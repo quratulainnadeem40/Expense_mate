@@ -1,4 +1,3 @@
-import 'package:expense_mate/Feature/expense/controller/expense_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -37,19 +36,21 @@ class TransactionDetailsScreen extends StatelessWidget {
   }
 
   void _onEditPressed() {
+    // 1. ExpenseBinding ko manual initialize kar rahe hain
+    ExpenseBinding().dependencies();
+
+    // 2. Navigation se pehle Controller mein data set kar rahe hain
+    final expenseController = Get.find<ExpenseController>();
+    expenseController.amountController.text = transaction.amount.toString();
+    expenseController.noteController.text = transaction.title;
+    expenseController.selectedCategory.value = transaction.category;
+    expenseController.isExpense.value = !transaction.isIncome;
+
+    // 3. Form fill hone ke baad screen navigate hogi
     Get.to(
       () => const AddExpenseView(),
-      binding: ExpenseBinding(),
       arguments: transaction,
     );
-
-    if (Get.isRegistered<ExpenseController>()) {
-      final expenseController = Get.find<ExpenseController>();
-      expenseController.amountController.text = transaction.amount.toString();
-      expenseController.noteController.text = transaction.title;
-      expenseController.selectedCategory.value = transaction.category;
-      expenseController.isExpense.value = !transaction.isIncome;
-    }
   }
 
   @override

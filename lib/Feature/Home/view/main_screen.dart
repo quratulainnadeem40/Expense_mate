@@ -14,89 +14,123 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Required Controllers Initialization
     final HomeController controller = Get.put(HomeController());
     Get.put(CategoriesController());
     Get.put(TransactionsController());
 
-    // Complete 5 pages list
     final List<Widget> pages = [
-      const HomeScreen(),                      // Index 0
-      const TransactionsView(),                // Index 1
-      const CategoriesView(),                  // Index 2
-      const Center(child: Text("Reports Screen")), // Index 3
-      const Center(child: Text("More Screen")), // Index 4
+      const HomeScreen(),
+      const TransactionsView(),
+      const CategoriesView(),
+      const Center(child: Text("Reports Screen")),
+      const Center(child: Text("More Screen")),
     ];
 
     return Scaffold(
-      body: Obx(() => IndexedStack(
-            index: controller.currentIndex.value,
-            children: pages,
-          )),
+      backgroundColor: const Color(0xFFF6F7F2),
+      
+      // Screen body
+      body: Obx(
+        () => IndexedStack(
+          index: controller.currentIndex.value,
+          children: pages,
+        ),
+      ),
 
-      // Floating Add Button
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Get.to(
-            () => const AddExpenseView(),
-            binding: ExpenseBinding(),
-          );
-        },
-        backgroundColor: Colors.blue,
-        elevation: 4.0,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 30),
+      // Integrated Floating Action Button
+      floatingActionButton: Obx(
+        () => controller.currentIndex.value == 0
+            ? SizedBox(
+                width: 56,
+                height: 56,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    Get.to(
+                      () => const AddExpenseView(),
+                      binding: ExpenseBinding(),
+                    );
+                  },
+                  backgroundColor: const Color(0xFF2B82FB),
+                  elevation: 4,
+                  shape: const CircleBorder(),
+                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                ),
+              )
+            : const SizedBox.shrink(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // Navigation Bar with 5 Navigation Destinations
-      bottomNavigationBar: Obx(
-        () => BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 6.0,
-          clipBehavior: Clip.antiAlias,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Left Side Items
-                _buildNavItem(
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  index: 0,
-                  controller: controller,
-                ),
-                _buildNavItem(
-                  icon: Icons.swap_horiz_rounded,
-                  label: 'Transactions',
-                  index: 1,
-                  controller: controller,
-                ),
+      // Curved Bottom Navigation Bar with Center Cutout Notch
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: Obx(
+          () => BottomAppBar(
+            shape: const CircularNotchedRectangle(),
+            notchMargin: 8.0,
+            color: const Color(0xFFEFF2E7),
+            elevation: 0,
+            child: SizedBox(
+              height: 60,
+              child: Row(
+                children: [
+                  // Left Side Tabs
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildNavItem(
+                          icon: Icons.home_rounded,
+                          label: 'Home',
+                          index: 0,
+                          controller: controller,
+                        ),
+                        _buildNavItem(
+                          icon: Icons.swap_horiz_rounded,
+                          label: 'Transactions',
+                          index: 1,
+                          controller: controller,
+                        ),
+                      ],
+                    ),
+                  ),
 
-                // FAB Gap Space
-                const SizedBox(width: 20),
+                  // Notch Space for Floating Button (Sirf Home Screen par)
+                  if (controller.currentIndex.value == 0)
+                    const SizedBox(width: 48),
 
-                // Right Side Items
-                _buildNavItem(
-                  icon: Icons.category_rounded,
-                  label: 'Categories',
-                  index: 2,
-                  controller: controller,
-                ),
-                _buildNavItem(
-                  icon: Icons.bar_chart_rounded,
-                  label: 'Reports',
-                  index: 3,
-                  controller: controller,
-                ),
-                _buildNavItem(
-                  icon: Icons.grid_view_rounded,
-                  label: 'More',
-                  index: 4,
-                  controller: controller,
-                ),
-              ],
+                  // Right Side Tabs
+                  Expanded(
+                    flex: 3,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildNavItem(
+                          icon: Icons.category_rounded,
+                          label: 'Categories',
+                          index: 2,
+                          controller: controller,
+                        ),
+                        _buildNavItem(
+                          icon: Icons.bar_chart_rounded,
+                          label: 'Reports',
+                          index: 3,
+                          controller: controller,
+                        ),
+                        _buildNavItem(
+                          icon: Icons.grid_view_rounded,
+                          label: 'More',
+                          index: 4,
+                          controller: controller,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -104,7 +138,6 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  // Navigation Item Widget
   Widget _buildNavItem({
     required IconData icon,
     required String label,
@@ -112,29 +145,31 @@ class MainScreen extends StatelessWidget {
     required HomeController controller,
   }) {
     final isSelected = controller.currentIndex.value == index;
-    final color = isSelected ? Colors.blue : Colors.grey.shade600;
+    final activeColor = const Color(0xFF2B82FB);
+    final inactiveColor = const Color(0xFF555B51);
 
     return InkWell(
       onTap: () => controller.changePage(index),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: color,
-              ),
+      borderRadius: BorderRadius.circular(10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? activeColor : inactiveColor,
+            size: 20,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? activeColor : inactiveColor,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
