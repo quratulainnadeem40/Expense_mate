@@ -1,7 +1,5 @@
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
-import 'package:get/get_rx/src/rx_types/rx_types.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
-
+import 'package:get/get.dart';
 
 class TransactionsController extends GetxController {
   var transactionList = <TransactionModel>[].obs;

@@ -4,7 +4,6 @@ import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-
 class AddTransactionDialog extends StatelessWidget {
   const AddTransactionDialog({super.key});
 
@@ -12,7 +11,13 @@ class AddTransactionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextEditingController titleController = TextEditingController();
     final TextEditingController amountController = TextEditingController();
-    final TextEditingController categoryController = TextEditingController();
+    
+    // Category ke liye String variable jo selected category ko store karega
+    final RxString selectedCategory = 'General'.obs;
+    
+    // Pre-defined categories ki list (agar aapke paas Categories folder mein koi controller hai toh wahan se bhi fetch kar sakte hain)
+    final List<String> categories = ['General', 'Food', 'Transport', 'Shopping', 'Bills', 'Entertainment'];
+
     final TransactionsController controller = Get.find();
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final RxBool isIncome = false.obs;
@@ -34,10 +39,27 @@ class AddTransactionDialog extends StatelessWidget {
               decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: categoryController,
-              decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
-            ),
+            
+            // TextField ki jagah DropdownButtonFormField use kiya gaya hai
+            Obx(() => DropdownButtonFormField<String>(
+                  value: selectedCategory.value,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: categories.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      selectedCategory.value = newValue;
+                    }
+                  },
+                )),
+            
             const SizedBox(height: 12),
             Obx(() => SwitchListTile(
                   title: Text(isIncome.value ? 'Income' : 'Expense'),
@@ -59,7 +81,7 @@ class AddTransactionDialog extends StatelessWidget {
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
                 title: titleController.text.trim(),
                 amount: double.tryParse(amountController.text) ?? 0.0,
-                category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'General',
+                category: selectedCategory.value, // Yahan selected dropdown value pass ho rahi hai
                 date: DateTime.now(),
                 isIncome: isIncome.value,
               );

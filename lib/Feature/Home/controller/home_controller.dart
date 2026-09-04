@@ -3,6 +3,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/constants/app_keys.dart';
 
 class HomeController extends GetxController {
+  // Bottom Navigation ke liye added property
+  var currentIndex = 0.obs;
+
   var totalBalance = 0.0.obs;
   var totalIncome = 0.0.obs;
   var totalExpense = 0.0.obs;
@@ -12,6 +15,18 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     loadDashboardData();
+  }
+
+  // Bottom navigation par jab user wapas is page par aaye toh data refresh karne ke liye
+  @override
+  void onReady() {
+    super.onReady();
+    loadDashboardData();
+  }
+
+  // Bottom Navigation tab change karne ke liye added method
+  void changePage(int index) {
+    currentIndex.value = index;
   }
 
   void loadDashboardData() {

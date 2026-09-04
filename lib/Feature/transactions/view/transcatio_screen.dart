@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../widgets/transaction_card.dart';
 
-
-class TransactionsView extends GetView<TransactionsController> {
+class TransactionsView extends StatelessWidget {
   const TransactionsView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Controller ko yahan initialize kar diya gaya hai taake 'not found' error na aaye
+    final TransactionsController controller = Get.put(TransactionsController());
+    
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -44,7 +46,7 @@ class TransactionsView extends GetView<TransactionsController> {
                         const SizedBox(height: 4),
                         Text(
                           '\$${controller.totalIncome.value.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -60,7 +62,7 @@ class TransactionsView extends GetView<TransactionsController> {
                         const SizedBox(height: 4),
                         Text(
                           '\$${controller.totalExpense.value.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

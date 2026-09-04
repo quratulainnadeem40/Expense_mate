@@ -29,8 +29,24 @@ class HomeScreen extends GetView<HomeController> {
               totalExpense: controller.totalExpense,
             ),
             const SizedBox(height: 24),
-            const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton(
+                  onPressed: () {
+                    Get.find<HomeController>().changePage(1);
+                  },
+                  child: const Text(
+                    'See All',
+                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
+            
             Expanded(
               child: Obx(() {
                 if (controller.recentTransactions.isEmpty) {
