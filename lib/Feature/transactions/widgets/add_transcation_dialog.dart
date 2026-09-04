@@ -12,13 +12,10 @@ class AddTransactionDialog extends StatelessWidget {
     final TextEditingController titleController = TextEditingController();
     final TextEditingController amountController = TextEditingController();
     
-    // Category ke liye String variable jo selected category ko store karega
     final RxString selectedCategory = 'General'.obs;
-    
-    // Pre-defined categories ki list (agar aapke paas Categories folder mein koi controller hai toh wahan se bhi fetch kar sakte hain)
     final List<String> categories = ['General', 'Food', 'Transport', 'Shopping', 'Bills', 'Entertainment'];
 
-    final TransactionsController controller = Get.find();
+    final TransactionsController controller = Get.put(TransactionsController());
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final RxBool isIncome = false.obs;
 
@@ -35,12 +32,11 @@ class AddTransactionDialog extends StatelessWidget {
             const SizedBox(height: 12),
             TextField(
               controller: amountController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             
-            // TextField ki jagah DropdownButtonFormField use kiya gaya hai
             Obx(() => DropdownButtonFormField<String>(
                   value: selectedCategory.value,
                   decoration: const InputDecoration(
@@ -76,17 +72,20 @@ class AddTransactionDialog extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () {
-            if (titleController.text.isNotEmpty && amountController.text.isNotEmpty) {
+            if (titleController.text.trim().isNotEmpty && amountController.text.trim().isNotEmpty) {
               final newTx = TransactionModel(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
                 title: titleController.text.trim(),
-                amount: double.tryParse(amountController.text) ?? 0.0,
-                category: selectedCategory.value, // Yahan selected dropdown value pass ho rahi hai
+                amount: double.tryParse(amountController.text.trim()) ?? 0.0,
+                category: selectedCategory.value,
                 date: DateTime.now(),
                 isIncome: isIncome.value,
               );
+              
               controller.addTransaction(newTx);
               Get.back();
+            } else {
+              Get.snackbar('Error', 'Please fill all fields', snackPosition: SnackPosition.BOTTOM);
             }
           },
           child: const Text('Add'),

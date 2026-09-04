@@ -1,17 +1,17 @@
-import 'package:expense_mate/Core/theme/custom_textstyle.dart';
-import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
+import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
+import 'package:expense_mate/core/constants/app_keys.dart';
 import '../widgets/transaction_card.dart';
 
-class TransactionsView extends StatelessWidget {
+class TransactionsView extends GetView<TransactionsController> {
   const TransactionsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Controller ko yahan initialize kar diya gaya hai taake 'not found' error na aaye
-    final TransactionsController controller = Get.put(TransactionsController());
-    
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -19,10 +19,48 @@ class TransactionsView extends StatelessWidget {
         title: Text('Transactions', style: AppTextStyles.headingMedium(isDark)),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // Summary Header Box
-          Obx(() => Container(
+      body: ValueListenableBuilder(
+        valueListenable: Hive.box(AppKeys.transactionsBox).listenable(),
+        builder: (context, Box box, _) {
+          final data = box.values.toList();
+          
+          double totalIncome = 0.0;
+          double totalExpense = 0.0;
+          List<TransactionModel> transactionsList = [];
+
+          for (var item in data) {
+            if (item is Map) {
+              final double amount = (item['amount'] as num?)?.toDouble() ?? 0.0;
+              final bool isIncome = item['type'] == 'Income';
+
+              if (isIncome) {
+                totalIncome += amount;
+              } else {
+                totalExpense += amount;
+              }
+
+              transactionsList.add(
+                TransactionModel(
+                  id: item['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                  title: (item['note'] != null && item['note'].toString().isNotEmpty)
+                      ? item['note'].toString()
+                      : (item['category']?.toString() ?? 'General'),
+                  amount: amount,
+                  category: item['category']?.toString() ?? 'General',
+                  date: item['date'] != null ? DateTime.parse(item['date'].toString()) : DateTime.now(),
+                  isIncome: isIncome,
+                ),
+              );
+            }
+          }
+
+          // Reverse to show latest transactions on top
+          final reversedList = transactionsList.reversed.toList();
+
+          return Column(
+            children: [
+              // Summary Header Box
+              Container(
                 padding: const EdgeInsets.all(16),
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -45,7 +83,7 @@ class TransactionsView extends StatelessWidget {
                         Text('Income', style: AppTextStyles.bodyMedium(isDark)),
                         const SizedBox(height: 4),
                         Text(
-                          '\$${controller.totalIncome.value.toStringAsFixed(2)}',
+                          '\$${totalIncome.toStringAsFixed(2)}',
                           style: const TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.bold,
@@ -61,7 +99,7 @@ class TransactionsView extends StatelessWidget {
                         Text('Expense', style: AppTextStyles.bodyMedium(isDark)),
                         const SizedBox(height: 4),
                         Text(
-                          '\$${controller.totalExpense.value.toStringAsFixed(2)}',
+                          '\$${totalExpense.toStringAsFixed(2)}',
                           style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
@@ -72,29 +110,32 @@ class TransactionsView extends StatelessWidget {
                     ),
                   ],
                 ),
-              )),
-          
-          // Transaction List
-          Expanded(
-            child: Obx(() {
-              if (controller.transactionList.isEmpty) {
-                return Center(
-                  child: Text(
-                    'No transactions found.',
-                    style: AppTextStyles.bodyLarge(isDark),
-                  ),
-                );
-              }
-              return ListView.builder(
-                itemCount: controller.transactionList.length,
-                itemBuilder: (context, index) {
-                  final tx = controller.transactionList[index];
-                  return TransactionCard(transaction: tx, isDark: isDark);
-                },
-              );
-            }),
-          ),
-        ],
+              ),
+
+              // Transactions List
+              Expanded(
+                child: reversedList.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No transactions found.',
+                          style: AppTextStyles.bodyLarge(isDark),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: reversedList.length,
+                        itemBuilder: (context, index) {
+                          final tx = reversedList[index];
+                          return TransactionCard(
+                            transaction: tx,
+                            isDark: isDark,
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
