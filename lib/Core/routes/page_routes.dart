@@ -5,6 +5,8 @@ import 'package:expense_mate/Feature/Categories/binding/categories_binding.dart'
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/Home/binding/home_binding.dart';
 import '' 'package:expense_mate/Feature/Home/view/home_screen.dart';
+import 'package:expense_mate/Feature/splash/binding/splash_binding.dart';
+import 'package:expense_mate/Feature/splash/view/splash_view_screen.dart';
 import 'package:expense_mate/Feature/transactions/binding/transcation_binding.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:get/get.dart';
@@ -31,6 +33,11 @@ class AppPages {
       name: AppRoutes.budget,
       page: () => const BudgetView(),
       binding: BudgetBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashView(),
+      binding: SplashBinding(),
     ),
   ];
 }
