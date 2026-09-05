@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import '../../Home/view/main_screen.dart'; // Exact path check kar lein
 
 class SplashController extends GetxController {
   @override
@@ -9,9 +10,9 @@ class SplashController extends GetxController {
   }
 
   void _navigateToHome() {
-    // 3 seconds timer ke baad Home/Dashboard screen par navigate karega
+    // 3 seconds timer ke baad MainScreen par navigate hoga
     Timer(const Duration(seconds: 3), () {
-      Get.offAllNamed('/home'); // Apne home route ka exact name yahan add karein
+      Get.offAll(() => const MainScreen());
     });
   }
 }

@@ -17,7 +17,7 @@ class ExpenseController extends GetxController {
     'Transport',
     'Shopping',
     'Bills',
-    'Entertainment'
+    'Entertainment',
   ];
 
   final List<String> incomeCategories = [
