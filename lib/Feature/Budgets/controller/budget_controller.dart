@@ -1,32 +1,78 @@
 import 'package:get/get.dart';
+import '../../Categories/controller/categories_controller.dart';
+import '../../Categories/model/categories_model.dart';
+import '../../transactions/controller/transcation_controller.dart';
 import '../model/budget_model.dart';
 
 class BudgetController extends GetxController {
-  var budgetList = <BudgetModel>[].obs;
+  final CategoriesController categoriesController = Get.find<CategoriesController>();
+  final TransactionsController transactionsController = Get.find<TransactionsController>();
 
-  double get totalAllocated => budgetList.fold(0, (sum, item) => sum + item.allocatedAmount);
-  double get totalSpent => budgetList.fold(0, (sum, item) => sum + item.spentAmount);
+  var customLimits = <String, double>{}.obs; 
+  var budgetList = <BudgetModel>[].obs; // Reactive List
 
   @override
   void onInit() {
     super.onInit();
-    loadBudgets();
+    // Jab bhi transactions ya categories update hon, budget list auto-recalculate ho
+    ever(transactionsController.transactions, (_) => calculateBudgets());
+    ever(categoriesController.categoryList, (_) => calculateBudgets());
+    ever(customLimits, (_) => calculateBudgets());
+    
+    calculateBudgets();
   }
 
-  void loadBudgets() {
-    budgetList.assignAll([
-      BudgetModel(id: '1', categoryName: 'Groceries', allocatedAmount: 20000, spentAmount: 12000),
-      BudgetModel(id: '2', categoryName: 'Shopping', allocatedAmount: 15000, spentAmount: 4000),
-    ]);
+  void calculateBudgets() {
+    final categories = categoriesController.categoryList;
+    final transactionsList = transactionsController.transactions;
+
+    final List<BudgetModel> tempList = categories.map((cat) {
+      double spent = transactionsList
+          .where((t) => 
+              t.category.trim().toLowerCase() == cat.name.trim().toLowerCase() && 
+              !t.isIncome)
+          .fold(0.0, (sum, t) => sum + t.amount);
+
+      double limit = customLimits[cat.name] ?? 10000.0; 
+
+      return BudgetModel(
+        id: cat.id,
+        categoryName: cat.name,
+        allocatedAmount: limit,
+        spentAmount: spent,
+      );
+    }).toList();
+
+    budgetList.assignAll(tempList); // Reactive List update
   }
 
-  void addNewBudget(String category, double amount) {
-    budgetList.add(
-      BudgetModel(
-        id: DateTime.now().toString(),
-        categoryName: category,
-        allocatedAmount: amount,
-      ),
+  double get totalAllocated => budgetList.fold(0, (sum, item) => sum + item.allocatedAmount);
+  double get totalSpent => budgetList.fold(0, (sum, item) => sum + item.spentAmount);
+
+  void setCategoryLimit(String categoryName, double newLimit) {
+    customLimits[categoryName] = newLimit;
+    calculateBudgets();
+  }
+
+  void addNewBudget(String categoryName, double amount) {
+    customLimits[categoryName] = amount;
+
+    bool exists = categoriesController.categoryList.any(
+      (element) => element.name.trim().toLowerCase() == categoryName.trim().toLowerCase(),
     );
+
+    if (!exists) {
+      categoriesController.addCategory(
+        CategoryModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: categoryName,
+          icon: 'attach_money',
+          colorValue: 0xFF2B82FB,
+          isDefault: false,
+        ),
+      );
+    }
+
+    calculateBudgets();
   }
 }

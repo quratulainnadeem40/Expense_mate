@@ -1,3 +1,4 @@
+import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
@@ -6,11 +7,12 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+// Budget view import
+import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
+
 import '../controller/home_controller.dart';
 import 'home_screen.dart';
-
-// Import your Budget Screen here
-// import 'package:expense_mate/Feature/budget/view/budget_view.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -53,18 +55,16 @@ class MainScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
-              // Budget Container Option
+
+              // Budget Option
               InkWell(
                 onTap: () {
-                  Navigator.pop(context); // Menu dismiss karega
-                  
-                  // Temporary placeholder navigation (Budget View replace karein)
+                  Navigator.pop(context); // Bottom sheet close karein
+
+                  // BudgetView navigate karein
                   Get.to(
-                    () => Scaffold(
-                      appBar: AppBar(title: const Text("Budget")),
-                      body: const Center(child: Text("Budget Screen")),
-                    ),
+                    () => const BudgetView(),
+                    binding: BudgetBinding(), // Controller injection
                   );
                 },
                 borderRadius: BorderRadius.circular(16),
@@ -146,16 +146,12 @@ class MainScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7F2),
-
-      // Screen body
       body: Obx(
         () => IndexedStack(
           index: controller.currentIndex.value,
           children: pages,
         ),
       ),
-
-      // Integrated Floating Action Button
       floatingActionButton: Obx(
         () => controller.currentIndex.value == 0
             ? SizedBox(
@@ -177,8 +173,6 @@ class MainScreen extends StatelessWidget {
             : const SizedBox.shrink(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
-      // Curved Bottom Navigation Bar with Center Cutout Notch
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -194,7 +188,6 @@ class MainScreen extends StatelessWidget {
               height: 60,
               child: Row(
                 children: [
-                  // Left Side Tabs
                   Expanded(
                     flex: 2,
                     child: Row(
@@ -217,12 +210,8 @@ class MainScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Notch Space for Floating Button (Home Screen dynamic check)
                   if (controller.currentIndex.value == 0)
                     const SizedBox(width: 48),
-
-                  // Right Side Tabs
                   Expanded(
                     flex: 3,
                     child: Row(
