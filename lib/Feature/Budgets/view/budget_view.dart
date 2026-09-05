@@ -42,6 +42,43 @@ class BudgetView extends GetView<BudgetController> {
     );
   }
 
+  void _showEditTotalBudgetDialog(BuildContext context, double currentTotalLimit) {
+    final amountController = TextEditingController(text: currentTotalLimit.toStringAsFixed(0));
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Set Total Monthly Budget'),
+          content: TextField(
+            controller: amountController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Total Limit',
+              hintText: 'e.g., 60000',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final totalLimit = double.tryParse(amountController.text.trim()) ?? currentTotalLimit;
+                controller.setTotalBudget(totalLimit);
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2B82FB)),
+              child: const Text('Update', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,7 +93,6 @@ class BudgetView extends GetView<BudgetController> {
         ),
       ),
       body: Obx(() {
-        // Automatic live fetch List
         final budgets = controller.budgetList;
 
         if (budgets.isEmpty) {
@@ -68,7 +104,6 @@ class BudgetView extends GetView<BudgetController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Overall Live Summary
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -78,14 +113,34 @@ class BudgetView extends GetView<BudgetController> {
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'Total Monthly Budget Spent',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF555B51)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Monthly Budget Spent',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF555B51),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18, color: Colors.grey),
+                          onPressed: () => _showEditTotalBudgetDialog(
+                            context,
+                            controller.totalAllocated,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       'RS ${controller.totalSpent.toStringAsFixed(0)} / RS ${controller.totalAllocated.toStringAsFixed(0)}',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2B82FB)),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2B82FB),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     ClipRRect(
@@ -110,7 +165,6 @@ class BudgetView extends GetView<BudgetController> {
               ),
               const SizedBox(height: 12),
 
-              // Live Categories Progress
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

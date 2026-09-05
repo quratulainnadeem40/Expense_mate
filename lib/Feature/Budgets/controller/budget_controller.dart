@@ -5,20 +5,31 @@ import '../../transactions/controller/transcation_controller.dart';
 import '../model/budget_model.dart';
 
 class BudgetController extends GetxController {
-  final CategoriesController categoriesController = Get.find<CategoriesController>();
-  final TransactionsController transactionsController = Get.find<TransactionsController>();
+  late CategoriesController categoriesController;
+  late TransactionsController transactionsController;
 
   var customLimits = <String, double>{}.obs; 
-  var budgetList = <BudgetModel>[].obs; // Reactive List
+  var budgetList = <BudgetModel>[].obs;
+  
+  var customTotalBudget = Rxn<double>();
 
   @override
   void onInit() {
     super.onInit();
-    // Jab bhi transactions ya categories update hon, budget list auto-recalculate ho
+
+    categoriesController = Get.isRegistered<CategoriesController>()
+        ? Get.find<CategoriesController>()
+        : Get.put(CategoriesController());
+
+    transactionsController = Get.isRegistered<TransactionsController>()
+        ? Get.find<TransactionsController>()
+        : Get.put(TransactionsController());
+
     ever(transactionsController.transactions, (_) => calculateBudgets());
     ever(categoriesController.categoryList, (_) => calculateBudgets());
     ever(customLimits, (_) => calculateBudgets());
-    
+    ever(customTotalBudget, (_) => calculateBudgets());
+
     calculateBudgets();
   }
 
@@ -43,15 +54,21 @@ class BudgetController extends GetxController {
       );
     }).toList();
 
-    budgetList.assignAll(tempList); // Reactive List update
+    budgetList.assignAll(tempList);
   }
 
-  double get totalAllocated => budgetList.fold(0, (sum, item) => sum + item.allocatedAmount);
-  double get totalSpent => budgetList.fold(0, (sum, item) => sum + item.spentAmount);
+  double get totalAllocated => customTotalBudget.value ?? 
+      budgetList.fold(0.0, (sum, item) => sum + item.allocatedAmount);
+
+  double get totalSpent => budgetList.fold(0.0, (sum, item) => sum + item.spentAmount);
 
   void setCategoryLimit(String categoryName, double newLimit) {
     customLimits[categoryName] = newLimit;
     calculateBudgets();
+  }
+
+  void setTotalBudget(double newTotalLimit) {
+    customTotalBudget.value = newTotalLimit;
   }
 
   void addNewBudget(String categoryName, double amount) {
