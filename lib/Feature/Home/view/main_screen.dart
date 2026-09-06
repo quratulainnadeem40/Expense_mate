@@ -4,6 +4,7 @@ import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
+import 'package:expense_mate/Feature/more/view/more_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/home_controller.dart';
@@ -23,7 +24,7 @@ class MainScreen extends StatelessWidget {
       const TransactionsView(),
       const CategoriesView(),
       const Center(child: Text("Reports Screen")),
-      const Center(child: Text("More Screen")),
+      const MoreView(),
     ];
 
     return Scaffold(
