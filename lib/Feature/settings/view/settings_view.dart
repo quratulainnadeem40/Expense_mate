@@ -2,7 +2,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:expense_mate/Core/service/notification_service.dart';
+
 
 import '../controller/settings_controller.dart';
 
@@ -165,26 +165,7 @@ class SettingsView extends GetView<SettingsController> {
               title: 'Notifications',
               isDark: isDark,
             ),
-ElevatedButton(
-  onPressed: () async {
-    final notificationService = Get.find<NotificationService>();
-    await notificationService.showTestNotification();
-  },
-  child: const Text('Test Notification'),
-),
-ElevatedButton(
-  onPressed: () async {
-    final notificationService = Get.find<NotificationService>();
 
-    await notificationService.scheduleTestBillNotification();
-
-    Get.snackbar(
-      'Scheduled',
-      'Test bill notification will appear in about 1 minute.',
-    );
-  },
-  child: const Text('Test Bill Reminder'),
-),
             const SizedBox(height: 10),
 
             _SettingsCard(

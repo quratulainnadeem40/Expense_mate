@@ -2,7 +2,6 @@ import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../settings/controller/settings_controller.dart';
-
 import '../../../Core/theme/custom_colors.dart';
 import '../controller/bills_reminders_controller.dart';
 import '../model/bill_model.dart';
@@ -89,51 +88,91 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               ),
 
               const SizedBox(height: 28),
+ // ====================================================
+//DUE TODAY
+// ====================================================
 
-              // ====================================================
-              // UPCOMING BILLS
-              // ====================================================
+_SectionTitle(
+  title: 'Due Today',
+  count: controller.todayBills.length,
+  isDark: isDark,
+),
 
-              _SectionTitle(
-                title: 'Upcoming Bills',
-                count: controller.upcomingBills.length,
-                isDark: isDark,
-              ),
+const SizedBox(height: 12),
 
-              const SizedBox(height: 12),
+if (controller.todayBills.isEmpty)
+  _EmptySection(
+    message: 'No bills due today',
+    icon: Icons.today_outlined,
+    isDark: isDark,
+  )
+else
+  ...controller.todayBills.map(
+    (bill) => _BillTile(
+      bill: bill,
+      isDark: isDark,
+      currency: settingsController.selectedCurrency.value,
+      onMarkPaid: () {
+        controller.markAsPaid(bill.id);
+      },
+      onDelete: () {
+        _showDeleteDialog(
+          context,
+          bill.name,
+          bill.id,
+        );
+      },
+      onEdit: () {
+        Get.to(
+          () => EditBillView(bill: bill),
+        );
+      },
+    ),
+  ),
 
-              if (controller.upcomingBills.isEmpty)
-                _EmptySection(
-                  message: 'No upcoming bills',
-                  icon: Icons.event_available_rounded,
-                  isDark: isDark,
-                )
-              else
-                ...controller.upcomingBills.map(
-                  (bill) => _BillTile(
-                    bill: bill,
-                    isDark: isDark,
-                      currency: settingsController.selectedCurrency.value,
+// ====================================================
+// UPCOMING BILLS
+// ====================================================
 
-                    onMarkPaid: () {
-                      controller.markAsPaid(bill.id);
-                    },
+const SizedBox(height: 24),
 
-                    onDelete: () {
-                      _showDeleteDialog(
-                        context,
-                        bill.name,
-                        bill.id,
-                      );
-                    },
+_SectionTitle(
+  title: 'Upcoming Bills',
+  count: controller.upcomingBills.length,
+  isDark: isDark,
+),
 
-                    onEdit: () {
-                      Get.to(
-                        () => EditBillView(bill: bill),
-                      );
-                    },
-                  ),
-                ),
+const SizedBox(height: 12),
+
+if (controller.upcomingBills.isEmpty)
+  _EmptySection(
+    message: 'No upcoming bills',
+    icon: Icons.event_available_rounded,
+    isDark: isDark,
+  )
+else
+  ...controller.upcomingBills.map(
+    (bill) => _BillTile(
+      bill: bill,
+      isDark: isDark,
+      currency: settingsController.selectedCurrency.value,
+      onMarkPaid: () {
+        controller.markAsPaid(bill.id);
+      },
+      onDelete: () {
+        _showDeleteDialog(
+          context,
+          bill.name,
+          bill.id,
+        );
+      },
+      onEdit: () {
+        Get.to(
+          () => EditBillView(bill: bill),
+        );
+      },
+    ),
+  ),
 
               // ====================================================
               // OVERDUE BILLS

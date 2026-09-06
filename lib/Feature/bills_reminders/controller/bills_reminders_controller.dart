@@ -12,10 +12,6 @@ class BillsRemindersController extends GetxController {
   final bills = <BillModel>[].obs;
   final isLoading = false.obs;
 
-  // ==========================================================
-  // CONTROLLERS / SERVICES
-  // ==========================================================
-
   final NotificationService notificationService =
       Get.find<NotificationService>();
 
@@ -75,7 +71,7 @@ class BillsRemindersController extends GetxController {
   int get overdueCount => overdueBills.length;
 
   // ==========================================================
-  // TOTAL AMOUNTS
+  // AMOUNTS
   // ==========================================================
 
   double get upcomingAmount {
@@ -119,24 +115,28 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> loadBills() async {
-    isLoading.value = true;
+    try {
+      isLoading.value = true;
 
-    final loadedBills = billsBox.values.map((item) {
-      return BillModel.fromMap(
-        Map<dynamic, dynamic>.from(item),
-      );
-    }).toList();
+      final loadedBills = billsBox.values.map((item) {
+        return BillModel.fromMap(
+          Map<dynamic, dynamic>.from(item),
+        );
+      }).toList();
 
-    bills.assignAll(loadedBills);
+      bills.assignAll(loadedBills);
+    } catch (e) {
+      print('LOAD BILLS ERROR: $e');
+    } finally {
+      isLoading.value = false;
+    }
 
-    isLoading.value = false;
-
-    // Schedule notifications for existing unpaid bills.
+    // Notifications should never prevent bills from loading.
     await _scheduleAllBillNotifications();
   }
 
   // ==========================================================
-  // SCHEDULE ALL BILL NOTIFICATIONS
+  // SCHEDULE ALL NOTIFICATIONS
   // ==========================================================
 
   Future<void> _scheduleAllBillNotifications() async {
@@ -152,7 +152,7 @@ class BillsRemindersController extends GetxController {
   }
 
   // ==========================================================
-  // SCHEDULE SINGLE BILL NOTIFICATION
+  // SCHEDULE ONE NOTIFICATION
   // ==========================================================
 
   Future<void> _scheduleBillNotification(
@@ -164,13 +164,19 @@ class BillsRemindersController extends GetxController {
       return;
     }
 
-    await notificationService.scheduleBillNotification(
-      notificationId: _notificationId(bill.id),
-      billName: bill.name,
-      amount: bill.amount,
-      currency: settingsController.selectedCurrency.value,
-      dueDate: bill.dueDate,
-    );
+    try {
+      await notificationService.scheduleBillNotification(
+        notificationId: _notificationId(bill.id),
+        billName: bill.name,
+        amount: bill.amount,
+        currency: settingsController.selectedCurrency.value,
+        dueDate: bill.dueDate,
+      );
+    } catch (e) {
+      print(
+        'NOTIFICATION SCHEDULE ERROR for ${bill.name}: $e',
+      );
+    }
   }
 
   // ==========================================================
@@ -178,7 +184,7 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   int _notificationId(String billId) {
-    return billId.hashCode.abs();
+    return int.tryParse(billId) ?? billId.hashCode.abs();
   }
 
   // ==========================================================
@@ -192,30 +198,39 @@ class BillsRemindersController extends GetxController {
     required String category,
     required String repeat,
   }) async {
-    final id = DateTime.now()
-        .millisecondsSinceEpoch
-        .toString();
+    try {
+      final id = DateTime.now()
+          .millisecondsSinceEpoch
+          .toString();
 
-    final bill = BillModel(
-      id: id,
-      name: name,
-      amount: amount,
-      dueDate: dueDate,
-      category: category,
-      repeat: repeat,
-      isPaid: false,
-    );
+      final bill = BillModel(
+        id: id,
+        name: name,
+        amount: amount,
+        dueDate: dueDate,
+        category: category,
+        repeat: repeat,
+        isPaid: false,
+      );
 
-    await billsBox.put(
-      id,
-      bill.toMap(),
-    );
+      // Save to Hive first.
+      await billsBox.put(
+        id,
+        bill.toMap(),
+      );
 
-    bills.add(bill);
-    bills.refresh();
+      // Update UI immediately.
+      bills.add(bill);
+      bills.refresh();
 
-    // Schedule notification for the new bill.
-    await _scheduleBillNotification(bill);
+      // Notification is secondary.
+      await _scheduleBillNotification(bill);
+
+      print('BILL ADDED: ${bill.name}');
+    } catch (e) {
+      print('ADD BILL ERROR: $e');
+      rethrow;
+    }
   }
 
   // ==========================================================
@@ -223,27 +238,39 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> updateBill(BillModel bill) async {
-    // Cancel the old notification first.
-    await notificationService.cancelNotification(
-      _notificationId(bill.id),
-    );
+    try {
+      // Update Hive first.
+      await billsBox.put(
+        bill.id,
+        bill.toMap(),
+      );
 
-    await billsBox.put(
-      bill.id,
-      bill.toMap(),
-    );
+      // Update observable list.
+      final index = bills.indexWhere(
+        (item) => item.id == bill.id,
+      );
 
-    final index = bills.indexWhere(
-      (item) => item.id == bill.id,
-    );
+      if (index != -1) {
+        bills[index] = bill;
+        bills.refresh();
+      }
 
-    if (index != -1) {
-      bills[index] = bill;
-      bills.refresh();
+      // Notification handling comes after the bill is updated.
+      try {
+        await notificationService.cancelNotification(
+          _notificationId(bill.id),
+        );
+      } catch (e) {
+        print('CANCEL OLD NOTIFICATION ERROR: $e');
+      }
+
+      await _scheduleBillNotification(bill);
+
+      print('BILL UPDATED: ${bill.name}');
+    } catch (e) {
+      print('UPDATE BILL ERROR: $e');
+      rethrow;
     }
-
-    // Schedule the updated bill if it is unpaid.
-    await _scheduleBillNotification(bill);
   }
 
   // ==========================================================
@@ -255,20 +282,21 @@ class BillsRemindersController extends GetxController {
       (bill) => bill.id == billId,
     );
 
-    if (index == -1) return;
+    if (index == -1) {
+      print('MARK PAID: BILL NOT FOUND: $billId');
+      return;
+    }
 
     final bill = bills[index];
-
-    // Cancel notification when bill is paid.
-    await notificationService.cancelNotification(
-      _notificationId(bill.id),
-    );
 
     final updatedBill = bill.copyWith(
       isPaid: true,
     );
 
+    // updateBill handles Hive + UI + notifications.
     await updateBill(updatedBill);
+
+    print('BILL MARKED PAID: ${bill.name}');
   }
 
   // ==========================================================
@@ -280,7 +308,10 @@ class BillsRemindersController extends GetxController {
       (bill) => bill.id == billId,
     );
 
-    if (index == -1) return;
+    if (index == -1) {
+      print('MARK UNPAID: BILL NOT FOUND: $billId');
+      return;
+    }
 
     final bill = bills[index];
 
@@ -289,6 +320,8 @@ class BillsRemindersController extends GetxController {
     );
 
     await updateBill(updatedBill);
+
+    print('BILL MARKED UNPAID: ${bill.name}');
   }
 
   // ==========================================================
@@ -296,18 +329,31 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> deleteBill(String billId) async {
-    // Cancel notification before deleting the bill.
-    await notificationService.cancelNotification(
-      _notificationId(billId),
-    );
+    try {
+      // Delete from Hive first.
+      await billsBox.delete(billId);
 
-    await billsBox.delete(billId);
+      // Remove from UI immediately.
+      bills.removeWhere(
+        (bill) => bill.id == billId,
+      );
 
-    bills.removeWhere(
-      (bill) => bill.id == billId,
-    );
+      bills.refresh();
 
-    bills.refresh();
+      // Notification cancellation is secondary.
+      try {
+        await notificationService.cancelNotification(
+          _notificationId(billId),
+        );
+      } catch (e) {
+        print('DELETE NOTIFICATION ERROR: $e');
+      }
+
+      print('BILL DELETED: $billId');
+    } catch (e) {
+      print('DELETE BILL ERROR: $e');
+      rethrow;
+    }
   }
 
   // ==========================================================
@@ -315,12 +361,22 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> clearBills() async {
-    await billsBox.clear();
+    try {
+      await billsBox.clear();
 
-    bills.clear();
+      bills.clear();
 
-    // Remove all scheduled notifications.
-    await notificationService.cancelAllNotifications();
+      try {
+        await notificationService.cancelAllNotifications();
+      } catch (e) {
+        print('CLEAR NOTIFICATIONS ERROR: $e');
+      }
+
+      print('ALL BILLS CLEARED');
+    } catch (e) {
+      print('CLEAR BILLS ERROR: $e');
+      rethrow;
+    }
   }
 
   // ==========================================================

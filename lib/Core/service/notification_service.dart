@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -19,21 +20,21 @@ class NotificationService {
       'Notifications for upcoming and due bills';
 
   Future<void> init() async {
-    // Initialize timezone database.
     tz.initializeTimeZones();
 
-    const AndroidInitializationSettings androidSettings =
+    const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const DarwinInitializationSettings iosSettings =
-        DarwinInitializationSettings();
+    const iosSettings = DarwinInitializationSettings();
 
-    const InitializationSettings settings = InitializationSettings(
+    const settings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
 
     await _notifications.initialize(settings);
+
+    debugPrint('NOTIFICATION SERVICE INITIALIZED');
   }
 
   Future<void> requestPermission() async {
@@ -41,7 +42,12 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.requestNotificationsPermission();
+    final notificationPermission =
+        await androidPlugin?.requestNotificationsPermission();
+
+    debugPrint(
+      'NOTIFICATION PERMISSION: $notificationPermission',
+    );
 
     final iosPlugin = _notifications
         .resolvePlatformSpecificImplementation<
@@ -55,27 +61,29 @@ class NotificationService {
   }
 
   Future<void> showTestNotification() async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
       channelDescription: _channelDescription,
-      importance: Importance.high,
+      importance: Importance.max,
       priority: Priority.high,
     );
 
-    const NotificationDetails details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
     );
 
     await _notifications.show(
       999,
       'ExpenseMate',
-      'Notifications are working!',
+      'Instant notification is working!',
       details,
     );
+
+    debugPrint('INSTANT NOTIFICATION SENT');
   }
 
+  
   Future<void> scheduleBillNotification({
     required int notificationId,
     required String billName,
@@ -83,74 +91,96 @@ class NotificationService {
     required String currency,
     required DateTime dueDate,
   }) async {
-    final scheduledDate = tz.TZDateTime(
+    final now = tz.TZDateTime.now(tz.local);
+
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+    );
+
+    // Reminder one day before at 9 AM.
+    final reminderDate = tz.TZDateTime(
       tz.local,
       dueDate.year,
       dueDate.month,
       dueDate.day,
-      9, // 9:00 AM
-    );
+      9,
+    ).subtract(const Duration(days: 1));
 
-    // Don't schedule notifications for dates that have already passed.
-    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
-      return;
+    if (reminderDate.isAfter(now)) {
+      await _notifications.zonedSchedule(
+        notificationId + 1000000,
+        'Bill Reminder',
+        '$billName is due tomorrow. Amount: '
+            '$currency ${amount.toStringAsFixed(2)}',
+        reminderDate,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+
+      debugPrint('DAY-BEFORE REMINDER SCHEDULED');
     }
 
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
+    // Due date notification at 9 AM.
+    final dueNotificationDate = tz.TZDateTime(
+      tz.local,
+      dueDate.year,
+      dueDate.month,
+      dueDate.day,
+      9,
     );
 
-    const NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-    );
+    if (dueNotificationDate.isAfter(now)) {
+      await _notifications.zonedSchedule(
+        notificationId,
+        'Bill Due Today',
+        '$billName is due today. Amount: '
+            '$currency ${amount.toStringAsFixed(2)}',
+        dueNotificationDate,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
 
-    await _notifications.zonedSchedule(
-      notificationId,
-      'Bill Due Today',
-      '$billName is due today. Amount: $currency ${amount.toStringAsFixed(2)}',
-      scheduledDate,
-      details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-    );
+      debugPrint('DUE-DATE NOTIFICATION SCHEDULED');
+    }
   }
-  Future<void> scheduleTestBillNotification() async {
-  final testDate = tz.TZDateTime.now(tz.local).add(
-    const Duration(minutes: 1),
-  );
-
-  const AndroidNotificationDetails androidDetails =
-      AndroidNotificationDetails(
-    _channelId,
-    _channelName,
-    channelDescription: _channelDescription,
-    importance: Importance.high,
-    priority: Priority.high,
-  );
-
-  const NotificationDetails details = NotificationDetails(
-    android: androidDetails,
-  );
-
-  await _notifications.zonedSchedule(
-    888,
-    'Bill Due Today',
-    'Test Electricity Bill is due today. Amount: PKR 2,500.00',
-    testDate,
-    details,
-    androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-  );
-}
 
   Future<void> cancelNotification(int notificationId) async {
     await _notifications.cancel(notificationId);
+    await _notifications.cancel(notificationId + 1000000);
+
+    debugPrint(
+      'NOTIFICATION CANCELLED: $notificationId',
+    );
   }
+
+Future<void> checkPendingNotifications() async {
+  final pending = await _notifications.pendingNotificationRequests();
+
+  debugPrint('================================');
+  debugPrint('PENDING NOTIFICATIONS: ${pending.length}');
+
+  for (final notification in pending) {
+    debugPrint(
+      'ID: ${notification.id} | '
+      'TITLE: ${notification.title} | '
+      'BODY: ${notification.body}',
+    );
+  }
+
+  debugPrint('================================');
+}
 
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
+
+    debugPrint('ALL NOTIFICATIONS CANCELLED');
   }
 }
