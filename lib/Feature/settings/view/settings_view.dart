@@ -212,6 +212,111 @@ class SettingsView extends GetView<SettingsController> {
 
             const SizedBox(height: 24),
 
+const SizedBox(height: 24),
+
+// ==================================================
+// ACCOUNT
+// ==================================================
+
+_SectionHeader(
+  title: 'Account',
+  isDark: isDark,
+),
+
+const SizedBox(height: 10),
+
+_SettingsCard(
+  children: [
+    // LOGOUT
+    ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+      ),
+
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(
+            alpha: 0.10,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      child: const Icon(
+          Icons.logout_rounded,
+          color: AppColors.primary,
+        ),
+      ),
+
+      title: Text(
+        'Logout',
+        style: AppTextStyles.bodyLarge(isDark).copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+
+      subtitle: Text(
+        'Sign out from your ExpenseMate account',
+        style: AppTextStyles.bodyMedium(isDark),
+      ),
+
+      trailing: const Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 16,
+      ),
+
+      onTap: () {
+        _showLogoutDialog(context);
+      },
+    ),
+
+    const Divider(height: 1),
+
+    // DELETE ACCOUNT
+    ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+      ),
+
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: AppColors.expenseRed.withValues(
+            alpha: 0.10,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.delete_forever_rounded,
+          color: AppColors.expenseRed,
+        ),
+      ),
+
+      title: Text(
+        'Delete Account',
+        style: AppTextStyles.bodyLarge(isDark).copyWith(
+          fontWeight: FontWeight.w600,
+          color: AppColors.expenseRed,
+        ),
+      ),
+
+      subtitle: Text(
+        'Permanently delete your account and data',
+        style: AppTextStyles.bodyMedium(isDark),
+      ),
+
+      trailing: const Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 16,
+      ),
+
+      onTap: () {
+        _showDeleteAccountDialog(context);
+      },
+    ),
+  ],
+),
             // ==================================================
             // DATA
             // ==================================================
@@ -388,6 +493,84 @@ class SettingsView extends GetView<SettingsController> {
       ),
     );
   }
+}
+
+// ============================================================
+// LOGOUT DIALOG
+// ============================================================
+
+void _showLogoutDialog(BuildContext context) {
+  Get.dialog(
+    AlertDialog(
+      title: const Text('Logout?'),
+
+      content: const Text(
+        'Are you sure you want to logout from your ExpenseMate account?',
+      ),
+
+      actions: [
+        TextButton(
+          onPressed: () {
+            Get.back();
+          },
+          child: const Text('Cancel'),
+        ),
+
+        TextButton(
+          onPressed: () async {
+            Get.back();
+           await Get.find<SettingsController>().logout();
+          },
+          child: const Text(
+            'Logout',
+            style: TextStyle(
+              color: AppColors.expenseRed,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ============================================================
+// DELETE ACCOUNT DIALOG
+// ============================================================
+
+void _showDeleteAccountDialog(BuildContext context) {
+  Get.dialog(
+    AlertDialog(
+      title: const Text('Delete Account?'),
+
+      content: const Text(
+        'This action is permanent. Your ExpenseMate account '
+        'and associated account data will be deleted. '
+        'You will not be able to recover your account.',
+      ),
+
+      actions: [
+        TextButton(
+          onPressed: () {
+            Get.back();
+          },
+          child: const Text('Cancel'),
+        ),
+
+        TextButton(
+          onPressed: () async {
+            Get.back();
+            await Get.find<SettingsController>().deleteAccount();
+          },
+          child: const Text(
+            'Delete Account',
+            style: TextStyle(
+              color: AppColors.expenseRed,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ============================================================

@@ -6,7 +6,7 @@ import 'package:expense_mate/Feature/Categories/binding/categories_binding.dart'
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 
 import 'package:expense_mate/Feature/Home/binding/home_binding.dart';
-import 'package:expense_mate/Feature/Home/view/home_screen.dart';
+import 'package:expense_mate/Feature/Home/view/main_screen.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
@@ -20,6 +20,11 @@ import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
+
+import 'package:expense_mate/Feature/auth/binding/auth_binding.dart';
+import 'package:expense_mate/Feature/auth/view/login_view.dart';
+import 'package:expense_mate/Feature/auth/view/signup_view.dart';
+import 'package:expense_mate/Feature/auth/view/forgot_password_view.dart';
 
 import 'package:get/get.dart';
 
@@ -37,16 +42,28 @@ class AppPages {
       binding: SplashBinding(),
     ),
 
-    // ==========================================================
-    // MAIN SECTIONS
-    // ==========================================================
+    
+// ==========================================================
+// AUTH
+// ==========================================================
 
-    GetPage(
-      name: AppRoutes.home,
-      page: () => const HomeScreen(),
-      binding: HomeBinding(),
-    ),
+GetPage(
+  name: AppRoutes.login,
+  page: () => const LoginView(),
+  binding: AuthBinding(),
+),
 
+GetPage(
+  name: AppRoutes.signup,
+  page: () => const SignupView(),
+  binding: AuthBinding(),
+),
+
+GetPage(
+  name: AppRoutes.forgotPassword,
+  page: () => const ForgotPasswordView(),
+  binding: AuthBinding(),
+),
     GetPage(
       name: AppRoutes.transactions,
       page: () => const TransactionsView(),
@@ -59,6 +76,15 @@ class AppPages {
       binding: CategoriesBinding(),
     ),
 
+// ==========================================================
+    // MAIN SECTIONS
+    // ==========================================================
+
+   GetPage(
+  name: AppRoutes.home,
+  page: () => const MainScreen(),
+  binding: HomeBinding(),
+),
     // ==========================================================
     // BUDGET
     // ==========================================================

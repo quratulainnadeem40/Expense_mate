@@ -1,18 +1,29 @@
 import 'dart:async';
+
+import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:get/get.dart';
-import '../../Home/view/main_screen.dart'; // Exact path check kar lein
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashController extends GetxController {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
   @override
   void onInit() {
     super.onInit();
-    _navigateToHome();
+    _checkAuthentication();
   }
 
-  void _navigateToHome() {
-    // 3 seconds timer ke baad MainScreen par navigate hoga
+  void _checkAuthentication() {
     Timer(const Duration(seconds: 3), () {
-      Get.offAll(() => const MainScreen());
+      final user = _supabase.auth.currentUser;
+
+      if (user != null) {
+        // User is already logged in
+        Get.offAllNamed(AppRoutes.home);
+      } else {
+        // User is not logged in
+        Get.offAllNamed(AppRoutes.login);
+      }
     });
   }
 }

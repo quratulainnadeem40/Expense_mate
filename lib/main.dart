@@ -5,13 +5,22 @@ import 'package:expense_mate/Feature/settings/controller/settings_controller.dar
 import 'package:expense_mate/core/routes/app_routes.dart';
 import 'package:expense_mate/core/service/storage_service.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get/get.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Hive storage
-  await StorageService.init();
+await StorageService.init();
+
+// Initialize Supabase
+await Supabase.initialize(
+  url: 'https://epjzyrjxrhbfdyrbdsli.supabase.co',
+  publishableKey: 'sb_publishable_2VnrpBbdOhiJpqw74rhufg_rp8GgJ_p',
+);
+
+// Initialize notification service FIRST
 
   // Initialize notification service FIRST
   final notificationService = NotificationService();
