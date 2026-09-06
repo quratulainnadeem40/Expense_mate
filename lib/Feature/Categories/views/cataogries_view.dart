@@ -3,14 +3,39 @@ import 'package:expense_mate/Feature/Categories/widgets/category_add_category_di
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/categories_controller.dart';
-import 'category_transactions_screen.dart'; // <-- Yeh import zaroori hai
+import 'category_transactions_screen.dart';
 
-class CategoriesView extends GetView<CategoriesController> {
+class CategoriesView extends StatelessWidget {
   const CategoriesView({super.key});
+
+  // Helper method to convert String icon names to IconData
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'directions_car':
+        return Icons.directions_car;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'receipt_long':
+        return Icons.receipt_long;
+      case 'movie':
+        return Icons.movie;
+      case 'work':
+        return Icons.work;
+      default:
+        return Icons.category;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Safety controller initialization
+    final controller = Get.isRegistered<CategoriesController>()
+        ? Get.find<CategoriesController>()
+        : Get.put(CategoriesController());
 
     return Scaffold(
       appBar: AppBar(
@@ -25,7 +50,7 @@ class CategoriesView extends GetView<CategoriesController> {
             return GestureDetector(
               onTap: () {
                 Get.to(() => CategoryTransactionsScreen(
-                      categoryName: category.name, 
+                      categoryName: category.name,
                     ));
               },
               child: Container(
@@ -40,7 +65,7 @@ class CategoriesView extends GetView<CategoriesController> {
                     CircleAvatar(
                       backgroundColor: Color(category.colorValue).withOpacity(0.2),
                       child: Icon(
-                        Icons.category,
+                        _getIconData(category.icon),
                         color: Color(category.colorValue),
                       ),
                     ),

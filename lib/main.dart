@@ -1,8 +1,8 @@
 import 'package:expense_mate/Core/routes/page_routes.dart';
 import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:expense_mate/Core/theme/custom_theme.dart';
-import 'package:expense_mate/Feature/Home/view/main_screen.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
+import 'package:expense_mate/core/routes/app_routes.dart';
 import 'package:expense_mate/core/service/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Hive storage
   await StorageService.init();
 
   // Initialize notification service FIRST
@@ -57,7 +58,9 @@ class ExpenseMateApp extends StatelessWidget {
           ? ThemeMode.dark
           : ThemeMode.light,
 
-      home: const MainScreen(),
+      // Start with Splash Screen
+      initialRoute: AppRoutes.splash,
+
       getPages: AppPages.pages,
     );
   }
