@@ -7,6 +7,7 @@ import '../controller/wallets_controller.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../widgets/wallet_card.dart';
 import 'add_wallet_view.dart';
+import 'wallet_details_view.dart';
 
 class WalletsView extends GetView<WalletsController> {
   const WalletsView({super.key});
@@ -70,16 +71,21 @@ class WalletsView extends GetView<WalletsController> {
                 _EmptyWalletState(isDark: isDark)
               else
                 ...controller.wallets.map(
-                  (wallet) => WalletCard(
-                    wallet: wallet,
-                    onDelete: () {
-                      _showDeleteDialog(
-                        context,
-                        wallet.name,
-                        wallet.id,
-                      );
-                    },
-                  ),
+                 (wallet) => WalletCard(
+  wallet: wallet,
+  onTap: () {
+    Get.to(
+      () => WalletDetailsView(wallet: wallet),
+    );
+  },
+  onDelete: () {
+    _showDeleteDialog(
+      context,
+      wallet.name,
+      wallet.id,
+    );
+  },
+),
                 ),
             ],
           ),
