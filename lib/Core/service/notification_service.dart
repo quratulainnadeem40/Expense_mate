@@ -118,6 +118,33 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
+  Future<void> scheduleTestBillNotification() async {
+  final testDate = tz.TZDateTime.now(tz.local).add(
+    const Duration(minutes: 1),
+  );
+
+  const AndroidNotificationDetails androidDetails =
+      AndroidNotificationDetails(
+    _channelId,
+    _channelName,
+    channelDescription: _channelDescription,
+    importance: Importance.high,
+    priority: Priority.high,
+  );
+
+  const NotificationDetails details = NotificationDetails(
+    android: androidDetails,
+  );
+
+  await _notifications.zonedSchedule(
+    888,
+    'Bill Due Today',
+    'Test Electricity Bill is due today. Amount: PKR 2,500.00',
+    testDate,
+    details,
+    androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+  );
+}
 
   Future<void> cancelNotification(int notificationId) async {
     await _notifications.cancel(notificationId);

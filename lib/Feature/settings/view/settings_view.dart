@@ -172,6 +172,19 @@ ElevatedButton(
   },
   child: const Text('Test Notification'),
 ),
+ElevatedButton(
+  onPressed: () async {
+    final notificationService = Get.find<NotificationService>();
+
+    await notificationService.scheduleTestBillNotification();
+
+    Get.snackbar(
+      'Scheduled',
+      'Test bill notification will appear in about 1 minute.',
+    );
+  },
+  child: const Text('Test Bill Reminder'),
+),
             const SizedBox(height: 10),
 
             _SettingsCard(

@@ -12,11 +12,7 @@ void main() async {
 
   await StorageService.init();
 
-  final settingsController = Get.put(
-    SettingsController(),
-    permanent: true,
-  );
-
+  // Initialize notification service FIRST
   final notificationService = NotificationService();
 
   await notificationService.init();
@@ -24,6 +20,12 @@ void main() async {
 
   Get.put(
     notificationService,
+    permanent: true,
+  );
+
+  // Initialize settings AFTER NotificationService
+  final settingsController = Get.put(
+    SettingsController(),
     permanent: true,
   );
 
@@ -47,11 +49,14 @@ class ExpenseMateApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Expense Mate',
       debugShowCheckedModeBanner: false,
+
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+
       themeMode: settingsController.isDarkMode.value
           ? ThemeMode.dark
           : ThemeMode.light,
+
       home: const MainScreen(),
       getPages: AppPages.pages,
     );

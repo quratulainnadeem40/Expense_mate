@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../Core/constants/app_keys.dart';
+import '../../../Core/service/notification_service.dart';
+import '../../settings/controller/settings_controller.dart';
 import '../model/bill_model.dart';
 
 class BillsRemindersController extends GetxController {
@@ -9,6 +11,16 @@ class BillsRemindersController extends GetxController {
 
   final bills = <BillModel>[].obs;
   final isLoading = false.obs;
+
+  // ==========================================================
+  // CONTROLLERS / SERVICES
+  // ==========================================================
+
+  final NotificationService notificationService =
+      Get.find<NotificationService>();
+
+  SettingsController get settingsController =>
+      Get.find<SettingsController>();
 
   // ==========================================================
   // FILTERED BILLS
@@ -44,7 +56,6 @@ class BillsRemindersController extends GetxController {
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
   }
 
-  // Bills due today
   List<BillModel> get todayBills {
     final now = DateTime.now();
 
@@ -107,7 +118,7 @@ class BillsRemindersController extends GetxController {
   // LOAD BILLS
   // ==========================================================
 
-  void loadBills() {
+  Future<void> loadBills() async {
     isLoading.value = true;
 
     final loadedBills = billsBox.values.map((item) {
@@ -119,6 +130,55 @@ class BillsRemindersController extends GetxController {
     bills.assignAll(loadedBills);
 
     isLoading.value = false;
+
+    // Schedule notifications for existing unpaid bills.
+    await _scheduleAllBillNotifications();
+  }
+
+  // ==========================================================
+  // SCHEDULE ALL BILL NOTIFICATIONS
+  // ==========================================================
+
+  Future<void> _scheduleAllBillNotifications() async {
+    if (!settingsController.notificationsEnabled.value) {
+      return;
+    }
+
+    for (final bill in bills) {
+      if (!bill.isPaid) {
+        await _scheduleBillNotification(bill);
+      }
+    }
+  }
+
+  // ==========================================================
+  // SCHEDULE SINGLE BILL NOTIFICATION
+  // ==========================================================
+
+  Future<void> _scheduleBillNotification(
+    BillModel bill,
+  ) async {
+    if (bill.isPaid) return;
+
+    if (!settingsController.notificationsEnabled.value) {
+      return;
+    }
+
+    await notificationService.scheduleBillNotification(
+      notificationId: _notificationId(bill.id),
+      billName: bill.name,
+      amount: bill.amount,
+      currency: settingsController.selectedCurrency.value,
+      dueDate: bill.dueDate,
+    );
+  }
+
+  // ==========================================================
+  // NOTIFICATION ID
+  // ==========================================================
+
+  int _notificationId(String billId) {
+    return billId.hashCode.abs();
   }
 
   // ==========================================================
@@ -153,6 +213,9 @@ class BillsRemindersController extends GetxController {
 
     bills.add(bill);
     bills.refresh();
+
+    // Schedule notification for the new bill.
+    await _scheduleBillNotification(bill);
   }
 
   // ==========================================================
@@ -160,6 +223,11 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> updateBill(BillModel bill) async {
+    // Cancel the old notification first.
+    await notificationService.cancelNotification(
+      _notificationId(bill.id),
+    );
+
     await billsBox.put(
       bill.id,
       bill.toMap(),
@@ -173,6 +241,9 @@ class BillsRemindersController extends GetxController {
       bills[index] = bill;
       bills.refresh();
     }
+
+    // Schedule the updated bill if it is unpaid.
+    await _scheduleBillNotification(bill);
   }
 
   // ==========================================================
@@ -187,6 +258,11 @@ class BillsRemindersController extends GetxController {
     if (index == -1) return;
 
     final bill = bills[index];
+
+    // Cancel notification when bill is paid.
+    await notificationService.cancelNotification(
+      _notificationId(bill.id),
+    );
 
     final updatedBill = bill.copyWith(
       isPaid: true,
@@ -220,6 +296,11 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> deleteBill(String billId) async {
+    // Cancel notification before deleting the bill.
+    await notificationService.cancelNotification(
+      _notificationId(billId),
+    );
+
     await billsBox.delete(billId);
 
     bills.removeWhere(
@@ -235,7 +316,11 @@ class BillsRemindersController extends GetxController {
 
   Future<void> clearBills() async {
     await billsBox.clear();
+
     bills.clear();
+
+    // Remove all scheduled notifications.
+    await notificationService.cancelAllNotifications();
   }
 
   // ==========================================================

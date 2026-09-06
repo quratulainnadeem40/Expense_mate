@@ -1,4 +1,5 @@
 import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -9,6 +10,9 @@ class SettingsController extends GetxController {
   final isDarkMode = false.obs;
   final selectedCurrency = 'PKR'.obs;
   final notificationsEnabled = true.obs;
+
+  final NotificationService notificationService =
+      Get.find<NotificationService>();
 
   @override
   void onInit() {
@@ -84,6 +88,11 @@ class SettingsController extends GetxController {
       'notifications_enabled',
       value,
     );
+
+    if (!value) {
+      // Notifications OFF → cancel all scheduled notifications.
+      await notificationService.cancelAllNotifications();
+    }
   }
 
   // ============================================================
@@ -96,6 +105,9 @@ class SettingsController extends GetxController {
     isDarkMode.value = false;
     selectedCurrency.value = 'PKR';
     notificationsEnabled.value = true;
+
+    // Clear any previously scheduled notifications.
+    await notificationService.cancelAllNotifications();
 
     Get.changeThemeMode(ThemeMode.light);
   }
