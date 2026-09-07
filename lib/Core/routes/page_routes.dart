@@ -1,14 +1,18 @@
-
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 
 import 'package:expense_mate/Feature/Categories/binding/categories_binding.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
+import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
 
 import 'package:expense_mate/Feature/Home/binding/home_binding.dart';
 import 'package:expense_mate/Feature/Home/view/main_screen.dart';
+import 'package:expense_mate/Feature/Home/view/home_screen.dart';
+import 'package:expense_mate/Feature/Reports/bindings/report_bindings.dart';
+
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
+
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 
@@ -20,14 +24,20 @@ import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
-
 import 'package:expense_mate/Feature/auth/binding/auth_binding.dart';
 import 'package:expense_mate/Feature/auth/view/login_view.dart';
 import 'package:expense_mate/Feature/auth/view/signup_view.dart';
 import 'package:expense_mate/Feature/auth/view/forgot_password_view.dart';
 
 import 'package:get/get.dart';
+// GOALS IMPORTS
+import 'package:expense_mate/Feature/Goals/binding/goals_binding.dart';
 
+
+// REPORTS
+import 'package:expense_mate/Feature/Reports/view/report_view.dart';
+
+import 'package:get/get.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -96,7 +106,27 @@ GetPage(
     ),
 
     // ==========================================================
-    // MEMBER 3 - WALLETS
+    // GOALS
+    // ==========================================================
+
+    GetPage(
+      name: AppRoutes.goals,
+      page: () => const GoalsView(),
+      binding: GoalsBinding(),
+    ),
+
+    // ==========================================================
+    // REPORTS
+    // ==========================================================
+
+    GetPage(
+      name: AppRoutes.reports,
+      page: () => const ReportsView(),
+      binding: ReportBindings(),
+    ),
+
+    // ==========================================================
+    // WALLETS
     // ==========================================================
 
     GetPage(
@@ -104,11 +134,21 @@ GetPage(
       page: () => const WalletsView(),
       binding: WalletsBinding(),
     ),
+
+    // ==========================================================
+    // BILLS & REMINDERS
+    // ==========================================================
+
     GetPage(
       name: AppRoutes.billsReminders,
       page: () => const BillsRemindersView(),
       binding: BillsRemindersBinding(),
     ),
+
+    // ==========================================================
+    // SETTINGS
+    // ==========================================================
+
     GetPage(
       name: AppRoutes.settings,
       page: () => const SettingsView(),

@@ -12,6 +12,7 @@ static const signup = '/signup';
 static const forgotPassword = '/forgot-password';
   // Other features
   static const String budget = '/budget';
+  static const String goals = '/goals';
 
   
   static const String wallets = '/wallets';
