@@ -9,6 +9,7 @@ class AppRoutes {
 
   // Other features
   static const String budget = '/budget';
+  static const String goals = '/goals';
 
   // Member 3 features
   static const String wallets = '/wallets';
