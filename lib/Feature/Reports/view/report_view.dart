@@ -1,15 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controller/report_controller.dart';
+import 'package:fl_chart/fl_chart.dart';
+
+// Package Import Format
+import 'package:expense_mate/Feature/Reports/controller/report_controller.dart';
 
 class ReportsView extends StatelessWidget {
   const ReportsView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final ReportController controller = Get.put(ReportController());
+    final ReportController controller = Get.find<ReportController>();
     final theme = Theme.of(context);
-    final isDark = Get.isDarkMode;
+
+    // Color Palette for Chart Categories
+    final List<Color> categoryColors = [
+      const Color(0xFF2EA44F),
+      const Color(0xFFE55353),
+      const Color(0xFF3399FF),
+      const Color(0xFFF9B115),
+      const Color(0xFF9C27B0),
+      const Color(0xFF00BCD4),
+      const Color(0xFFFF9800),
+      const Color(0xFF673AB7),
+    ];
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -22,7 +36,7 @@ class ReportsView extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddTransactionBottomSheet(context, controller),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Entry', style: TextStyle(color: Colors.white)),
+        label: const Text('Add Entry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF2EA44F),
       ),
       body: SingleChildScrollView(
@@ -30,68 +44,148 @@ class ReportsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Live Summary Cards (Obx Live Updated)
-            Obx(() => Card(
-                  elevation: 2,
+            // 1. Total Summary Cards
+            Obx(
+              () => Card(
+                elevation: 2,
+                color: theme.cardColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          Text('Total Income', style: TextStyle(color: theme.hintColor, fontSize: 13)),
+                          const SizedBox(height: 6),
+                          Text(
+                            'PKR ${controller.totalIncome.value.toStringAsFixed(2)}',
+                            style: const TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      Container(height: 35, width: 1, color: theme.dividerColor),
+                      Column(
+                        children: [
+                          Text('Total Expenses', style: TextStyle(color: theme.hintColor, fontSize: 13)),
+                          const SizedBox(height: 6),
+                          Text(
+                            'PKR ${controller.totalExpense.value.toStringAsFixed(2)}',
+                            style: const TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 2. Clear Graph Breakdown Analysis
+            Obx(() {
+              if (controller.totalExpense.value > 0) {
+                final breakdown = controller.categoryBreakdown;
+                final categoriesList = breakdown.keys.toList();
+
+                return Card(
                   color: theme.cardColor,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          children: [
-                            Text(
-                              'Total Income',
-                              style: TextStyle(
-                                color: theme.hintColor,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '\$${controller.totalIncome.value.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        Text(
+                          'Expense Breakdown Analysis',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: theme.textTheme.titleMedium?.color,
+                          ),
                         ),
-                        Container(
-                          height: 35,
-                          width: 1,
-                          color: theme.dividerColor,
+                        const SizedBox(height: 20),
+                        
+                        // Dynamic Chart
+                        SizedBox(
+                          height: 200,
+                          child: PieChart(
+                            PieChartData(
+                              sectionsSpace: 3,
+                              centerSpaceRadius: 45,
+                              sections: categoriesList.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final catName = entry.value;
+                                final amount = breakdown[catName] ?? 0.0;
+                                final percentage = ((amount / controller.totalExpense.value) * 100);
+
+                                return PieChartSectionData(
+                                  value: amount,
+                                  title: '${percentage.toStringAsFixed(0)}%',
+                                  radius: 55,
+                                  titleStyle: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  color: categoryColors[index % categoryColors.length],
+                                );
+                              }).toList(),
+                            ),
+                          ),
                         ),
-                        Column(
-                          children: [
-                            Text(
-                              'Total Expenses',
-                              style: TextStyle(
-                                color: theme.hintColor,
-                                fontSize: 13,
+
+                        const SizedBox(height: 20),
+
+                        // Categories Clear Indicator Legend List
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 10,
+                          children: categoriesList.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final catName = entry.value;
+                            final amount = breakdown[catName] ?? 0.0;
+                            final color = categoryColors[index % categoryColors.length];
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: color.withOpacity(0.4)),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '\$${controller.totalExpense.value.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(radius: 5, backgroundColor: color),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '$catName: PKR ${amount.toStringAsFixed(0)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.textTheme.bodyMedium?.color,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
                   ),
-                )),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
 
             const SizedBox(height: 20),
 
-            // 2. Transaction Activity Section Header
+            // 3. Transactions List
             Text(
               'Recent Transactions',
               style: TextStyle(
@@ -102,7 +196,6 @@ class ReportsView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // 3. Live Updating Transaction List
             Obx(() {
               if (controller.transactions.isEmpty) {
                 return Container(
@@ -114,8 +207,7 @@ class ReportsView extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      'No entries added yet. Tap "+ Add Entry" to record income or expenses.',
-                      textAlign: TextAlign.center,
+                      'No entries added yet.',
                       style: TextStyle(color: theme.hintColor),
                     ),
                   ),
@@ -131,17 +223,12 @@ class ReportsView extends StatelessWidget {
                   return Card(
                     color: theme.cardColor,
                     margin: const EdgeInsets.only(bottom: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: item.isIncome
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.red.withOpacity(0.15),
+                        backgroundColor: item.isIncome ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
                         child: Icon(
-                          item.isIncome
-                              ? Icons.arrow_downward
-                              : Icons.arrow_upward,
+                          item.isIncome ? Icons.arrow_downward : Icons.arrow_upward,
                           color: item.isIncome ? Colors.green : Colors.red,
                         ),
                       ),
@@ -154,14 +241,11 @@ class ReportsView extends StatelessWidget {
                         ),
                       ),
                       subtitle: Text(
-                        item.date,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.hintColor,
-                        ),
+                        '${item.category} • ${item.date}',
+                        style: TextStyle(fontSize: 12, color: theme.hintColor),
                       ),
                       trailing: Text(
-                        '${item.isIncome ? "+" : "-"}\$${item.amount.toStringAsFixed(2)}',
+                        '${item.isIncome ? "+" : "-"} PKR ${item.amount.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: item.isIncome ? Colors.green : Colors.red,
@@ -178,10 +262,12 @@ class ReportsView extends StatelessWidget {
     );
   }
 
-  // Modal Sheet for Entering Amount & Details
-  void _showAddTransactionBottomSheet(
-      BuildContext context, ReportController controller) {
+  // BottomSheet with Custom Category Field
+  void _showAddTransactionBottomSheet(BuildContext context, ReportController controller) {
     final theme = Theme.of(context);
+    final categories = ['Food & Dining', 'Shopping', 'Bills', 'Salary', 'Entertainment', 'General', '+ Add Custom Category'];
+    final customCategoryController = TextEditingController();
+    var isCustomSelected = false.obs;
 
     showModalBottomSheet(
       context: context,
@@ -204,11 +290,7 @@ class ReportsView extends StatelessWidget {
             children: [
               Text(
                 'Add New Record',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.textTheme.titleLarge?.color,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -217,12 +299,8 @@ class ReportsView extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: 'Title (e.g. Salary, Grocery)',
                   labelStyle: TextStyle(color: theme.hintColor),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: theme.dividerColor),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2EA44F)),
-                  ),
+                  enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
                 ),
               ),
               const SizedBox(height: 12),
@@ -231,36 +309,83 @@ class ReportsView extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                 decoration: InputDecoration(
-                  labelText: 'Amount (\$)',
+                  labelText: 'Amount (PKR)',
                   labelStyle: TextStyle(color: theme.hintColor),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: theme.dividerColor),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2EA44F)),
-                  ),
+                  enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
                 ),
               ),
+              const SizedBox(height: 12),
+              
+              // Category Selection Dropdown
+              Obx(
+                () => DropdownButtonFormField<String>(
+                  value: categories.contains(controller.selectedCategory.value)
+                      ? controller.selectedCategory.value
+                      : categories.first,
+                  dropdownColor: theme.cardColor,
+                  style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    labelStyle: TextStyle(color: theme.hintColor),
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+                    focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+                  ),
+                  items: categories
+                      .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val == '+ Add Custom Category') {
+                      isCustomSelected.value = true;
+                    } else if (val != null) {
+                      isCustomSelected.value = false;
+                      controller.selectedCategory.value = val;
+                    }
+                  },
+                ),
+              ),
+
+              // Custom Category Input Field
+              Obx(() {
+                if (isCustomSelected.value) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: TextField(
+                      controller: customCategoryController,
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                      decoration: InputDecoration(
+                        labelText: 'Enter Custom Category Name',
+                        labelStyle: TextStyle(color: theme.hintColor),
+                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+                        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+                      ),
+                      onChanged: (val) {
+                        if (val.trim().isNotEmpty) {
+                          controller.selectedCategory.value = val.trim();
+                        }
+                      },
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                       onPressed: () => controller.addTransaction(true),
-                      child: const Text('Add Income',
-                          style: TextStyle(color: Colors.white)),
+                      child: const Text('Add Income', style: TextStyle(color: Colors.white)),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      style:
-                          ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       onPressed: () => controller.addTransaction(false),
-                      child: const Text('Add Expense',
-                          style: TextStyle(color: Colors.white)),
+                      child: const Text('Add Expense', style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],

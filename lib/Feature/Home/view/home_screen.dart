@@ -147,7 +147,7 @@ class HomeScreen extends GetView<HomeController> {
   }
 
   // ============================================================
-  // MORE OPTIONS SHEET (Fixes Bottom Bar & FAB Overlap)
+  // MORE OPTIONS SHEET
   // ============================================================
 
   void _showMoreSheet(BuildContext context) {
@@ -156,7 +156,7 @@ class HomeScreen extends GetView<HomeController> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useRootNavigator: true, // Bottom Bar & FAB ke UPAR show karega
+      useRootNavigator: true,
       backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
