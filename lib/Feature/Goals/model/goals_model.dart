@@ -13,5 +13,28 @@ class GoalModel {
     required this.targetDate,
   });
 
-  double get progress => (savedAmount / targetAmount).clamp(0.0, 1.0);
+  // Safe progress calculation
+  double get progress =>
+      targetAmount > 0 ? (savedAmount / targetAmount).clamp(0.0, 1.0) : 0.0;
+
+  // For Local Storage (GetStorage / SharedPreferences)
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'targetAmount': targetAmount,
+      'savedAmount': savedAmount,
+      'targetDate': targetDate.toIso8601String(),
+    };
+  }
+
+  factory GoalModel.fromMap(Map<String, dynamic> map) {
+    return GoalModel(
+      id: map['id'],
+      title: map['title'],
+      targetAmount: map['targetAmount'],
+      savedAmount: map['savedAmount'],
+      targetDate: DateTime.parse(map['targetDate']),
+    );
+  }
 }

@@ -8,17 +8,22 @@ class ReportsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ReportController controller = Get.put(ReportController());
+    final theme = Theme.of(context);
+    final isDark = Get.isDarkMode;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Live Reports & Analytics'),
         centerTitle: true,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddTransactionBottomSheet(context, controller),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Entry'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add Entry', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF2EA44F),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -27,7 +32,8 @@ class ReportsView extends StatelessWidget {
           children: [
             // 1. Live Summary Cards (Obx Live Updated)
             Obx(() => Card(
-                  elevation: 3,
+                  elevation: 2,
+                  color: theme.cardColor,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
                   child: Padding(
@@ -37,9 +43,13 @@ class ReportsView extends StatelessWidget {
                       children: [
                         Column(
                           children: [
-                            const Text('Total Income',
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: 13)),
+                            Text(
+                              'Total Income',
+                              style: TextStyle(
+                                color: theme.hintColor,
+                                fontSize: 13,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             Text(
                               '\$${controller.totalIncome.value.toStringAsFixed(2)}',
@@ -51,12 +61,19 @@ class ReportsView extends StatelessWidget {
                           ],
                         ),
                         Container(
-                            height: 35, width: 1, color: Colors.grey.shade300),
+                          height: 35,
+                          width: 1,
+                          color: theme.dividerColor,
+                        ),
                         Column(
                           children: [
-                            const Text('Total Expenses',
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: 13)),
+                            Text(
+                              'Total Expenses',
+                              style: TextStyle(
+                                color: theme.hintColor,
+                                fontSize: 13,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             Text(
                               '\$${controller.totalExpense.value.toStringAsFixed(2)}',
@@ -75,9 +92,13 @@ class ReportsView extends StatelessWidget {
             const SizedBox(height: 20),
 
             // 2. Transaction Activity Section Header
-            const Text(
+            Text(
               'Recent Transactions',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.titleMedium?.color,
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -88,14 +109,14 @@ class ReportsView extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
                       'No entries added yet. Tap "+ Add Entry" to record income or expenses.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: theme.hintColor),
                     ),
                   ),
                 );
@@ -108,6 +129,7 @@ class ReportsView extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final item = controller.transactions[index];
                   return Card(
+                    color: theme.cardColor,
                     margin: const EdgeInsets.only(bottom: 8),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -123,11 +145,21 @@ class ReportsView extends StatelessWidget {
                           color: item.isIncome ? Colors.green : Colors.red,
                         ),
                       ),
-                      title: Text(item.title,
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold)),
-                      subtitle: Text(item.date,
-                          style: const TextStyle(fontSize: 12)),
+                      title: Text(
+                        item.title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      subtitle: Text(
+                        item.date,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.hintColor,
+                        ),
+                      ),
                       trailing: Text(
                         '${item.isIncome ? "+" : "-"}\$${item.amount.toStringAsFixed(2)}',
                         style: TextStyle(
@@ -149,8 +181,11 @@ class ReportsView extends StatelessWidget {
   // Modal Sheet for Entering Amount & Details
   void _showAddTransactionBottomSheet(
       BuildContext context, ReportController controller) {
+    final theme = Theme.of(context);
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: theme.cardColor,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -167,23 +202,43 @@ class ReportsView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Add New Record',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                'Add New Record',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: controller.titleController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                decoration: InputDecoration(
                   labelText: 'Title (e.g. Salary, Grocery)',
-                  border: OutlineInputBorder(),
+                  labelStyle: TextStyle(color: theme.hintColor),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.dividerColor),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2EA44F)),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller.amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                decoration: InputDecoration(
                   labelText: 'Amount (\$)',
-                  border: OutlineInputBorder(),
+                  labelStyle: TextStyle(color: theme.hintColor),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.dividerColor),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2EA44F)),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -194,7 +249,8 @@ class ReportsView extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green),
                       onPressed: () => controller.addTransaction(true),
-                      child: const Text('Add Income'),
+                      child: const Text('Add Income',
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -203,7 +259,8 @@ class ReportsView extends StatelessWidget {
                       style:
                           ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       onPressed: () => controller.addTransaction(false),
-                      child: const Text('Add Expense'),
+                      child: const Text('Add Expense',
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],
