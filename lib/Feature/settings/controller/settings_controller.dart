@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 class SettingsController extends GetxController {
   late Box settingsBox;
 
@@ -25,9 +24,7 @@ class SettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
     settingsBox = Hive.box(AppKeys.settingsBox);
-
     loadSettings();
   }
 
@@ -36,23 +33,25 @@ class SettingsController extends GetxController {
   // ============================================================
 
   void loadSettings() {
-    isDarkMode.value =
-        settingsBox.get(
-          AppKeys.isDarkModeKey,
-          defaultValue: false,
-        ) as bool;
+    isDarkMode.value = settingsBox.get(
+      AppKeys.isDarkModeKey,
+      defaultValue: false,
+    ) as bool;
 
-    selectedCurrency.value =
-        settingsBox.get(
-          'currency',
-          defaultValue: 'PKR',
-        ) as String;
+    selectedCurrency.value = settingsBox.get(
+      'currency',
+      defaultValue: 'PKR',
+    ) as String;
 
-    notificationsEnabled.value =
-        settingsBox.get(
-          'notifications_enabled',
-          defaultValue: true,
-        ) as bool;
+    notificationsEnabled.value = settingsBox.get(
+      'notifications_enabled',
+      defaultValue: true,
+    ) as bool;
+
+    // Load hone par saved theme apply karein
+    Get.changeThemeMode(
+      isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
+    );
   }
 
   // ============================================================
@@ -67,6 +66,7 @@ class SettingsController extends GetxController {
       value,
     );
 
+    // Instant theme change toggle
     Get.changeThemeMode(
       value ? ThemeMode.dark : ThemeMode.light,
     );
@@ -152,66 +152,58 @@ class SettingsController extends GetxController {
   // DELETE ACCOUNT
   // ============================================================
 
- Future<void> deleteAccount() async {
-  try {
-    final user = _supabase.auth.currentUser;
+  Future<void> deleteAccount() async {
+    try {
+      final user = _supabase.auth.currentUser;
 
-    if (user == null) {
+      if (user == null) {
+        Get.snackbar(
+          'Error',
+          'No logged-in account found.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final response = await _supabase.functions.invoke(
+        'delete-account',
+      );
+
+      if (response.status != 200) {
+        throw Exception(
+          response.data?['error'] ?? 'Unable to delete account.',
+        );
+      }
+
+      await settingsBox.clear();
+
+      try {
+        await notificationService.cancelAllNotifications();
+      } catch (e) {
+        print('Notification cleanup error: $e');
+      }
+
+      await _supabase.auth.signOut();
+
+      Get.offAllNamed(AppRoutes.login);
+
       Get.snackbar(
-        'Error',
-        'No logged-in account found.',
+        'Account Deleted',
+        'Your ExpenseMate account has been permanently deleted.',
         snackPosition: SnackPosition.BOTTOM,
       );
-      return;
-    }
-
-    final response = await _supabase.functions.invoke(
-      'delete-account',
-    );
-
-    print('Delete Account Status: ${response.status}');
-    print('Delete Account Data: ${response.data}');
-
-    if (response.status != 200) {
-      throw Exception(
-        response.data?['error'] ??
-            'Unable to delete account.',
+    } on AuthException catch (e) {
+      Get.snackbar(
+        'Delete Account Failed',
+        e.message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Delete Account Failed',
+        'Unable to delete account: $e',
+        snackPosition: SnackPosition.BOTTOM,
       );
     }
-
-   await settingsBox.clear();
-
-try {
-  await notificationService.cancelAllNotifications();
-} catch (e) {
-  print('Notification cleanup error: $e');
-}
-
-await _supabase.auth.signOut();
-
-Get.offAllNamed(AppRoutes.login);
-
-    Get.snackbar(
-      'Account Deleted',
-      'Your ExpenseMate account has been permanently deleted.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } on AuthException catch (e) {
-    print('Auth error: ${e.message}');
-
-    Get.snackbar(
-      'Delete Account Failed',
-      e.message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } catch (e) {
-    print('Delete account exception: $e');
-
-    Get.snackbar(
-      'Delete Account Failed',
-      'Unable to delete account: $e',
-      snackPosition: SnackPosition.BOTTOM,
-    );
   }
-}
 }

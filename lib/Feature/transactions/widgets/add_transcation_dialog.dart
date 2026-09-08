@@ -16,37 +16,83 @@ class AddTransactionDialog extends StatelessWidget {
     final List<String> categories = ['General', 'Food', 'Transport', 'Shopping', 'Bills', 'Entertainment'];
 
     final TransactionsController controller = Get.put(TransactionsController());
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Theme details extract
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
     final RxBool isIncome = false.obs;
 
     return AlertDialog(
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      
       title: Text('Add Transaction', style: AppTextStyles.headingMedium(isDark)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 1. TITLE INPUT FIELD
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: InputDecoration(
+                labelText: 'Title',
+                labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                border: const OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
+
+            // 2. AMOUNT INPUT FIELD
             TextField(
               controller: amountController,
+              style: TextStyle(color: colorScheme.onSurface),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                labelText: 'Amount',
+                labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                border: const OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             
+            // 3. CATEGORY DROPDOWN
             Obx(() => DropdownButtonFormField<String>(
                   value: selectedCategory.value,
-                  decoration: const InputDecoration(
+                  dropdownColor: colorScheme.surface,
+                  style: TextStyle(color: colorScheme.onSurface),
+                  decoration: InputDecoration(
                     labelText: 'Category',
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                    border: const OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colorScheme.outline),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    ),
                   ),
                   items: categories.map((String category) {
                     return DropdownMenuItem<String>(
                       value: category,
-                      child: Text(category),
+                      child: Text(
+                        category,
+                        style: TextStyle(color: colorScheme.onSurface),
+                      ),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
@@ -57,9 +103,15 @@ class AddTransactionDialog extends StatelessWidget {
                 )),
             
             const SizedBox(height: 12),
+
+            // 4. INCOME / EXPENSE SWITCH
             Obx(() => SwitchListTile(
-                  title: Text(isIncome.value ? 'Income' : 'Expense'),
+                  title: Text(
+                    isIncome.value ? 'Income' : 'Expense',
+                    style: TextStyle(color: colorScheme.onSurface),
+                  ),
                   value: isIncome.value,
+                  activeColor: Colors.green,
                   onChanged: (val) => isIncome.value = val,
                 )),
           ],
@@ -68,9 +120,16 @@ class AddTransactionDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Get.back(),
-          child: const Text('Cancel'),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
+          ),
         ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+          ),
           onPressed: () {
             if (titleController.text.trim().isNotEmpty && amountController.text.trim().isNotEmpty) {
               final newTx = TransactionModel(
@@ -85,7 +144,13 @@ class AddTransactionDialog extends StatelessWidget {
               controller.addTransaction(newTx);
               Get.back();
             } else {
-              Get.snackbar('Error', 'Please fill all fields', snackPosition: SnackPosition.BOTTOM);
+              Get.snackbar(
+                'Error', 
+                'Please fill all fields', 
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: colorScheme.errorContainer,
+                colorText: colorScheme.onErrorContainer,
+              );
             }
           },
           child: const Text('Add'),
