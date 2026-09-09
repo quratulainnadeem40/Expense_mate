@@ -13,14 +13,18 @@ class WalletTypeSelector extends StatelessWidget {
   static const List<String> walletTypes = [
     'Cash',
     'Bank Account',
+    'JazzCash',
+    'Easypaisa',
     'Credit Card',
-    'E-Wallet',
+    'Other',
   ];
 
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      initialValue: selectedType,
+      initialValue: walletTypes.contains(selectedType)
+          ? selectedType
+          : walletTypes.first,
       decoration: const InputDecoration(
         labelText: 'Wallet Type',
         border: OutlineInputBorder(),

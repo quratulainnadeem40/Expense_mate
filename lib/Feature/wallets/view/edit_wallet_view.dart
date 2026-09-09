@@ -63,19 +63,15 @@ class _EditWalletViewState extends State<EditWalletView> {
       return;
     }
 
-    final updatedWallet = widget.wallet.copyWith(
-      name: nameController.text.trim(),
-      type: selectedType,
-      balance: balance,
-      currency: selectedCurrency,
-    );
-
     final controller = Get.find<WalletsController>();
 
-    await controller.updateWallet(updatedWallet);
-
-    Get.back();
-    Get.back();
+    await controller.updateWallet(
+  walletId: widget.wallet.id,
+  name: nameController.text.trim(),
+  type: selectedType,
+  balance: balance,
+  currency: selectedCurrency,
+);
   }
 
   @override
@@ -90,14 +86,11 @@ class _EditWalletViewState extends State<EditWalletView> {
           style: AppTextStyles.headingMedium(isDark),
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-
           child: Form(
             key: formKey,
-
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -158,8 +151,16 @@ class _EditWalletViewState extends State<EditWalletView> {
                       return 'Please enter balance';
                     }
 
-                    if (double.tryParse(value.trim()) == null) {
+                    final amount = double.tryParse(
+                      value.trim(),
+                    );
+
+                    if (amount == null) {
                       return 'Please enter a valid amount';
+                    }
+
+                    if (amount < 0) {
+                      return 'Balance cannot be negative';
                     }
 
                     return null;

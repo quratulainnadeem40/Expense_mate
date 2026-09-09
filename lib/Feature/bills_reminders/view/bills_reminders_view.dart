@@ -1,8 +1,10 @@
+
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../settings/controller/settings_controller.dart';
+
 import '../../../Core/theme/custom_colors.dart';
+import '../../settings/controller/settings_controller.dart';
 import '../controller/bills_reminders_controller.dart';
 import '../model/bill_model.dart';
 import 'add_bill_view.dart';
@@ -10,11 +12,14 @@ import 'edit_bill_view.dart';
 
 class BillsRemindersView extends GetView<BillsRemindersController> {
   const BillsRemindersView({super.key});
+
   SettingsController get settingsController =>
       Get.find<SettingsController>();
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,7 +42,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
 
         return RefreshIndicator(
           onRefresh: () async {
-            controller.loadBills();
+            await controller.loadBills();
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -53,20 +58,20 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
                     child: _SummaryCard(
                       title: 'Upcoming',
                       count: controller.upcomingCount,
-                      currency: settingsController.selectedCurrency.value,
+                      currency:
+                          settingsController.selectedCurrency.value,
                       amount: controller.upcomingAmount,
                       icon: Icons.event_note_rounded,
                       isDark: isDark,
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: _SummaryCard(
                       title: 'Overdue',
                       count: controller.overdueCount,
-                      currency: settingsController.selectedCurrency.value,
+                      currency:
+                          settingsController.selectedCurrency.value,
                       amount: controller.overdueAmount,
                       icon: Icons.warning_amber_rounded,
                       isDark: isDark,
@@ -80,7 +85,8 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               _SummaryCard(
                 title: 'Paid',
                 count: controller.paidCount,
-                currency: settingsController.selectedCurrency.value,
+                currency:
+                    settingsController.selectedCurrency.value,
                 amount: controller.paidAmount,
                 icon: Icons.check_circle_outline_rounded,
                 isDark: isDark,
@@ -88,91 +94,94 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               ),
 
               const SizedBox(height: 28),
- // ====================================================
-//DUE TODAY
-// ====================================================
 
-_SectionTitle(
-  title: 'Due Today',
-  count: controller.todayBills.length,
-  isDark: isDark,
-),
+              // ====================================================
+              // DUE TODAY
+              // ====================================================
 
-const SizedBox(height: 12),
+              _SectionTitle(
+                title: 'Due Today',
+                count: controller.todayBills.length,
+                isDark: isDark,
+              ),
 
-if (controller.todayBills.isEmpty)
-  _EmptySection(
-    message: 'No bills due today',
-    icon: Icons.today_outlined,
-    isDark: isDark,
-  )
-else
-  ...controller.todayBills.map(
-    (bill) => _BillTile(
-      bill: bill,
-      isDark: isDark,
-      currency: settingsController.selectedCurrency.value,
-      onMarkPaid: () {
-        controller.markAsPaid(bill.id);
-      },
-      onDelete: () {
-        _showDeleteDialog(
-          context,
-          bill.name,
-          bill.id,
-        );
-      },
-      onEdit: () {
-        Get.to(
-          () => EditBillView(bill: bill),
-        );
-      },
-    ),
-  ),
+              const SizedBox(height: 12),
 
-// ====================================================
-// UPCOMING BILLS
-// ====================================================
+              if (controller.todayBills.isEmpty)
+                _EmptySection(
+                  message: 'No bills due today',
+                  icon: Icons.today_outlined,
+                  isDark: isDark,
+                )
+              else
+                ...controller.todayBills.map(
+                  (bill) => _BillTile(
+                    bill: bill,
+                    isDark: isDark,
+                    currency:
+                        settingsController.selectedCurrency.value,
+                    onMarkPaid: () {
+                      controller.markAsPaid(bill.id);
+                    },
+                    onDelete: () {
+                      _showDeleteDialog(
+                        context,
+                        bill.title,
+                        bill.id,
+                      );
+                    },
+                    onEdit: () {
+                      Get.to(
+                        () => EditBillView(bill: bill),
+                      );
+                    },
+                  ),
+                ),
 
-const SizedBox(height: 24),
+              // ====================================================
+              // UPCOMING BILLS
+              // ====================================================
 
-_SectionTitle(
-  title: 'Upcoming Bills',
-  count: controller.upcomingBills.length,
-  isDark: isDark,
-),
+              const SizedBox(height: 24),
 
-const SizedBox(height: 12),
+              _SectionTitle(
+                title: 'Upcoming Bills',
+                count: controller.upcomingBills.length,
+                isDark: isDark,
+              ),
 
-if (controller.upcomingBills.isEmpty)
-  _EmptySection(
-    message: 'No upcoming bills',
-    icon: Icons.event_available_rounded,
-    isDark: isDark,
-  )
-else
-  ...controller.upcomingBills.map(
-    (bill) => _BillTile(
-      bill: bill,
-      isDark: isDark,
-      currency: settingsController.selectedCurrency.value,
-      onMarkPaid: () {
-        controller.markAsPaid(bill.id);
-      },
-      onDelete: () {
-        _showDeleteDialog(
-          context,
-          bill.name,
-          bill.id,
-        );
-      },
-      onEdit: () {
-        Get.to(
-          () => EditBillView(bill: bill),
-        );
-      },
-    ),
-  ),
+              const SizedBox(height: 12),
+
+              if (controller.upcomingBills.isEmpty)
+                _EmptySection(
+                  message: 'No upcoming bills',
+                  icon: Icons.event_available_rounded,
+                  isDark: isDark,
+                )
+              else
+                ...controller.upcomingBills.map(
+                  (bill) => _BillTile(
+                    bill: bill,
+                    isDark: isDark,
+                    currency:
+                        settingsController.selectedCurrency.value,
+                    onMarkPaid: () {
+                      controller.markAsPaid(bill.id);
+                    },
+                    onDelete: () {
+                      _showDeleteDialog(
+                        context,
+                        bill.title,
+                        bill.id,
+                      );
+                    },
+                    onEdit: () {
+                      Get.to(
+                        () => EditBillView(bill: bill),
+                      );
+                    },
+                  ),
+                ),
 
               // ====================================================
               // OVERDUE BILLS
@@ -200,20 +209,18 @@ else
                     bill: bill,
                     isDark: isDark,
                     isOverdue: true,
-                    currency: settingsController.selectedCurrency.value,
-
+                    currency:
+                        settingsController.selectedCurrency.value,
                     onMarkPaid: () {
                       controller.markAsPaid(bill.id);
                     },
-
                     onDelete: () {
                       _showDeleteDialog(
                         context,
-                        bill.name,
+                        bill.title,
                         bill.id,
                       );
                     },
-
                     onEdit: () {
                       Get.to(
                         () => EditBillView(bill: bill),
@@ -247,20 +254,18 @@ else
                   (bill) => _BillTile(
                     bill: bill,
                     isDark: isDark,
-                      currency: settingsController.selectedCurrency.value,
-
+                    currency:
+                        settingsController.selectedCurrency.value,
                     onMarkPaid: () {
                       controller.markAsUnpaid(bill.id);
                     },
-
                     onDelete: () {
                       _showDeleteDialog(
                         context,
-                        bill.name,
+                        bill.title,
                         bill.id,
                       );
                     },
-
                     onEdit: () {
                       Get.to(
                         () => EditBillView(bill: bill),
@@ -300,26 +305,33 @@ else
     String billName,
     String billId,
   ) {
+    // Prevent multiple dialogs from opening.
+    if (Get.isDialogOpen == true) {
+      return;
+    }
+
     Get.dialog(
       AlertDialog(
         title: const Text('Delete Bill'),
-
         content: Text(
           'Are you sure you want to delete "$billName"?',
         ),
-
         actions: [
           TextButton(
             onPressed: () {
-              Get.back();
+              if (Get.isDialogOpen == true) {
+                Get.back();
+              }
             },
             child: const Text('Cancel'),
           ),
-
           TextButton(
-            onPressed: () {
-              controller.deleteBill(billId);
-              Get.back();
+            onPressed: () async {
+              if (Get.isDialogOpen == true) {
+                Get.back();
+              }
+
+              await controller.deleteBill(billId);
             },
             child: const Text(
               'Delete',
@@ -330,6 +342,7 @@ else
           ),
         ],
       ),
+      barrierDismissible: false,
     );
   }
 }
@@ -341,8 +354,8 @@ else
 class _SummaryCard extends StatelessWidget {
   final String title;
   final int count;
-  final double amount;
   final String currency;
+  final double amount;
   final IconData icon;
   final bool isDark;
   final bool fullWidth;
@@ -350,8 +363,8 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.title,
     required this.count,
-    required this.amount,
     required this.currency,
+    required this.amount,
     required this.icon,
     required this.isDark,
     this.fullWidth = false,
@@ -360,70 +373,48 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: fullWidth ? double.infinity : null,
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
-
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.surfaceDark
             : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
       ),
-
       child: Row(
         children: [
-          // ======================================================
-          // ICON
-          // ======================================================
-
-          Container(
-            width: 44,
-            height: 44,
-
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(
-                alpha: 0.10,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-
+          CircleAvatar(
+            backgroundColor:
+                AppColors.primary.withValues(alpha: 0.10),
             child: Icon(
               icon,
               color: AppColors.primary,
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // ======================================================
-          // DETAILS
-          // ======================================================
-
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
                   style: AppTextStyles.bodyMedium(isDark),
                 ),
-
-                const SizedBox(height: 3),
-
+                const SizedBox(height: 4),
                 Text(
-                  '$count bill${count == 1 ? '' : 's'}',
+                  '$currency ${amount.toStringAsFixed(2)}',
                   style: AppTextStyles.bodyLarge(isDark).copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
-                const SizedBox(height: 3),
-
-               Text(
-  '$currency ${amount.toStringAsFixed(2)}',
-  style: AppTextStyles.caption(isDark),
-),
               ],
+            ),
+          ),
+          Text(
+            '$count',
+            style: AppTextStyles.headingMedium(isDark).copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -456,7 +447,6 @@ class _SectionTitle extends StatelessWidget {
           title,
           style: AppTextStyles.headingMedium(isDark),
         ),
-
         Text(
           '$count',
           style: AppTextStyles.bodyMedium(isDark).copyWith(
@@ -473,10 +463,10 @@ class _SectionTitle extends StatelessWidget {
 // ============================================================
 
 class _BillTile extends StatelessWidget {
- final BillModel bill;
-final bool isDark;
-final bool isOverdue;
-final String currency;
+  final BillModel bill;
+  final bool isDark;
+  final bool isOverdue;
+  final String currency;
 
   final VoidCallback onMarkPaid;
   final VoidCallback onDelete;
@@ -502,11 +492,9 @@ final String currency;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: 0,
-
       color: isDark
           ? AppColors.surfaceDark
           : AppColors.surfaceLight,
-
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
@@ -521,12 +509,10 @@ final String currency;
           backgroundColor: isOverdue
               ? AppColors.expenseRed.withValues(alpha: 0.10)
               : AppColors.primary.withValues(alpha: 0.10),
-
           child: Icon(
             isOverdue
                 ? Icons.warning_amber_rounded
                 : Icons.receipt_long_rounded,
-
             color: isOverdue
                 ? AppColors.expenseRed
                 : AppColors.primary,
@@ -534,11 +520,11 @@ final String currency;
         ),
 
         // ========================================================
-        // BILL NAME
+        // BILL TITLE
         // ========================================================
 
         title: Text(
-          bill.name,
+          bill.title,
           style: AppTextStyles.bodyLarge(isDark).copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -553,17 +539,21 @@ final String currency;
           children: [
             const SizedBox(height: 4),
 
-            Text(
-              '${bill.category} • ${bill.repeat}',
-              style: AppTextStyles.bodyMedium(isDark),
-            ),
+            if (bill.categoryId != null &&
+                bill.categoryId!.isNotEmpty)
+              Text(
+                'Category selected',
+                style: AppTextStyles.bodyMedium(isDark),
+              ),
 
-            const SizedBox(height: 3),
+            if (bill.categoryId != null &&
+                bill.categoryId!.isNotEmpty)
+              const SizedBox(height: 3),
 
             Text(
               'Due: $date',
-              style: AppTextStyles.caption(isDark),),
-               SizedBox(height: 3),
+              style: AppTextStyles.caption(isDark),
+            ),
 
             const SizedBox(height: 3),
 
@@ -571,9 +561,26 @@ final String currency;
               '$currency ${bill.amount.toStringAsFixed(2)}',
               style: AppTextStyles.caption(isDark).copyWith(
                 fontWeight: FontWeight.w600,
-  ),
-),
-            
+              ),
+            ),
+
+            if (bill.reminderEnabled) ...[
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  Icon(
+                    Icons.notifications_active_outlined,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Reminder enabled',
+                    style: AppTextStyles.caption(isDark),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
 
@@ -591,37 +598,23 @@ final String currency;
               onDelete();
             }
           },
-
           itemBuilder: (context) {
             return [
-              // ==================================================
-              // EDIT
-              // ==================================================
-
               const PopupMenuItem<String>(
                 value: 'edit',
-
                 child: Row(
                   children: [
                     Icon(
                       Icons.edit_outlined,
                       size: 20,
                     ),
-
                     SizedBox(width: 10),
-
                     Text('Edit'),
                   ],
                 ),
               ),
-
-              // ==================================================
-              // MARK PAID / UNPAID
-              // ==================================================
-
               PopupMenuItem<String>(
                 value: 'paid',
-
                 child: Row(
                   children: [
                     Icon(
@@ -629,9 +622,7 @@ final String currency;
                           ? Icons.undo_rounded
                           : Icons.check_circle_outline,
                     ),
-
                     const SizedBox(width: 8),
-
                     Text(
                       bill.isPaid
                           ? 'Mark Unpaid'
@@ -640,23 +631,15 @@ final String currency;
                   ],
                 ),
               ),
-
-              // ==================================================
-              // DELETE
-              // ==================================================
-
               const PopupMenuItem<String>(
                 value: 'delete',
-
                 child: Row(
                   children: [
                     Icon(
                       Icons.delete_outline,
                       color: AppColors.expenseRed,
                     ),
-
                     SizedBox(width: 8),
-
                     Text('Delete'),
                   ],
                 ),
@@ -690,19 +673,16 @@ class _EmptySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
       padding: const EdgeInsets.symmetric(
         vertical: 28,
         horizontal: 16,
       ),
-
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.surfaceDark
             : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
       ),
-
       child: Column(
         children: [
           Icon(
@@ -710,9 +690,7 @@ class _EmptySection extends StatelessWidget {
             size: 42,
             color: AppColors.primary,
           ),
-
           const SizedBox(height: 10),
-
           Text(
             message,
             style: AppTextStyles.bodyMedium(isDark),
@@ -722,3 +700,4 @@ class _EmptySection extends StatelessWidget {
     );
   }
 }
+

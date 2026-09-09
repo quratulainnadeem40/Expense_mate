@@ -1,13 +1,12 @@
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../Core/constants/app_keys.dart';
 import '../../../Core/service/notification_service.dart';
 import '../../settings/controller/settings_controller.dart';
 import '../model/bill_model.dart';
 
 class BillsRemindersController extends GetxController {
-  late Box billsBox;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   final bills = <BillModel>[].obs;
   final isLoading = false.obs;
@@ -17,6 +16,8 @@ class BillsRemindersController extends GetxController {
 
   SettingsController get settingsController =>
       Get.find<SettingsController>();
+
+  User? get currentUser => _supabase.auth.currentUser;
 
   // ==========================================================
   // FILTERED BILLS
@@ -102,11 +103,6 @@ class BillsRemindersController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
-    billsBox = Hive.box(
-      AppKeys.billsRemindersBox,
-    );
-
     loadBills();
   }
 
@@ -115,23 +111,41 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> loadBills() async {
+    final user = currentUser;
+
+    if (user == null) {
+      bills.clear();
+      return;
+    }
+
     try {
       isLoading.value = true;
 
-      final loadedBills = billsBox.values.map((item) {
-        return BillModel.fromMap(
-          Map<dynamic, dynamic>.from(item),
-        );
-      }).toList();
+      final response = await _supabase
+          .from('bills_reminders')
+          .select()
+          .eq('user_id', user.id)
+          .order('due_date', ascending: true);
 
-      bills.assignAll(loadedBills);
+      bills.assignAll(
+        (response as List)
+            .map(
+              (item) => BillModel.fromMap(
+                Map<String, dynamic>.from(item),
+              ),
+            )
+            .toList(),
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
     } catch (e) {
-      print('LOAD BILLS ERROR: $e');
+      _showError(
+        'Unable to load bills. Please try again.',
+      );
     } finally {
       isLoading.value = false;
     }
 
-    // Notifications should never prevent bills from loading.
     await _scheduleAllBillNotifications();
   }
 
@@ -145,7 +159,7 @@ class BillsRemindersController extends GetxController {
     }
 
     for (final bill in bills) {
-      if (!bill.isPaid) {
+      if (!bill.isPaid && bill.reminderEnabled) {
         await _scheduleBillNotification(bill);
       }
     }
@@ -158,7 +172,9 @@ class BillsRemindersController extends GetxController {
   Future<void> _scheduleBillNotification(
     BillModel bill,
   ) async {
-    if (bill.isPaid) return;
+    if (bill.isPaid || !bill.reminderEnabled) {
+      return;
+    }
 
     if (!settingsController.notificationsEnabled.value) {
       return;
@@ -167,14 +183,14 @@ class BillsRemindersController extends GetxController {
     try {
       await notificationService.scheduleBillNotification(
         notificationId: _notificationId(bill.id),
-        billName: bill.name,
+        billName: bill.title,
         amount: bill.amount,
         currency: settingsController.selectedCurrency.value,
         dueDate: bill.dueDate,
       );
     } catch (e) {
       print(
-        'NOTIFICATION SCHEDULE ERROR for ${bill.name}: $e',
+        'NOTIFICATION SCHEDULE ERROR for ${bill.title}: $e',
       );
     }
   }
@@ -192,44 +208,63 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> addBill({
-    required String name,
+    required String title,
     required double amount,
     required DateTime dueDate,
-    required String category,
-    required String repeat,
+    String? categoryId,
+    String? walletId,
+    String? note,
+    bool reminderEnabled = true,
+    DateTime? reminderTime,
   }) async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError('Please login first.');
+      return;
+    }
+
     try {
-      final id = DateTime.now()
-          .millisecondsSinceEpoch
-          .toString();
+      isLoading.value = true;
 
-      final bill = BillModel(
-        id: id,
-        name: name,
-        amount: amount,
-        dueDate: dueDate,
-        category: category,
-        repeat: repeat,
-        isPaid: false,
+      final response = await _supabase
+          .from('bills_reminders')
+          .insert({
+            'user_id': user.id,
+            'title': title.trim(),
+            'amount': amount,
+            'due_date': dueDate.toIso8601String(),
+            'category_id': categoryId,
+            'wallet_id': walletId,
+            'note': note?.trim(),
+            'is_paid': false,
+            'reminder_enabled': reminderEnabled,
+            'reminder_time': reminderTime?.toIso8601String(),
+          })
+          .select()
+          .single();
+
+      final bill = BillModel.fromMap(
+        Map<String, dynamic>.from(response),
       );
 
-      // Save to Hive first.
-      await billsBox.put(
-        id,
-        bill.toMap(),
-      );
-
-      // Update UI immediately.
       bills.add(bill);
-      bills.refresh();
 
-      // Notification is secondary.
       await _scheduleBillNotification(bill);
 
-      print('BILL ADDED: ${bill.name}');
+      Get.snackbar(
+        'Success',
+        'Bill added successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
     } catch (e) {
-      print('ADD BILL ERROR: $e');
-      rethrow;
+      _showError(
+        'Unable to add bill. Please try again.',
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -238,38 +273,68 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> updateBill(BillModel bill) async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError('Please login first.');
+      return;
+    }
+
     try {
-      // Update Hive first.
-      await billsBox.put(
-        bill.id,
-        bill.toMap(),
+      isLoading.value = true;
+
+      await notificationService
+          .cancelNotification(
+        _notificationId(bill.id),
       );
 
-      // Update observable list.
+      final response = await _supabase
+          .from('bills_reminders')
+          .update({
+            'title': bill.title,
+            'amount': bill.amount,
+            'due_date': bill.dueDate.toIso8601String(),
+            'category_id': bill.categoryId,
+            'wallet_id': bill.walletId,
+            'note': bill.note,
+            'is_paid': bill.isPaid,
+            'reminder_enabled': bill.reminderEnabled,
+            'reminder_time':
+                bill.reminderTime?.toIso8601String(),
+          })
+          .eq('id', bill.id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+      final updatedBill = BillModel.fromMap(
+        Map<String, dynamic>.from(response),
+      );
+
       final index = bills.indexWhere(
         (item) => item.id == bill.id,
       );
 
       if (index != -1) {
-        bills[index] = bill;
+        bills[index] = updatedBill;
         bills.refresh();
       }
 
-      // Notification handling comes after the bill is updated.
-      try {
-        await notificationService.cancelNotification(
-          _notificationId(bill.id),
-        );
-      } catch (e) {
-        print('CANCEL OLD NOTIFICATION ERROR: $e');
-      }
+      await _scheduleBillNotification(updatedBill);
 
-      await _scheduleBillNotification(bill);
-
-      print('BILL UPDATED: ${bill.name}');
+      Get.snackbar(
+        'Success',
+        'Bill updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
     } catch (e) {
-      print('UPDATE BILL ERROR: $e');
-      rethrow;
+      _showError(
+        'Unable to update bill. Please try again.',
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -283,20 +348,15 @@ class BillsRemindersController extends GetxController {
     );
 
     if (index == -1) {
-      print('MARK PAID: BILL NOT FOUND: $billId');
+      _showError('Bill not found.');
       return;
     }
 
     final bill = bills[index];
 
-    final updatedBill = bill.copyWith(
-      isPaid: true,
+    await updateBill(
+      bill.copyWith(isPaid: true),
     );
-
-    // updateBill handles Hive + UI + notifications.
-    await updateBill(updatedBill);
-
-    print('BILL MARKED PAID: ${bill.name}');
   }
 
   // ==========================================================
@@ -309,19 +369,41 @@ class BillsRemindersController extends GetxController {
     );
 
     if (index == -1) {
-      print('MARK UNPAID: BILL NOT FOUND: $billId');
+      _showError('Bill not found.');
       return;
     }
 
     final bill = bills[index];
 
-    final updatedBill = bill.copyWith(
-      isPaid: false,
+    await updateBill(
+      bill.copyWith(isPaid: false),
+    );
+  }
+
+  // ==========================================================
+  // TOGGLE REMINDER
+  // ==========================================================
+
+  Future<void> toggleReminder(
+    String billId,
+    bool enabled,
+  ) async {
+    final index = bills.indexWhere(
+      (bill) => bill.id == billId,
     );
 
-    await updateBill(updatedBill);
+    if (index == -1) {
+      _showError('Bill not found.');
+      return;
+    }
 
-    print('BILL MARKED UNPAID: ${bill.name}');
+    final bill = bills[index];
+
+    await updateBill(
+      bill.copyWith(
+        reminderEnabled: enabled,
+      ),
+    );
   }
 
   // ==========================================================
@@ -329,30 +411,49 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> deleteBill(String billId) async {
-    try {
-      // Delete from Hive first.
-      await billsBox.delete(billId);
+    final user = currentUser;
 
-      // Remove from UI immediately.
+    if (user == null) {
+      _showError('Please login first.');
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      await _supabase
+          .from('bills_reminders')
+          .delete()
+          .eq('id', billId)
+          .eq('user_id', user.id);
+
       bills.removeWhere(
         (bill) => bill.id == billId,
       );
 
-      bills.refresh();
-
-      // Notification cancellation is secondary.
       try {
         await notificationService.cancelNotification(
           _notificationId(billId),
         );
       } catch (e) {
-        print('DELETE NOTIFICATION ERROR: $e');
+        print(
+          'DELETE NOTIFICATION ERROR: $e',
+        );
       }
 
-      print('BILL DELETED: $billId');
+      Get.snackbar(
+        'Success',
+        'Bill deleted successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
     } catch (e) {
-      print('DELETE BILL ERROR: $e');
-      rethrow;
+      _showError(
+        'Unable to delete bill. Please try again.',
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -361,21 +462,44 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> clearBills() async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError('Please login first.');
+      return;
+    }
+
     try {
-      await billsBox.clear();
+      isLoading.value = true;
+
+      await _supabase
+          .from('bills_reminders')
+          .delete()
+          .eq('user_id', user.id);
 
       bills.clear();
 
       try {
         await notificationService.cancelAllNotifications();
       } catch (e) {
-        print('CLEAR NOTIFICATIONS ERROR: $e');
+        print(
+          'CLEAR NOTIFICATIONS ERROR: $e',
+        );
       }
 
-      print('ALL BILLS CLEARED');
+      Get.snackbar(
+        'Success',
+        'All bills cleared.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
     } catch (e) {
-      print('CLEAR BILLS ERROR: $e');
-      rethrow;
+      _showError(
+        'Unable to clear bills. Please try again.',
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -390,5 +514,17 @@ class BillsRemindersController extends GetxController {
     return first.year == second.year &&
         first.month == second.month &&
         first.day == second.day;
+  }
+
+  // ==========================================================
+  // ERROR
+  // ==========================================================
+
+  void _showError(String message) {
+    Get.snackbar(
+      'Error',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 }
