@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controller/goals_controller.dart';
-import '../widgets/goals_card.dart';
+
+// ✅ Package imports use karein relative imports (../) ki jagah
+import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
+import 'package:expense_mate/Feature/goals/widgets/goals_card.dart';
 
 class GoalsView extends GetView<GoalsController> {
   const GoalsView({super.key});

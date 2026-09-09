@@ -3,15 +3,13 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 
 class ReportController extends GetxController {
-  // Controller lookup fallback logic
-  TransactionsController get _txController =>
-      Get.isRegistered<TransactionsController>()
-          ? Get.find<TransactionsController>()
-          : Get.put(TransactionsController());
+  // Direct Get.find usage to prevent instance collisions
+  TransactionsController get _txController => Get.find<TransactionsController>();
 
   // Safe getter for reactive transactions
   RxList<TransactionModel> get transactions => _txController.transactions;
 
+  // Dynamic getters for chart & summary calculations
   double get totalIncome => transactions
       .where((tx) => tx.isIncome)
       .fold(0.0, (sum, item) => sum + item.amount);
