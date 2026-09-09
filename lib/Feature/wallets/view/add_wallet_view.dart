@@ -2,7 +2,6 @@ import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-
 import '../controller/wallets_controller.dart';
 import '../widgets/wallet_type_selector.dart';
 
@@ -45,15 +44,12 @@ class _AddWalletViewState extends State<AddWalletView> {
     final controller = Get.find<WalletsController>();
 
     await controller.addWallet(
-      name: nameController.text.trim(),
-      type: selectedType,
-      balance: balance,
-      currency: selectedCurrency,
-    );
-
-    Get.back();
+  name: nameController.text.trim(),
+  type: selectedType,
+  balance: balance,
+  currency: selectedCurrency,
+);
   }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -65,14 +61,11 @@ class _AddWalletViewState extends State<AddWalletView> {
           style: AppTextStyles.headingMedium(isDark),
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-
           child: Form(
             key: formKey,
-
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,6 +104,12 @@ class _AddWalletViewState extends State<AddWalletView> {
                     setState(() {
                       selectedType = value;
                     });
+
+                    // Automatically use the selected wallet type
+                    // as the wallet name when the name field is empty.
+                    if (nameController.text.trim().isEmpty) {
+                      nameController.text = value;
+                    }
                   },
                 ),
 
@@ -132,8 +131,14 @@ class _AddWalletViewState extends State<AddWalletView> {
                       return 'Please enter balance';
                     }
 
-                    if (double.tryParse(value.trim()) == null) {
+                    final amount = double.tryParse(value.trim());
+
+                    if (amount == null) {
                       return 'Please enter a valid amount';
+                    }
+
+                    if (amount < 0) {
+                      return 'Balance cannot be negative';
                     }
 
                     return null;

@@ -1,3 +1,5 @@
+
+import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,58 +22,37 @@ class EditBillView extends StatefulWidget {
 class _EditBillViewState extends State<EditBillView> {
   final formKey = GlobalKey<FormState>();
 
-  late TextEditingController nameController;
+  late TextEditingController titleController;
   late TextEditingController amountController;
+  late TextEditingController noteController;
 
   late DateTime selectedDate;
-  late String selectedCategory;
-  late String selectedRepeat;
-
-  final List<String> categories = [
-    'Utilities',
-    'Rent',
-    'Internet',
-    'Phone',
-    'Subscription',
-    'Insurance',
-    'Education',
-    'Other',
-  ];
-
-  final List<String> repeatOptions = [
-    'None',
-    'Monthly',
-    'Yearly',
-  ];
 
   @override
   void initState() {
     super.initState();
 
     // Load existing bill data
-    nameController = TextEditingController(
-      text: widget.bill.name,
+    titleController = TextEditingController(
+      text: widget.bill.title,
     );
 
     amountController = TextEditingController(
       text: widget.bill.amount.toString(),
     );
 
+    noteController = TextEditingController(
+      text: widget.bill.note ?? '',
+    );
+
     selectedDate = widget.bill.dueDate;
-
-    selectedCategory = categories.contains(widget.bill.category)
-        ? widget.bill.category
-        : 'Other';
-
-    selectedRepeat = repeatOptions.contains(widget.bill.repeat)
-        ? widget.bill.repeat
-        : 'None';
   }
 
   @override
   void dispose() {
-    nameController.dispose();
+    titleController.dispose();
     amountController.dispose();
+    noteController.dispose();
     super.dispose();
   }
 
@@ -109,23 +90,25 @@ class _EditBillViewState extends State<EditBillView> {
       amountController.text.trim(),
     );
 
-    if (amount == null) {
+    if (amount == null || amount <= 0) {
       return;
     }
 
     final controller = Get.find<BillsRemindersController>();
 
     final updatedBill = widget.bill.copyWith(
-      name: nameController.text.trim(),
+      title: titleController.text.trim(),
       amount: amount,
       dueDate: selectedDate,
-      category: selectedCategory,
-      repeat: selectedRepeat,
+      note: noteController.text.trim().isEmpty
+          ? null
+          : noteController.text.trim(),
     );
 
     await controller.updateBill(updatedBill);
 
-    Get.back();
+Get.offNamed(AppRoutes.billsReminders);
+    
   }
 
   // ============================================================
@@ -167,11 +150,11 @@ class _EditBillViewState extends State<EditBillView> {
                 const SizedBox(height: 20),
 
                 // ==================================================
-                // BILL NAME
+                // BILL TITLE
                 // ==================================================
 
                 TextFormField(
-                  controller: nameController,
+                  controller: titleController,
 
                   textInputAction:
                       TextInputAction.next,
@@ -231,8 +214,8 @@ class _EditBillViewState extends State<EditBillView> {
                       return 'Please enter a valid amount';
                     }
 
-                    if (amount < 0) {
-                      return 'Amount cannot be negative';
+                    if (amount <= 0) {
+                      return 'Amount must be greater than 0';
                     }
 
                     return null;
@@ -271,67 +254,22 @@ class _EditBillViewState extends State<EditBillView> {
                 const SizedBox(height: 18),
 
                 // ==================================================
-                // CATEGORY
+                // NOTE
                 // ==================================================
 
-                DropdownButtonFormField<String>(
-                  initialValue: selectedCategory,
+                TextFormField(
+                  controller: noteController,
+                  maxLines: 3,
 
                   decoration: const InputDecoration(
-                    labelText: 'Category',
+                    labelText: 'Note',
+                    hintText: 'Add a note (optional)',
                     prefixIcon: Icon(
-                      Icons.category_outlined,
+                      Icons.notes_outlined,
                     ),
                     border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
                   ),
-
-                  items: categories.map((category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedCategory = value;
-                      });
-                    }
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // REPEAT
-                // ==================================================
-
-                DropdownButtonFormField<String>(
-                  initialValue: selectedRepeat,
-
-                  decoration: const InputDecoration(
-                    labelText: 'Repeat',
-                    prefixIcon: Icon(
-                      Icons.repeat_rounded,
-                    ),
-                    border: OutlineInputBorder(),
-                  ),
-
-                  items: repeatOptions.map((repeat) {
-                    return DropdownMenuItem<String>(
-                      value: repeat,
-                      child: Text(repeat),
-                    );
-                  }).toList(),
-
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedRepeat = value;
-                      });
-                    }
-                  },
                 ),
 
                 const SizedBox(height: 30),
@@ -364,3 +302,4 @@ class _EditBillViewState extends State<EditBillView> {
     );
   }
 }
+

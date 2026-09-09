@@ -33,8 +33,8 @@ class WalletsView extends GetView<WalletsController> {
 
         return RefreshIndicator(
           onRefresh: () async {
-            controller.loadWallets();
-          },
+  await controller.loadWallets();
+},
 
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),

@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 class SettingsController extends GetxController {
   late Box settingsBox;
 
   final isDarkMode = false.obs;
   final selectedCurrency = 'PKR'.obs;
   final notificationsEnabled = true.obs;
+
+  final isDeletingAccount = false.obs;
 
   final NotificationService notificationService =
       Get.find<NotificationService>();
@@ -24,7 +27,9 @@ class SettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
     settingsBox = Hive.box(AppKeys.settingsBox);
+
     loadSettings();
   }
 
@@ -47,11 +52,6 @@ class SettingsController extends GetxController {
       'notifications_enabled',
       defaultValue: true,
     ) as bool;
-
-    // Load hone par saved theme apply karein
-    Get.changeThemeMode(
-      isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
-    );
   }
 
   // ============================================================
@@ -66,7 +66,6 @@ class SettingsController extends GetxController {
       value,
     );
 
-    // Instant theme change toggle
     Get.changeThemeMode(
       value ? ThemeMode.dark : ThemeMode.light,
     );
@@ -98,7 +97,13 @@ class SettingsController extends GetxController {
     );
 
     if (!value) {
-      await notificationService.cancelAllNotifications();
+      try {
+        await notificationService.cancelAllNotifications();
+      } catch (e) {
+        debugPrint(
+          'Notification cleanup error: $e',
+        );
+      }
     }
   }
 
@@ -113,7 +118,13 @@ class SettingsController extends GetxController {
     selectedCurrency.value = 'PKR';
     notificationsEnabled.value = true;
 
-    await notificationService.cancelAllNotifications();
+    try {
+      await notificationService.cancelAllNotifications();
+    } catch (e) {
+      debugPrint(
+        'Notification cleanup error: $e',
+      );
+    }
 
     Get.changeThemeMode(ThemeMode.light);
   }
@@ -153,6 +164,10 @@ class SettingsController extends GetxController {
   // ============================================================
 
   Future<void> deleteAccount() async {
+    if (isDeletingAccount.value) {
+      return;
+    }
+
     try {
       final user = _supabase.auth.currentUser;
 
@@ -165,24 +180,36 @@ class SettingsController extends GetxController {
         return;
       }
 
+      isDeletingAccount.value = true;
+
       final response = await _supabase.functions.invoke(
         'delete-account',
       );
 
       if (response.status != 200) {
-        throw Exception(
-          response.data?['error'] ?? 'Unable to delete account.',
-        );
+        String errorMessage = 'Unable to delete account.';
+
+        if (response.data is Map &&
+            response.data['error'] != null) {
+          errorMessage = response.data['error'].toString();
+        }
+
+        throw Exception(errorMessage);
       }
 
+      // Clear local settings.
       await settingsBox.clear();
 
+      // Cancel any locally scheduled notifications.
       try {
         await notificationService.cancelAllNotifications();
       } catch (e) {
-        print('Notification cleanup error: $e');
+        debugPrint(
+          'Notification cleanup error: $e',
+        );
       }
 
+      // Sign out locally after successful account deletion.
       await _supabase.auth.signOut();
 
       Get.offAllNamed(AppRoutes.login);
@@ -199,11 +226,18 @@ class SettingsController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
+      debugPrint(
+        'Delete account exception: $e',
+      );
+
       Get.snackbar(
         'Delete Account Failed',
-        'Unable to delete account: $e',
+        'Unable to delete account. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
+    } finally {
+      isDeletingAccount.value = false;
     }
   }
 }
+

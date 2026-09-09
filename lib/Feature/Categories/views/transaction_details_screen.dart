@@ -1,12 +1,13 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/controller/expense_controller.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
-import 'package:expense_mate/core/constants/app_keys.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   final TransactionModel transaction;
@@ -16,45 +17,64 @@ class TransactionDetailsScreen extends StatelessWidget {
     required this.transaction,
   });
 
-  void _deleteTransaction() async {
-    final box = Hive.box(AppKeys.transactionsBox);
-    final rawMap = box.toMap();
+  // ------------------------------------------------------------
+  // DELETE
+  // ------------------------------------------------------------
 
-    dynamic targetKey;
-    rawMap.forEach((key, value) {
-      if (value is Map && value['id'] == transaction.id) {
-        targetKey = key;
-      }
-    });
+  Future<void> _deleteTransaction() async {
+    final controller = Get.find<TransactionsController>();
 
-    if (targetKey != null) {
-      await box.delete(targetKey);
-      Get.back();
-      Get.snackbar('Deleted', 'Transaction removed successfully',
-          snackPosition: SnackPosition.BOTTOM);
-    }
+    await controller.deleteTransaction(transaction.id);
+
+    Get.back();
+
+    Get.snackbar(
+      'Deleted',
+      'Transaction removed successfully',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
+  // ------------------------------------------------------------
+  // EDIT
+  // ------------------------------------------------------------
+
   void _onEditPressed() {
-    // 1. ExpenseBinding ko manual initialize kar rahe hain
-    ExpenseBinding().dependencies();
+    if (!Get.isRegistered<ExpenseController>()) {
+      ExpenseBinding().dependencies();
+    }
 
-    // 2. Navigation se pehle Controller mein data set kar rahe hain
     final expenseController = Get.find<ExpenseController>();
-    expenseController.amountController.text = transaction.amount.toString();
-    expenseController.noteController.text = transaction.title;
-    expenseController.selectedCategory.value = transaction.category;
-    expenseController.isExpense.value = !transaction.isIncome;
 
-    // 3. Form fill hone ke baad screen navigate hogi
+    expenseController.amountController.text =
+        transaction.amount.toString();
+
+    expenseController.noteController.text =
+        transaction.note ?? transaction.title;
+
+    expenseController.isExpense.value =
+        transaction.type == 'expense';
+
+    expenseController.selectedCategoryId.value =
+        transaction.categoryId;
+
+    expenseController.selectedWalletId.value =
+        transaction.walletId;
+
     Get.to(
       () => const AddExpenseView(),
       arguments: transaction,
     );
   }
 
+  // ------------------------------------------------------------
+  // UI
+  // ------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transaction Details'),
@@ -67,6 +87,10 @@ class TransactionDetailsScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 10),
 
+              // ------------------------------------------------
+              // ICON
+              // ------------------------------------------------
+
               CircleAvatar(
                 radius: 35,
                 backgroundColor: transaction.isIncome
@@ -76,54 +100,111 @@ class TransactionDetailsScreen extends StatelessWidget {
                   transaction.isIncome
                       ? Icons.arrow_downward
                       : Icons.shopping_bag,
-                  color: transaction.isIncome ? Colors.green : Colors.red,
+                  color: transaction.isIncome
+                      ? Colors.green
+                      : Colors.red,
                   size: 35,
                 ),
               ),
+
               const SizedBox(height: 12),
+
+              // ------------------------------------------------
+              // TITLE
+              // ------------------------------------------------
 
               Text(
                 transaction.title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+
               const SizedBox(height: 6),
+
+              // ------------------------------------------------
+              // AMOUNT
+              // ------------------------------------------------
+
               Text(
-                '${transaction.isIncome ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
+                '${transaction.isIncome ? '+' : '-'}'
+                '₨${transaction.amount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: transaction.isIncome ? Colors.green : Colors.red,
+                  color: transaction.isIncome
+                      ? Colors.green
+                      : Colors.red,
                 ),
               ),
+
+              const SizedBox(height: 6),
+
+              // ------------------------------------------------
+              // CATEGORY ID
+              // ------------------------------------------------
+
               Text(
-                transaction.category,
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                transaction.categoryId.isEmpty
+                    ? 'No category'
+                    : transaction.categoryId,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
               ),
 
               const SizedBox(height: 30),
 
+              // ------------------------------------------------
+              // DETAILS CARD
+              // ------------------------------------------------
+
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(
+                    color: Colors.grey.withOpacity(0.2),
+                  ),
                 ),
                 child: Column(
                   children: [
-                    _buildDetailRow('Date',
-                        DateFormat('MMM dd, yyyy').format(transaction.date)),
+                    _buildDetailRow(
+                      'Date',
+                      DateFormat('MMM dd, yyyy')
+                          .format(transaction.date),
+                    ),
+
                     const Divider(height: 24),
-                    _buildDetailRow('Payment Method', 'Cash'),
+
+                    _buildDetailRow(
+                      'Wallet',
+                      _walletName(),
+                    ),
+
                     const Divider(height: 24),
-                    _buildDetailRow('Note', transaction.title),
+
+                    _buildDetailRow(
+                      'Note',
+                      transaction.note?.isNotEmpty == true
+                          ? transaction.note!
+                          : 'No note',
+                    ),
+
                     const Divider(height: 24),
+
                     _buildDetailRow(
                       'Status',
-                      transaction.isIncome ? 'Income' : 'Expense',
-                      valueColor:
-                          transaction.isIncome ? Colors.green : Colors.red,
+                      transaction.isIncome
+                          ? 'Income'
+                          : 'Expense',
+                      valueColor: transaction.isIncome
+                          ? Colors.green
+                          : Colors.red,
                     ),
                   ],
                 ),
@@ -131,20 +212,33 @@ class TransactionDetailsScreen extends StatelessWidget {
 
               const Spacer(),
 
+              // ------------------------------------------------
+              // ACTIONS
+              // ------------------------------------------------
+
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton.filledTonal(
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.1),
+                      backgroundColor:
+                          Colors.red.withOpacity(0.1),
                     ),
                     onPressed: _deleteTransaction,
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                    ),
                   ),
+
                   FloatingActionButton.small(
                     onPressed: _onEditPressed,
                     backgroundColor: Colors.blue,
-                    child: const Icon(Icons.edit, color: Colors.white),
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -155,18 +249,66 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String title, String value, {Color? valueColor}) {
+  // ------------------------------------------------------------
+  // WALLET NAME
+  // ------------------------------------------------------------
+
+  String _walletName() {
+    if (!Get.isRegistered<ExpenseController>()) {
+      return transaction.walletId.isEmpty
+          ? 'No wallet'
+          : transaction.walletId;
+    }
+
+    final expenseController =
+        Get.find<ExpenseController>();
+
+    final wallets =
+        expenseController.walletsController.wallets;
+
+    final wallet = wallets.firstWhereOrNull(
+      (wallet) => wallet.id == transaction.walletId,
+    );
+
+    return wallet?.name ??
+        (transaction.walletId.isEmpty
+            ? 'No wallet'
+            : transaction.walletId);
+  }
+
+  // ------------------------------------------------------------
+  // DETAIL ROW
+  // ------------------------------------------------------------
+
+  Widget _buildDetailRow(
+    String title,
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: const TextStyle(color: Colors.grey, fontSize: 14)),
         Text(
-          value,
-          style: TextStyle(
+          title,
+          style: const TextStyle(
+            color: Colors.grey,
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: valueColor ?? Colors.black,
+          ),
+        ),
+
+        const SizedBox(width: 20),
+
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? Colors.black,
+            ),
           ),
         ),
       ],

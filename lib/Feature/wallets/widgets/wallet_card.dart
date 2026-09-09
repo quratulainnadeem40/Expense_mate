@@ -17,22 +17,28 @@ class WalletCard extends StatelessWidget {
     this.onTap,
   });
 
-  IconData _getWalletIcon() {
-    switch (wallet.type.toLowerCase()) {
-      case 'bank account':
-        return Icons.account_balance;
+ IconData _getWalletIcon() {
+  switch (wallet.type) {
+    case 'Cash':
+      return Icons.payments_outlined;
 
-      case 'credit card':
-        return Icons.credit_card;
+    case 'Bank Account':
+      return Icons.account_balance;
 
-      case 'e-wallet':
-        return Icons.account_balance_wallet;
+    case 'JazzCash':
+      return Icons.account_balance_wallet;
 
-      case 'cash':
-      default:
-        return Icons.payments_outlined;
-    }
+    case 'Easypaisa':
+      return Icons.account_balance_wallet;
+
+    case 'Credit Card':
+      return Icons.credit_card;
+
+    case 'Other':
+    default:
+      return Icons.account_balance_wallet_outlined;
   }
+}
 
   @override
   Widget build(BuildContext context) {

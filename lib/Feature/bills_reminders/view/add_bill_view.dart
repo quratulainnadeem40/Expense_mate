@@ -1,7 +1,8 @@
+
+import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 
 import '../controller/bills_reminders_controller.dart';
 
@@ -15,35 +16,17 @@ class AddBillView extends StatefulWidget {
 class _AddBillViewState extends State<AddBillView> {
   final formKey = GlobalKey<FormState>();
 
-  final nameController = TextEditingController();
+  final titleController = TextEditingController();
   final amountController = TextEditingController();
+  final noteController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
 
-  String selectedCategory = 'Utilities';
-  String selectedRepeat = 'None';
-
-  final List<String> categories = [
-    'Utilities',
-    'Rent',
-    'Internet',
-    'Phone',
-    'Subscription',
-    'Insurance',
-    'Education',
-    'Other',
-  ];
-
-  final List<String> repeatOptions = [
-    'None',
-    'Monthly',
-    'Yearly',
-  ];
-
   @override
   void dispose() {
-    nameController.dispose();
+    titleController.dispose();
     amountController.dispose();
+    noteController.dispose();
     super.dispose();
   }
 
@@ -79,21 +62,22 @@ class _AddBillViewState extends State<AddBillView> {
       amountController.text.trim(),
     );
 
-    if (amount == null) {
+    if (amount == null || amount <= 0) {
       return;
     }
 
     final controller = Get.find<BillsRemindersController>();
 
     await controller.addBill(
-      name: nameController.text.trim(),
+      title: titleController.text.trim(),
       amount: amount,
       dueDate: selectedDate,
-      category: selectedCategory,
-      repeat: selectedRepeat,
+      note: noteController.text.trim().isEmpty
+          ? null
+          : noteController.text.trim(),
     );
 
-    Get.back();
+    Get.offNamed(AppRoutes.billsReminders);
   }
 
   // ==========================================================
@@ -134,11 +118,11 @@ class _AddBillViewState extends State<AddBillView> {
                 const SizedBox(height: 20),
 
                 // ==================================================
-                // BILL NAME
+                // BILL TITLE
                 // ==================================================
 
                 TextFormField(
-                  controller: nameController,
+                  controller: titleController,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Bill Name',
@@ -236,9 +220,7 @@ class _AddBillViewState extends State<AddBillView> {
                         const Icon(
                           Icons.calendar_month_outlined,
                         ),
-
                         const SizedBox(width: 12),
-
                         Text(
                           '${selectedDate.day.toString().padLeft(2, '0')}/'
                           '${selectedDate.month.toString().padLeft(2, '0')}/'
@@ -246,9 +228,7 @@ class _AddBillViewState extends State<AddBillView> {
                           style:
                               AppTextStyles.bodyLarge(isDark),
                         ),
-
                         const Spacer(),
-
                         const Icon(
                           Icons.arrow_drop_down_rounded,
                         ),
@@ -260,61 +240,21 @@ class _AddBillViewState extends State<AddBillView> {
                 const SizedBox(height: 18),
 
                 // ==================================================
-                // CATEGORY
+                // NOTE
                 // ==================================================
 
-                DropdownButtonFormField<String>(
-                  initialValue: selectedCategory,
+                TextFormField(
+                  controller: noteController,
+                  maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'Category',
+                    labelText: 'Note',
+                    hintText: 'Add a note (optional)',
                     prefixIcon: Icon(
-                      Icons.category_outlined,
+                      Icons.notes_outlined,
                     ),
                     border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
                   ),
-                  items: categories.map((category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedCategory = value;
-                      });
-                    }
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                // ==================================================
-                // REPEAT
-                // ==================================================
-
-                DropdownButtonFormField<String>(
-                  initialValue: selectedRepeat,
-                  decoration: const InputDecoration(
-                    labelText: 'Repeat',
-                    prefixIcon: Icon(
-                      Icons.repeat_rounded,
-                    ),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: repeatOptions.map((repeat) {
-                    return DropdownMenuItem<String>(
-                      value: repeat,
-                      child: Text(repeat),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedRepeat = value;
-                      });
-                    }
-                  },
                 ),
 
                 const SizedBox(height: 30),
@@ -346,3 +286,4 @@ class _AddBillViewState extends State<AddBillView> {
     );
   }
 }
+
