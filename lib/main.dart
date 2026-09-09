@@ -11,7 +11,8 @@ import 'package:expense_mate/Core/theme/custom_theme.dart';
 
 // Controllers Imports
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
-import 'package:expense_mate/Feature/Reports/controller/report_controller.dart'; 
+// FIX: Changed 'Reports' to lowercase 'reports'
+import 'package:expense_mate/Feature/reports/controller/report_controller.dart'; 
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 
 void main() async {
@@ -35,7 +36,7 @@ void main() async {
   // 4. Global State Controllers Injection
   final settingsController = Get.put(SettingsController(), permanent: true);
   Get.put(ReportController(), permanent: true);
-  Get.put(TransactionsController(), permanent: true); // Added for AddTransaction Dialog / Home sync
+  Get.put(TransactionsController(), permanent: true); 
 
   runApp(ExpenseMateApp(settingsController: settingsController));
 }
