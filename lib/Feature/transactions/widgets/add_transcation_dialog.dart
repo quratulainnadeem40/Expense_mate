@@ -23,12 +23,8 @@ class AddTransactionDialog extends StatelessWidget {
       'Entertainment'
     ];
 
-    // Find registered global instance instead of creating a duplicate
-    final TransactionsController controller = Get.isRegistered<TransactionsController>()
-        ? Get.find<TransactionsController>()
-        : Get.put(TransactionsController());
+    final TransactionsController txController = Get.find<TransactionsController>();
 
-    // Theme details extract
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
@@ -43,7 +39,6 @@ class AddTransactionDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 1. TITLE INPUT FIELD
             TextField(
               controller: titleController,
               style: TextStyle(color: colorScheme.onSurface),
@@ -61,7 +56,6 @@ class AddTransactionDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // 2. AMOUNT INPUT FIELD
             TextField(
               controller: amountController,
               style: TextStyle(color: colorScheme.onSurface),
@@ -80,7 +74,6 @@ class AddTransactionDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // 3. CATEGORY DROPDOWN
             Obx(
               () => DropdownButtonFormField<String>(
                 value: selectedCategory.value,
@@ -116,7 +109,6 @@ class AddTransactionDialog extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // 4. INCOME / EXPENSE SWITCH
             Obx(
               () => SwitchListTile(
                 title: Text(
@@ -158,7 +150,7 @@ class AddTransactionDialog extends StatelessWidget {
                 isIncome: isIncome.value,
               );
 
-              controller.addTransaction(newTx);
+              txController.addTransaction(newTx);
               Get.back();
             } else {
               Get.snackbar(

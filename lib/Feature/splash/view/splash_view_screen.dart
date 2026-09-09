@@ -10,14 +10,10 @@ class SplashView extends GetView<SplashController> {
     Get.find<SplashController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF030D26), // Dark background matching the image
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Image.asset(
-            'assets/expense_mate.png', // Apni image ka exact path yahan dein
-            fit: BoxFit.contain,
-          ),
+      body: SizedBox.expand(
+        child: Image.asset(
+          'assets/expense_mate.png', // Apni image ka exact path
+          fit: BoxFit.cover, // Yeh image ko poori screen par stretch bina distortion ke fit kar dega
         ),
       ),
     );

@@ -2,24 +2,23 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-// SettingsController ka relative/exact path import karein
+// SettingsController ka path
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 
 class BalanceCard extends StatelessWidget {
-  final RxDouble totalBalance;
-  final RxDouble totalIncome;
-  final RxDouble totalExpense;
+  final double totalBalance;
+  final double totalIncome;
+  final double totalExpense;
 
   const BalanceCard({
-    Key? key,
+    super.key,
     required this.totalBalance,
     required this.totalIncome,
     required this.totalExpense,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    // SettingsController locate karein
     final settingsController = Get.isRegistered<SettingsController>()
         ? Get.find<SettingsController>()
         : Get.put(SettingsController());
@@ -35,10 +34,13 @@ class BalanceCard extends StatelessWidget {
         children: [
           const Text('Total Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 8),
+          
+          // Currency reactive status ke liye Obx inside wrapper
           Obx(() => Text(
-                '${settingsController.selectedCurrency.value} ${totalBalance.value.toStringAsFixed(2)}',
+                '${settingsController.selectedCurrency.value} ${totalBalance.toStringAsFixed(2)}',
                 style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
               )),
+              
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -54,7 +56,7 @@ class BalanceCard extends StatelessWidget {
 
   Widget _buildInfoItem(
     String title, 
-    RxDouble amount, 
+    double amount, 
     Color color, 
     SettingsController settingsController
   ) {
@@ -64,7 +66,7 @@ class BalanceCard extends StatelessWidget {
         Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 4),
         Obx(() => Text(
-              '${settingsController.selectedCurrency.value} ${amount.value.toStringAsFixed(2)}',
+              '${settingsController.selectedCurrency.value} ${amount.toStringAsFixed(2)}',
               style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
             )),
       ],
