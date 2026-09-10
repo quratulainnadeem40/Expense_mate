@@ -40,7 +40,7 @@ class SignupView extends GetView<AuthController> {
 
               Center(
                 child: Image.asset(
-                  'assets/expense_mate.png',
+                  'assets/logo.png',
                   height: 80,
                   width: 80,
                 ),

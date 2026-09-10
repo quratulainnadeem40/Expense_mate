@@ -7,8 +7,11 @@ class AddExpenseView extends GetView<ExpenseController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = Get.isDarkMode;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -22,7 +25,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                 height: 48,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F4F7),
+                  color: isDark ? Colors.grey[850] : const Color(0xFFF2F4F7),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -41,7 +44,9 @@ class AddExpenseView extends GetView<ExpenseController> {
                           child: Text(
                             'Expense',
                             style: TextStyle(
-                              color: controller.isExpense.value ? Colors.white : Colors.black,
+                              color: controller.isExpense.value 
+                                  ? Colors.white 
+                                  : (isDark ? Colors.white70 : Colors.black),
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -63,7 +68,9 @@ class AddExpenseView extends GetView<ExpenseController> {
                           child: Text(
                             'Income',
                             style: TextStyle(
-                              color: !controller.isExpense.value ? Colors.white : Colors.black,
+                              color: !controller.isExpense.value 
+                                  ? Colors.white 
+                                  : (isDark ? Colors.white70 : Colors.black),
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -82,20 +89,29 @@ class AddExpenseView extends GetView<ExpenseController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Amount', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text('Amount', style: TextStyle(color: theme.hintColor, fontSize: 13)),
                       TextField(
                         controller: controller.amountController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          fontSize: 20, 
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                        decoration: InputDecoration(
                           hintText: '0.00',
-                          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black12)),
-                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+                          hintStyle: TextStyle(color: theme.hintColor),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: theme.dividerColor),
+                          ),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF2EA44F)),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      const Text('Category', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text('Category', style: TextStyle(color: theme.hintColor, fontSize: 13)),
                       Obx(() {
                         final currentList = controller.isExpense.value 
                             ? controller.expenseCategories 
@@ -103,13 +119,22 @@ class AddExpenseView extends GetView<ExpenseController> {
                             
                         return DropdownButtonFormField<String>(
                           value: controller.selectedCategory.value,
-                          icon: const Icon(Icons.arrow_drop_down, color: Colors.black54),
-                          decoration: const InputDecoration(
-                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black12)),
-                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+                          dropdownColor: theme.cardColor,
+                          icon: Icon(Icons.arrow_drop_down, color: theme.iconTheme.color ?? Colors.grey),
+                          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                          decoration: InputDecoration(
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: theme.dividerColor),
+                            ),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF2EA44F)),
+                            ),
                           ),
                           items: currentList.map((String val) {
-                            return DropdownMenuItem<String>(value: val, child: Text(val));
+                            return DropdownMenuItem<String>(
+                              value: val, 
+                              child: Text(val, style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
+                            );
                           }).toList(),
                           onChanged: (val) {
                             if (val != null) controller.selectedCategory.value = val;
@@ -118,16 +143,25 @@ class AddExpenseView extends GetView<ExpenseController> {
                       }),
                       const SizedBox(height: 24),
 
-                      const Text('Payment Method', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text('Payment Method', style: TextStyle(color: theme.hintColor, fontSize: 13)),
                       Obx(() => DropdownButtonFormField<String>(
                         value: controller.selectedPaymentMethod.value,
-                        icon: const Icon(Icons.arrow_drop_down, color: Colors.black54),
-                        decoration: const InputDecoration(
-                          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black12)),
-                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+                        dropdownColor: theme.cardColor,
+                        icon: Icon(Icons.arrow_drop_down, color: theme.iconTheme.color ?? Colors.grey),
+                        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                        decoration: InputDecoration(
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: theme.dividerColor),
+                          ),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF2EA44F)),
+                          ),
                         ),
                         items: controller.paymentMethods.map((String val) {
-                          return DropdownMenuItem<String>(value: val, child: Text(val));
+                          return DropdownMenuItem<String>(
+                            value: val, 
+                            child: Text(val, style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
+                          );
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) controller.selectedPaymentMethod.value = val;
@@ -135,14 +169,19 @@ class AddExpenseView extends GetView<ExpenseController> {
                       )),
                       const SizedBox(height: 24),
 
-                      const Text('Note (Optional)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text('Note (Optional)', style: TextStyle(color: theme.hintColor, fontSize: 13)),
                       TextField(
                         controller: controller.noteController,
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                        decoration: InputDecoration(
                           hintText: 'e.g., Lunch with team',
-                          hintStyle: TextStyle(color: Colors.black38),
-                          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black12)),
-                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+                          hintStyle: TextStyle(color: theme.hintColor),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: theme.dividerColor),
+                          ),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF2EA44F)),
+                          ),
                         ),
                       ),
                     ],
@@ -160,7 +199,14 @@ class AddExpenseView extends GetView<ExpenseController> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => controller.saveExpense(),
-                  child: const Text('Save', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Save', 
+                    style: TextStyle(
+                      color: Colors.white, 
+                      fontSize: 16, 
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -168,7 +214,7 @@ class AddExpenseView extends GetView<ExpenseController> {
               Center(
                 child: TextButton(
                   onPressed: () => Get.back(),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  child: Text('Cancel', style: TextStyle(color: theme.hintColor, fontSize: 14)),
                 ),
               ),
             ],

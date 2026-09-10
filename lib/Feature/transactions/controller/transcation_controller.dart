@@ -24,7 +24,6 @@ class TransactionsController extends GetxController {
       if (value is Map) {
         final mapData = Map<String, dynamic>.from(value);
         
-        // Income vs Expense handling fix
         final String typeStr = (mapData['type'] ?? 'Expense').toString().toLowerCase();
         final bool isInc = (typeStr == 'income');
 
@@ -41,7 +40,8 @@ class TransactionsController extends GetxController {
       }
     }
 
-    transactions.assignAll(loadedList.reversed);
+    final reversedList = loadedList.reversed.toList();
+    transactions.assignAll(reversedList);
   }
 
   void addTransaction(TransactionModel transaction) async {
@@ -61,7 +61,7 @@ class TransactionsController extends GetxController {
     };
 
     await box.add(mapData);
-    await loadTransactions();
+    await loadTransactions(); // Auto-refreshes list and reactive listeners
   }
 
   void deleteTransaction(String id) async {

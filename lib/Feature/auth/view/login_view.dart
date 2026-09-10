@@ -30,7 +30,7 @@ class LoginView extends GetView<AuthController> {
 
               Center(
                 child: Image.asset(
-                  'assets/expense_mate.png',
+                  'assets/logo.png',
                   height: 90,
                   width: 90,
                 ),
