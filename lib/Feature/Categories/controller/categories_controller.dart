@@ -1,10 +1,15 @@
+
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get_rx/src/rx_types/rx_types.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesController extends GetxController {
-  var categoryList = <CategoryModel>[].obs;
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  final categoryList = <CategoryModel>[].obs;
+  final isLoading = false.obs;
+
+  User? get currentUser => _supabase.auth.currentUser;
 
   @override
   void onInit() {
@@ -12,23 +17,140 @@ class CategoriesController extends GetxController {
     fetchCategories();
   }
 
-  void fetchCategories() {
-    // Initial categories based on Expense Mate blueprint
-    categoryList.value = [
-      CategoryModel(id: '1', name: 'Food & Dining', icon: 'restaurant', colorValue: 0xFFE53935, isDefault: true),
-      CategoryModel(id: '2', name: 'Transport', icon: 'directions_car', colorValue: 0xFF1E88E5, isDefault: true),
-      CategoryModel(id: '3', name: 'Shopping', icon: 'shopping_bag', colorValue: 0xFF8E24AA, isDefault: true),
-      CategoryModel(id: '4', name: 'Bills', icon: 'receipt_long', colorValue: 0xFFFB8C00, isDefault: true),
-      CategoryModel(id: '5', name: 'Entertainment', icon: 'movie', colorValue: 0xFFE91E63, isDefault: true),
-      CategoryModel(id: '6', name: 'Salary', icon: 'work', colorValue: 0xFF43A047, isDefault: true),
-    ];
+  Future<void> fetchCategories() async {
+    final user = currentUser;
+
+    if (user == null) {
+      categoryList.clear();
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      final response = await _supabase
+          .from('categories')
+          .select()
+          .eq('user_id', user.id)
+          .order('name');
+
+      final data = response as List;
+
+      final categories = data
+          .map(
+            (item) => CategoryModel(
+              id: item['id'].toString(),
+              name: item['name'].toString(),
+              icon: item['icon']?.toString() ?? 'category',
+              colorValue: _parseColor(item['color']),
+              isDefault: false,
+              type: item['type']?.toString().toLowerCase() ?? 'expense',
+            ),
+          )
+          .toList();
+
+      categoryList.assignAll(categories);
+    } on PostgrestException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Unable to load categories.');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  void addCategory(CategoryModel category) {
-    categoryList.add(category);
+  Future<void> addCategory(CategoryModel category) async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError('Please login first.');
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      await _supabase.from('categories').insert({
+        'user_id': user.id,
+        'name': category.name,
+        'icon': category.icon,
+        'color': category.colorValue.toRadixString(16),
+        'type': category.type,
+      });
+
+      await fetchCategories();
+
+      Get.snackbar(
+        'Success',
+        'Category added successfully',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Unable to add category.');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  void deleteCategory(String id) {
-    categoryList.removeWhere((cat) => cat.id == id && !cat.isDefault);
+  Future<void> deleteCategory(String id) async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError('Please login first.');
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      await _supabase
+          .from('categories')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+      categoryList.removeWhere((cat) => cat.id == id);
+
+      Get.snackbar(
+        'Deleted',
+        'Category deleted successfully',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PostgrestException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Unable to delete category.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  int _parseColor(dynamic value) {
+    if (value == null) {
+      return 0xFF757575;
+    }
+
+    if (value is int) {
+      return value;
+    }
+
+    final stringValue = value.toString();
+
+    if (stringValue.startsWith('0x')) {
+      return int.tryParse(stringValue) ?? 0xFF757575;
+    }
+
+    return int.tryParse(stringValue, radix: 16) ?? 0xFF757575;
+  }
+
+  void _showError(String message) {
+    Get.snackbar(
+      'Error',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 }
+

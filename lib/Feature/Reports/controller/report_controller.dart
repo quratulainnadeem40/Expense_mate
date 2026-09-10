@@ -3,13 +3,10 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 
 class ReportController extends GetxController {
-  // Direct Get.find usage to prevent instance collisions
-  TransactionsController get _txController => Get.find<TransactionsController>();
+  late final TransactionsController _txController;
 
-  // Safe getter for reactive transactions
   RxList<TransactionModel> get transactions => _txController.transactions;
 
-  // Dynamic getters for chart & summary calculations
   double get totalIncome => transactions
       .where((tx) => tx.isIncome)
       .fold(0.0, (sum, item) => sum + item.amount);
@@ -23,6 +20,17 @@ class ReportController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _txController.loadTransactions();
+
+    if (Get.isRegistered<TransactionsController>()) {
+      _txController = Get.find<TransactionsController>();
+      _txController.loadTransactions();
+    } else {
+      Get.lazyPut<TransactionsController>(
+        () => TransactionsController(),
+      );
+
+      _txController = Get.find<TransactionsController>();
+      _txController.loadTransactions();
+    }
   }
 }

@@ -1,8 +1,8 @@
+
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 
 import '../controller/settings_controller.dart';
 
@@ -21,7 +21,6 @@ class SettingsView extends GetView<SettingsController> {
           style: AppTextStyles.headingMedium(isDark),
         ),
       ),
-
       body: Obx(
         () => ListView(
           padding: const EdgeInsets.all(16),
@@ -96,7 +95,6 @@ class SettingsView extends GetView<SettingsController> {
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
-
                   leading: Container(
                     width: 42,
                     height: 42,
@@ -111,19 +109,16 @@ class SettingsView extends GetView<SettingsController> {
                       color: AppColors.primary,
                     ),
                   ),
-
                   title: Text(
                     'Default Currency',
                     style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   subtitle: Text(
                     'Choose the currency used by the app',
                     style: AppTextStyles.bodyMedium(isDark),
                   ),
-
                   trailing: DropdownButton<String>(
                     value: controller.selectedCurrency.value,
                     underline: const SizedBox(),
@@ -143,7 +138,7 @@ class SettingsView extends GetView<SettingsController> {
                       DropdownMenuItem(
                         value: 'GBP',
                         child: Text('GBP'),
-                    ),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value != null) {
@@ -174,7 +169,6 @@ class SettingsView extends GetView<SettingsController> {
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
-
                   secondary: Container(
                     width: 42,
                     height: 42,
@@ -189,134 +183,126 @@ class SettingsView extends GetView<SettingsController> {
                       color: AppColors.primary,
                     ),
                   ),
-
                   title: Text(
                     'Bill Notifications',
                     style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   subtitle: Text(
                     'Receive reminders for upcoming bills',
                     style: AppTextStyles.bodyMedium(isDark),
                   ),
-
                   value: controller.notificationsEnabled.value,
-
-                  onChanged:
-                      controller.toggleNotifications,
+                  onChanged: controller.toggleNotifications,
                 ),
               ],
             ),
 
             const SizedBox(height: 24),
 
-const SizedBox(height: 24),
+            // ==================================================
+            // ACCOUNT
+            // ==================================================
 
-// ==================================================
-// ACCOUNT
-// ==================================================
+            _SectionHeader(
+              title: 'Account',
+              isDark: isDark,
+            ),
 
-_SectionHeader(
-  title: 'Account',
-  isDark: isDark,
-),
+            const SizedBox(height: 10),
 
-const SizedBox(height: 10),
+            _SettingsCard(
+              children: [
+                // ==================================================
+                // LOGOUT
+                // ==================================================
 
-_SettingsCard(
-  children: [
-    // LOGOUT
-    ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-      ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ),
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(
+                        alpha: 0.10,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  title: Text(
+                    'Logout',
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Sign out from your ExpenseMate account',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                  ),
+                  onTap: () {
+                    _showLogoutDialog(context);
+                  },
+                ),
 
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(
-            alpha: 0.10,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      child: const Icon(
-          Icons.logout_rounded,
-          color: AppColors.primary,
-        ),
-      ),
+                const Divider(height: 1),
 
-      title: Text(
-        'Logout',
-        style: AppTextStyles.bodyLarge(isDark).copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+                // ==================================================
+                // DELETE ACCOUNT
+                // ==================================================
 
-      subtitle: Text(
-        'Sign out from your ExpenseMate account',
-        style: AppTextStyles.bodyMedium(isDark),
-      ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ),
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.expenseRed.withValues(
+                        alpha: 0.10,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.delete_forever_rounded,
+                      color: AppColors.expenseRed,
+                    ),
+                  ),
+                  title: Text(
+                    'Delete Account',
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.expenseRed,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Permanently delete your account and data',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                  ),
+                  onTap: () {
+                    _showDeleteAccountDialog(context);
+                  },
+                ),
+              ],
+            ),
 
-      trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
-        size: 16,
-      ),
+            const SizedBox(height: 24),
 
-      onTap: () {
-        _showLogoutDialog(context);
-      },
-    ),
-
-    const Divider(height: 1),
-
-    // DELETE ACCOUNT
-    ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-      ),
-
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: AppColors.expenseRed.withValues(
-            alpha: 0.10,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(
-          Icons.delete_forever_rounded,
-          color: AppColors.expenseRed,
-        ),
-      ),
-
-      title: Text(
-        'Delete Account',
-        style: AppTextStyles.bodyLarge(isDark).copyWith(
-          fontWeight: FontWeight.w600,
-          color: AppColors.expenseRed,
-        ),
-      ),
-
-      subtitle: Text(
-        'Permanently delete your account and data',
-        style: AppTextStyles.bodyMedium(isDark),
-      ),
-
-      trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
-        size: 16,
-      ),
-
-      onTap: () {
-        _showDeleteAccountDialog(context);
-      },
-    ),
-  ],
-),
             // ==================================================
             // DATA
             // ==================================================
@@ -334,7 +320,6 @@ _SettingsCard(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
-
                   leading: Container(
                     width: 42,
                     height: 42,
@@ -349,24 +334,20 @@ _SettingsCard(
                       color: AppColors.expenseRed,
                     ),
                   ),
-
                   title: Text(
                     'Reset Settings',
                     style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   subtitle: Text(
                     'Restore settings to their defaults',
                     style: AppTextStyles.bodyMedium(isDark),
                   ),
-
                   trailing: const Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 16,
                   ),
-
                   onTap: () {
                     _showResetDialog(context);
                   },
@@ -393,7 +374,6 @@ _SettingsCard(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                   ),
-
                   leading: Container(
                     width: 42,
                     height: 42,
@@ -408,14 +388,12 @@ _SettingsCard(
                       color: AppColors.primary,
                     ),
                   ),
-
                   title: Text(
                     'ExpenseMate',
                     style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   subtitle: Text(
                     'Expense management made simple',
                     style: AppTextStyles.bodyMedium(isDark),
@@ -457,12 +435,10 @@ _SettingsCard(
     Get.dialog(
       AlertDialog(
         title: const Text('Reset Settings?'),
-
         content: const Text(
           'This will restore your app settings to their default values. '
           'Your wallets, bills and transactions will not be deleted.',
         ),
-
         actions: [
           TextButton(
             onPressed: () {
@@ -470,11 +446,11 @@ _SettingsCard(
             },
             child: const Text('Cancel'),
           ),
-
           TextButton(
             onPressed: () async {
-              await controller.resetSettings();
               Get.back();
+
+              await controller.resetSettings();
 
               Get.snackbar(
                 'Settings Reset',
@@ -493,84 +469,78 @@ _SettingsCard(
       ),
     );
   }
-}
 
-// ============================================================
-// LOGOUT DIALOG
-// ============================================================
+  // ============================================================
+  // LOGOUT DIALOG
+  // ============================================================
 
-void _showLogoutDialog(BuildContext context) {
-  Get.dialog(
-    AlertDialog(
-      title: const Text('Logout?'),
-
-      content: const Text(
-        'Are you sure you want to logout from your ExpenseMate account?',
-      ),
-
-      actions: [
-        TextButton(
-          onPressed: () {
-            Get.back();
-          },
-          child: const Text('Cancel'),
+  void _showLogoutDialog(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Logout?'),
+        content: const Text(
+          'Are you sure you want to logout from your ExpenseMate account?',
         ),
-
-        TextButton(
-          onPressed: () async {
-            Get.back();
-           await Get.find<SettingsController>().logout();
-          },
-          child: const Text(
-            'Logout',
-            style: TextStyle(
-              color: AppColors.expenseRed,
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              await controller.logout();
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                color: AppColors.expenseRed,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-// ============================================================
-// DELETE ACCOUNT DIALOG
-// ============================================================
-
-void _showDeleteAccountDialog(BuildContext context) {
-  Get.dialog(
-    AlertDialog(
-      title: const Text('Delete Account?'),
-
-      content: const Text(
-        'This action is permanent. Your ExpenseMate account '
-        'and associated account data will be deleted. '
-        'You will not be able to recover your account.',
+        ],
       ),
+    );
+  }
 
-      actions: [
-        TextButton(
-          onPressed: () {
-            Get.back();
-          },
-          child: const Text('Cancel'),
+  // ============================================================
+  // DELETE ACCOUNT DIALOG
+  // ============================================================
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'This action is permanent. Your ExpenseMate account '
+          'and associated account data will be deleted. '
+          'You will not be able to recover your account.',
         ),
-
-        TextButton(
-          onPressed: () async {
-            Get.back();
-            await Get.find<SettingsController>().deleteAccount();
-          },
-          child: const Text(
-            'Delete Account',
-            style: TextStyle(
-              color: AppColors.expenseRed,
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              await controller.deleteAccount();
+            },
+            child: const Text(
+              'Delete Account',
+              style: TextStyle(
+                color: AppColors.expenseRed,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 // ============================================================
