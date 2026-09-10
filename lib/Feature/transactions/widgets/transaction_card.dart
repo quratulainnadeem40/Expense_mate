@@ -1,8 +1,9 @@
 
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/utils/formatters.dart';
-import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
+import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -23,6 +24,21 @@ class TransactionCard extends StatelessWidget {
       binding: ExpenseBinding(),
       arguments: transaction,
     );
+  }
+
+  String _getCategoryName() {
+    if (!Get.isRegistered<CategoriesController>()) {
+      return transaction.categoryId;
+    }
+
+    final categoriesController =
+        Get.find<CategoriesController>();
+
+    final category = categoriesController.categoryList.firstWhereOrNull(
+      (category) => category.id == transaction.categoryId,
+    );
+
+    return category?.name ?? transaction.categoryId;
   }
 
   @override
@@ -58,7 +74,9 @@ class TransactionCard extends StatelessWidget {
                           : Colors.red,
                     ),
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment:
@@ -69,9 +87,11 @@ class TransactionCard extends StatelessWidget {
                           style: AppTextStyles.bodyLarge(isDark),
                           overflow: TextOverflow.ellipsis,
                         ),
+
                         const SizedBox(height: 2),
+
                         Text(
-                          '${transaction.category} • ${Formatters.formatDate(transaction.date)}',
+                          '${_getCategoryName()} • ${Formatters.formatDate(transaction.date)}',
                           style: AppTextStyles.caption(isDark),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -81,7 +101,9 @@ class TransactionCard extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(width: 8),
+
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -95,7 +117,9 @@ class TransactionCard extends StatelessWidget {
                     fontSize: 15,
                   ),
                 ),
+
                 const SizedBox(width: 6),
+
                 Icon(
                   Icons.edit_outlined,
                   size: 18,
