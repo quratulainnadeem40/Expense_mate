@@ -4,6 +4,7 @@ import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -26,6 +27,48 @@ class TransactionCard extends StatelessWidget {
     );
   }
 
+  void _deleteTransaction() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: const Text(
+          'Are you sure you want to delete this transaction?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+
+              final controller =
+                  Get.find<TransactionsController>();
+
+              final success =
+                  await controller.deleteTransaction(
+                transaction.id,
+              );
+
+              if (success) {
+                Get.snackbar(
+                  'Deleted',
+                  'Transaction deleted successfully.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getCategoryName() {
     if (!Get.isRegistered<CategoriesController>()) {
       return transaction.categoryId;
@@ -34,7 +77,8 @@ class TransactionCard extends StatelessWidget {
     final categoriesController =
         Get.find<CategoriesController>();
 
-    final category = categoriesController.categoryList.firstWhereOrNull(
+    final category =
+        categoriesController.categoryList.firstWhereOrNull(
       (category) => category.id == transaction.categoryId,
     );
 
@@ -118,12 +162,57 @@ class TransactionCard extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
 
-                Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert,
+                    size: 20,
+                    color:
+                        Theme.of(context).colorScheme.primary,
+                  ),
+                  padding: EdgeInsets.zero,
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _editTransaction();
+                    } else if (value == 'delete') {
+                      _deleteTransaction();
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: Colors.red,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
