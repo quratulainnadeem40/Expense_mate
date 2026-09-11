@@ -27,6 +27,7 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  icons_launcher: ^3.1.0
 
 flutter:
   uses-material-design: true
@@ -35,7 +36,3 @@ flutter:
     - assets/expense_mate.png
     - assets/logo.png
 
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/expense_mate.png"

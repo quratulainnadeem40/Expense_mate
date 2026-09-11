@@ -1,4 +1,3 @@
-
 class CategoryModel {
   final String id;
   final String name;
@@ -36,4 +35,3 @@ class CategoryModel {
         type: json['type']?.toString().toLowerCase() ?? 'expense',
       );
 }
-
