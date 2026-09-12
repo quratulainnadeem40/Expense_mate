@@ -31,11 +31,11 @@ class CategoriesController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _supabase
-          .from('categories')
-          .select('*, expenses(count)')
-          .eq('user_id', user.id)
-          .order('name');
+    final response = await _supabase
+    .from('categories')
+    .select('*, transactions(count)')
+    .eq('user_id', user.id)
+    .order('name');
 
       final data = response as List;
       final Map<String, int> countsMap = {};
@@ -44,9 +44,10 @@ class CategoriesController extends GetxController {
         final String catId = item['id'].toString();
 
         int count = 0;
-        if (item['expenses'] != null && (item['expenses'] as List).isNotEmpty) {
-          count = item['expenses'][0]['count'] ?? 0;
-        }
+       if (item['transactions'] != null &&
+    (item['transactions'] as List).isNotEmpty) {
+  count = item['transactions'][0]['count'] ?? 0;
+}
         countsMap[catId] = count;
 
         return CategoryModel(
