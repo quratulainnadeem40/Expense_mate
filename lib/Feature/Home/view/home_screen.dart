@@ -225,9 +225,8 @@ class HomeScreen extends StatelessWidget {
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.settings_rounded,
-                          title: 'Settings',
-                          subtitle:
-                              'Manage app preferences and settings',
+                         title: 'Profile',
+subtitle: 'Manage your profile and account settings',
                           onTap: () {
                             Get.back();
                             Get.to(
