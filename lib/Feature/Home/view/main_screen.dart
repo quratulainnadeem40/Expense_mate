@@ -1,3 +1,4 @@
+import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,7 +8,6 @@ import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 
 // Transactions
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
-import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 
 // Reports
 import 'package:expense_mate/Feature/Reports/view/report_view.dart';
@@ -15,18 +15,6 @@ import 'package:expense_mate/Feature/Reports/view/report_view.dart';
 // Expense
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
-
-// Wallets
-import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
-import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
-
-// Bills & Reminders
-import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
-import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
-
-// Budget
-import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
-import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 
 // Home
 import '../controller/home_controller.dart';
@@ -76,6 +64,10 @@ class MainScreen extends StatelessWidget {
         height: 56,
         child: FloatingActionButton(
           onPressed: () {
+            // Agar Drawer open hai to usay close karein pehle
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
             Get.to(
               () => const AddExpenseView(),
               binding: ExpenseBinding(),
@@ -217,6 +209,10 @@ class MainScreen extends StatelessWidget {
 
     return InkWell(
       onTap: () {
+        // Safe Pop: Agar Drawer khula hai toh Navigator stack seDrawer close hoga
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
         controller.changePage(index);
       },
 
