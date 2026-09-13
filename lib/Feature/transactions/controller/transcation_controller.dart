@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,12 +8,40 @@ class TransactionsController extends GetxController {
   final transactions = <TransactionModel>[].obs;
   final isLoading = false.obs;
 
+  // Search related states
+  final isSearching = false.obs;
+  final searchQuery = ''.obs;
+
   User? get currentUser => _supabase.auth.currentUser;
 
   @override
   void onInit() {
     super.onInit();
     loadTransactions();
+  }
+
+  // ============================================================
+  // SEARCH & TOGGLE
+  // ============================================================
+
+  void toggleSearch() {
+    isSearching.value = !isSearching.value;
+    if (!isSearching.value) {
+      searchQuery.value = '';
+    }
+  }
+
+  // Filter transactions based on title or note
+  List<TransactionModel> get filteredTransactions {
+    if (searchQuery.value.isEmpty) {
+      return transactions;
+    }
+    final query = searchQuery.value.toLowerCase();
+    return transactions.where((tx) {
+      final titleMatch = tx.title.toLowerCase().contains(query);
+      final noteMatch = tx.note?.toLowerCase().contains(query) ?? false;
+      return titleMatch || noteMatch;
+    }).toList();
   }
 
   // ============================================================
@@ -238,6 +265,10 @@ class TransactionsController extends GetxController {
     return totalIncome - totalExpense;
   }
 
+  void _searchError(String message) {
+    _showError(message);
+  }
+
   void _showError(String message) {
     Get.snackbar(
       'Error',
@@ -246,4 +277,3 @@ class TransactionsController extends GetxController {
     );
   }
 }
-

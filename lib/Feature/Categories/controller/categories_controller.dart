@@ -18,7 +18,6 @@ class CategoriesController extends GetxController {
     fetchCategories();
   }
 
-  // Categories & Transaction Counts Fetch
   Future<void> fetchCategories() async {
     final user = currentUser;
 
@@ -31,34 +30,53 @@ class CategoriesController extends GetxController {
     try {
       isLoading.value = true;
 
-    final response = await _supabase
-    .from('categories')
-    .select('*, transactions(count)')
-    .eq('user_id', user.id)
-    .order('name');
+      final response = await _supabase
+          .from('categories')
+          .select('*, transactions(count)')
+          .eq('user_id', user.id)
+          .order('name');
 
       final data = response as List;
       final Map<String, int> countsMap = {};
+      final seenNames = <String>{};
+      final categories = <CategoryModel>[];
 
-      final categories = data.map((item) {
+      for (final item in data) {
+        final rawName = item['name']?.toString() ?? '';
+        
+        // Normalize aggressively: trim whitespace, convert to lowercase, 
+        // and collapse multiple internal spaces into one
+        final normalizedName = rawName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+        // Skip if this normalized name has already been processed
+        if (seenNames.contains(normalizedName)) {
+          continue;
+        }
+        seenNames.add(normalizedName);
+
         final String catId = item['id'].toString();
-
         int count = 0;
-       if (item['transactions'] != null &&
-    (item['transactions'] as List).isNotEmpty) {
-  count = item['transactions'][0]['count'] ?? 0;
-}
+
+        if (item['transactions'] != null &&
+            (item['transactions'] as List).isNotEmpty) {
+          count = item['transactions'][0]['count'] ?? 0;
+        }
+
         countsMap[catId] = count;
 
-        return CategoryModel(
-          id: catId,
-          name: item['name'].toString(),
-          icon: item['icon']?.toString() ?? 'category',
-          colorValue: _parseColor(item['color']),
-          isDefault: false,
-          type: item['type']?.toString().toLowerCase() ?? 'expense',
+        categories.add(
+          CategoryModel(
+            id: catId,
+            name: rawName, // Keep original casing/formatting for display
+            icon: item['icon']?.toString() ?? 'category',
+            colorValue: _parseColor(item['color']),
+            isDefault: false,
+            type: item['type']?.toString().toLowerCase() ?? 'expense',
+          ),
         );
-      }).toList();
+      }
+
+      categories.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
       categoryCounts.assignAll(countsMap);
       categoryList.assignAll(categories);
@@ -75,7 +93,6 @@ class CategoriesController extends GetxController {
     return categoryCounts[categoryId] ?? 0;
   }
 
-  // Add Category (Fixed Foreign Key / Insert Error)
   Future<void> addCategory(CategoryModel category) async {
     final user = currentUser;
 
@@ -87,24 +104,26 @@ class CategoriesController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Single insert query without schema join error
       final response = await _supabase
           .from('categories')
           .insert({
             'user_id': user.id,
             'name': category.name,
             'icon': category.icon,
-            'color': category.colorValue.toRadixString(16).padLeft(8, '0'),
+            'color': category.colorValue
+                .toRadixString(16)
+                .padLeft(8, '0'),
             'type': category.type,
           })
           .select()
           .single();
 
       final String newId = response['id'].toString();
+
       final newCategory = CategoryModel(
         id: newId,
-        name: response['name'].toString(),
-        icon: response['icon']?.toString() ?? 'category',
+        name: response['name']?.toString() ?? category.name,
+        icon: response['icon']?.toString() ?? category.icon,
         colorValue: _parseColor(response['color']),
         isDefault: false,
         type: response['type']?.toString().toLowerCase() ?? 'expense',
@@ -112,7 +131,8 @@ class CategoriesController extends GetxController {
 
       categoryCounts[newId] = 0;
       categoryList.add(newCategory);
-      categoryList.sort((a, b) => a.name.compareTo(b.name));
+
+      categoryList.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
       if (Get.isDialogOpen ?? false) {
         Get.back();
@@ -132,7 +152,6 @@ class CategoriesController extends GetxController {
     }
   }
 
-  // Delete Category
   Future<void> deleteCategory(String id) async {
     final user = currentUser;
 
@@ -150,7 +169,7 @@ class CategoriesController extends GetxController {
           .eq('id', id)
           .eq('user_id', user.id);
 
-      categoryList.removeWhere((cat) => cat.id == id);
+      categoryList.removeWhere((category) => category.id == id);
       categoryCounts.remove(id);
 
       Get.snackbar(
@@ -168,14 +187,23 @@ class CategoriesController extends GetxController {
   }
 
   int _parseColor(dynamic value) {
-    if (value == null) return 0xFF757575;
-    if (value is int) return value;
+    if (value == null) {
+      return 0xFF757575;
+    }
 
-    String hex = value.toString().replaceAll('#', '').trim();
+    if (value is int) {
+      return value;
+    }
+
+    String hex = value
+        .toString()
+        .replaceAll('#', '')
+        .trim();
 
     if (hex.startsWith('0x')) {
       hex = hex.substring(2);
     }
+
     if (hex.length == 6) {
       hex = 'FF$hex';
     }

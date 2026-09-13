@@ -76,7 +76,7 @@ GetPage(
 ),
     GetPage(
       name: AppRoutes.transactions,
-      page: () => const TransactionsView(),
+      page: () =>  TransactionsView(),
       binding: TransactionsBinding(),
     ),
 
