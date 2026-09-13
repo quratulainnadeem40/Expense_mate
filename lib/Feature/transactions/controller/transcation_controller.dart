@@ -86,7 +86,7 @@ class TransactionsController extends GetxController {
   }
 
   // ============================================================
-  // ADD TRANSACTION
+  // ADD TRANSACTION (FIXED FOR UUID & TYPE)
   // ============================================================
 
   Future<bool> addTransaction(
@@ -99,30 +99,30 @@ class TransactionsController extends GetxController {
       return false;
     }
 
-    if (transaction.walletId.isEmpty) {
-      _showError('Please select a wallet.');
-      return false;
-    }
-
-    if (transaction.categoryId.isEmpty) {
-      _showError('Please select a category.');
-      return false;
-    }
-
     try {
       isLoading.value = true;
 
-      await _supabase.from('transactions').insert({
+      // Dynamic Map to prevent UUID syntax errors for empty fields
+      final Map<String, dynamic> insertData = {
         'user_id': user.id,
-        'wallet_id': transaction.walletId,
-        'category_id': transaction.categoryId,
         'title': transaction.title,
         'amount': transaction.amount,
-        'type': transaction.type,
+        'type': transaction.isIncome ? 'income' : 'expense',
         'transaction_date':
-            transaction.transactionDate.toIso8601String(),
+            (transaction.transactionDate ?? DateTime.now()).toIso8601String(),
         'note': transaction.note,
-      });
+      };
+
+      // Only add foreign keys if valid UUID strings exist
+      if (transaction.walletId.isNotEmpty) {
+        insertData['wallet_id'] = transaction.walletId;
+      }
+
+      if (transaction.categoryId.isNotEmpty) {
+        insertData['category_id'] = transaction.categoryId;
+      }
+
+      await _supabase.from('transactions').insert(insertData);
 
       await loadTransactions();
 
@@ -157,31 +157,28 @@ class TransactionsController extends GetxController {
       return false;
     }
 
-    if (transaction.walletId.isEmpty) {
-      _showError('Please select a wallet.');
-      return false;
-    }
-
-    if (transaction.categoryId.isEmpty) {
-      _showError('Please select a category.');
-      return false;
-    }
-
     try {
       isLoading.value = true;
 
+      final Map<String, dynamic> updateData = {
+        'title': transaction.title,
+        'amount': transaction.amount,
+        'type': transaction.isIncome ? 'income' : 'expense',
+        'transaction_date': transaction.transactionDate.toIso8601String(),
+        'note': transaction.note,
+      };
+
+      if (transaction.walletId.isNotEmpty) {
+        updateData['wallet_id'] = transaction.walletId;
+      }
+
+      if (transaction.categoryId.isNotEmpty) {
+        updateData['category_id'] = transaction.categoryId;
+      }
+
       await _supabase
           .from('transactions')
-          .update({
-            'wallet_id': transaction.walletId,
-            'category_id': transaction.categoryId,
-            'title': transaction.title,
-            'amount': transaction.amount,
-            'type': transaction.type,
-            'transaction_date':
-                transaction.transactionDate.toIso8601String(),
-            'note': transaction.note,
-          })
+          .update(updateData)
           .eq('id', transaction.id)
           .eq('user_id', user.id);
 

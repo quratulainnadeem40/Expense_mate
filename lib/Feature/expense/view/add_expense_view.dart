@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -16,12 +15,12 @@ class AddExpenseView extends GetView<ExpenseController> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Obx(
-  () => Text(
-    controller.isEditMode.value
-        ? 'Edit Transaction'
-        : 'Add Transaction',
-  ),
-),
+          () => Text(
+            controller.isEditMode.value
+                ? 'Edit Transaction'
+                : 'Add Transaction',
+          ),
+        ),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -196,36 +195,42 @@ class AddExpenseView extends GetView<ExpenseController> {
                           value: currentList.any(
                             (category) =>
                                 category.id ==
-                                controller
-                                    .selectedCategoryId.value,
+                                controller.selectedCategoryId.value,
                           )
                               ? controller.selectedCategoryId.value
                               : null,
+                          selectedItemBuilder: (BuildContext context) {
+                            return currentList.map<Widget>((category) {
+                              return Text(
+                                category.name,
+                                style: TextStyle(
+                                  color: theme.textTheme.bodyLarge?.color,
+                                ),
+                              );
+                            }).toList();
+                          },
                           dropdownColor: theme.cardColor,
                           icon: Icon(
                             Icons.arrow_drop_down,
-                            color: theme.iconTheme.color ??
-                                Colors.grey,
+                            color: theme.iconTheme.color ?? Colors.grey,
                           ),
                           style: TextStyle(
-                            color:
-                                theme.textTheme.bodyLarge?.color,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                           decoration: InputDecoration(
-                            enabledBorder:
-                                UnderlineInputBorder(
+                            enabledBorder: UnderlineInputBorder(
                               borderSide: BorderSide(
                                 color: theme.dividerColor,
                               ),
                             ),
-                            focusedBorder:
-                                const UnderlineInputBorder(
+                            focusedBorder: const UnderlineInputBorder(
                               borderSide: BorderSide(
                                 color: Color(0xFF2EA44F),
                               ),
                             ),
                           ),
-                          items: currentList.map<DropdownMenuItem<String>>(
+                          items: currentList
+                              .map<DropdownMenuItem<String>>(
                             (category) {
                               return DropdownMenuItem<String>(
                                 value: category.id,
@@ -242,8 +247,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                           ).toList(),
                           onChanged: (value) {
                             if (value != null) {
-                              controller.selectedCategoryId.value =
-                                  value;
+                              controller.selectedCategoryId.value = value;
                             }
                           },
                         );
@@ -287,25 +291,41 @@ class AddExpenseView extends GetView<ExpenseController> {
                           )
                               ? controller.selectedWalletId.value
                               : null,
+                          selectedItemBuilder: (BuildContext context) {
+                            return wallets.map<Widget>((wallet) {
+                              return Row(
+                                children: [
+                                  Icon(
+                                    _walletIcon(wallet.type),
+                                    size: 20,
+                                    color: const Color(0xFF2EA44F),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    wallet.name,
+                                    style: TextStyle(
+                                      color: theme.textTheme.bodyLarge?.color,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList();
+                          },
                           dropdownColor: theme.cardColor,
                           icon: Icon(
                             Icons.arrow_drop_down,
-                            color: theme.iconTheme.color ??
-                                Colors.grey,
+                            color: theme.iconTheme.color ?? Colors.grey,
                           ),
                           style: TextStyle(
-                            color:
-                                theme.textTheme.bodyLarge?.color,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                           decoration: InputDecoration(
-                            enabledBorder:
-                                UnderlineInputBorder(
+                            enabledBorder: UnderlineInputBorder(
                               borderSide: BorderSide(
                                 color: theme.dividerColor,
                               ),
                             ),
-                            focusedBorder:
-                                const UnderlineInputBorder(
+                            focusedBorder: const UnderlineInputBorder(
                               borderSide: BorderSide(
                                 color: Color(0xFF2EA44F),
                               ),
@@ -340,8 +360,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                           ).toList(),
                           onChanged: (value) {
                             if (value != null) {
-                              controller.selectedWalletId.value =
-                                  value;
+                              controller.selectedWalletId.value = value;
                             }
                           },
                         );
@@ -364,22 +383,19 @@ class AddExpenseView extends GetView<ExpenseController> {
                       TextField(
                         controller: controller.noteController,
                         style: TextStyle(
-                          color:
-                              theme.textTheme.bodyLarge?.color,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                         decoration: InputDecoration(
                           hintText: 'e.g., Lunch with team',
                           hintStyle: TextStyle(
                             color: theme.hintColor,
                           ),
-                          enabledBorder:
-                              UnderlineInputBorder(
+                          enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
                               color: theme.dividerColor,
                             ),
                           ),
-                          focusedBorder:
-                              const UnderlineInputBorder(
+                          focusedBorder: const UnderlineInputBorder(
                             borderSide: BorderSide(
                               color: Color(0xFF2EA44F),
                             ),
@@ -401,12 +417,10 @@ class AddExpenseView extends GetView<ExpenseController> {
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFF2EA44F),
+                      backgroundColor: const Color(0xFF2EA44F),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     onPressed: controller.isLoading.value
@@ -416,22 +430,21 @@ class AddExpenseView extends GetView<ExpenseController> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child:
-                                CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               strokeWidth: 2,
                               color: Colors.white,
                             ),
                           )
-                        :  Obx(
-    () => Text(
-      controller.isEditMode.value ? 'Update' : 'Save',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
+                        : Obx(
+                            () => Text(
+                              controller.isEditMode.value ? 'Update' : 'Save',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -484,4 +497,3 @@ class AddExpenseView extends GetView<ExpenseController> {
     }
   }
 }
-

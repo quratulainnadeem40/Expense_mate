@@ -38,7 +38,7 @@ class MainScreen extends StatelessWidget {
       const HomeScreen(),
        TransactionsView(),
       const CategoriesView(),
-      const ReportsView(),
+       ReportsView(),
     ];
 
     return Scaffold(
