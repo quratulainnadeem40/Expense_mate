@@ -82,7 +82,7 @@ GetPage(
 
     GetPage(
       name: AppRoutes.categories,
-      page: () => const CategoriesView(),
+      page: () => CategoriesView(),
       binding: CategoriesBinding(),
     ),
 

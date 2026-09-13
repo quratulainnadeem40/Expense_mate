@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,7 +32,7 @@ class ExpenseController extends GetxController {
   final noteController = TextEditingController();
 
   // ------------------------------------------------------------
-  // SELECTIONS
+  // SELECTIONS (Initially empty)
   // ------------------------------------------------------------
 
   final selectedCategoryId = ''.obs;
@@ -74,104 +73,38 @@ class ExpenseController extends GetxController {
   // INIT
   // ------------------------------------------------------------
 
-@override
-void onInit() {
-  super.onInit();
+  @override
+  void onInit() {
+    super.onInit();
 
-  if (!Get.isRegistered<CategoriesController>()) {
-    Get.put(CategoriesController());
-  }
-
-  if (!Get.isRegistered<WalletsController>()) {
-    Get.put(WalletsController());
-  }
-
-  categoriesController = Get.find<CategoriesController>();
-  walletsController = Get.find<WalletsController>();
-
-  _setDefaultSelections();
-
-  // ------------------------------------------------------------
-  // CHECK IF THIS IS EDIT MODE
-  // ------------------------------------------------------------
-
-  final argument = Get.arguments;
-
-  if (argument is TransactionModel) {
-    loadTransactionForEdit(argument);
-  }
-}
-
-
-
-  // ------------------------------------------------------------
-  // DEFAULT SELECTIONS
-  // ------------------------------------------------------------
-
-  void _setDefaultSelections() {
-    ever(
-      categoriesController.categoryList,
-      (_) => _updateDefaultCategory(),
-    );
-
-    ever(
-      walletsController.wallets,
-      (_) => _updateDefaultWallet(),
-    );
-
-    _updateDefaultCategory();
-    _updateDefaultWallet();
-  }
-
-  void _updateDefaultCategory() {
-    final list = isExpense.value
-        ? expenseCategories
-        : incomeCategories;
-
-    if (list.isEmpty) {
-      if (!isEditMode.value) {
-        selectedCategoryId.value = '';
-      }
-      return;
+    if (!Get.isRegistered<CategoriesController>()) {
+      Get.put(CategoriesController());
     }
 
-    final exists = list.any(
-      (category) => category.id == selectedCategoryId.value,
-    );
-
-    if (!exists && !isEditMode.value) {
-      selectedCategoryId.value = list.first.id;
-    }
-  }
-
-  void _updateDefaultWallet() {
-    if (walletsController.wallets.isEmpty) {
-      if (!isEditMode.value) {
-        selectedWalletId.value = '';
-      }
-      return;
+    if (!Get.isRegistered<WalletsController>()) {
+      Get.put(WalletsController());
     }
 
-    final exists = walletsController.wallets.any(
-      (wallet) => wallet.id == selectedWalletId.value,
-    );
+    categoriesController = Get.find<CategoriesController>();
+    walletsController = Get.find<WalletsController>();
 
-    if (!exists && !isEditMode.value) {
-      selectedWalletId.value =
-          walletsController.wallets.first.id;
+    // CHECK IF THIS IS EDIT MODE
+    final argument = Get.arguments;
+
+    if (argument is TransactionModel) {
+      loadTransactionForEdit(argument);
     }
   }
 
   // ------------------------------------------------------------
-  // EXPENSE / INCOME
+  // EXPENSE / INCOME TOGGLE
   // ------------------------------------------------------------
 
   void toggleType(bool isExp) {
     isExpense.value = isExp;
 
     if (!isEditMode.value) {
-      selectedCategoryId.value = '';
-      _updateDefaultCategory();
+      selectedCategoryId.value = ''; // Reset category on type switch
     }
   }
 
@@ -179,27 +112,16 @@ void onInit() {
   // LOAD TRANSACTION FOR EDIT
   // ------------------------------------------------------------
 
-  void loadTransactionForEdit(
-    TransactionModel transaction,
-  ) {
+  void loadTransactionForEdit(TransactionModel transaction) {
     isEditMode.value = true;
-
     editingTransactionId = transaction.id;
 
-    amountController.text =
-        transaction.amount.toString();
+    amountController.text = transaction.amount.toString();
+    noteController.text = transaction.note ?? transaction.title;
 
-    noteController.text =
-        transaction.note ?? transaction.title;
-
-    isExpense.value =
-        transaction.type.toLowerCase() == 'expense';
-
-    selectedCategoryId.value =
-        transaction.categoryId;
-
-    selectedWalletId.value =
-        transaction.walletId;
+    isExpense.value = transaction.type.toLowerCase() == 'expense';
+    selectedCategoryId.value = transaction.categoryId;
+    selectedWalletId.value = transaction.walletId;
   }
 
   // ------------------------------------------------------------
@@ -214,14 +136,11 @@ void onInit() {
       return;
     }
 
-    final amountText =
-        amountController.text.trim();
-
-    final note =
-        noteController.text.trim();
+    final amountText = amountController.text.trim();
+    final note = noteController.text.trim();
 
     // ----------------------------------------------------------
-    // VALIDATION
+    // VALIDATIONS
     // ----------------------------------------------------------
 
     if (amountText.isEmpty) {
@@ -229,8 +148,7 @@ void onInit() {
       return;
     }
 
-    final amount =
-        double.tryParse(amountText);
+    final amount = double.tryParse(amountText);
 
     if (amount == null || amount <= 0) {
       _showError('Please enter a valid amount.');
@@ -238,160 +156,92 @@ void onInit() {
     }
 
     if (selectedCategoryId.value.isEmpty) {
-      _showError('Please select a category.');
+      _showError('No category selected');
       return;
     }
 
     if (selectedWalletId.value.isEmpty) {
-      _showError('Please select a wallet.');
+      _showError('No wallet selected');
       return;
     }
 
     // ----------------------------------------------------------
-    // SAVE
+    // SAVE PROCESS
     // ----------------------------------------------------------
 
     try {
       isLoading.value = true;
 
-      final wasEditing =
-          isEditMode.value;
+      final wasEditing = isEditMode.value;
+      final transactionId = editingTransactionId;
 
-      final transactionId =
-          editingTransactionId;
-
-      final transaction =
-          TransactionModel(
+      final transaction = TransactionModel(
         id: transactionId ?? '',
         userId: user.id,
-        walletId:
-            selectedWalletId.value,
-        categoryId:
-            selectedCategoryId.value,
+        walletId: selectedWalletId.value,
+        categoryId: selectedCategoryId.value,
         title: note.isEmpty
-            ? (isExpense.value
-                ? 'Expense'
-                : 'Income')
+            ? (isExpense.value ? 'Expense' : 'Income')
             : note,
         amount: amount,
-        type: isExpense.value
-            ? 'expense'
-            : 'income',
-        transactionDate:
-            DateTime.now(),
-        note: note.isEmpty
-            ? null
-            : note,
+        type: isExpense.value ? 'expense' : 'income',
+        transactionDate: DateTime.now(),
+        note: note.isEmpty ? null : note,
       );
 
-      // --------------------------------------------------------
-      // TRANSACTION CONTROLLER
-      // --------------------------------------------------------
-
-      if (!Get.isRegistered<
-          TransactionsController>()) {
-        Get.put(
-          TransactionsController(),
-        );
+      if (!Get.isRegistered<TransactionsController>()) {
+        Get.put(TransactionsController());
       }
 
-      final transactionsController =
-          Get.find<TransactionsController>();
-
-      // --------------------------------------------------------
-      // RESULT
-      // --------------------------------------------------------
+      final transactionsController = Get.find<TransactionsController>();
 
       bool success;
 
       if (wasEditing) {
-        if (transactionId == null ||
-            transactionId.isEmpty) {
-          _showError(
-            'Transaction ID is missing.',
-          );
+        if (transactionId == null || transactionId.isEmpty) {
+          _showError('Transaction ID is missing.');
           return;
         }
 
-        success =
-            await transactionsController
-                .updateTransaction(
+        success = await transactionsController.updateTransaction(
           transaction,
         );
       } else {
-        success =
-            await transactionsController
-                .addTransaction(
+        success = await transactionsController.addTransaction(
           transaction,
         );
       }
 
-      // --------------------------------------------------------
-      // DO NOT NAVIGATE IF SAVE FAILED
-      // --------------------------------------------------------
+      if (!success) return;
 
-      if (!success) {
-        return;
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().loadDashboardData();
       }
 
-      // --------------------------------------------------------
-      // REFRESH DASHBOARD
-      // --------------------------------------------------------
-
-      if (Get.isRegistered<
-          HomeController>()) {
-      Get.find<HomeController>().loadDashboardData();
-      }
-
-      // --------------------------------------------------------
-      // RESET FORM
-      // --------------------------------------------------------
-
-      amountController.clear();
-      noteController.clear();
-
-      isEditMode.value = false;
-      editingTransactionId = null;
-
-      // --------------------------------------------------------
-      // CLOSE ADD / EDIT SCREEN
-      // --------------------------------------------------------
-
+      resetForm();
       Get.back();
 
-      // --------------------------------------------------------
-      // SUCCESS MESSAGE
-      // --------------------------------------------------------
-
       Get.snackbar(
-        wasEditing
-            ? 'Updated'
-            : 'Success',
+        wasEditing ? 'Updated' : 'Success',
         wasEditing
             ? 'Transaction updated successfully.'
             : 'Transaction added successfully.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xFF2EA44F),
+        colorText: Colors.white,
         icon: const Icon(
           Icons.check_circle,
           color: Colors.white,
           size: 28,
         ),
-        snackPosition:
-            SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFF4CAF50),
-        colorText: Colors.white,
-        margin:
-            const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(15),
         borderRadius: 12,
-        duration:
-            const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
       );
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Failed to save transaction.',
-      );
+      _showError('Failed to save transaction.');
     } finally {
       isLoading.value = false;
     }
@@ -412,21 +262,23 @@ void onInit() {
 
     selectedCategoryId.value = '';
     selectedWalletId.value = '';
-
-    _updateDefaultCategory();
-    _updateDefaultWallet();
   }
 
   // ------------------------------------------------------------
-  // ERROR
+  // ERROR SNACKBAR
   // ------------------------------------------------------------
 
   void _showError(String message) {
     Get.snackbar(
       'Error',
       message,
-      snackPosition:
-          SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: const Color(0xFFE53935),
+      colorText: Colors.white,
+      icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
+      margin: const EdgeInsets.all(15),
+      borderRadius: 12,
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -441,4 +293,3 @@ void onInit() {
     super.onClose();
   }
 }
-
