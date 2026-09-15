@@ -75,6 +75,7 @@ class ExpenseController extends GetxController {
   // ------------------------------------------------------------
 
 @override
+@override
 void onInit() {
   super.onInit();
 
@@ -89,11 +90,10 @@ void onInit() {
   categoriesController = Get.find<CategoriesController>();
   walletsController = Get.find<WalletsController>();
 
-  _setDefaultSelections();
+  // Refresh latest categories from Supabase
+  categoriesController.fetchCategories();
 
-  // ------------------------------------------------------------
-  // CHECK IF THIS IS EDIT MODE
-  // ------------------------------------------------------------
+  _setDefaultSelections();
 
   final argument = Get.arguments;
 
@@ -101,7 +101,6 @@ void onInit() {
     loadTransactionForEdit(argument);
   }
 }
-
 
 
   // ------------------------------------------------------------
