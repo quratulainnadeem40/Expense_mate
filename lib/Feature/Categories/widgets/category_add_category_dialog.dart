@@ -158,38 +158,36 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
           child: const Text('Cancel'),
         ),
 
-        ElevatedButton(
-          onPressed: () async {
-            final String categoryName =
-                nameController.text.trim();
+       ElevatedButton(
+  onPressed: () async {
+    final String categoryName = nameController.text.trim();
 
-            if (categoryName.isEmpty) {
-              Get.snackbar(
-                'Required',
-                'Please enter category name.',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-              return;
-            }
+    if (categoryName.isEmpty) {
+      Get.snackbar(
+        'Required',
+        'Please enter category name.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
 
-            final newCategory = CategoryModel(
-              id: DateTime.now()
-                  .millisecondsSinceEpoch
-                  .toString(),
-              name: categoryName,
-              icon: selectedIcon,
-              colorValue: 0xFF2E7D32,
-              isDefault: false,
-            );
+    final newCategory = CategoryModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: categoryName,
+      icon: selectedIcon,
+      colorValue: 0xFF2E7D32,
+      isDefault: false,
+      type: 'expense',
+    );
 
-            await controller.addCategory(newCategory);
+    await controller.addCategory(newCategory);
 
-            // Do NOT call Get.back() here.
-            // Controller already closes the dialog
-            // after successful insertion.
-          },
-          child: const Text('Add'),
-        ),
+    if (Get.isDialogOpen == true) {
+      Get.back();
+    }
+  },
+  child: const Text('Add'),
+),
       ],
     );
   }

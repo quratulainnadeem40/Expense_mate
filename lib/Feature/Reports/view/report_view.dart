@@ -3,6 +3,7 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:get/get.dart';
 
 class ReportsView extends GetView<ReportController> {
@@ -14,7 +15,7 @@ class ReportsView extends GetView<ReportController> {
   Widget build(BuildContext context) {
     final controller = Get.find<ReportController>();
     final txController = Get.find<TransactionsController>();
-
+final categoriesController = Get.find<CategoriesController>();
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
@@ -303,13 +304,14 @@ class ReportsView extends GetView<ReportController> {
                               ),
                             ),
                             subtitle: Text(
-                              '${tx.category} • ${tx.date.day}/${tx.date.month}/${tx.date.year}',
-                              style: TextStyle(
-                                color: isDarkMode
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
-                              ),
-                            ),
+  '${_getCategoryName(tx.category, categoriesController)} • '
+  '${tx.date.day}/${tx.date.month}/${tx.date.year}',
+  style: TextStyle(
+    color: isDarkMode
+        ? Colors.grey.shade400
+        : Colors.grey.shade600,
+  ),
+),
                             trailing: Text(
                               '${isIncome ? '+' : '-'} PKR ${tx.amount.toStringAsFixed(2)}',
                               style: TextStyle(
@@ -335,6 +337,17 @@ class ReportsView extends GetView<ReportController> {
       ),
     );
   }
+
+  String _getCategoryName(
+  String categoryId,
+  CategoriesController categoriesController,
+) {
+  final category = categoriesController.categoryList.firstWhereOrNull(
+    (item) => item.id == categoryId,
+  );
+
+  return category?.name ?? categoryId;
+}
 
   void _showAddEntryBottomSheet(
     BuildContext context,

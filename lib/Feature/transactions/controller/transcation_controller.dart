@@ -6,11 +6,12 @@ class TransactionsController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   final transactions = <TransactionModel>[].obs;
-  final isLoading = false.obs;
 
-  // Search related states
-  final isSearching = false.obs;
-  final searchQuery = ''.obs;
+  final totalBalance = 0.0.obs;
+  final totalIncome = 0.0.obs;
+  final totalExpense = 0.0.obs;
+
+  final isLoading = false.obs;
 
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -18,30 +19,6 @@ class TransactionsController extends GetxController {
   void onInit() {
     super.onInit();
     loadTransactions();
-  }
-
-  // ============================================================
-  // SEARCH & TOGGLE
-  // ============================================================
-
-  void toggleSearch() {
-    isSearching.value = !isSearching.value;
-    if (!isSearching.value) {
-      searchQuery.value = '';
-    }
-  }
-
-  // Filter transactions based on title or note
-  List<TransactionModel> get filteredTransactions {
-    if (searchQuery.value.isEmpty) {
-      return transactions;
-    }
-    final query = searchQuery.value.toLowerCase();
-    return transactions.where((tx) {
-      final titleMatch = tx.title.toLowerCase().contains(query);
-      final noteMatch = tx.note?.toLowerCase().contains(query) ?? false;
-      return titleMatch || noteMatch;
-    }).toList();
   }
 
   // ============================================================
@@ -53,6 +30,7 @@ class TransactionsController extends GetxController {
 
     if (user == null) {
       transactions.clear();
+      _calculateTotals();
       return;
     }
 
@@ -67,15 +45,25 @@ class TransactionsController extends GetxController {
 
       final data = response as List;
 
-      final loadedTransactions = data
-          .map(
-            (item) => TransactionModel.fromMap(
-              Map<String, dynamic>.from(item),
-            ),
-          )
-          .toList();
+      final loadedTransactions = data.map((item) {
+        return TransactionModel(
+          id: item['id'].toString(),
+          userId: item['user_id'].toString(),
+          walletId: item['wallet_id'].toString(),
+          categoryId: item['category_id'].toString(),
+          title: item['title']?.toString() ?? '',
+          amount: (item['amount'] as num).toDouble(),
+          type: item['type'].toString(),
+          transactionDate: DateTime.parse(
+            item['transaction_date'].toString(),
+          ),
+          note: item['note']?.toString(),
+        );
+      }).toList();
 
       transactions.assignAll(loadedTransactions);
+
+      _calculateTotals();
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
@@ -86,12 +74,10 @@ class TransactionsController extends GetxController {
   }
 
   // ============================================================
-  // ADD TRANSACTION (FIXED FOR UUID & TYPE)
+  // ADD TRANSACTION
   // ============================================================
 
-  Future<bool> addTransaction(
-    TransactionModel transaction,
-  ) async {
+  Future<bool> addTransaction(TransactionModel transaction) async {
     final user = currentUser;
 
     if (user == null) {
@@ -102,29 +88,38 @@ class TransactionsController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Dynamic Map to prevent UUID syntax errors for empty fields
-      final Map<String, dynamic> insertData = {
-        'user_id': user.id,
-        'title': transaction.title,
-        'amount': transaction.amount,
-        'type': transaction.isIncome ? 'income' : 'expense',
-        'transaction_date':
-            (transaction.transactionDate ?? DateTime.now()).toIso8601String(),
-        'note': transaction.note,
-      };
+      final response = await _supabase
+          .from('transactions')
+          .insert({
+            'user_id': user.id,
+            'wallet_id': transaction.walletId,
+            'category_id': transaction.categoryId,
+            'title': transaction.title,
+            'amount': transaction.amount,
+            'type': transaction.type,
+            'transaction_date':
+                transaction.transactionDate.toIso8601String(),
+            'note': transaction.note,
+          })
+          .select()
+          .single();
 
-      // Only add foreign keys if valid UUID strings exist
-      if (transaction.walletId.isNotEmpty) {
-        insertData['wallet_id'] = transaction.walletId;
-      }
+      final addedTransaction = TransactionModel(
+        id: response['id'].toString(),
+        userId: response['user_id'].toString(),
+        walletId: response['wallet_id'].toString(),
+        categoryId: response['category_id'].toString(),
+        title: response['title']?.toString() ?? '',
+        amount: (response['amount'] as num).toDouble(),
+        type: response['type'].toString(),
+        transactionDate:
+            DateTime.parse(response['transaction_date'].toString()),
+        note: response['note']?.toString(),
+      );
 
-      if (transaction.categoryId.isNotEmpty) {
-        insertData['category_id'] = transaction.categoryId;
-      }
+      transactions.insert(0, addedTransaction);
 
-      await _supabase.from('transactions').insert(insertData);
-
-      await loadTransactions();
+      _calculateTotals();
 
       return true;
     } on PostgrestException catch (e) {
@@ -142,9 +137,7 @@ class TransactionsController extends GetxController {
   // UPDATE TRANSACTION
   // ============================================================
 
-  Future<bool> updateTransaction(
-    TransactionModel transaction,
-  ) async {
+  Future<bool> updateTransaction(TransactionModel transaction) async {
     final user = currentUser;
 
     if (user == null) {
@@ -152,37 +145,48 @@ class TransactionsController extends GetxController {
       return false;
     }
 
-    if (transaction.id.isEmpty) {
-      _showError('Transaction ID is missing.');
-      return false;
-    }
-
     try {
       isLoading.value = true;
 
-      final Map<String, dynamic> updateData = {
-        'title': transaction.title,
-        'amount': transaction.amount,
-        'type': transaction.isIncome ? 'income' : 'expense',
-        'transaction_date': transaction.transactionDate.toIso8601String(),
-        'note': transaction.note,
-      };
-
-      if (transaction.walletId.isNotEmpty) {
-        updateData['wallet_id'] = transaction.walletId;
-      }
-
-      if (transaction.categoryId.isNotEmpty) {
-        updateData['category_id'] = transaction.categoryId;
-      }
-
-      await _supabase
+      final response = await _supabase
           .from('transactions')
-          .update(updateData)
+          .update({
+            'wallet_id': transaction.walletId,
+            'category_id': transaction.categoryId,
+            'title': transaction.title,
+            'amount': transaction.amount,
+            'type': transaction.type,
+            'transaction_date':
+                transaction.transactionDate.toIso8601String(),
+            'note': transaction.note,
+          })
           .eq('id', transaction.id)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select()
+          .single();
 
-      await loadTransactions();
+      final updatedTransaction = TransactionModel(
+        id: response['id'].toString(),
+        userId: response['user_id'].toString(),
+        walletId: response['wallet_id'].toString(),
+        categoryId: response['category_id'].toString(),
+        title: response['title']?.toString() ?? '',
+        amount: (response['amount'] as num).toDouble(),
+        type: response['type'].toString(),
+        transactionDate:
+            DateTime.parse(response['transaction_date'].toString()),
+        note: response['note']?.toString(),
+      );
+
+      final index = transactions.indexWhere(
+        (item) => item.id == transaction.id,
+      );
+
+      if (index != -1) {
+        transactions[index] = updatedTransaction;
+      }
+
+      _calculateTotals();
 
       return true;
     } on PostgrestException catch (e) {
@@ -200,16 +204,11 @@ class TransactionsController extends GetxController {
   // DELETE TRANSACTION
   // ============================================================
 
-  Future<bool> deleteTransaction(String id) async {
+  Future<bool> deleteTransaction(String transactionId) async {
     final user = currentUser;
 
     if (user == null) {
       _showError('Please login first.');
-      return false;
-    }
-
-    if (id.isEmpty) {
-      _showError('Transaction ID is missing.');
       return false;
     }
 
@@ -219,10 +218,14 @@ class TransactionsController extends GetxController {
       await _supabase
           .from('transactions')
           .delete()
-          .eq('id', id)
+          .eq('id', transactionId)
           .eq('user_id', user.id);
 
-      await loadTransactions();
+      transactions.removeWhere(
+        (transaction) => transaction.id == transactionId,
+      );
+
+      _calculateTotals();
 
       return true;
     } on PostgrestException catch (e) {
@@ -237,34 +240,29 @@ class TransactionsController extends GetxController {
   }
 
   // ============================================================
-  // HELPERS
+  // TOTALS
   // ============================================================
 
-  double get totalIncome {
-    return transactions
-        .where((transaction) => transaction.isIncome)
-        .fold(
-          0.0,
-          (sum, transaction) => sum + transaction.amount,
-        );
+  void _calculateTotals() {
+    double income = 0.0;
+    double expense = 0.0;
+
+    for (final transaction in transactions) {
+      if (transaction.isIncome) {
+        income += transaction.amount;
+      } else {
+        expense += transaction.amount;
+      }
+    }
+
+    totalIncome.value = income;
+    totalExpense.value = expense;
+    totalBalance.value = income - expense;
   }
 
-  double get totalExpense {
-    return transactions
-        .where((transaction) => transaction.isExpense)
-        .fold(
-          0.0,
-          (sum, transaction) => sum + transaction.amount,
-        );
-  }
-
-  double get balance {
-    return totalIncome - totalExpense;
-  }
-
-  void _searchError(String message) {
-    _showError(message);
-  }
+  // ============================================================
+  // ERROR
+  // ============================================================
 
   void _showError(String message) {
     Get.snackbar(

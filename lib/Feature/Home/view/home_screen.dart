@@ -21,7 +21,7 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
-
+import 'package:expense_mate/Feature/Home/controller/home_controller.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -85,7 +85,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reportController = Get.find<ReportController>();
-    final transactionsController = Get.find<TransactionsController>();
+    
 
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -312,130 +312,152 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Obx(() {
-                    final list = transactionsController.transactions;
+  final homeController = Get.find<HomeController>();
+  final recentItems = homeController.recentTransactions;
 
-                    if (list.isEmpty) {
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 40.0),
-                        alignment: Alignment.center,
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              size: 48,
-                              color: isDarkMode
-                                  ? Colors.grey.shade600
-                                  : Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No recent transactions found.',
-                              style: TextStyle(
-                                color: isDarkMode
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+  if (recentItems.isEmpty) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40.0),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 48,
+            color: isDarkMode
+                ? Colors.grey.shade600
+                : Colors.grey.shade400,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No transactions today.',
+            style: TextStyle(
+              color: isDarkMode
+                  ? Colors.grey.shade400
+                  : Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                    final recentItems = list.take(5).toList();
+  return ListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: recentItems.length,
+    itemBuilder: (context, index) {
+      final transaction = recentItems[index];
 
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: recentItems.length,
-                      itemBuilder: (context, index) {
-                        final TransactionModel transaction =
-                            recentItems[index];
-                        final bool isIncome = transaction.isIncome;
-                        final String categoryName =
-                            _getCategoryName(transaction.categoryId);
-                        final String displayTitle =
-                            transaction.title.trim().isEmpty
-                                ? categoryName
-                                : transaction.title;
+      final bool isIncome =
+          transaction['type']?.toString().toLowerCase() == 'income';
 
-                        return Card(
-                          elevation: 0,
-                          color: theme.cardColor,
-                          margin: const EdgeInsets.symmetric(vertical: 6.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 2,
-                              ),
-                              leading: CircleAvatar(
-                                radius: 22,
-                                backgroundColor: isIncome
-                                    ? (isDarkMode
-                                        ? const Color(0xFF1E382B)
-                                        : const Color(0xFFEBF9EE))
-                                    : (isDarkMode
-                                        ? const Color(0xFF3B1E1E)
-                                        : const Color(0xFFFDEEEE)),
-                                child: Icon(
-                                  isIncome
-                                      ? Icons.arrow_downward_rounded
-                                      : Icons.arrow_upward_rounded,
-                                  color: isIncome
-                                      ? const Color(0xFF4CAF50)
-                                      : const Color(0xFFEB5757),
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                displayTitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  "$categoryName • ${_getFormattedDate(transaction.date)}",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.grey.shade400
-                                        : Colors.grey.shade600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              trailing: Text(
-                                "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: isIncome
-                                      ? const Color(0xFF4CAF50)
-                                      : const Color(0xFFEB5757),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  }),
-                ],
+      final String categoryId =
+          transaction['category_id']?.toString() ??
+          transaction['categoryId']?.toString() ??
+          '';
+
+      final String categoryName =
+          _getCategoryName(categoryId);
+
+      final String title =
+          transaction['title']?.toString() ?? categoryName;
+
+      final double amount =
+          double.tryParse(
+                transaction['amount']?.toString() ?? '0',
+              ) ??
+              0.0;
+
+      final DateTime date =
+          DateTime.tryParse(
+                transaction['transaction_date']?.toString() ??
+                    transaction['transactionDate']?.toString() ??
+                    transaction['date']?.toString() ??
+                    '',
+              ) ??
+              DateTime.now();
+
+      return Card(
+        elevation: 0,
+        color: theme.cardColor,
+        margin: const EdgeInsets.symmetric(vertical: 6.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 2,
+            ),
+            leading: CircleAvatar(
+              radius: 22,
+              backgroundColor: isIncome
+                  ? (isDarkMode
+                      ? const Color(0xFF1E382B)
+                      : const Color(0xFFEBF9EE))
+                  : (isDarkMode
+                      ? const Color(0xFF3B1E1E)
+                      : const Color(0xFFFDEEEE)),
+              child: Icon(
+                isIncome
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
+                color: isIncome
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFFEB5757),
+                size: 20,
+              ),
+            ),
+            title: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isDarkMode
+                    ? Colors.white
+                    : Colors.black87,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text(
+                '$categoryName • ${_getFormattedDate(date)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDarkMode
+                      ? Colors.grey.shade400
+                      : Colors.grey.shade600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            trailing: Text(
+              '${isIncome ? '+' : '-'}PKR ${amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: isIncome
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFFEB5757),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}),
+  
+                  
+                ],  
               ),
             );
           },

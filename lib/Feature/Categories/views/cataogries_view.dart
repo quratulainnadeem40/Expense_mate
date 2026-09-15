@@ -11,14 +11,8 @@ import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_instance/src/bindings_interface.dart';
-import 'package:get/get_instance/src/extension_instance.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_rx/src/rx_types/rx_types.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 
 import '../controller/categories_controller.dart';
 import 'category_transactions_screen.dart';
@@ -32,19 +26,27 @@ class CategoriesView extends StatefulWidget {
 
 class _CategoriesViewState extends State<CategoriesView> {
   String? selectedForDeleteId;
+
   late final CategoriesController controller;
+
   final RxBool isDrawerOpen = false.obs;
 
   @override
   void initState() {
     super.initState();
+
     controller = Get.isRegistered<CategoriesController>()
         ? Get.find<CategoriesController>()
         : Get.put(CategoriesController());
   }
 
+  // ============================================================
+  // USER NAME
+  // ============================================================
+
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
+
     if (user != null) {
       final nameFromMetaData =
           user.userMetadata?['full_name'] ??
@@ -68,6 +70,10 @@ class _CategoriesViewState extends State<CategoriesView> {
     return 'User';
   }
 
+  // ============================================================
+  // DRAWER NAVIGATION
+  // ============================================================
+
   void _closeDrawerAndNavigate(
     Widget Function() page, {
     Bindings? binding,
@@ -82,6 +88,24 @@ class _CategoriesViewState extends State<CategoriesView> {
     });
   }
 
+  // ============================================================
+  // ADD CATEGORY
+  // ============================================================
+
+  Future<void> _openAddCategoryDialog() async {
+    await Get.dialog(
+      const AddCategoryDialog(),
+      barrierDismissible: false,
+    );
+
+    // Refresh category list after dialog closes.
+    await controller.fetchCategories();
+  }
+
+  // ============================================================
+  // CATEGORY COLORS
+  // ============================================================
+
   Color _getCategoryColor(
     String name,
     int defaultColorValue,
@@ -89,22 +113,31 @@ class _CategoriesViewState extends State<CategoriesView> {
     switch (name.toLowerCase().trim()) {
       case 'transport':
         return const Color(0xFF42A5F5);
+
       case 'shopping':
         return const Color(0xFFAB47BC);
+
       case 'salary':
         return const Color(0xFFFFA726);
+
       case 'investment':
         return const Color(0xFFEF5350);
+
       case 'health':
         return const Color(0xFF7E57C2);
+
       case 'gift':
         return const Color(0xFFEC407A);
+
       case 'freelance':
         return const Color(0xFF26A69A);
+
       case 'business':
         return const Color(0xFF5C6BC0);
+
       case 'bills':
         return const Color(0xFFFF7043);
+
       case 'other':
         return const Color(0xFF78909C);
     }
@@ -132,6 +165,10 @@ class _CategoriesViewState extends State<CategoriesView> {
 
     return customColors[hash % customColors.length];
   }
+
+  // ============================================================
+  // CATEGORY ICONS
+  // ============================================================
 
   IconData _getIconData(String iconName) {
     switch (iconName.toLowerCase().trim()) {
@@ -193,14 +230,9 @@ class _CategoriesViewState extends State<CategoriesView> {
     }
   }
 
-  Future<void> _openAddCategoryDialog() async {
-    await Get.dialog(
-      const AddCategoryDialog(),
-      barrierDismissible: false,
-    );
-
-    await controller.fetchCategories();
-  }
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +243,10 @@ class _CategoriesViewState extends State<CategoriesView> {
       backgroundColor: isDark
           ? const Color(0xFF121212)
           : const Color(0xFFF7F9F8),
+
+      // ========================================================
+      // APP BAR
+      // ========================================================
 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -254,8 +290,16 @@ class _CategoriesViewState extends State<CategoriesView> {
         ),
       ),
 
+      // ========================================================
+      // BODY
+      // ========================================================
+
       body: Stack(
         children: [
+          // ======================================================
+          // CATEGORY LIST
+          // ======================================================
+
           GestureDetector(
             onTap: () {
               if (selectedForDeleteId != null) {
@@ -283,12 +327,13 @@ class _CategoriesViewState extends State<CategoriesView> {
                 );
               }
 
-              // Removed .take(5) to show all user-added categories completely
               final categories = controller.categoryList;
 
               return ListView.builder(
                 padding: const EdgeInsets.only(
                   top: 12,
+
+                  // Space for bottom Add button
                   bottom: 100,
                 ),
                 itemCount: categories.length,
@@ -309,11 +354,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                   final bool isDeleteVisible =
                       selectedForDeleteId == category.id;
 
-                  bool isDefaultCategory = false;
-
-                  try {
-                    isDefaultCategory = category.isDefault;
-                  } catch (_) {}
+                  final bool isDefaultCategory =
+                      category.isDefault;
 
                   return Container(
                     margin: const EdgeInsets.symmetric(
@@ -336,8 +378,11 @@ class _CategoriesViewState extends State<CategoriesView> {
                     child: Material(
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
+
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
+
+                        // Category tap = transactions
                         onTap: () {
                           if (selectedForDeleteId != null) {
                             setState(() {
@@ -351,20 +396,26 @@ class _CategoriesViewState extends State<CategoriesView> {
                             );
                           }
                         },
+
+                        // Long press = delete
                         onLongPress: () {
                           if (!isDefaultCategory) {
                             setState(() {
-                              selectedForDeleteId = category.id;
+                              selectedForDeleteId =
+                                  category.id;
                             });
                           }
                         },
+
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
                           ),
+
                           child: Row(
                             children: [
+                              // Category icon
                               Container(
                                 width: 48,
                                 height: 48,
@@ -382,6 +433,7 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                               const SizedBox(width: 16),
 
+                              // Category information
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment:
@@ -432,6 +484,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                 ),
                               ),
 
+                              // Arrow
                               if (!isDeleteVisible)
                                 Icon(
                                   Icons.chevron_right_rounded,
@@ -439,18 +492,21 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   size: 22,
                                 ),
 
+                              // Delete button
                               if (isDeleteVisible) ...[
                                 const SizedBox(width: 8),
 
                                 InkWell(
                                   onTap: () async {
-                                    await controller.deleteCategory(
+                                    await controller
+                                        .deleteCategory(
                                       category.id,
                                     );
 
                                     if (mounted) {
                                       setState(() {
-                                        selectedForDeleteId = null;
+                                        selectedForDeleteId =
+                                            null;
                                       });
                                     }
                                   },
@@ -460,13 +516,16 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     padding:
                                         const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFFFEBEE),
+                                      color:
+                                          const Color(0xFFFFEBEE),
                                       borderRadius:
                                           BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
-                                      Icons.delete_outline_rounded,
-                                      color: Color(0xFFE57373),
+                                      Icons
+                                          .delete_outline_rounded,
+                                      color:
+                                          Color(0xFFE57373),
                                       size: 18,
                                     ),
                                   ),
@@ -483,6 +542,10 @@ class _CategoriesViewState extends State<CategoriesView> {
             }),
           ),
 
+          // ======================================================
+          // DRAWER
+          // ======================================================
+
           Obx(() {
             if (!isDrawerOpen.value) {
               return const SizedBox.shrink();
@@ -491,6 +554,7 @@ class _CategoriesViewState extends State<CategoriesView> {
             return Positioned.fill(
               child: Stack(
                 children: [
+                  // Drawer overlay
                   GestureDetector(
                     onTap: () {
                       isDrawerOpen.value = false;
@@ -500,12 +564,14 @@ class _CategoriesViewState extends State<CategoriesView> {
                     ),
                   ),
 
+                  // Drawer
                   Align(
                     alignment: Alignment.centerLeft,
                     child: SafeArea(
                       child: Container(
                         width:
-                            MediaQuery.of(context).size.width * 0.78,
+                            MediaQuery.of(context).size.width *
+                                0.78,
                         margin: const EdgeInsets.only(
                           left: 12,
                           top: 8,
@@ -531,23 +597,37 @@ class _CategoriesViewState extends State<CategoriesView> {
                               BorderRadius.circular(28),
                           child: Column(
                             children: [
+                              // ================================
+                              // USER HEADER
+                              // ================================
+
                               UserAccountsDrawerHeader(
                                 margin: EdgeInsets.zero,
+
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: isDark
                                         ? [
-                                            const Color(0xFF2E7D32),
-                                            const Color(0xFF1B5E20),
+                                            const Color(
+                                              0xFF2E7D32,
+                                            ),
+                                            const Color(
+                                              0xFF1B5E20,
+                                            ),
                                           ]
                                         : [
-                                            const Color(0xFF4CAF50),
-                                            const Color(0xFF388E3C),
+                                            const Color(
+                                              0xFF4CAF50,
+                                            ),
+                                            const Color(
+                                              0xFF388E3C,
+                                            ),
                                           ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                 ),
+
                                 currentAccountPictureSize:
                                     const Size.square(64),
 
@@ -561,7 +641,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     ),
                                   ),
                                   child: CircleAvatar(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor:
+                                        Colors.white,
                                     child: Text(
                                       _userName.isNotEmpty
                                           ? _userName[0]
@@ -600,6 +681,10 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   ),
                                 ),
                               ),
+
+                              // ================================
+                              // DRAWER OPTIONS
+                              // ================================
 
                               Expanded(
                                 child: ListView(
@@ -721,32 +806,65 @@ class _CategoriesViewState extends State<CategoriesView> {
               ),
             );
           }),
+
+          // ======================================================
+          // BOTTOM-RIGHT ADD BUTTON
+          // ======================================================
+
+          Obx(() {
+            if (isDrawerOpen.value) {
+              return const SizedBox.shrink();
+            }
+
+            return Positioned(
+              right: 16,
+              bottom: 20,
+              child: ElevatedButton.icon(
+                onPressed: _openAddCategoryDialog,
+
+                icon: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 20,
+                ),
+
+                label: const Text(
+                  'Add',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      const Color(0xFF2E7D32),
+                  foregroundColor: Colors.white,
+                  elevation: 5,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            );
+          }),
         ],
       ),
 
-      floatingActionButton: Obx(() {
-        if (isDrawerOpen.value) {
-          return const SizedBox.shrink();
-        }
-
-        return FloatingActionButton(
-          onPressed: _openAddCategoryDialog,
-          backgroundColor:
-              const Color(0xFF2E7D32),
-          elevation: 4,
-          mini: true,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 22,
-          ),
-        );
-      }),
+      // IMPORTANT:
+      // No floatingActionButton here.
     );
   }
+
+  // ============================================================
+  // DRAWER OPTION
+  // ============================================================
 
   Widget _buildDrawerOption({
     required BuildContext context,
@@ -757,6 +875,7 @@ class _CategoriesViewState extends State<CategoriesView> {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
+
     final bool isDarkMode =
         theme.brightness == Brightness.dark;
 
@@ -776,16 +895,20 @@ class _CategoriesViewState extends State<CategoriesView> {
           ),
         ],
       ),
+
       child: Material(
         color: Colors.transparent,
+
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
+
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
             ),
+
             child: Row(
               children: [
                 Container(
@@ -814,7 +937,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                         title,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontWeight:
+                              FontWeight.w700,
                           color: isDarkMode
                               ? Colors.white
                               : const Color(0xFF212121),
@@ -826,7 +950,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                       Text(
                         subtitle,
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        overflow:
+                            TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
                           color: isDarkMode
