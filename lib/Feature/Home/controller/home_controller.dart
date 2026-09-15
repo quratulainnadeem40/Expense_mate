@@ -1,21 +1,52 @@
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../../core/constants/app_keys.dart';
+
+import '../../transactions/controller/transcation_controller.dart';
+import '../../transactions/model/transcation_model.dart';
 
 class HomeController extends GetxController {
-  // Bottom Navigation
-  var currentIndex = 0.obs;
+  // ==========================================================
+  // BOTTOM NAVIGATION
+  // ==========================================================
 
-  var totalBalance = 0.0.obs;
-  var totalIncome = 0.0.obs;
-  var totalExpense = 0.0.obs;
+  final currentIndex = 0.obs;
 
-  // Only today's transactions
-  var recentTransactions = <Map<dynamic, dynamic>>[].obs;
+  // ==========================================================
+  // DASHBOARD TOTALS
+  // ==========================================================
+
+  final totalBalance = 0.0.obs;
+  final totalIncome = 0.0.obs;
+  final totalExpense = 0.0.obs;
+
+  // ==========================================================
+  // ONLY TODAY'S TRANSACTIONS
+  // ==========================================================
+
+  final recentTransactions = <TransactionModel>[].obs;
+
+  late TransactionsController transactionsController;
 
   @override
   void onInit() {
     super.onInit();
+
+    // Use the existing TransactionsController.
+    // Do NOT create another TransactionsController if one already exists.
+    if (!Get.isRegistered<TransactionsController>()) {
+      Get.put(TransactionsController());
+    }
+
+    transactionsController = Get.find<TransactionsController>();
+
+    // Refresh Home whenever transactions are:
+    // - added
+    // - edited
+    // - deleted
+    ever(
+      transactionsController.transactions,
+      (_) => loadDashboardData(),
+    );
+
     loadDashboardData();
   }
 
@@ -25,23 +56,33 @@ class HomeController extends GetxController {
     loadDashboardData();
   }
 
-  // Bottom Navigation
+  // ==========================================================
+  // BOTTOM NAVIGATION
+  // ==========================================================
+
   void changePage(int index) {
     currentIndex.value = index;
   }
 
+  // ==========================================================
+  // LOAD DASHBOARD DATA
+  // ==========================================================
+
   void loadDashboardData() {
-    final box = Hive.box(AppKeys.transactionsBox);
-    final data = box.values.toList();
+    final allTransactions = transactionsController.transactions;
 
     double income = 0.0;
     double expense = 0.0;
 
-    for (var item in data) {
-      if (item['type']?.toString().toLowerCase() == 'income') {
-        income += _getAmount(item['amount']);
+    // ----------------------------------------------------------
+    // TOTAL INCOME / EXPENSE
+    // ----------------------------------------------------------
+
+    for (final transaction in allTransactions) {
+      if (transaction.isIncome) {
+        income += transaction.amount;
       } else {
-        expense += _getAmount(item['amount']);
+        expense += transaction.amount;
       }
     }
 
@@ -49,35 +90,28 @@ class HomeController extends GetxController {
     totalExpense.value = expense;
     totalBalance.value = income - expense;
 
-    // ==========================================================
-    // ONLY TODAY'S TRANSACTIONS FOR HOME SCREEN
-    // ==========================================================
+    // ----------------------------------------------------------
+    // TODAY'S TRANSACTIONS ONLY
+    // ----------------------------------------------------------
 
-    final todayTransactions = data
-        .where((item) {
-          final date = _getTransactionDate(item);
-          return date != null && _isToday(date);
-        })
-        .map((item) => item as Map<dynamic, dynamic>)
-        .toList();
+    final todayTransactions = allTransactions.where((transaction) {
+      return _isToday(transaction.transactionDate);
+    }).toList();
 
-    // Newest transaction first
+    // ----------------------------------------------------------
+    // NEWEST TRANSACTION FIRST
+    // ----------------------------------------------------------
+
     todayTransactions.sort((a, b) {
-      final dateA = _getTransactionDate(a);
-      final dateB = _getTransactionDate(b);
-
-      if (dateA == null || dateB == null) {
-        return 0;
-      }
-
-      return dateB.compareTo(dateA);
+      return b.transactionDate.compareTo(a.transactionDate);
     });
 
+    // Update Home screen list
     recentTransactions.assignAll(todayTransactions);
   }
 
   // ==========================================================
-  // CHECK WHETHER TRANSACTION IS FROM TODAY
+  // CHECK WHETHER DATE IS TODAY
   // ==========================================================
 
   bool _isToday(DateTime date) {
@@ -86,42 +120,5 @@ class HomeController extends GetxController {
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
-  }
-
-  // ==========================================================
-  // GET TRANSACTION DATE
-  // ==========================================================
-
-  DateTime? _getTransactionDate(Map<dynamic, dynamic> item) {
-    final value =
-        item['transaction_date'] ??
-        item['transactionDate'] ??
-        item['date'];
-
-    if (value == null) {
-      return null;
-    }
-
-    if (value is DateTime) {
-      return value;
-    }
-
-    if (value is String) {
-      return DateTime.tryParse(value);
-    }
-
-    return null;
-  }
-
-  // ==========================================================
-  // GET AMOUNT SAFELY
-  // ==========================================================
-
-  double _getAmount(dynamic value) {
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 }

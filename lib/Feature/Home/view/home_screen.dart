@@ -18,7 +18,6 @@ import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/Home/widgets/balance_card.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
-import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:expense_mate/Feature/Home/controller/home_controller.dart';
@@ -349,36 +348,21 @@ class HomeScreen extends StatelessWidget {
     physics: const NeverScrollableScrollPhysics(),
     itemCount: recentItems.length,
     itemBuilder: (context, index) {
-      final transaction = recentItems[index];
+      final TransactionModel transaction = recentItems[index];
 
-      final bool isIncome =
-          transaction['type']?.toString().toLowerCase() == 'income';
+final bool isIncome = transaction.isIncome;
 
-      final String categoryId =
-          transaction['category_id']?.toString() ??
-          transaction['categoryId']?.toString() ??
-          '';
+final String categoryId = transaction.categoryId;
 
-      final String categoryName =
-          _getCategoryName(categoryId);
+final String categoryName = _getCategoryName(categoryId);
 
-      final String title =
-          transaction['title']?.toString() ?? categoryName;
+final String title =
+    transaction.title.isNotEmpty ? transaction.title : categoryName;
 
-      final double amount =
-          double.tryParse(
-                transaction['amount']?.toString() ?? '0',
-              ) ??
-              0.0;
+final double amount = transaction.amount;
 
-      final DateTime date =
-          DateTime.tryParse(
-                transaction['transaction_date']?.toString() ??
-                    transaction['transactionDate']?.toString() ??
-                    transaction['date']?.toString() ??
-                    '',
-              ) ??
-              DateTime.now();
+
+   final DateTime date = transaction.transactionDate;
 
       return Card(
         elevation: 0,
