@@ -1,7 +1,8 @@
+import 'package:expense_mate/Feature/Reports/view/report_view.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:expense_mate/Feature/Reports/view/report_view.dart';
 // Categories
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
@@ -10,7 +11,7 @@ import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 
 // Reports
-import 'package:expense_mate/Feature/Reports/view/report_view.dart';
+
 
 // Expense
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
@@ -37,7 +38,7 @@ class MainScreen extends StatelessWidget {
       const HomeScreen(),
       TransactionsView(),
        CategoriesView(),
-      ReportsView(),
+      const ReportView(),
     ];
 
     final isDark = Theme.of(context).brightness == Brightness.dark;

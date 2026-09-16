@@ -121,7 +121,7 @@ GetPage(
 
     GetPage(
       name: AppRoutes.reports,
-      page: () =>  ReportsView(),
+      page: () =>  ReportView(),
       binding: ReportBindings(),
     ),
 
