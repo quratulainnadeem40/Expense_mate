@@ -26,6 +26,9 @@ class TransactionsView extends StatefulWidget {
 
 class _TransactionsViewState extends State<TransactionsView> with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
+  final RxString searchQuery = ''.obs;
+  final RxBool isSearching = false.obs;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -36,10 +39,10 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _searchController.dispose();
     super.dispose();
   }
 
-  // Automatically close drawer when app resumes or frame updates if switching tabs
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -97,6 +100,12 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
           isDrawerOpen.value = false;
           return false;
         }
+        if (isSearching.value) {
+          isSearching.value = false;
+          searchQuery.value = '';
+          _searchController.clear();
+          return false;
+        }
         return true;
       },
       child: Scaffold(
@@ -110,24 +119,47 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
             ),
             onPressed: () => isDrawerOpen.value = true,
           ),
-          title: Text(
-            'Transactions',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.black87,
-            ),
-          ),
+          title: Obx(() {
+            if (isSearching.value) {
+              return TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => searchQuery.value = value,
+                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
+                  hintText: 'Search transactions...',
+                  hintStyle: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
+                  border: InputBorder.none,
+                ),
+              );
+            }
+            return Text(
+              'Transactions',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black87,
+              ),
+            );
+          }),
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
           scrolledUnderElevation: 0,
           actions: [
-            IconButton(
-              icon: Icon(
-                Icons.search_rounded,
-                color: isDarkMode ? Colors.white : Colors.black87,
-              ),
-              onPressed: () {},
-            ),
+            Obx(() => IconButton(
+                  icon: Icon(
+                    isSearching.value ? Icons.close_rounded : Icons.search_rounded,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                  onPressed: () {
+                    if (isSearching.value) {
+                      isSearching.value = false;
+                      searchQuery.value = '';
+                      _searchController.clear();
+                    } else {
+                      isSearching.value = true;
+                    }
+                  },
+                )),
           ],
         ),
         body: Stack(
@@ -220,7 +252,13 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                 // 2. Transaction History List
                 Expanded(
                   child: Obx(() {
-                    final list = transactionsController.transactions;
+                    final query = searchQuery.value.toLowerCase();
+                    final list = transactionsController.transactions.where((tx) {
+                      if (query.isEmpty) return true;
+                      final categoryName = _getCategoryName(tx.categoryId).toLowerCase();
+                      final title = tx.title.toLowerCase();
+                      return title.contains(query) || categoryName.contains(query);
+                    }).toList();
 
                     if (list.isEmpty) {
                       return Center(
