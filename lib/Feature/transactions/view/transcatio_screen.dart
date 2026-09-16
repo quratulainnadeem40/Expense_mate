@@ -16,12 +16,36 @@ import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// Feature Controllers & Models
 
-class TransactionsView extends StatelessWidget {
-  TransactionsView({super.key});
+class TransactionsView extends StatefulWidget {
+  const TransactionsView({super.key});
 
+  @override
+  State<TransactionsView> createState() => _TransactionsViewState();
+}
+
+class _TransactionsViewState extends State<TransactionsView> with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Automatically close drawer when app resumes or frame updates if switching tabs
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      isDrawerOpen.value = false;
+    }
+  }
 
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
@@ -54,11 +78,11 @@ class TransactionsView extends StatelessWidget {
     return "${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}";
   }
 
-  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) async {
     isDrawerOpen.value = false;
-    Future.delayed(const Duration(milliseconds: 150), () {
-      Get.to(page, binding: binding);
-    });
+    await Future.delayed(const Duration(milliseconds: 150));
+    await Get.to(page, binding: binding);
+    isDrawerOpen.value = false;
   }
 
   @override
@@ -280,76 +304,76 @@ class TransactionsView extends StatelessWidget {
                                 ),
                               ),
                             ),
-                           trailing: Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    Text(
-      "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
-      style: TextStyle(
-        color: isIncome
-            ? const Color(0xFF4CAF50)
-            : const Color(0xFFEB5757),
-        fontWeight: FontWeight.bold,
-        fontSize: 15,
-      ),
-    ),
-    const SizedBox(width: 4),
-    PopupMenuButton<String>(
-      icon: Icon(
-        Icons.more_vert_rounded,
-        color: isDarkMode
-            ? Colors.grey.shade400
-            : Colors.grey.shade600,
-      ),
-      onSelected: (value) {
-        if (value == 'edit') {
-          Get.to(
-            () => const AddExpenseView(),
-            binding: ExpenseBinding(),
-            arguments: transaction,
-          );
-        }
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
+                                  style: TextStyle(
+                                    color: isIncome
+                                        ? const Color(0xFF4CAF50)
+                                        : const Color(0xFFEB5757),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert_rounded,
+                                    color: isDarkMode
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      Get.to(
+                                        () => const AddExpenseView(),
+                                        binding: ExpenseBinding(),
+                                        arguments: transaction,
+                                      );
+                                    }
 
-        if (value == 'delete') {
-          _showDeleteConfirmation(
-            context,
-            transactionsController,
-            transaction,
-          );
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem<String>(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit_rounded, size: 20),
-              SizedBox(width: 10),
-              Text('Edit'),
-            ],
-          ),
-        ),
-        const PopupMenuItem<String>(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(
-                Icons.delete_outline_rounded,
-                size: 20,
-                color: Colors.red,
-              ),
-              SizedBox(width: 10),
-              Text(
-                'Delete',
-                style: TextStyle(color: Colors.red),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  ],
-),
+                                    if (value == 'delete') {
+                                      _showDeleteConfirmation(
+                                        context,
+                                        transactionsController,
+                                        transaction,
+                                      );
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_rounded, size: 20),
+                                          SizedBox(width: 10),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete_outline_rounded,
+                                            size: 20,
+                                            color: Colors.red,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            'Delete',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -359,7 +383,7 @@ class TransactionsView extends StatelessWidget {
               ],
             ),
 
-            // Custom Floating Drawer Overlay matching second reference image layout
+            // Custom Floating Drawer Overlay
             Obx(() {
               if (!isDrawerOpen.value) return const SizedBox.shrink();
 
@@ -512,61 +536,62 @@ class TransactionsView extends StatelessWidget {
     );
   }
 
-void _showDeleteConfirmation(
-  BuildContext context,
-  TransactionsController controller,
-  TransactionModel transaction,
-) {
-  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  void _showDeleteConfirmation(
+    BuildContext context,
+    TransactionsController controller,
+    TransactionModel transaction,
+  ) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-  Get.dialog(
-    AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-      title: Text(
-        'Delete Transaction',
-        style: TextStyle(
-          color: isDarkMode ? Colors.white : Colors.black87,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: Text(
-        'Are you sure you want to delete this transaction?',
-        style: TextStyle(
-          color: isDarkMode
-              ? Colors.grey.shade300
-              : Colors.grey.shade700,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () async {
-            Get.back();
-
-            final success = await controller.deleteTransaction(
-              transaction.id,
-            );
-
-            if (success) {
-              Get.snackbar(
-                'Deleted',
-                'Transaction deleted successfully.',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            }
-          },
-          child: const Text(
-            'Delete',
-            style: TextStyle(color: Colors.red),
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          'Delete Transaction',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
           ),
         ),
-      ],
-    ),
-  );
-}
+        content: Text(
+          'Are you sure you want to delete this transaction?',
+          style: TextStyle(
+            color: isDarkMode
+                ? Colors.grey.shade300
+                : Colors.grey.shade700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+
+              final success = await controller.deleteTransaction(
+                transaction.id,
+              );
+
+              if (success) {
+                Get.snackbar(
+                  'Deleted',
+                  'Transaction deleted successfully.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDrawerOption({
     required BuildContext context,
     required IconData icon,
