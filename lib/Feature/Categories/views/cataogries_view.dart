@@ -25,7 +25,8 @@ class CategoriesView extends StatefulWidget {
 }
 
 class _CategoriesViewState extends State<CategoriesView> {
-  String? selectedForDeleteId;
+  final Set<String> selectedCategoryIds = <String>{};
+  bool isSelectionMode = false;
 
   late final CategoriesController controller;
 
@@ -50,6 +51,47 @@ class _CategoriesViewState extends State<CategoriesView> {
     }
   }
 
+  void _enterSelectionMode(String categoryId) {
+    setState(() {
+      isSelectionMode = true;
+      selectedCategoryIds.add(categoryId);
+    });
+  }
+
+  void _toggleCategorySelection(String categoryId) {
+    setState(() {
+      if (selectedCategoryIds.contains(categoryId)) {
+        selectedCategoryIds.remove(categoryId);
+      } else {
+        selectedCategoryIds.add(categoryId);
+      }
+
+      if (selectedCategoryIds.isEmpty) {
+        isSelectionMode = false;
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedCategoryIds.clear();
+    });
+  }
+
+  Future<void> _deleteSelectedCategories() async {
+    if (selectedCategoryIds.isEmpty) {
+      return;
+    }
+
+    final idsToDelete = selectedCategoryIds.toList();
+    await controller.deleteCategories(idsToDelete);
+
+    if (mounted) {
+      _exitSelectionMode();
+    }
+  }
+
   // ============================================================
   // USER NAME
   // ============================================================
@@ -59,11 +101,9 @@ class _CategoriesViewState extends State<CategoriesView> {
 
     if (user != null) {
       final nameFromMetaData =
-          user.userMetadata?['full_name'] ??
-          user.userMetadata?['name'];
+          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null &&
-          nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
@@ -71,8 +111,7 @@ class _CategoriesViewState extends State<CategoriesView> {
         final emailPrefix = user.email!.split('@').first;
 
         if (emailPrefix.isNotEmpty) {
-          return emailPrefix[0].toUpperCase() +
-              emailPrefix.substring(1);
+          return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
         }
       }
     }
@@ -84,17 +123,11 @@ class _CategoriesViewState extends State<CategoriesView> {
   // DRAWER NAVIGATION
   // ============================================================
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     isDrawerOpen.value = false;
 
     Future.delayed(const Duration(milliseconds: 180), () {
-      Get.to(
-        page,
-        binding: binding,
-      );
+      Get.to(page, binding: binding);
     });
   }
 
@@ -103,10 +136,7 @@ class _CategoriesViewState extends State<CategoriesView> {
   // ============================================================
 
   Future<void> _openAddCategoryDialog() async {
-    await Get.dialog(
-      const AddCategoryDialog(),
-      barrierDismissible: false,
-    );
+    await Get.dialog(const AddCategoryDialog(), barrierDismissible: false);
 
     // Refresh category list after dialog closes.
     await controller.fetchCategories();
@@ -116,10 +146,7 @@ class _CategoriesViewState extends State<CategoriesView> {
   // CATEGORY COLORS
   // ============================================================
 
-  Color _getCategoryColor(
-    String name,
-    int defaultColorValue,
-  ) {
+  Color _getCategoryColor(String name, int defaultColorValue) {
     switch (name.toLowerCase().trim()) {
       case 'transport':
         return const Color(0xFF42A5F5);
@@ -143,8 +170,7 @@ class _CategoriesViewState extends State<CategoriesView> {
         return const Color(0xFF78909C);
     }
 
-    if (defaultColorValue != 0 &&
-        defaultColorValue != 0xFF757575) {
+    if (defaultColorValue != 0 && defaultColorValue != 0xFF757575) {
       return Color(defaultColorValue);
     }
 
@@ -159,10 +185,7 @@ class _CategoriesViewState extends State<CategoriesView> {
       const Color(0xFF8D6E63),
     ];
 
-    final int hash = name.codeUnits.fold(
-      0,
-      (prev, curr) => prev + curr,
-    );
+    final int hash = name.codeUnits.fold(0, (prev, curr) => prev + curr);
 
     return customColors[hash % customColors.length];
   }
@@ -222,8 +245,7 @@ class _CategoriesViewState extends State<CategoriesView> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     // ✅ PopScope: جب back دبایا تو drawer بند کریں
     return PopScope(
@@ -242,53 +264,72 @@ class _CategoriesViewState extends State<CategoriesView> {
         // ========================================================
         // APP BAR
         // ========================================================
-
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: false,
 
-          leading: IconButton(
-            icon: Icon(
-              Icons.menu_rounded,
-              color: isDark
-                  ? Colors.white
-                  : const Color(0xFF2E7D32),
-              size: 28,
-            ),
-            onPressed: () {
-              isDrawerOpen.value = true;
-            },
-          ),
+          leading: isSelectionMode
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: _exitSelectionMode,
+                )
+              : IconButton(
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: isDark ? Colors.white : const Color(0xFF2E7D32),
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    isDrawerOpen.value = true;
+                  },
+                ),
 
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Categories',
-                style: AppTextStyles.headingMedium(isDark).copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
+                isSelectionMode
+                    ? '${selectedCategoryIds.length} selected'
+                    : 'Categories',
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               const SizedBox(height: 2),
               Text(
                 'Manage your expense categories',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark
-                      ? Colors.grey[400]
-                      : Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
           ),
+          actions: [
+            if (isSelectionMode)
+              IconButton(
+                tooltip: 'Delete selected categories',
+                onPressed: selectedCategoryIds.isEmpty
+                    ? null
+                    : _deleteSelectedCategories,
+                icon: const Icon(Icons.delete_outline_rounded),
+              )
+            else
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    isSelectionMode = true;
+                  });
+                },
+                child: const Text('Select'),
+              ),
+          ],
         ),
 
         // ========================================================
         // BODY
         // ========================================================
-
         body: Stack(
           children: [
             // ======================================================
@@ -297,58 +338,45 @@ class _CategoriesViewState extends State<CategoriesView> {
 
             GestureDetector(
               onTap: () {
-                if (selectedForDeleteId != null) {
-                  setState(() {
-                    selectedForDeleteId = null;
-                  });
+                if (isSelectionMode) {
+                  _exitSelectionMode();
                 }
               },
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (controller.categoryList.isEmpty) {
                   return const Center(
                     child: Text(
                       'No categories found',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   );
                 }
 
-                final categories = controller.categoryList;
+                final categories = controller.categoryList.toList();
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(
-                    top: 12,
-                    bottom: 100,
-                  ),
+                  padding: const EdgeInsets.only(top: 12, bottom: 100),
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
                     final category = categories[index];
 
-                    final Color baseColor =
-                        _getCategoryColor(
+                    final Color baseColor = _getCategoryColor(
                       category.name,
                       category.colorValue,
                     );
 
-                    final int transactionCount =
-                        controller.getCategoryCount(
+                    final int transactionCount = controller.getCategoryCount(
                       category.id,
                     );
 
-                    final bool isDeleteVisible =
-                        selectedForDeleteId == category.id;
-
-                    final bool isDefaultCategory =
-                        category.isDefault;
+                    final bool isDefaultCategory = category.isDefault;
+                    final bool isSelected = selectedCategoryIds.contains(
+                      category.id,
+                    );
 
                     return Container(
                       margin: const EdgeInsets.symmetric(
@@ -356,9 +384,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF1E1E1E)
-                            : Colors.white,
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -377,10 +403,8 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                           onTap: () {
                             _closeDrawerInstantly();
-                            if (selectedForDeleteId != null) {
-                              setState(() {
-                                selectedForDeleteId = null;
-                              });
+                            if (isSelectionMode) {
+                              _toggleCategorySelection(category.id);
                             } else {
                               Get.to(
                                 () => CategoryTransactionsScreen(
@@ -392,10 +416,11 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                           onLongPress: () {
                             if (!isDefaultCategory) {
-                              setState(() {
-                                selectedForDeleteId =
-                                    category.id;
-                              });
+                              if (isSelectionMode) {
+                                _toggleCategorySelection(category.id);
+                              } else {
+                                _enterSelectionMode(category.id);
+                              }
                             }
                           },
 
@@ -411,8 +436,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   width: 48,
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color:
-                                        baseColor.withOpacity(0.18),
+                                    color: baseColor.withOpacity(0.18),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -431,32 +455,25 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     children: [
                                       Text(
                                         category.name,
-                                        style:
-                                            AppTextStyles.bodyLarge(
-                                          isDark,
-                                        ).copyWith(
-                                          fontWeight:
-                                              FontWeight.w600,
-                                          fontSize: 16,
-                                        ),
+                                        style: AppTextStyles.bodyLarge(isDark)
+                                            .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
                                       ),
 
                                       const SizedBox(height: 4),
 
                                       Container(
-                                        padding:
-                                            const EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                           horizontal: 8,
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
                                           color: isDark
                                               ? Colors.grey[800]
-                                              : const Color(
-                                                  0xFFF0F2F5,
-                                                ),
-                                          borderRadius:
-                                              BorderRadius.circular(
+                                              : const Color(0xFFF0F2F5),
+                                          borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
@@ -474,52 +491,22 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   ),
                                 ),
 
-                                if (!isDeleteVisible)
+                                if (isSelectionMode)
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.circle_outlined,
+                                    color: isSelected
+                                        ? const Color(0xFF2EA44F)
+                                        : Colors.grey[400],
+                                    size: 24,
+                                  )
+                                else
                                   Icon(
                                     Icons.chevron_right_rounded,
                                     color: Colors.grey[400],
                                     size: 22,
                                   ),
-
-                                if (isDeleteVisible) ...[
-                                  const SizedBox(width: 8),
-
-                                  InkWell(
-                                    onTap: () async {
-                                      _closeDrawerInstantly();
-                                      await controller
-                                          .deleteCategory(
-                                        category.id,
-                                      );
-
-                                      if (mounted) {
-                                        setState(() {
-                                          selectedForDeleteId =
-                                              null;
-                                        });
-                                      }
-                                    },
-                                    borderRadius:
-                                        BorderRadius.circular(8),
-                                    child: Container(
-                                      padding:
-                                          const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            const Color(0xFFFFEBEE),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons
-                                            .delete_outline_rounded,
-                                        color:
-                                            Color(0xFFE57373),
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           ),
@@ -534,7 +521,6 @@ class _CategoriesViewState extends State<CategoriesView> {
             // ======================================================
             // DRAWER
             // ======================================================
-
             Obx(() {
               if (!isDrawerOpen.value) {
                 return const SizedBox.shrink();
@@ -547,18 +533,14 @@ class _CategoriesViewState extends State<CategoriesView> {
                       onTap: () {
                         isDrawerOpen.value = false;
                       },
-                      child: Container(
-                        color: Colors.black.withOpacity(0.5),
-                      ),
+                      child: Container(color: Colors.black.withOpacity(0.5)),
                     ),
 
                     Align(
                       alignment: Alignment.centerLeft,
                       child: SafeArea(
                         child: Container(
-                          width:
-                              MediaQuery.of(context).size.width *
-                                  0.78,
+                          width: MediaQuery.of(context).size.width * 0.78,
                           margin: const EdgeInsets.only(
                             left: 12,
                             top: 8,
@@ -568,20 +550,17 @@ class _CategoriesViewState extends State<CategoriesView> {
                             color: isDark
                                 ? const Color(0xFF1E1E1E)
                                 : const Color(0xFFF9FAFB),
-                            borderRadius:
-                                BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    Colors.black.withOpacity(0.3),
+                                color: Colors.black.withOpacity(0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius:
-                                BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(28),
                             child: Column(
                               children: [
                                 UserAccountsDrawerHeader(
@@ -591,31 +570,23 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     gradient: LinearGradient(
                                       colors: isDark
                                           ? [
-                                              const Color(
-                                                0xFF2E7D32,
-                                              ),
-                                              const Color(
-                                                0xFF1B5E20,
-                                              ),
+                                              const Color(0xFF2E7D32),
+                                              const Color(0xFF1B5E20),
                                             ]
                                           : [
-                                              const Color(
-                                                0xFF4CAF50,
-                                              ),
-                                              const Color(
-                                                0xFF388E3C,
-                                              ),
+                                              const Color(0xFF4CAF50),
+                                              const Color(0xFF388E3C),
                                             ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                   ),
 
-                                  currentAccountPictureSize:
-                                      const Size.square(64),
+                                  currentAccountPictureSize: const Size.square(
+                                    64,
+                                  ),
 
-                                  currentAccountPicture:
-                                      Container(
+                                  currentAccountPicture: Container(
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
@@ -624,19 +595,15 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       ),
                                     ),
                                     child: CircleAvatar(
-                                      backgroundColor:
-                                          Colors.white,
+                                      backgroundColor: Colors.white,
                                       child: Text(
                                         _userName.isNotEmpty
-                                            ? _userName[0]
-                                                .toUpperCase()
+                                            ? _userName[0].toUpperCase()
                                             : 'U',
                                         style: const TextStyle(
                                           fontSize: 26,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                          color:
-                                              Color(0xFF2E7D32),
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF2E7D32),
                                         ),
                                       ),
                                     ),
@@ -645,51 +612,46 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   accountName: Text(
                                     _userName,
                                     style: const TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
+                                      fontWeight: FontWeight.bold,
                                       fontSize: 18,
                                       color: Colors.white,
                                     ),
                                   ),
 
                                   accountEmail: Text(
-                                    Supabase.instance.client.auth
+                                    Supabase
+                                            .instance
+                                            .client
+                                            .auth
                                             .currentUser
                                             ?.email ??
                                         '',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white
-                                          .withOpacity(0.9),
+                                      color: Colors.white.withOpacity(0.9),
                                     ),
                                   ),
                                 ),
 
                                 Expanded(
                                   child: ListView(
-                                    padding:
-                                        const EdgeInsets.symmetric(
+                                    padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
                                       vertical: 16,
                                     ),
-                                    physics:
-                                        const BouncingScrollPhysics(),
+                                    physics: const BouncingScrollPhysics(),
                                     children: [
                                       _buildDrawerOption(
                                         context: context,
                                         icon: Icons
                                             .account_balance_wallet_rounded,
-                                        iconColor:
-                                            const Color(0xFF2B82FB),
+                                        iconColor: const Color(0xFF2B82FB),
                                         title: 'Wallets',
                                         subtitle:
                                             'Manage your cash, bank and other wallets',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const WalletsView(),
-                                          binding:
-                                              WalletsBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const WalletsView(),
+                                          binding: WalletsBinding(),
                                         ),
                                       ),
 
@@ -697,19 +659,14 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon: Icons
-                                            .pie_chart_rounded,
-                                        iconColor:
-                                            const Color(0xFFFF9800),
+                                        icon: Icons.pie_chart_rounded,
+                                        iconColor: const Color(0xFFFF9800),
                                         title: 'Budgets',
                                         subtitle:
                                             'Set and track monthly spending limits',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const BudgetView(),
-                                          binding:
-                                              BudgetBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const BudgetView(),
+                                          binding: BudgetBinding(),
                                         ),
                                       ),
 
@@ -717,39 +674,14 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon:
-                                            Icons.stars_rounded,
-                                        iconColor:
-                                            const Color(0xFFE91E63),
+                                        icon: Icons.stars_rounded,
+                                        iconColor: const Color(0xFFE91E63),
                                         title: 'Goals',
                                         subtitle:
                                             'Track your financial targets and savings',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
+                                        onTap: () => _closeDrawerAndNavigate(
                                           () => const GoalsView(),
-                                          binding:
-                                              GoalsBinding(),
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 12),
-
-                                      _buildDrawerOption(
-                                        context: context,
-                                        icon: Icons
-                                            .notifications_active_rounded,
-                                        iconColor:
-                                            const Color(0xFF9C27B0),
-                                        title:
-                                            'Bills & Reminders',
-                                        subtitle:
-                                            'Manage upcoming bills and reminders',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const BillsRemindersView(),
-                                          binding:
-                                              BillsRemindersBinding(),
+                                          binding: GoalsBinding(),
                                         ),
                                       ),
 
@@ -758,18 +690,29 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       _buildDrawerOption(
                                         context: context,
                                         icon:
-                                            Icons.person_rounded,
-                                        iconColor:
-                                            const Color(0xFF00BCD4),
+                                            Icons.notifications_active_rounded,
+                                        iconColor: const Color(0xFF9C27B0),
+                                        title: 'Bills & Reminders',
+                                        subtitle:
+                                            'Manage upcoming bills and reminders',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const BillsRemindersView(),
+                                          binding: BillsRemindersBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons.person_rounded,
+                                        iconColor: const Color(0xFF00BCD4),
                                         title: 'Profile',
                                         subtitle:
                                             'Manage your profile and account settings',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const SettingsView(),
-                                          binding:
-                                              SettingsBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const SettingsView(),
+                                          binding: SettingsBinding(),
                                         ),
                                       ),
                                     ],
@@ -789,7 +732,6 @@ class _CategoriesViewState extends State<CategoriesView> {
             // ======================================================
             // BOTTOM-RIGHT ADD BUTTON
             // ======================================================
-
             Obx(() {
               if (isDrawerOpen.value) {
                 return const SizedBox.shrink();
@@ -801,11 +743,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                 child: ElevatedButton.icon(
                   onPressed: _openAddCategoryDialog,
 
-                  icon: const Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  icon: const Icon(Icons.add, color: Colors.white, size: 20),
 
                   label: const Text(
                     'Add',
@@ -817,8 +755,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                   ),
 
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF2E7D32),
+                    backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
                     elevation: 5,
                     padding: const EdgeInsets.symmetric(
@@ -826,8 +763,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                       vertical: 12,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -853,20 +789,15 @@ class _CategoriesViewState extends State<CategoriesView> {
   }) {
     final theme = Theme.of(context);
 
-    final bool isDarkMode =
-        theme.brightness == Brightness.dark;
+    final bool isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? const Color(0xFF2A2A2A)
-            : Colors.white,
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              isDarkMode ? 0.2 : 0.04,
-            ),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -881,10 +812,7 @@ class _CategoriesViewState extends State<CategoriesView> {
           borderRadius: BorderRadius.circular(16),
 
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
 
             child: Row(
               children: [
@@ -893,29 +821,22 @@ class _CategoriesViewState extends State<CategoriesView> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: iconColor.withOpacity(0.12),
-                    borderRadius:
-                        BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
 
                 const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight:
-                              FontWeight.w700,
+                          fontWeight: FontWeight.w700,
                           color: isDarkMode
                               ? Colors.white
                               : const Color(0xFF212121),
@@ -927,8 +848,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                       Text(
                         subtitle,
                         maxLines: 2,
-                        overflow:
-                            TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
                           color: isDarkMode
