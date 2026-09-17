@@ -87,7 +87,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        Icons.arrow_downward_rounded,
+                                        Icons.arrow_upward_rounded,
                                         size: 16,
                                         color: isExpense
                                             ? Colors.white
@@ -140,7 +140,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        Icons.arrow_upward_rounded,
+                                        Icons.arrow_downward_rounded,
                                         size: 16,
                                         color: !isExpense
                                             ? Colors.white
