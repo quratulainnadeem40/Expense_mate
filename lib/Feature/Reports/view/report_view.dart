@@ -6,18 +6,37 @@ class ReportView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final backgroundColor =
+        isDark ? const Color(0xff000000) : const Color(0xffF5F7FA);
+
+    final cardColor =
+        isDark ? const Color(0xff0A0A0A) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black;
+
+    final secondaryTextColor =
+        isDark ? Colors.white70 : Colors.grey;
+
     return Scaffold(
-      backgroundColor: const Color(0xffF5F7FA),
+      backgroundColor: backgroundColor,
+
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Reports & Analytics',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            color: textColor,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: cardColor,
         elevation: 0,
+        iconTheme: IconThemeData(
+          color: textColor,
+        ),
       ),
 
       body: SingleChildScrollView(
@@ -32,6 +51,7 @@ class ReportView extends StatelessWidget {
               children: [
                 Expanded(
                   child: _summaryCard(
+                    context: context,
                     title: 'Total Income',
                     amount: 'PKR 50,000',
                     icon: Icons.arrow_downward,
@@ -43,6 +63,7 @@ class ReportView extends StatelessWidget {
 
                 Expanded(
                   child: _summaryCard(
+                    context: context,
                     title: 'Total Expense',
                     amount: 'PKR 20,000',
                     icon: Icons.arrow_upward,
@@ -56,17 +77,19 @@ class ReportView extends StatelessWidget {
 
             // ---------------- BAR CHART ----------------
 
-            const Text(
+            Text(
               'Income vs Expense',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
 
             const SizedBox(height: 12),
 
             _chartContainer(
+              context: context,
               child: SizedBox(
                 height: 280,
                 child: BarChart(
@@ -80,6 +103,14 @@ class ReportView extends StatelessWidget {
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: isDark
+                              ? Colors.white24
+                              : Colors.black12,
+                          strokeWidth: 1,
+                        );
+                      },
                     ),
 
                     titlesData: FlTitlesData(
@@ -87,6 +118,15 @@ class ReportView extends StatelessWidget {
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 45,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              value.toInt().toString(),
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 11,
+                              ),
+                            );
+                          },
                         ),
                       ),
 
@@ -106,8 +146,9 @@ class ReportView extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
                                 text,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w600,
+                                  color: textColor,
                                 ),
                               ),
                             );
@@ -160,17 +201,19 @@ class ReportView extends StatelessWidget {
 
             // ---------------- PIE CHART ----------------
 
-            const Text(
+            Text(
               'Expense Categories',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
 
             const SizedBox(height: 12),
 
             _chartContainer(
+              context: context,
               child: Column(
                 children: [
 
@@ -232,10 +275,10 @@ class ReportView extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  const Wrap(
+                  Wrap(
                     spacing: 20,
                     runSpacing: 10,
-                    children: [
+                    children: const [
                       _Legend(
                         title: 'Food',
                         color: Colors.blue,
@@ -262,17 +305,19 @@ class ReportView extends StatelessWidget {
 
             // ---------------- LINE CHART ----------------
 
-            const Text(
+            Text(
               'Monthly Expenses',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
 
             const SizedBox(height: 12),
 
             _chartContainer(
+              context: context,
               child: SizedBox(
                 height: 280,
                 child: LineChart(
@@ -283,6 +328,22 @@ class ReportView extends StatelessWidget {
 
                     gridData: FlGridData(
                       show: true,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: isDark
+                              ? Colors.white24
+                              : Colors.black12,
+                          strokeWidth: 1,
+                        );
+                      },
+                      getDrawingVerticalLine: (value) {
+                        return FlLine(
+                          color: isDark
+                              ? Colors.white12
+                              : Colors.black12,
+                          strokeWidth: 1,
+                        );
+                      },
                     ),
 
                     titlesData: FlTitlesData(
@@ -290,6 +351,15 @@ class ReportView extends StatelessWidget {
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 40,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              value.toInt().toString(),
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 11,
+                              ),
+                            );
+                          },
                         ),
                       ),
 
@@ -311,8 +381,9 @@ class ReportView extends StatelessWidget {
                                 value < months.length) {
                               return Text(
                                 months[value.toInt()],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
+                                  color: textColor,
                                 ),
                               );
                             }
@@ -372,7 +443,7 @@ class ReportView extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
@@ -381,19 +452,20 @@ class ReportView extends StatelessWidget {
                   ),
                 ],
               ),
+
               child: Column(
-                children: const [
+                children: [
                   Text(
                     'Current Balance',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey,
+                      color: secondaryTextColor,
                     ),
                   ),
 
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                  Text(
+                  const Text(
                     'PKR 30,000',
                     style: TextStyle(
                       fontSize: 28,
@@ -415,16 +487,29 @@ class ReportView extends StatelessWidget {
   // ---------------- SUMMARY CARD ----------------
 
   static Widget _summaryCard({
+    required BuildContext context,
     required String title,
     required String amount,
     required IconData icon,
     required Color iconColor,
   }) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final cardColor =
+        isDark ? const Color(0xff0A0A0A) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black;
+
+    final secondaryTextColor =
+        isDark ? Colors.white70 : Colors.grey;
+
     return Container(
       padding: const EdgeInsets.all(16),
 
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
 
         boxShadow: [
@@ -448,8 +533,8 @@ class ReportView extends StatelessWidget {
 
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.grey,
+            style: TextStyle(
+              color: secondaryTextColor,
             ),
           ),
 
@@ -457,9 +542,10 @@ class ReportView extends StatelessWidget {
 
           Text(
             amount,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
         ],
@@ -470,14 +556,21 @@ class ReportView extends StatelessWidget {
   // ---------------- CHART CONTAINER ----------------
 
   static Widget _chartContainer({
+    required BuildContext context,
     required Widget child,
   }) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final cardColor =
+        isDark ? const Color(0xff0A0A0A) : Colors.white;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
 
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
 
         boxShadow: [
@@ -520,7 +613,14 @@ class _Legend extends StatelessWidget {
 
         const SizedBox(width: 6),
 
-        Text(title),
+        Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
+          ),
+        ),
       ],
     );
   }
