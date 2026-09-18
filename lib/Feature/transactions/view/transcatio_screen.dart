@@ -14,6 +14,7 @@ import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 // Feature Controllers & Models
 
 class TransactionsView extends StatelessWidget {
@@ -23,16 +24,22 @@ class TransactionsView extends StatelessWidget {
 
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
+
     if (user != null) {
-      final nameFromMetaData = user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
-      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
+      final nameFromMetaData =
+          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
+
+      if (nameFromMetaData != null &&
+          nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
+
       if (user.email != null && user.email!.contains('@')) {
         final emailPrefix = user.email!.split('@').first;
         return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
       }
     }
+
     return 'User';
   }
 
@@ -40,20 +47,41 @@ class TransactionsView extends StatelessWidget {
     if (!Get.isRegistered<CategoriesController>()) {
       return categoryId;
     }
+
     final categoriesController = Get.find<CategoriesController>();
+
     final category = categoriesController.categoryList.firstWhereOrNull(
       (cat) => cat.id == categoryId,
     );
+
     return category?.name ?? categoryId;
   }
 
   String _getFormattedDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
     return "${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}";
   }
 
-  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
+  void _closeDrawerAndNavigate(
+    Widget Function() page, {
+    Bindings? binding,
+  }) {
     isDrawerOpen.value = false;
+
     Future.delayed(const Duration(milliseconds: 150), () {
       Get.to(page, binding: binding);
     });
@@ -71,19 +99,24 @@ class TransactionsView extends StatelessWidget {
           isDrawerOpen.value = false;
           return false;
         }
+
         return true;
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
+          // BACK BUTTON
           leading: IconButton(
             icon: Icon(
-              Icons.menu_rounded,
+              Icons.arrow_back_rounded,
               color: isDarkMode ? Colors.white : Colors.black87,
               size: 28,
             ),
-            onPressed: () => isDrawerOpen.value = true,
+            onPressed: () {
+              Get.back();
+            },
           ),
+
           title: Text(
             'Transactions',
             style: TextStyle(
@@ -91,9 +124,11 @@ class TransactionsView extends StatelessWidget {
               color: isDarkMode ? Colors.white : Colors.black87,
             ),
           ),
+
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
           scrolledUnderElevation: 0,
+
           actions: [
             IconButton(
               icon: Icon(
@@ -104,6 +139,7 @@ class TransactionsView extends StatelessWidget {
             ),
           ],
         ),
+
         body: Stack(
           children: [
             // Main Transactions Screen Content
@@ -115,21 +151,37 @@ class TransactionsView extends StatelessWidget {
 
                   double totalIncome = list
                       .where((tx) => tx.isIncome == true)
-                      .fold(0.0, (sum, tx) => sum + tx.amount);
+                      .fold(
+                        0.0,
+                        (sum, tx) => sum + tx.amount,
+                      );
 
                   double totalExpense = list
                       .where((tx) => tx.isIncome == false)
-                      .fold(0.0, (sum, tx) => sum + tx.amount);
+                      .fold(
+                        0.0,
+                        (sum, tx) => sum + tx.amount,
+                      );
 
                   return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                      color: isDarkMode
+                          ? const Color(0xFF1E1E1E)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.05),
+                          color: Colors.black.withOpacity(
+                            isDarkMode ? 0.3 : 0.05,
+                          ),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -144,7 +196,9 @@ class TransactionsView extends StatelessWidget {
                                 'Income',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  color: isDarkMode
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -159,11 +213,15 @@ class TransactionsView extends StatelessWidget {
                             ],
                           ),
                         ),
+
                         Container(
                           height: 35,
                           width: 1,
-                          color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                          color: isDarkMode
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300,
                         ),
+
                         Expanded(
                           child: Column(
                             children: [
@@ -171,7 +229,9 @@ class TransactionsView extends StatelessWidget {
                                 'Expense',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  color: isDarkMode
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -204,13 +264,17 @@ class TransactionsView extends StatelessWidget {
                             Icon(
                               Icons.receipt_long_outlined,
                               size: 48,
-                              color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                              color: isDarkMode
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade400,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'No transactions found.',
                               style: TextStyle(
-                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                color: isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
                                 fontSize: 14,
                               ),
                             ),
@@ -220,39 +284,61 @@ class TransactionsView extends StatelessWidget {
                     }
 
                     return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       itemCount: list.length,
                       itemBuilder: (context, index) {
                         final TransactionModel transaction = list[index];
                         final bool isIncome = transaction.isIncome;
-                        final String categoryName = _getCategoryName(transaction.categoryId);
-                        final String displayTitle = transaction.title.trim().isEmpty
-                            ? categoryName
-                            : transaction.title;
+
+                        final String categoryName =
+                            _getCategoryName(transaction.categoryId);
+
+                        final String displayTitle =
+                            transaction.title.trim().isEmpty
+                                ? categoryName
+                                : transaction.title;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                            color: isDarkMode
+                                ? const Color(0xFF1E1E1E)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+                                color: Colors.black.withOpacity(
+                                  isDarkMode ? 0.2 : 0.04,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
                             leading: CircleAvatar(
                               radius: 22,
                               backgroundColor: isIncome
-                                  ? (isDarkMode ? const Color(0xFF1E382B) : const Color(0xFFEBF9EE))
-                                  : (isDarkMode ? const Color(0xFF3B1E1E) : const Color(0xFFFDEEEE)),
+                                  ? (isDarkMode
+                                      ? const Color(0xFF1E382B)
+                                      : const Color(0xFFEBF9EE))
+                                  : (isDarkMode
+                                      ? const Color(0xFF3B1E1E)
+                                      : const Color(0xFFFDEEEE)),
                               child: Icon(
-                                isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                                color: isIncome ? const Color(0xFF4CAF50) : const Color(0xFFEB5757),
+                                isIncome
+                                    ? Icons.arrow_downward_rounded
+                                    : Icons.arrow_upward_rounded,
+                                color: isIncome
+                                    ? const Color(0xFF4CAF50)
+                                    : const Color(0xFFEB5757),
                                 size: 20,
                               ),
                             ),
@@ -263,7 +349,9 @@ class TransactionsView extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: isDarkMode ? Colors.white : Colors.black87,
+                                color: isDarkMode
+                                    ? Colors.white
+                                    : Colors.black87,
                               ),
                             ),
                             subtitle: Padding(
@@ -273,7 +361,9 @@ class TransactionsView extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  color: isDarkMode
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                   fontSize: 12,
                                 ),
                               ),
@@ -281,7 +371,9 @@ class TransactionsView extends StatelessWidget {
                             trailing: Text(
                               "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
                               style: TextStyle(
-                                color: isIncome ? const Color(0xFF4CAF50) : const Color(0xFFEB5757),
+                                color: isIncome
+                                    ? const Color(0xFF4CAF50)
+                                    : const Color(0xFFEB5757),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                               ),
@@ -295,9 +387,11 @@ class TransactionsView extends StatelessWidget {
               ],
             ),
 
-            // Custom Floating Drawer Overlay matching second reference image layout
+            // Custom Floating Drawer Overlay
             Obx(() {
-              if (!isDrawerOpen.value) return const SizedBox.shrink();
+              if (!isDrawerOpen.value) {
+                return const SizedBox.shrink();
+              }
 
               return Stack(
                 children: [
@@ -307,14 +401,21 @@ class TransactionsView extends StatelessWidget {
                       color: Colors.black.withOpacity(0.5),
                     ),
                   ),
+
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.78,
                       height: MediaQuery.of(context).size.height * 0.76,
-                      margin: const EdgeInsets.only(left: 12, top: 10, bottom: 80),
+                      margin: const EdgeInsets.only(
+                        left: 12,
+                        top: 10,
+                        bottom: 80,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                        color: isDarkMode
+                            ? const Color(0xFF1E1E1E)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
@@ -333,16 +434,22 @@ class TransactionsView extends StatelessWidget {
                               decoration: const BoxDecoration(
                                 color: Color(0xFF4CAF50),
                               ),
-                              currentAccountPictureSize: const Size.square(64),
+                              currentAccountPictureSize:
+                                  const Size.square(64),
                               currentAccountPicture: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
                                 ),
                                 child: CircleAvatar(
                                   backgroundColor: Colors.white,
                                   child: Text(
-                                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                                    _userName.isNotEmpty
+                                        ? _userName[0].toUpperCase()
+                                        : 'U',
                                     style: const TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
@@ -360,16 +467,22 @@ class TransactionsView extends StatelessWidget {
                                 ),
                               ),
                               accountEmail: Text(
-                                Supabase.instance.client.auth.currentUser?.email ?? '',
+                                Supabase.instance.client.auth.currentUser
+                                        ?.email ??
+                                    '',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.white.withOpacity(0.9),
                                 ),
                               ),
                             ),
+
                             Expanded(
                               child: ListView(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
                                 physics: const BouncingScrollPhysics(),
                                 children: [
                                   _buildDrawerOption(
@@ -377,55 +490,69 @@ class TransactionsView extends StatelessWidget {
                                     icon: Icons.account_balance_wallet_rounded,
                                     iconColor: const Color(0xFF2B82FB),
                                     title: 'Wallets',
-                                    subtitle: 'Manage your cash, bank and other...',
+                                    subtitle:
+                                        'Manage your cash, bank and other...',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const WalletsView(),
                                       binding: WalletsBinding(),
                                     ),
                                   ),
+
                                   const SizedBox(height: 8),
+
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.pie_chart_rounded,
                                     iconColor: const Color(0xFFFF9800),
                                     title: 'Budgets',
-                                    subtitle: 'Set and track monthly spen...',
+                                    subtitle:
+                                        'Set and track monthly spen...',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const BudgetView(),
                                       binding: BudgetBinding(),
                                     ),
                                   ),
+
                                   const SizedBox(height: 8),
+
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.stars_rounded,
                                     iconColor: const Color(0xFFE91E63),
                                     title: 'Goals',
-                                    subtitle: 'Track your financial targets...',
+                                    subtitle:
+                                        'Track your financial targets...',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const GoalsView(),
                                       binding: GoalsBinding(),
                                     ),
                                   ),
+
                                   const SizedBox(height: 8),
+
                                   _buildDrawerOption(
                                     context: context,
-                                    icon: Icons.notifications_active_rounded,
+                                    icon:
+                                        Icons.notifications_active_rounded,
                                     iconColor: const Color(0xFF9C27B0),
                                     title: 'Bills & Reminders',
-                                    subtitle: 'Manage upcoming bills an...',
+                                    subtitle:
+                                        'Manage upcoming bills an...',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const BillsRemindersView(),
                                       binding: BillsRemindersBinding(),
                                     ),
                                   ),
+
                                   const SizedBox(height: 8),
+
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.person_rounded,
                                     iconColor: const Color(0xFF00BCD4),
                                     title: 'Profile',
-                                    subtitle: 'Manage your profile and acc...',
+                                    subtitle:
+                                        'Manage your profile and acc...',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const SettingsView(),
                                       binding: SettingsBinding(),
@@ -458,13 +585,18 @@ class TransactionsView extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        color: isDarkMode
+            ? const Color(0xFF2A2A2A)
+            : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withOpacity(
+              isDarkMode ? 0.2 : 0.04,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -476,7 +608,10 @@ class TransactionsView extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             child: Row(
               children: [
                 Container(
@@ -486,9 +621,15 @@ class TransactionsView extends StatelessWidget {
                     color: iconColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: iconColor, size: 24),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 24,
+                  ),
                 ),
+
                 const SizedBox(width: 14),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,7 +639,9 @@ class TransactionsView extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: isDarkMode ? Colors.white : const Color(0xFF212121),
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF212121),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -508,16 +651,21 @@ class TransactionsView extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDarkMode ? Colors.grey.shade400 : const Color(0xFF757575),
+                          color: isDarkMode
+                              ? Colors.grey.shade400
+                              : const Color(0xFF757575),
                         ),
                       ),
                     ],
                   ),
                 ),
+
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
-                  color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  color: isDarkMode
+                      ? Colors.grey.shade500
+                      : Colors.grey.shade400,
                 ),
               ],
             ),
