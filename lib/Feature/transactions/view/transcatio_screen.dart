@@ -11,16 +11,46 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
+import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
+import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Feature Controllers & Models
 
-class TransactionsView extends StatelessWidget {
-  TransactionsView({super.key});
+class TransactionsView extends StatefulWidget {
+  const TransactionsView({super.key});
 
+  @override
+  State<TransactionsView> createState() => _TransactionsViewState();
+}
+
+class _TransactionsViewState extends State<TransactionsView> with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
+  final RxString searchQuery = ''.obs;
+  final RxBool isSearching = false.obs;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      isDrawerOpen.value = false;
+    }
+  }
 
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
@@ -130,13 +160,21 @@ class TransactionsView extends StatelessWidget {
           scrolledUnderElevation: 0,
 
           actions: [
-            IconButton(
-              icon: Icon(
-                Icons.search_rounded,
-                color: isDarkMode ? Colors.white : Colors.black87,
-              ),
-              onPressed: () {},
-            ),
+            Obx(() => IconButton(
+                  icon: Icon(
+                    isSearching.value ? Icons.close_rounded : Icons.search_rounded,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                  onPressed: () {
+                    if (isSearching.value) {
+                      isSearching.value = false;
+                      searchQuery.value = '';
+                      _searchController.clear();
+                    } else {
+                      isSearching.value = true;
+                    }
+                  },
+                )),
           ],
         ),
 
@@ -254,7 +292,13 @@ class TransactionsView extends StatelessWidget {
                 // 2. Transaction History List
                 Expanded(
                   child: Obx(() {
-                    final list = transactionsController.transactions;
+                    final query = searchQuery.value.toLowerCase();
+                    final list = transactionsController.transactions.where((tx) {
+                      if (query.isEmpty) return true;
+                      final categoryName = _getCategoryName(tx.categoryId).toLowerCase();
+                      final title = tx.title.toLowerCase();
+                      return title.contains(query) || categoryName.contains(query);
+                    }).toList();
 
                     if (list.isEmpty) {
                       return Center(
@@ -571,6 +615,62 @@ class TransactionsView extends StatelessWidget {
             }),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(
+    BuildContext context,
+    TransactionsController controller,
+    TransactionModel transaction,
+  ) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          'Delete Transaction',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete this transaction?',
+          style: TextStyle(
+            color: isDarkMode
+                ? Colors.grey.shade300
+                : Colors.grey.shade700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+
+              final success = await controller.deleteTransaction(
+                transaction.id,
+              );
+
+              if (success) {
+                Get.snackbar(
+                  'Deleted',
+                  'Transaction deleted successfully.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
       ),
     );
   }

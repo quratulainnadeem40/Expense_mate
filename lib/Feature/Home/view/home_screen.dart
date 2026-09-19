@@ -18,10 +18,9 @@ import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/Home/widgets/balance_card.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
-import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
-
+import 'package:expense_mate/Feature/Home/controller/home_controller.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -103,7 +102,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reportController = Get.find<ReportController>();
-    final transactionsController = Get.find<TransactionsController>();
+    final transactionsController =
+        Get.find<HomeController>().transactionsController;
+    
 
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;

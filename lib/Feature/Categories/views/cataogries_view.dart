@@ -11,12 +11,7 @@ import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_instance/src/bindings_interface.dart';
-import 'package:get/get_instance/src/extension_instance.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_rx/src/rx_types/rx_types.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../controller/categories_controller.dart';
@@ -30,8 +25,12 @@ class CategoriesView extends StatefulWidget {
 }
 
 class _CategoriesViewState extends State<CategoriesView> {
-  String? selectedForDeleteId;
+  final Set<String> selectedCategoryIds = <String>{};
+
+  bool isSelectionMode = false;
+
   late final CategoriesController controller;
+
   final RxBool isDrawerOpen = false.obs;
 
   @override
@@ -42,6 +41,80 @@ class _CategoriesViewState extends State<CategoriesView> {
         ? Get.find<CategoriesController>()
         : Get.put(CategoriesController());
   }
+
+  // ============================================================
+  // DRAWER
+  // ============================================================
+
+  void _closeDrawerInstantly() {
+    if (isDrawerOpen.value) {
+      isDrawerOpen.value = false;
+    }
+  }
+
+  void _closeDrawerAndNavigate(
+    Widget Function() page, {
+    Bindings? binding,
+  }) {
+    isDrawerOpen.value = false;
+
+    Future.delayed(const Duration(milliseconds: 180), () {
+      Get.to(page, binding: binding);
+    });
+  }
+
+  // ============================================================
+  // SELECTION MODE
+  // ============================================================
+
+  void _enterSelectionMode(String categoryId) {
+    setState(() {
+      isSelectionMode = true;
+      selectedCategoryIds.add(categoryId);
+    });
+  }
+
+  void _toggleCategorySelection(String categoryId) {
+    setState(() {
+      if (selectedCategoryIds.contains(categoryId)) {
+        selectedCategoryIds.remove(categoryId);
+      } else {
+        selectedCategoryIds.add(categoryId);
+      }
+
+      if (selectedCategoryIds.isEmpty) {
+        isSelectionMode = false;
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedCategoryIds.clear();
+    });
+  }
+
+  Future<void> _deleteSelectedCategories() async {
+    if (selectedCategoryIds.isEmpty) {
+      return;
+    }
+
+    final idsToDelete = selectedCategoryIds.toList();
+
+    await controller.deleteCategories(idsToDelete);
+
+    if (mounted) {
+      setState(() {
+        isSelectionMode = false;
+        selectedCategoryIds.clear();
+      });
+    }
+  }
+
+  // ============================================================
+  // USER NAME
+  // ============================================================
 
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
@@ -69,30 +142,108 @@ class _CategoriesViewState extends State<CategoriesView> {
     return 'User';
   }
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
-    isDrawerOpen.value = false;
+  // ============================================================
+  // ADD CATEGORY
+  // ============================================================
 
-    Future.delayed(const Duration(milliseconds: 180), () {
-      Get.to(
-        page,
-        binding: binding,
-      );
-    });
+  Future<void> _openAddCategoryDialog() async {
+    await Get.dialog(
+      const AddCategoryDialog(),
+      barrierDismissible: false,
+    );
+
+    await controller.fetchCategories();
   }
+
+  // ============================================================
+  // CATEGORY COLORS
+  // ============================================================
 
   Color _getCategoryColor(
     String name,
     int defaultColorValue,
   ) {
     switch (name.toLowerCase().trim()) {
-      case 'transport':
+      case 'food':
+      case 'food & dining':
+      case 'restaurant':
+      case 'meal':
+        return const Color(0xFFFF7043);
+
+      case 'groceries':
+        return const Color(0xFF66BB6A);
+
+      case 'rent':
+      case 'housing':
+      case 'home':
         return const Color(0xFF42A5F5);
+
+      case 'bills':
+      case 'utilities':
+        return const Color(0xFFFF9800);
+
+      case 'transport':
+      case 'transportation':
+        return const Color(0xFF42A5F5);
+
+      case 'fuel':
+        return const Color(0xFFE53935);
 
       case 'shopping':
         return const Color(0xFFAB47BC);
+
+      case 'clothing':
+        return const Color(0xFFEC407A);
+
+      case 'health':
+      case 'healthcare':
+      case 'medicine':
+        return const Color(0xFFE53935);
+
+      case 'education':
+      case 'school':
+        return const Color(0xFF5C6BC0);
+
+      case 'mobile':
+      case 'phone':
+      case 'mobile & internet':
+        return const Color(0xFF26A69A);
+
+      case 'internet':
+      case 'wifi':
+        return const Color(0xFF29B6F6);
+
+      case 'entertainment':
+      case 'movie':
+        return const Color(0xFF7E57C2);
+
+      case 'travel':
+      case 'flight':
+        return const Color(0xFF26A69A);
+
+      case 'beauty':
+      case 'personal care':
+        return const Color(0xFFEC407A);
+
+      case 'fitness':
+      case 'sports':
+        return const Color(0xFF66BB6A);
+
+      case 'pets':
+        return const Color(0xFF8D6E63);
+
+      case 'gifts':
+      case 'gift':
+      case 'gifts & donations':
+        return const Color(0xFFE91E63);
+
+      case 'subscriptions':
+        return const Color(0xFF7E57C2);
+
+      case 'home maintenance':
+      case 'maintenance':
+      case 'tools':
+        return const Color(0xFF78909C);
 
       case 'salary':
         return const Color(0xFFFFA726);
@@ -100,21 +251,11 @@ class _CategoriesViewState extends State<CategoriesView> {
       case 'investment':
         return const Color(0xFFEF5350);
 
-      case 'health':
-        return const Color(0xFF7E57C2);
-
-      case 'gift':
-      case 'gifts':
-        return const Color(0xFFEC407A);
-
       case 'freelance':
         return const Color(0xFF26A69A);
 
       case 'business':
         return const Color(0xFF5C6BC0);
-
-      case 'bills':
-        return const Color(0xFFFF7043);
 
       case 'other':
         return const Color(0xFF78909C);
@@ -136,46 +277,55 @@ class _CategoriesViewState extends State<CategoriesView> {
       const Color(0xFF8D6E63),
     ];
 
-    final int hash = name.codeUnits.fold(
-      0,
-      (prev, curr) => prev + curr,
-    );
+    final int hash =
+        name.codeUnits.fold(0, (prev, curr) => prev + curr);
 
     return customColors[hash % customColors.length];
   }
 
-  // Updated mapping for all 20 categories.
-  // These are Flutter built-in modern rounded icons,
-  // so no HugeIcons package is required.
+  // ============================================================
+  // CATEGORY ICONS
+  // ============================================================
+
   IconData _getIconData(String iconName) {
     switch (iconName.toLowerCase().trim()) {
       case 'food':
+      case 'food & dining':
       case 'restaurant':
+      case 'meal':
         return Icons.restaurant_rounded;
-
-      case 'transport':
-      case 'directions_car':
-        return Icons.directions_car_rounded;
 
       case 'groceries':
         return Icons.shopping_basket_rounded;
+
+      case 'rent':
+      case 'housing':
+      case 'home':
+        return Icons.home_work_rounded;
+
+      case 'bills':
+      case 'utilities':
+        return Icons.receipt_long_rounded;
+
+      case 'transport':
+      case 'transportation':
+      case 'directions_car':
+        return Icons.directions_car_rounded;
+
+      case 'fuel':
+        return Icons.local_gas_station_rounded;
 
       case 'shopping':
       case 'shopping_bag':
         return Icons.shopping_bag_rounded;
 
-      case 'rent':
-        return Icons.home_work_rounded;
-
-      case 'bills':
-      case 'receipt_long':
-        return Icons.receipt_long_rounded;
-
-      case 'fuel':
-        return Icons.local_gas_station_rounded;
+      case 'clothing':
+        return Icons.checkroom_rounded;
 
       case 'health':
-        return Icons.health_and_safety_rounded;
+      case 'healthcare':
+      case 'medicine':
+        return Icons.medical_services_rounded;
 
       case 'education':
       case 'school':
@@ -183,41 +333,46 @@ class _CategoriesViewState extends State<CategoriesView> {
 
       case 'mobile':
       case 'phone':
+      case 'mobile & internet':
         return Icons.phone_android_rounded;
 
       case 'internet':
+      case 'wifi':
         return Icons.wifi_rounded;
-
-      case 'clothing':
-        return Icons.checkroom_rounded;
-
-      case 'travel':
-        return Icons.flight_rounded;
 
       case 'entertainment':
       case 'movie':
         return Icons.movie_rounded;
 
-      case 'fitness':
-        return Icons.fitness_center_rounded;
-
-      case 'gifts':
-      case 'gift':
-        return Icons.card_giftcard_rounded;
+      case 'travel':
+      case 'flight':
+        return Icons.flight_rounded;
 
       case 'beauty':
+      case 'personal care':
         return Icons.face_retouching_natural_rounded;
+
+      case 'fitness':
+      case 'sports':
+        return Icons.fitness_center_rounded;
 
       case 'pets':
         return Icons.pets_rounded;
 
-      case 'home':
-        return Icons.house_rounded;
+      case 'gifts':
+      case 'gift':
+      case 'gifts & donations':
+        return Icons.card_giftcard_rounded;
 
-      case 'other':
-        return Icons.more_horiz_rounded;
+      case 'subscriptions':
+        return Icons.subscriptions_rounded;
 
-      // Existing categories ko bhi support karta hai.
+      case 'home maintenance':
+      case 'maintenance':
+      case 'tools':
+        return Icons.handyman_rounded;
+
+      // Existing categories
       case 'work':
       case 'salary':
       case 'freelance':
@@ -232,617 +387,727 @@ class _CategoriesViewState extends State<CategoriesView> {
       case 'bookmark':
         return Icons.bookmark_rounded;
 
+      case 'other':
+        return Icons.more_horiz_rounded;
+
       default:
         return Icons.category_rounded;
     }
   }
 
-  Future<void> _openAddCategoryDialog() async {
-    await Get.dialog(
-      const AddCategoryDialog(),
-      barrierDismissible: false,
-    );
-
-    await controller.fetchCategories();
-  }
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
     final bool isDark =
         Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF7F9F8),
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          _closeDrawerInstantly();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDark
+            ? const Color(0xFF121212)
+            : const Color(0xFFF7F9F8),
 
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
+        // ========================================================
+        // APP BAR
+        // ========================================================
 
-        leading: IconButton(
-          icon: Icon(
-            Icons.menu_rounded,
-            color: isDark
-                ? Colors.white
-                : const Color(0xFF2E7D32),
-            size: 28,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+
+          leading: isSelectionMode
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.close_rounded,
+                  ),
+                  onPressed: _exitSelectionMode,
+                )
+              : IconButton(
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: isDark
+                        ? Colors.white
+                        : const Color(0xFF2E7D32),
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    isDrawerOpen.value = true;
+                  },
+                ),
+
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isSelectionMode
+                    ? '${selectedCategoryIds.length} selected'
+                    : 'Categories',
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
+
+              const SizedBox(height: 2),
+
+              Text(
+                'Manage your expense categories',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
+                ),
+              ),
+            ],
           ),
-          onPressed: () {
-            isDrawerOpen.value = true;
-          },
-        ),
 
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Categories',
-              style: AppTextStyles.headingMedium(isDark).copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
+          actions: [
+            if (isSelectionMode)
+              IconButton(
+                tooltip: 'Delete selected categories',
+                onPressed: selectedCategoryIds.isEmpty
+                    ? null
+                    : _deleteSelectedCategories,
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                ),
+              )
+            else
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    isSelectionMode = true;
+                  });
+                },
+                child: const Text('Select'),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Manage your expense categories',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark
-                    ? Colors.grey[400]
-                    : Colors.grey[600],
-              ),
-            ),
           ],
         ),
-      ),
 
-      body: Stack(
-        children: [
-          GestureDetector(
-            onTap: () {
-              if (selectedForDeleteId != null) {
-                setState(() {
-                  selectedForDeleteId = null;
-                });
-              }
-            },
+        // ========================================================
+        // BODY
+        // ========================================================
 
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
+        body: Stack(
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (isSelectionMode) {
+                  _exitSelectionMode();
+                }
+              },
 
-              if (controller.categoryList.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No categories found',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (controller.categoryList.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No categories found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
                     ),
+                  );
+                }
+
+                final categories =
+                    controller.categoryList.toList();
+
+                return ListView.builder(
+                  padding: const EdgeInsets.only(
+                    top: 12,
+                    bottom: 100,
                   ),
+
+                  itemCount: categories.length,
+
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+
+                    final Color baseColor =
+                        _getCategoryColor(
+                      category.name,
+                      category.colorValue,
+                    );
+
+                    final int transactionCount =
+                        controller.getCategoryCount(
+                      category.id,
+                    );
+
+                    final bool isDefaultCategory =
+                        category.isDefault;
+
+                    final bool isSelected =
+                        selectedCategoryIds.contains(
+                      category.id,
+                    );
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1E1E1E)
+                            : Colors.white,
+
+                        borderRadius:
+                            BorderRadius.circular(16),
+
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withOpacity(0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius:
+                            BorderRadius.circular(16),
+
+                        child: InkWell(
+                          borderRadius:
+                              BorderRadius.circular(16),
+
+                          onTap: () {
+                            _closeDrawerInstantly();
+
+                            if (isSelectionMode) {
+                              _toggleCategorySelection(
+                                category.id,
+                              );
+                            } else {
+                              Get.to(
+                                () =>
+                                    CategoryTransactionsScreen(
+                                  categoryName:
+                                      category.name,
+                                ),
+                              );
+                            }
+                          },
+
+                          onLongPress: () {
+                            if (!isDefaultCategory) {
+                              if (isSelectionMode) {
+                                _toggleCategorySelection(
+                                  category.id,
+                                );
+                              } else {
+                                _enterSelectionMode(
+                                  category.id,
+                                );
+                              }
+                            }
+                          },
+
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+
+                                  decoration: BoxDecoration(
+                                    color: baseColor
+                                        .withOpacity(0.18),
+                                    shape: BoxShape.circle,
+                                  ),
+
+                                  child: Icon(
+                                    _getIconData(
+                                      category.icon,
+                                    ),
+                                    color: baseColor,
+                                    size: 24,
+                                  ),
+                                ),
+
+                                const SizedBox(width: 16),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+
+                                    children: [
+                                      Text(
+                                        category.name,
+                                        style:
+                                            AppTextStyles.bodyLarge(
+                                          isDark,
+                                        ).copyWith(
+                                          fontWeight:
+                                              FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Container(
+                                        padding:
+                                            const EdgeInsets
+                                                .symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+
+                                        decoration:
+                                            BoxDecoration(
+                                          color: isDark
+                                              ? Colors.grey[800]
+                                              : const Color(
+                                                  0xFFF0F2F5,
+                                                ),
+                                          borderRadius:
+                                              BorderRadius
+                                                  .circular(
+                                            12,
+                                          ),
+                                        ),
+
+                                        child: Text(
+                                          '$transactionCount transactions',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isDark
+                                                ? Colors.grey[300]
+                                                : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                if (isSelectionMode)
+                                  Icon(
+                                    isSelected
+                                        ? Icons
+                                            .check_circle_rounded
+                                        : Icons
+                                            .circle_outlined,
+                                    color: isSelected
+                                        ? const Color(
+                                            0xFF2EA44F,
+                                          )
+                                        : Colors.grey[400],
+                                    size: 24,
+                                  )
+                                else
+                                  Icon(
+                                    Icons
+                                        .chevron_right_rounded,
+                                    color: Colors.grey[400],
+                                    size: 22,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
+              }),
+            ),
+
+            // ======================================================
+            // DRAWER
+            // ======================================================
+
+            Obx(() {
+              if (!isDrawerOpen.value) {
+                return const SizedBox.shrink();
               }
 
-              final categories = controller.categoryList;
-
-              return ListView.builder(
-                padding: const EdgeInsets.only(
-                  top: 12,
-                  bottom: 100,
-                ),
-                itemCount: categories.length,
-
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-
-                  final Color baseColor =
-                      _getCategoryColor(
-                    category.name,
-                    category.colorValue,
-                  );
-
-                  final int transactionCount =
-                      controller.getCategoryCount(
-                    category.id,
-                  );
-
-                  final bool isDeleteVisible =
-                      selectedForDeleteId == category.id;
-
-                  bool isDefaultCategory = false;
-
-                  try {
-                    isDefaultCategory = category.isDefault;
-                  } catch (_) {}
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+              return Positioned.fill(
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        isDrawerOpen.value = false;
+                      },
+                      child: Container(
+                        color: Colors.black.withOpacity(0.5),
+                      ),
                     ),
 
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF1E1E1E)
-                          : Colors.white,
+                    Align(
+                      alignment: Alignment.centerLeft,
 
-                      borderRadius: BorderRadius.circular(16),
+                      child: SafeArea(
+                        child: Container(
+                          width:
+                              MediaQuery.of(context).size.width *
+                                  0.78,
 
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-
-                        onTap: () {
-                          if (selectedForDeleteId != null) {
-                            setState(() {
-                              selectedForDeleteId = null;
-                            });
-                          } else {
-                            Get.to(
-                              () => CategoryTransactionsScreen(
-                                categoryName: category.name,
-                              ),
-                            );
-                          }
-                        },
-
-                        onLongPress: () {
-                          if (!isDefaultCategory) {
-                            setState(() {
-                              selectedForDeleteId = category.id;
-                            });
-                          }
-                        },
-
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                          margin: const EdgeInsets.only(
+                            left: 12,
+                            top: 8,
+                            bottom: 8,
                           ),
 
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : const Color(0xFFF9FAFB),
 
-                                decoration: BoxDecoration(
-                                  color:
-                                      baseColor.withOpacity(0.18),
-                                  shape: BoxShape.circle,
-                                ),
+                            borderRadius:
+                                BorderRadius.circular(28),
 
-                                child: Icon(
-                                  _getIconData(category.icon),
-                                  color: baseColor,
-                                  size: 24,
-                                ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withOpacity(0.3),
+                                blurRadius: 20,
+                                offset:
+                                    const Offset(0, 10),
                               ),
+                            ],
+                          ),
 
-                              const SizedBox(width: 16),
+                          child: ClipRRect(
+                            borderRadius:
+                                BorderRadius.circular(28),
 
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                            child: Column(
+                              children: [
+                                UserAccountsDrawerHeader(
+                                  margin: EdgeInsets.zero,
 
-                                  children: [
-                                    Text(
-                                      category.name,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isDark
+                                          ? [
+                                              const Color(
+                                                0xFF2E7D32,
+                                              ),
+                                              const Color(
+                                                0xFF1B5E20,
+                                              ),
+                                            ]
+                                          : [
+                                              const Color(
+                                                0xFF4CAF50,
+                                              ),
+                                              const Color(
+                                                0xFF388E3C,
+                                              ),
+                                            ],
 
-                                      style:
-                                          AppTextStyles.bodyLarge(
-                                        isDark,
-                                      ).copyWith(
-                                        fontWeight:
-                                            FontWeight.w600,
-                                        fontSize: 16,
+                                      begin:
+                                          Alignment.topLeft,
+                                      end:
+                                          Alignment.bottomRight,
+                                    ),
+                                  ),
+
+                                  currentAccountPictureSize:
+                                      const Size.square(64),
+
+                                  currentAccountPicture:
+                                      Container(
+                                    decoration:
+                                        BoxDecoration(
+                                      shape:
+                                          BoxShape.circle,
+                                      border: Border.all(
+                                        color:
+                                            Colors.white,
+                                        width: 2,
                                       ),
                                     ),
 
-                                    const SizedBox(height: 4),
-
-                                    Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-
-                                      decoration: BoxDecoration(
-                                        color: isDark
-                                            ? Colors.grey[800]
-                                            : const Color(
-                                                0xFFF0F2F5,
-                                              ),
-
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                          12,
-                                        ),
-                                      ),
+                                    child: CircleAvatar(
+                                      backgroundColor:
+                                          Colors.white,
 
                                       child: Text(
-                                        '$transactionCount transactions',
+                                        _userName.isNotEmpty
+                                            ? _userName[0]
+                                                .toUpperCase()
+                                            : 'U',
 
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isDark
-                                              ? Colors.grey[300]
-                                              : Colors.grey[600],
+                                        style:
+                                            const TextStyle(
+                                          fontSize: 26,
+                                          fontWeight:
+                                              FontWeight.bold,
+                                          color: Color(
+                                            0xFF2E7D32,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
+
+                                  accountName: Text(
+                                    _userName,
+                                    style:
+                                        const TextStyle(
+                                      fontWeight:
+                                          FontWeight.bold,
+                                      fontSize: 18,
+                                      color:
+                                          Colors.white,
+                                    ),
+                                  ),
+
+                                  accountEmail: Text(
+                                    Supabase
+                                            .instance
+                                            .client
+                                            .auth
+                                            .currentUser
+                                            ?.email ??
+                                        '',
+
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white
+                                          .withOpacity(0.9),
+                                    ),
+                                  ),
                                 ),
-                              ),
 
-                              if (!isDeleteVisible)
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: Colors.grey[400],
-                                  size: 22,
-                                ),
-
-                              if (isDeleteVisible) ...[
-                                const SizedBox(width: 8),
-
-                                InkWell(
-                                  onTap: () async {
-                                    await controller.deleteCategory(
-                                      category.id,
-                                    );
-
-                                    if (mounted) {
-                                      setState(() {
-                                        selectedForDeleteId = null;
-                                      });
-                                    }
-                                  },
-
-                                  borderRadius:
-                                      BorderRadius.circular(8),
-
-                                  child: Container(
+                                Expanded(
+                                  child: ListView(
                                     padding:
-                                        const EdgeInsets.all(8),
-
-                                    decoration: BoxDecoration(
-                                      color:
-                                          const Color(0xFFFFEBEE),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
+                                        const EdgeInsets
+                                            .symmetric(
+                                      horizontal: 14,
+                                      vertical: 16,
                                     ),
 
-                                    child: const Icon(
-                                      Icons.delete_outline_rounded,
-                                      color:
-                                          Color(0xFFE57373),
-                                      size: 18,
-                                    ),
+                                    physics:
+                                        const BouncingScrollPhysics(),
+
+                                    children: [
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons
+                                            .account_balance_wallet_rounded,
+                                        iconColor:
+                                            const Color(
+                                          0xFF2B82FB,
+                                        ),
+                                        title: 'Wallets',
+                                        subtitle:
+                                            'Manage your cash, bank and other wallets',
+                                        onTap: () =>
+                                            _closeDrawerAndNavigate(
+                                          () =>
+                                              const WalletsView(),
+                                          binding:
+                                              WalletsBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons
+                                            .pie_chart_rounded,
+                                        iconColor:
+                                            const Color(
+                                          0xFFFF9800,
+                                        ),
+                                        title: 'Budgets',
+                                        subtitle:
+                                            'Set and track monthly spending limits',
+                                        onTap: () =>
+                                            _closeDrawerAndNavigate(
+                                          () =>
+                                              const BudgetView(),
+                                          binding:
+                                              BudgetBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons
+                                            .stars_rounded,
+                                        iconColor:
+                                            const Color(
+                                          0xFFE91E63,
+                                        ),
+                                        title: 'Goals',
+                                        subtitle:
+                                            'Track your financial targets and savings',
+                                        onTap: () =>
+                                            _closeDrawerAndNavigate(
+                                          () =>
+                                              const GoalsView(),
+                                          binding:
+                                              GoalsBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons
+                                            .notifications_active_rounded,
+                                        iconColor:
+                                            const Color(
+                                          0xFF9C27B0,
+                                        ),
+                                        title:
+                                            'Bills & Reminders',
+                                        subtitle:
+                                            'Manage upcoming bills and reminders',
+                                        onTap: () =>
+                                            _closeDrawerAndNavigate(
+                                          () =>
+                                              const BillsRemindersView(),
+                                          binding:
+                                              BillsRemindersBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons
+                                            .person_rounded,
+                                        iconColor:
+                                            const Color(
+                                          0xFF00BCD4,
+                                        ),
+                                        title: 'Profile',
+                                        subtitle:
+                                            'Manage your profile and account settings',
+                                        onTap: () =>
+                                            _closeDrawerAndNavigate(
+                                          () =>
+                                              const SettingsView(),
+                                          binding:
+                                              SettingsBinding(),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               );
             }),
-          ),
 
-          // DRAWER
-          Obx(() {
-            if (!isDrawerOpen.value) {
-              return const SizedBox.shrink();
-            }
+            // ======================================================
+            // ADD BUTTON
+            // ======================================================
 
-            return Positioned.fill(
-              child: Stack(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      isDrawerOpen.value = false;
-                    },
-                    child: Container(
-                      color: Colors.black.withOpacity(0.5),
+            Obx(() {
+              if (isDrawerOpen.value) {
+                return const SizedBox.shrink();
+              }
+
+              return Positioned(
+                right: 16,
+                bottom: 20,
+
+                child: ElevatedButton.icon(
+                  onPressed: _openAddCategoryDialog,
+
+                  icon: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+
+                  label: const Text(
+                    'Add',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
 
-                  Align(
-                    alignment: Alignment.centerLeft,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFF2E7D32),
+                    foregroundColor: Colors.white,
+                    elevation: 5,
 
-                    child: SafeArea(
-                      child: Container(
-                        width:
-                            MediaQuery.of(context).size.width * 0.78,
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
 
-                        margin: const EdgeInsets.only(
-                          left: 12,
-                          top: 8,
-                          bottom: 8,
-                        ),
-
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF1E1E1E)
-                              : const Color(0xFFF9FAFB),
-
-                          borderRadius:
-                              BorderRadius.circular(28),
-
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  Colors.black.withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(28),
-
-                          child: Column(
-                            children: [
-                              UserAccountsDrawerHeader(
-                                margin: EdgeInsets.zero,
-
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isDark
-                                        ? [
-                                            const Color(0xFF2E7D32),
-                                            const Color(0xFF1B5E20),
-                                          ]
-                                        : [
-                                            const Color(0xFF4CAF50),
-                                            const Color(0xFF388E3C),
-                                          ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-
-                                currentAccountPictureSize:
-                                    const Size.square(64),
-
-                                currentAccountPicture:
-                                    Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-
-                                  child: CircleAvatar(
-                                    backgroundColor: Colors.white,
-
-                                    child: Text(
-                                      _userName.isNotEmpty
-                                          ? _userName[0]
-                                              .toUpperCase()
-                                          : 'U',
-
-                                      style: const TextStyle(
-                                        fontSize: 26,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                        color:
-                                            Color(0xFF2E7D32),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                accountName: Text(
-                                  _userName,
-
-                                  style: const TextStyle(
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
-                                ),
-
-                                accountEmail: Text(
-                                  Supabase.instance.client.auth
-                                          .currentUser
-                                          ?.email ??
-                                      '',
-
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.white
-                                        .withOpacity(0.9),
-                                  ),
-                                ),
-                              ),
-
-                              Expanded(
-                                child: ListView(
-                                  padding:
-                                      const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 16,
-                                  ),
-
-                                  physics:
-                                      const BouncingScrollPhysics(),
-
-                                  children: [
-                                    _buildDrawerOption(
-                                      context: context,
-                                      icon: Icons
-                                          .account_balance_wallet_rounded,
-                                      iconColor:
-                                          const Color(0xFF2B82FB),
-                                      title: 'Wallets',
-                                      subtitle:
-                                          'Manage your cash, bank and other wallets',
-
-                                      onTap: () =>
-                                          _closeDrawerAndNavigate(
-                                        () =>
-                                            const WalletsView(),
-                                        binding:
-                                            WalletsBinding(),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    _buildDrawerOption(
-                                      context: context,
-                                      icon: Icons
-                                          .pie_chart_rounded,
-                                      iconColor:
-                                          const Color(0xFFFF9800),
-                                      title: 'Budgets',
-                                      subtitle:
-                                          'Set and track monthly spending limits',
-
-                                      onTap: () =>
-                                          _closeDrawerAndNavigate(
-                                        () =>
-                                            const BudgetView(),
-                                        binding:
-                                            BudgetBinding(),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    _buildDrawerOption(
-                                      context: context,
-                                      icon:
-                                          Icons.stars_rounded,
-                                      iconColor:
-                                          const Color(0xFFE91E63),
-                                      title: 'Goals',
-                                      subtitle:
-                                          'Track your financial targets and savings',
-
-                                      onTap: () =>
-                                          _closeDrawerAndNavigate(
-                                        () =>
-                                            const GoalsView(),
-                                        binding:
-                                            GoalsBinding(),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    _buildDrawerOption(
-                                      context: context,
-                                      icon: Icons
-                                          .notifications_active_rounded,
-                                      iconColor:
-                                          const Color(0xFF9C27B0),
-                                      title:
-                                          'Bills & Reminders',
-                                      subtitle:
-                                          'Manage upcoming bills and reminders',
-
-                                      onTap: () =>
-                                          _closeDrawerAndNavigate(
-                                        () =>
-                                            const BillsRemindersView(),
-                                        binding:
-                                            BillsRemindersBinding(),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    _buildDrawerOption(
-                                      context: context,
-                                      icon:
-                                          Icons.person_rounded,
-                                      iconColor:
-                                          const Color(0xFF00BCD4),
-                                      title: 'Profile',
-                                      subtitle:
-                                          'Manage your profile and account settings',
-
-                                      onTap: () =>
-                                          _closeDrawerAndNavigate(
-                                        () =>
-                                            const SettingsView(),
-                                        binding:
-                                            SettingsBinding(),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12),
                     ),
                   ),
-                ],
-              ),
-            );
-          }),
-        ],
+                ),
+              );
+            }),
+          ],
+        ),
       ),
-
-      floatingActionButton: Obx(() {
-        if (isDrawerOpen.value) {
-          return const SizedBox.shrink();
-        }
-
-        return FloatingActionButton(
-          onPressed: _openAddCategoryDialog,
-
-          backgroundColor:
-              const Color(0xFF2E7D32),
-
-          elevation: 4,
-
-          mini: true,
-
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 22,
-          ),
-        );
-      }),
     );
   }
+
+  // ============================================================
+  // DRAWER OPTION
+  // ============================================================
 
   Widget _buildDrawerOption({
     required BuildContext context,
@@ -881,12 +1146,12 @@ class _CategoriesViewState extends State<CategoriesView> {
 
         child: InkWell(
           onTap: onTap,
-
           borderRadius:
               BorderRadius.circular(16),
 
           child: Padding(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
             ),
@@ -898,7 +1163,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                   height: 44,
 
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color:
+                        iconColor.withOpacity(0.12),
                     borderRadius:
                         BorderRadius.circular(12),
                   ),
@@ -923,10 +1189,13 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontWeight:
+                              FontWeight.w700,
                           color: isDarkMode
                               ? Colors.white
-                              : const Color(0xFF212121),
+                              : const Color(
+                                  0xFF212121,
+                                ),
                         ),
                       ),
 

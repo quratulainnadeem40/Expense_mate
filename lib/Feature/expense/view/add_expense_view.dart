@@ -87,7 +87,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        Icons.arrow_downward_rounded,
+                                        Icons.arrow_upward_rounded,
                                         size: 16,
                                         color: isExpense
                                             ? Colors.white
@@ -140,7 +140,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        Icons.arrow_upward_rounded,
+                                        Icons.arrow_downward_rounded,
                                         size: 16,
                                         color: !isExpense
                                             ? Colors.white
@@ -408,23 +408,42 @@ class AddExpenseView extends GetView<ExpenseController> {
                     const SizedBox(height: 16),
 
                     // --------------------------------------------------
-                    // NOTE FIELD
+                    // NOTE FIELD  (hint changes with selected category)
                     // --------------------------------------------------
                     _buildFieldLabel(theme, 'Note (Optional)'),
                     const SizedBox(height: 6),
-                    TextField(
-                      controller: controller.noteController,
-                      style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                      decoration: _buildInputDecoration(theme, isDark).copyWith(
-                        hintText: 'e.g., Lunch with team',
-                        hintStyle: TextStyle(
-                          color: theme.hintColor.withOpacity(0.6),
-                          fontSize: 13,
+                    Obx(() {
+                      final isExpense = controller.isExpense.value;
+
+                      final currentList = isExpense
+                          ? controller.expenseCategories
+                          : controller.incomeCategories;
+
+                      final selectedId = controller.selectedCategoryId.value;
+
+                      String? selectedName;
+                      for (final category in currentList) {
+                        if (category.id == selectedId) {
+                          selectedName = category.name;
+                          break;
+                        }
+                      }
+
+                      return TextField(
+                        controller: controller.noteController,
+                        style: TextStyle(
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
-                      ),
-                    ),
+                        decoration:
+                            _buildInputDecoration(theme, isDark).copyWith(
+                          hintText: _noteHint(selectedName, isExpense),
+                          hintStyle: TextStyle(
+                            color: theme.hintColor.withOpacity(0.6),
+                            fontSize: 13,
+                          ),
+                        ),
+                      );
+                    }),
                   ], // <-- Scrollable Column children close HERE
                 ),
               ),
@@ -520,6 +539,111 @@ class AddExpenseView extends GetView<ExpenseController> {
   }
 
   // Helper Methods & Styles
+
+  /// Returns a note placeholder based on the selected category.
+  /// Matching is keyword based, so small naming differences
+  /// (e.g. "Food", "Food & Drinks", "Foods") still work.
+  String _noteHint(String? categoryName, bool isExpense) {
+    final name = (categoryName ?? '').toLowerCase().trim();
+
+    if (name.isEmpty) {
+      return isExpense
+          ? 'e.g., What did you spend on?'
+          : 'e.g., Where did this income come from?';
+    }
+
+    bool has(List<String> keys) => keys.any((k) => name.contains(k));
+
+    if (isExpense) {
+      if (has(['food', 'restaurant', 'dining', 'lunch', 'dinner'])) {
+        return 'e.g., Lunch with team';
+      }
+      if (has(['grocer', 'kitchen', 'vegetable', 'market'])) {
+        return 'e.g., Monthly grocery shopping';
+      }
+      if (has(['transport', 'travel', 'fuel', 'petrol', 'taxi', 'uber',
+          'careem', 'bus', 'rickshaw'])) {
+        return 'e.g., Fuel for the bike';
+      }
+      if (has(['shop', 'cloth', 'fashion', 'apparel'])) {
+        return 'e.g., New pair of shoes';
+      }
+      if (has(['bill', 'utilit', 'electric', 'gas', 'water'])) {
+        return 'e.g., Electricity bill for this month';
+      }
+      if (has(['rent', 'house', 'home'])) {
+        return 'e.g., House rent payment';
+      }
+      if (has(['health', 'medical', 'doctor', 'medicine', 'hospital',
+          'pharmac'])) {
+        return 'e.g., Doctor visit and medicines';
+      }
+      if (has(['educat', 'school', 'college', 'universit', 'fee', 'tuition',
+          'book', 'course'])) {
+        return 'e.g., Semester fee payment';
+      }
+      if (has(['entertain', 'movie', 'game', 'fun', 'outing'])) {
+        return 'e.g., Movie tickets with friends';
+      }
+      if (has(['mobile', 'phone', 'internet', 'wifi', 'recharge', 'load',
+          'subscription', 'netflix'])) {
+        return 'e.g., Monthly internet package';
+      }
+      if (has(['gift', 'donat', 'charity', 'zakat', 'sadqa'])) {
+        return 'e.g., Gift for a friend\'s wedding';
+      }
+      if (has(['personal', 'care', 'salon', 'grooming', 'beauty'])) {
+        return 'e.g., Haircut and grooming';
+      }
+      if (has(['famil', 'kid', 'child', 'parent'])) {
+        return 'e.g., Kids\' monthly expenses';
+      }
+      if (has(['repair', 'maintain', 'maintenance', 'service'])) {
+        return 'e.g., Bike servicing and repair';
+      }
+      if (has(['insur', 'tax', 'loan', 'installment', 'emi'])) {
+        return 'e.g., Monthly installment payment';
+      }
+      if (has(['pet', 'animal'])) {
+        return 'e.g., Pet food and vet visit';
+      }
+      return 'e.g., Add a short note for $categoryName';
+    }
+
+    // ---------------- INCOME ----------------
+    if (has(['salary', 'wage', 'pay'])) {
+      return 'e.g., Salary for this month';
+    }
+    if (has(['business', 'shop', 'sale', 'profit'])) {
+      return 'e.g., Profit from shop sales';
+    }
+    if (has(['freelanc', 'client', 'project', 'fiverr', 'upwork'])) {
+      return 'e.g., Payment from a client project';
+    }
+    if (has(['invest', 'stock', 'dividend', 'interest', 'saving'])) {
+      return 'e.g., Return on investment';
+    }
+    if (has(['bonus', 'commission', 'incentive', 'overtime'])) {
+      return 'e.g., Performance bonus from office';
+    }
+    if (has(['gift', 'eidi', 'award', 'prize'])) {
+      return 'e.g., Eidi received from family';
+    }
+    if (has(['rent', 'property'])) {
+      return 'e.g., Rent received from tenant';
+    }
+    if (has(['refund', 'cashback', 'return'])) {
+      return 'e.g., Refund for a cancelled order';
+    }
+    if (has(['loan', 'borrow', 'debt', 'repay'])) {
+      return 'e.g., Loan amount returned by a friend';
+    }
+    if (has(['pension', 'allowance', 'stipend', 'scholarship'])) {
+      return 'e.g., Monthly allowance received';
+    }
+    return 'e.g., Add a short note for $categoryName';
+  }
+
   Widget _buildFieldLabel(ThemeData theme, String title) {
     return Text(
       title,

@@ -73,28 +73,28 @@ class ExpenseController extends GetxController {
   // INIT
   // ------------------------------------------------------------
 
-  @override
-  void onInit() {
-    super.onInit();
+ @override
+void onInit() {
+  super.onInit();
 
-    if (!Get.isRegistered<CategoriesController>()) {
-      Get.put(CategoriesController());
-    }
-
-    if (!Get.isRegistered<WalletsController>()) {
-      Get.put(WalletsController());
-    }
-
-    categoriesController = Get.find<CategoriesController>();
-    walletsController = Get.find<WalletsController>();
-
-    // CHECK IF THIS IS EDIT MODE
-    final argument = Get.arguments;
-
-    if (argument is TransactionModel) {
-      loadTransactionForEdit(argument);
-    }
+  if (!Get.isRegistered<CategoriesController>()) {
+    Get.put(CategoriesController());
   }
+
+  if (!Get.isRegistered<WalletsController>()) {
+    Get.put(WalletsController());
+  }
+
+  categoriesController = Get.find<CategoriesController>();
+  walletsController = Get.find<WalletsController>();
+
+  // CHECK IF THIS IS EDIT MODE
+  final argument = Get.arguments;
+
+  if (argument is TransactionModel) {
+    loadTransactionForEdit(argument);
+  }
+}
 
   // ------------------------------------------------------------
   // EXPENSE / INCOME TOGGLE

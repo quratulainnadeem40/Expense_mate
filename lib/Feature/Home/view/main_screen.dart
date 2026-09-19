@@ -5,8 +5,8 @@ import 'package:get/get.dart';
 import 'package:expense_mate/Feature/Reports/view/report_view.dart';
 // Categories
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
-
+import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart' hide TransactionsView;
+import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 // Transactions
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 
@@ -62,29 +62,42 @@ class MainScreen extends StatelessWidget {
       // FLOATING ACTION BUTTON (Center Notched)
       // ==========================================================
 
-      floatingActionButton: SizedBox(
-        width: 54,
-        height: 54,
-        child: FloatingActionButton(
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-            Get.to(
-              () => const AddExpenseView(),
-              binding: ExpenseBinding(),
-            );
-          },
-          backgroundColor: primaryGreen,
-          elevation: 3,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 28,
-          ),
-        ),
+      floatingActionButton: Obx(() {
+  final isCategories =
+      controller.currentIndex.value == 2;
+
+  return SizedBox(
+    width: 54,
+    height: 54,
+    child: FloatingActionButton(
+      onPressed: () {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        if (isCategories) {
+          Get.dialog(
+            const AddCategoryDialog(),
+            barrierDismissible: false,
+          );
+        } else {
+          Get.to(
+            () => const AddExpenseView(),
+            binding: ExpenseBinding(),
+          );
+        }
+      },
+      backgroundColor: primaryGreen,
+      elevation: 3,
+      shape: const CircleBorder(),
+      child: const Icon(
+        Icons.add,
+        color: Colors.white,
+        size: 28,
       ),
+    ),
+  );
+}),
 
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,

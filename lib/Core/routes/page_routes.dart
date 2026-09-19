@@ -7,7 +7,6 @@ import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
 
 import 'package:expense_mate/Feature/Home/binding/home_binding.dart';
 import 'package:expense_mate/Feature/Home/view/main_screen.dart';
-import 'package:expense_mate/Feature/Home/view/home_screen.dart';
 import 'package:expense_mate/Feature/Reports/bindings/report_bindings.dart';
 
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';

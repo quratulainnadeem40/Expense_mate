@@ -36,17 +36,20 @@ class CategoriesController extends GetxController {
           .eq('user_id', user.id)
           .order('name');
 
-      final data = response as List;
+      final data = response;
       final Map<String, int> countsMap = {};
       final seenNames = <String>{};
       final categories = <CategoryModel>[];
 
       for (final item in data) {
         final rawName = item['name']?.toString() ?? '';
-        
-        // Normalize aggressively: trim whitespace, convert to lowercase, 
+
+        // Normalize aggressively: trim whitespace, convert to lowercase,
         // and collapse multiple internal spaces into one
-        final normalizedName = rawName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+        final normalizedName = rawName.trim().toLowerCase().replaceAll(
+          RegExp(r'\s+'),
+          ' ',
+        );
 
         // Skip if this normalized name has already been processed
         if (seenNames.contains(normalizedName)) {
@@ -57,9 +60,9 @@ class CategoriesController extends GetxController {
         final String catId = item['id'].toString();
         int count = 0;
 
-        if (item['transactions'] != null &&
-            (item['transactions'] as List).isNotEmpty) {
-          count = item['transactions'][0]['count'] ?? 0;
+        final transactions = item['transactions'];
+        if (transactions is List && transactions.isNotEmpty) {
+          count = (transactions.first['count'] as num?)?.toInt() ?? 0;
         }
 
         countsMap[catId] = count;
@@ -76,7 +79,9 @@ class CategoriesController extends GetxController {
         );
       }
 
-      categories.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      categories.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
 
       categoryCounts.assignAll(countsMap);
       categoryList.assignAll(categories);
@@ -110,9 +115,7 @@ class CategoriesController extends GetxController {
             'user_id': user.id,
             'name': category.name,
             'icon': category.icon,
-            'color': category.colorValue
-                .toRadixString(16)
-                .padLeft(8, '0'),
+            'color': category.colorValue.toRadixString(16).padLeft(8, '0'),
             'type': category.type,
           })
           .select()
@@ -132,7 +135,9 @@ class CategoriesController extends GetxController {
       categoryCounts[newId] = 0;
       categoryList.add(newCategory);
 
-      categoryList.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      categoryList.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
 
       if (Get.isDialogOpen ?? false) {
         Get.back();
@@ -153,10 +158,18 @@ class CategoriesController extends GetxController {
   }
 
   Future<void> deleteCategory(String id) async {
+    await deleteCategories([id]);
+  }
+
+  Future<void> deleteCategories(List<String> ids) async {
     final user = currentUser;
 
     if (user == null) {
       _showError('Please login first.');
+      return;
+    }
+
+    if (ids.isEmpty) {
       return;
     }
 
@@ -166,15 +179,19 @@ class CategoriesController extends GetxController {
       await _supabase
           .from('categories')
           .delete()
-          .eq('id', id)
+          .inFilter('id', ids)
           .eq('user_id', user.id);
 
-      categoryList.removeWhere((category) => category.id == id);
-      categoryCounts.remove(id);
+      categoryList.removeWhere((category) => ids.contains(category.id));
+      for (final id in ids) {
+        categoryCounts.remove(id);
+      }
 
       Get.snackbar(
         'Deleted',
-        'Category deleted successfully',
+        ids.length == 1
+            ? 'Category deleted successfully'
+            : '${ids.length} categories deleted successfully',
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
@@ -195,10 +212,7 @@ class CategoriesController extends GetxController {
       return value;
     }
 
-    String hex = value
-        .toString()
-        .replaceAll('#', '')
-        .trim();
+    String hex = value.toString().replaceAll('#', '').trim();
 
     if (hex.startsWith('0x')) {
       hex = hex.substring(2);
