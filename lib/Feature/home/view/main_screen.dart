@@ -1,8 +1,8 @@
-import 'package:expense_mate/Feature/Reports/view/report_view.dart';
+import 'package:expense_mate/Feature/reports/view/report_view.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:expense_mate/Feature/Reports/view/report_view.dart';
+import 'package:expense_mate/Feature/reports/view/report_view.dart';
 // Categories
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart' hide TransactionsView;
