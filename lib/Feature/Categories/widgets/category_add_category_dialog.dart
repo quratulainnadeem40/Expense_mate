@@ -3,6 +3,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../controller/categories_controller.dart';
 
 class AddCategoryDialog extends StatefulWidget {
@@ -382,5 +383,6 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
         ),
       ],
     );
+  
   }
 }

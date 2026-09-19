@@ -308,9 +308,8 @@ class HomeScreen extends StatelessWidget {
                           subtitle:
                               'Manage your profile and account settings',
                           onTap: () => _closeDrawerAndNavigate(
-                            () => const SettingsView(),
-                            binding: SettingsBinding(),
-                          ),
+  () => const SettingsView(),
+),
                         ),
                       ],
                     ),

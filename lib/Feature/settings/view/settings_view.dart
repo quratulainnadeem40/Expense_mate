@@ -1,14 +1,15 @@
-
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../controller/settings_controller.dart';
 
-class SettingsView extends GetView<SettingsController> {
+class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
+
+  SettingsController get controller =>
+      Get.find<SettingsController>();
 
   @override
   Widget build(BuildContext context) {
@@ -25,19 +26,11 @@ class SettingsView extends GetView<SettingsController> {
         ),
         centerTitle: false,
       ),
-
       body: Obx(
         () => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
           children: [
-            // =====================================================
-            // PROFILE HEADER
-            // =====================================================
-
-            _buildProfileHeader(
-              context,
-              isDark,
-            ),
+            _buildProfileHeader(context, isDark),
 
             const SizedBox(height: 28),
 
@@ -69,8 +62,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'Dark Mode',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -114,8 +106,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'Default Currency',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -184,8 +175,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'Bill Notifications',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -193,10 +183,8 @@ class SettingsView extends GetView<SettingsController> {
                     'Receive reminders for upcoming bills',
                     style: AppTextStyles.bodyMedium(isDark),
                   ),
-                  value:
-                      controller.notificationsEnabled.value,
-                  onChanged:
-                      controller.toggleNotifications,
+                  value: controller.notificationsEnabled.value,
+                  onChanged: controller.toggleNotifications,
                 ),
               ],
             ),
@@ -218,7 +206,6 @@ class SettingsView extends GetView<SettingsController> {
             _SettingsCard(
               isDark: isDark,
               children: [
-                // LOGOUT
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -230,8 +217,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'Logout',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -252,12 +238,10 @@ class SettingsView extends GetView<SettingsController> {
                   height: 1,
                   indent: 74,
                   endIndent: 16,
-                  color: isDark
-                      ? Colors.white12
-                      : Colors.black12,
+                  color:
+                      isDark ? Colors.white12 : Colors.black12,
                 ),
 
-                // DELETE ACCOUNT
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -279,8 +263,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'Delete Account',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.expenseRed,
                     ),
@@ -338,8 +321,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'Reset Settings',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -386,8 +368,7 @@ class SettingsView extends GetView<SettingsController> {
                   ),
                   title: Text(
                     'ExpenseMate',
-                    style:
-                        AppTextStyles.bodyLarge(isDark).copyWith(
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -400,10 +381,6 @@ class SettingsView extends GetView<SettingsController> {
             ),
 
             const SizedBox(height: 30),
-
-            // =====================================================
-            // APP FOOTER
-            // =====================================================
 
             Center(
               child: Text(
@@ -436,8 +413,21 @@ class SettingsView extends GetView<SettingsController> {
     BuildContext context,
     bool isDark,
   ) {
+    // IMPORTANT:
+    // Use the controller's observable values here.
+    // Do not read authUser directly for the displayed name/email.
+    final displayName =
+        controller.profileName.value.isNotEmpty
+            ? controller.profileName.value
+            : 'User';
+
+    final displayEmail =
+        controller.profileEmail.value.isNotEmpty
+            ? controller.profileEmail.value
+            : 'No email available';
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.surfaceDark
@@ -458,164 +448,167 @@ class SettingsView extends GetView<SettingsController> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          // =======================================================
-          // PROFILE PICTURE
-          // =======================================================
-
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primary.withValues(
-                      alpha: 0.25,
-                    ),
-                    width: 2,
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundColor: AppColors.primary,
-                  backgroundImage:
-                      controller.profilePictureUrl.value.isNotEmpty
-                          ? NetworkImage(
-                              controller.profilePictureUrl.value,
-                            )
-                          : null,
-                  child:
-                      controller.profilePictureUrl.value.isEmpty
-                          ? Text(
-                              controller.profileName.value.isNotEmpty
-                                  ? controller.profileName.value[0]
-                                      .toUpperCase()
-                                  : 'U',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 29,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
+          Align(
+            alignment: Alignment.topRight,
+            child: TextButton.icon(
+              onPressed: () {
+                _showEditProfileDialog(context);
+              },
+              icon: const Icon(
+                Icons.edit_rounded,
+                size: 17,
+              ),
+              label: const Text(
+                'Edit',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-
-              // CAMERA
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: Material(
-                  color: AppColors.primary,
-                  shape: const CircleBorder(),
-                  elevation: 3,
-                  child: InkWell(
-                    onTap: controller.pickProfilePicture,
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 31,
-                      height: 31,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceLight,
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_rounded,
-                        color: Colors.white,
-                        size: 15,
-                      ),
-                    ),
-                  ),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
                 ),
+                minimumSize: Size.zero,
+                tapTargetSize:
+                    MaterialTapTargetSize.shrinkWrap,
               ),
-            ],
+            ),
           ),
 
-          const SizedBox(width: 18),
+          const SizedBox(height: 4),
 
-          // =======================================================
-          // NAME + EMAIL
-          // =======================================================
+          Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primary.withValues(
+                          alpha: 0.25,
+                        ),
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 40,
+                      backgroundColor: AppColors.primary,
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
+                              ? NetworkImage(
+                                  controller.profilePictureUrl.value,
+                                )
+                              : null,
+                      child:
+                          controller.profilePictureUrl.value.isEmpty
+                              ? Text(
+                                  displayName.isNotEmpty
+                                      ? displayName[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 29,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                    ),
+                  ),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        controller.profileName.value,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            AppTextStyles.headingMedium(isDark).copyWith(
-                          fontWeight: FontWeight.bold,
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Material(
+                      color: AppColors.primary,
+                      shape: const CircleBorder(),
+                      elevation: 3,
+                      child: InkWell(
+                        onTap: controller.pickProfilePicture,
+                        customBorder: const CircleBorder(),
+                        child: Container(
+                          width: 31,
+                          height: 31,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.surfaceDark
+                                  : AppColors.surfaceLight,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Colors.white,
+                            size: 15,
+                          ),
                         ),
                       ),
                     ),
+                  ),
+                ],
+              ),
 
-                    const SizedBox(width: 5),
+              const SizedBox(width: 18),
 
-                    InkWell(
-                      onTap: () {
-                        _showEditNameDialog(context);
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.all(5),
-                        child: Icon(
-                          Icons.edit_rounded,
-                          size: 17,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          AppTextStyles.headingMedium(isDark).copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      displayEmail,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium(isDark),
+                    ),
+
+                    const SizedBox(height: 9),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(
+                          alpha: 0.10,
+                        ),
+                        borderRadius:
+                            BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'ExpenseMate Account',
+                        style: TextStyle(
                           color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 5),
-
-                Text(
-                  Supabase.instance.client.auth.currentUser?.email ??
-                      controller.profileEmail.value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium(isDark),
-                ),
-
-                const SizedBox(height: 9),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(
-                      alpha: 0.10,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'ExpenseMate Account',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -623,24 +616,230 @@ class SettingsView extends GetView<SettingsController> {
   }
 
   // =============================================================
-  // EDIT NAME
+  // EDIT PROFILE DIALOG
   // =============================================================
 
-  void _showEditNameDialog(BuildContext context) {
+  void _showEditProfileDialog(BuildContext context) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    // Get the latest values at the moment the dialog opens.
     final nameController = TextEditingController(
       text: controller.profileName.value,
     );
 
+    final emailController = TextEditingController(
+      text: controller.profileEmail.value,
+    );
+
+    final passwordController = TextEditingController();
+
+    final obscurePassword = true.obs;
+
     Get.dialog(
       AlertDialog(
-        title: const Text('Edit Name'),
-        content: TextField(
-          controller: nameController,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            hintText: 'Enter your name',
+        backgroundColor:
+            isDark ? AppColors.surfaceDark : Colors.white,
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Edit Profile',
+                style:
+                    AppTextStyles.headingMedium(isDark).copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: () => Get.back(),
+              icon: const Icon(
+                Icons.close_rounded,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // =================================================
+                // PROFILE PICTURE
+                // =================================================
+
+                Obx(
+                  () => CircleAvatar(
+                    radius: 45,
+                    backgroundColor: AppColors.primary,
+                    backgroundImage:
+                        controller.profilePictureUrl.value.isNotEmpty
+                            ? NetworkImage(
+                                controller.profilePictureUrl.value,
+                              )
+                            : null,
+                    child:
+                        controller.profilePictureUrl.value.isEmpty
+                            ? Text(
+                                controller.profileName.value.isNotEmpty
+                                    ? controller.profileName.value[0]
+                                        .toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Obx(
+                      () => OutlinedButton.icon(
+                        onPressed:
+                            controller.isUpdatingProfile.value
+                                ? null
+                                : () async {
+                                    await controller
+                                        .pickProfilePicture();
+                                  },
+                        icon: const Icon(
+                          Icons.photo_library_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Change'),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    Obx(
+                      () => controller
+                              .profilePictureUrl
+                              .value
+                              .isNotEmpty
+                          ? OutlinedButton.icon(
+                              onPressed:
+                                  controller
+                                          .isUpdatingProfile
+                                          .value
+                                      ? null
+                                      : () async {
+                                          await controller
+                                              .clearProfilePicture();
+                                        },
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                                color:
+                                    AppColors.expenseRed,
+                              ),
+                              label: const Text(
+                                'Clear',
+                                style: TextStyle(
+                                  color:
+                                      AppColors.expenseRed,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // =================================================
+                // NAME
+                // =================================================
+
+                TextField(
+                  controller: nameController,
+                  textCapitalization:
+                      TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    prefixIcon: Icon(
+                      Icons.person_outline_rounded,
+                    ),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // =================================================
+                // EMAIL
+                // =================================================
+
+                TextField(
+                  controller: emailController,
+                  keyboardType:
+                      TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(
+                      Icons.email_outlined,
+                    ),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // =================================================
+                // PASSWORD
+                // =================================================
+
+                Obx(
+                  () => TextField(
+                    controller: passwordController,
+                    obscureText:
+                        obscurePassword.value,
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      hintText:
+                          'Leave empty to keep current password',
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          obscurePassword.value =
+                              !obscurePassword.value;
+                        },
+                        icon: Icon(
+                          obscurePassword.value
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                      ),
+                      border:
+                          const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Leave password empty if you do not want to change it.',
+                    style:
+                        AppTextStyles.caption(isDark),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -648,26 +847,37 @@ class SettingsView extends GetView<SettingsController> {
             onPressed: () => Get.back(),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
 
-              if (name.isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'Please enter your name.',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-                return;
-              }
-
-              Get.back();
-              await controller.updateName(name);
-            },
-            child: const Text('Save'),
+          Obx(
+            () => ElevatedButton(
+              onPressed:
+                  controller.isUpdatingProfile.value
+                      ? null
+                      : () async {
+                          await controller.updateProfile(
+                            name: nameController.text,
+                            email: emailController.text,
+                            password: passwordController.text,
+                          );
+                        },
+              child:
+                  controller.isUpdatingProfile.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Save Changes',
+                        ),
+            ),
           ),
         ],
       ),
+      barrierDismissible: false,
     );
   }
 
@@ -676,49 +886,47 @@ class SettingsView extends GetView<SettingsController> {
   // =============================================================
 
   void _showResetDialog(BuildContext context) {
-  Get.dialog(
-    AlertDialog(
-      title: const Text('Reset Settings?'),
-      content: const Text(
-        'This will restore your app settings to their default values. '
-        'Your wallets, bills and transactions will not be deleted.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(),
-          child: const Text('Cancel'),
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Reset Settings?'),
+        content: const Text(
+          'This will restore your app settings to their default values. '
+          'Your wallets, bills and transactions will not be deleted.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
 
-        TextButton(
-          onPressed: () async {
-            // Close dialog first
-            Get.back();
+              await Future.delayed(
+                const Duration(milliseconds: 200),
+              );
 
-            // Give the dialog time to close
-            await Future.delayed(
-              const Duration(milliseconds: 200),
-            );
+              await controller.resetSettings();
 
-            // Reset settings
-            await controller.resetSettings();
-
-            Get.snackbar(
-              'Settings Reset',
-              'Your settings have been restored to default.',
-              snackPosition: SnackPosition.BOTTOM,
-            );
-          },
-          child: const Text(
-            'Reset',
-            style: TextStyle(
-              color: AppColors.expenseRed,
+              Get.snackbar(
+                'Settings Reset',
+                'Your settings have been restored to default.',
+                snackPosition:
+                    SnackPosition.BOTTOM,
+              );
+            },
+            child: const Text(
+              'Reset',
+              style: TextStyle(
+                color: AppColors.expenseRed,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
+
   // =============================================================
   // LOGOUT
   // =============================================================
@@ -732,7 +940,7 @@ class SettingsView extends GetView<SettingsController> {
         ),
         actions: [
           TextButton(
-            onPressed: Get.back,
+            onPressed: () => Get.back(),
             child: const Text('Cancel'),
           ),
           TextButton(
@@ -767,7 +975,7 @@ class SettingsView extends GetView<SettingsController> {
         ),
         actions: [
           TextButton(
-            onPressed: Get.back,
+            onPressed: () => Get.back(),
             child: const Text('Cancel'),
           ),
           TextButton(
@@ -822,12 +1030,11 @@ class _SectionHeader extends StatelessWidget {
             color: AppColors.primary,
           ),
         ),
-
         const SizedBox(width: 10),
-
         Text(
           title,
-          style: AppTextStyles.headingMedium(isDark).copyWith(
+          style:
+              AppTextStyles.headingMedium(isDark).copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),

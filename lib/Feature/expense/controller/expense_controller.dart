@@ -88,6 +88,9 @@ void onInit() {
   categoriesController = Get.find<CategoriesController>();
   walletsController = Get.find<WalletsController>();
 
+  // Refresh latest categories from Supabase
+  categoriesController.fetchCategories();
+
   // CHECK IF THIS IS EDIT MODE
   final argument = Get.arguments;
 
