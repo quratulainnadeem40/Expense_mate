@@ -14,51 +14,31 @@ class AddCategoryDialog extends StatefulWidget {
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final TextEditingController nameController = TextEditingController();
 
-  final CategoriesController controller = Get.find();
+  final CategoriesController controller = Get.find<CategoriesController>();
 
-  String selectedIcon = 'shopping_bag';
+  String selectedIcon = 'food';
 
   final List<Map<String, dynamic>> categoryIcons = [
-    {
-      'name': 'shopping_bag',
-      'icon': Icons.shopping_bag_outlined,
-    },
-    {
-      'name': 'restaurant',
-      'icon': Icons.restaurant_outlined,
-    },
-    {
-      'name': 'home',
-      'icon': Icons.home_outlined,
-    },
-    {
-      'name': 'directions_car',
-      'icon': Icons.directions_car_outlined,
-    },
-    {
-      'name': 'movie',
-      'icon': Icons.movie_outlined,
-    },
-    {
-      'name': 'school',
-      'icon': Icons.school_outlined,
-    },
-    {
-      'name': 'health',
-      'icon': Icons.health_and_safety_outlined,
-    },
-    {
-      'name': 'phone',
-      'icon': Icons.phone_android_outlined,
-    },
-    {
-      'name': 'fitness',
-      'icon': Icons.fitness_center_outlined,
-    },
-    {
-      'name': 'bookmark',
-      'icon': Icons.bookmark_border,
-    },
+    {'name': 'food', 'icon': Icons.restaurant_rounded},
+    {'name': 'transport', 'icon': Icons.directions_car_rounded},
+    {'name': 'groceries', 'icon': Icons.shopping_basket_rounded},
+    {'name': 'shopping', 'icon': Icons.shopping_bag_rounded},
+    {'name': 'rent', 'icon': Icons.home_work_rounded},
+    {'name': 'bills', 'icon': Icons.receipt_long_rounded},
+    {'name': 'fuel', 'icon': Icons.local_gas_station_rounded},
+    {'name': 'health', 'icon': Icons.health_and_safety_rounded},
+    {'name': 'education', 'icon': Icons.school_rounded},
+    {'name': 'mobile', 'icon': Icons.phone_android_rounded},
+    {'name': 'internet', 'icon': Icons.wifi_rounded},
+    {'name': 'clothing', 'icon': Icons.checkroom_rounded},
+    {'name': 'travel', 'icon': Icons.flight_rounded},
+    {'name': 'entertainment', 'icon': Icons.movie_rounded},
+    {'name': 'fitness', 'icon': Icons.fitness_center_rounded},
+    {'name': 'gifts', 'icon': Icons.card_giftcard_rounded},
+    {'name': 'beauty', 'icon': Icons.face_retouching_natural_rounded},
+    {'name': 'pets', 'icon': Icons.pets_rounded},
+    {'name': 'home', 'icon': Icons.house_rounded},
+    {'name': 'other', 'icon': Icons.more_horiz_rounded},
   ];
 
   @override
@@ -72,12 +52,14 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     final bool isDark =
         Theme.of(context).brightness == Brightness.dark;
 
+    final Color primaryColor =
+        Theme.of(context).colorScheme.primary;
+
     return AlertDialog(
       title: Text(
         'Add New Category',
         style: AppTextStyles.headingMedium(isDark),
       ),
-
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -88,6 +70,10 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               decoration: const InputDecoration(
                 hintText: 'Enter category name',
                 border: OutlineInputBorder(),
+
+                // Pencil / edit icon ko hide karne ke liye
+                prefixIcon: SizedBox.shrink(),
+                icon: SizedBox.shrink(),
               ),
             ),
 
@@ -104,8 +90,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               spacing: 10,
               runSpacing: 10,
               children: categoryIcons.map((item) {
-                final String iconName = item['name'];
-                final IconData iconData = item['icon'];
+                final String iconName = item['name'] as String;
+                final IconData iconData = item['icon'] as IconData;
 
                 final bool isSelected =
                     selectedIcon == iconName;
@@ -118,30 +104,25 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    width: 48,
-                    height: 48,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.15)
+                          ? primaryColor.withOpacity(0.15)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
+                            ? primaryColor
                             : Colors.grey.withOpacity(0.3),
                         width: isSelected ? 2 : 1,
                       ),
                     ),
                     child: Icon(
                       iconData,
-                      size: 24,
+                      size: 25,
                       color: isSelected
-                          ? Theme.of(context).colorScheme.primary
+                          ? primaryColor
                           : Colors.grey,
                     ),
                   ),
@@ -151,10 +132,11 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
           ],
         ),
       ),
-
       actions: [
         TextButton(
-          onPressed: () => Get.back(),
+          onPressed: () {
+            Get.back();
+          },
           child: const Text('Cancel'),
         ),
 
@@ -180,13 +162,13 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               icon: selectedIcon,
               colorValue: 0xFF2E7D32,
               isDefault: false,
+              type: 'expense',
             );
 
             await controller.addCategory(newCategory);
 
-            // Do NOT call Get.back() here.
-            // Controller already closes the dialog
-            // after successful insertion.
+            // Controller successful insert ke baad
+            // dialog close karega.
           },
           child: const Text('Add'),
         ),
@@ -194,4 +176,3 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     );
   }
 }
-

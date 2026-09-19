@@ -19,7 +19,6 @@ import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-
 import '../controller/categories_controller.dart';
 import 'category_transactions_screen.dart';
 
@@ -38,6 +37,7 @@ class _CategoriesViewState extends State<CategoriesView> {
   @override
   void initState() {
     super.initState();
+
     controller = Get.isRegistered<CategoriesController>()
         ? Get.find<CategoriesController>()
         : Get.put(CategoriesController());
@@ -45,6 +45,7 @@ class _CategoriesViewState extends State<CategoriesView> {
 
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
+
     if (user != null) {
       final nameFromMetaData =
           user.userMetadata?['full_name'] ??
@@ -89,22 +90,32 @@ class _CategoriesViewState extends State<CategoriesView> {
     switch (name.toLowerCase().trim()) {
       case 'transport':
         return const Color(0xFF42A5F5);
+
       case 'shopping':
         return const Color(0xFFAB47BC);
+
       case 'salary':
         return const Color(0xFFFFA726);
+
       case 'investment':
         return const Color(0xFFEF5350);
+
       case 'health':
         return const Color(0xFF7E57C2);
+
       case 'gift':
+      case 'gifts':
         return const Color(0xFFEC407A);
+
       case 'freelance':
         return const Color(0xFF26A69A);
+
       case 'business':
         return const Color(0xFF5C6BC0);
+
       case 'bills':
         return const Color(0xFFFF7043);
+
       case 'other':
         return const Color(0xFF78909C);
     }
@@ -133,28 +144,80 @@ class _CategoriesViewState extends State<CategoriesView> {
     return customColors[hash % customColors.length];
   }
 
+  // Updated mapping for all 20 categories.
+  // These are Flutter built-in modern rounded icons,
+  // so no HugeIcons package is required.
   IconData _getIconData(String iconName) {
     switch (iconName.toLowerCase().trim()) {
-      case 'restaurant':
       case 'food':
-        return Icons.restaurant;
+      case 'restaurant':
+        return Icons.restaurant_rounded;
 
-      case 'directions_car':
       case 'transport':
+      case 'directions_car':
         return Icons.directions_car_rounded;
 
-      case 'shopping_bag':
+      case 'groceries':
+        return Icons.shopping_basket_rounded;
+
       case 'shopping':
+      case 'shopping_bag':
         return Icons.shopping_bag_rounded;
 
-      case 'receipt_long':
+      case 'rent':
+        return Icons.home_work_rounded;
+
       case 'bills':
+      case 'receipt_long':
         return Icons.receipt_long_rounded;
 
-      case 'movie':
+      case 'fuel':
+        return Icons.local_gas_station_rounded;
+
+      case 'health':
+        return Icons.health_and_safety_rounded;
+
+      case 'education':
+      case 'school':
+        return Icons.school_rounded;
+
+      case 'mobile':
+      case 'phone':
+        return Icons.phone_android_rounded;
+
+      case 'internet':
+        return Icons.wifi_rounded;
+
+      case 'clothing':
+        return Icons.checkroom_rounded;
+
+      case 'travel':
+        return Icons.flight_rounded;
+
       case 'entertainment':
+      case 'movie':
         return Icons.movie_rounded;
 
+      case 'fitness':
+        return Icons.fitness_center_rounded;
+
+      case 'gifts':
+      case 'gift':
+        return Icons.card_giftcard_rounded;
+
+      case 'beauty':
+        return Icons.face_retouching_natural_rounded;
+
+      case 'pets':
+        return Icons.pets_rounded;
+
+      case 'home':
+        return Icons.house_rounded;
+
+      case 'other':
+        return Icons.more_horiz_rounded;
+
+      // Existing categories ko bhi support karta hai.
       case 'work':
       case 'salary':
       case 'freelance':
@@ -165,25 +228,6 @@ class _CategoriesViewState extends State<CategoriesView> {
 
       case 'investment':
         return Icons.trending_up_rounded;
-
-      case 'health':
-        return Icons.favorite_rounded;
-
-      case 'gift':
-        return Icons.card_giftcard_rounded;
-
-      case 'school':
-      case 'education':
-        return Icons.school_rounded;
-
-      case 'home':
-        return Icons.home_rounded;
-
-      case 'phone':
-        return Icons.phone_android_rounded;
-
-      case 'fitness':
-        return Icons.fitness_center_rounded;
 
       case 'bookmark':
         return Icons.bookmark_rounded;
@@ -264,6 +308,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                 });
               }
             },
+
             child: Obx(() {
               if (controller.isLoading.value) {
                 return const Center(
@@ -283,7 +328,6 @@ class _CategoriesViewState extends State<CategoriesView> {
                 );
               }
 
-              // Removed .take(5) to show all user-added categories completely
               final categories = controller.categoryList;
 
               return ListView.builder(
@@ -292,6 +336,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                   bottom: 100,
                 ),
                 itemCount: categories.length,
+
                 itemBuilder: (context, index) {
                   final category = categories[index];
 
@@ -320,11 +365,14 @@ class _CategoriesViewState extends State<CategoriesView> {
                       horizontal: 16,
                       vertical: 6,
                     ),
+
                     decoration: BoxDecoration(
                       color: isDark
                           ? const Color(0xFF1E1E1E)
                           : Colors.white,
+
                       borderRadius: BorderRadius.circular(16),
+
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.02),
@@ -333,11 +381,14 @@ class _CategoriesViewState extends State<CategoriesView> {
                         ),
                       ],
                     ),
+
                     child: Material(
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
+
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
+
                         onTap: () {
                           if (selectedForDeleteId != null) {
                             setState(() {
@@ -351,6 +402,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                             );
                           }
                         },
+
                         onLongPress: () {
                           if (!isDefaultCategory) {
                             setState(() {
@@ -358,21 +410,25 @@ class _CategoriesViewState extends State<CategoriesView> {
                             });
                           }
                         },
+
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
                           ),
+
                           child: Row(
                             children: [
                               Container(
                                 width: 48,
                                 height: 48,
+
                                 decoration: BoxDecoration(
                                   color:
                                       baseColor.withOpacity(0.18),
                                   shape: BoxShape.circle,
                                 ),
+
                                 child: Icon(
                                   _getIconData(category.icon),
                                   color: baseColor,
@@ -386,9 +442,11 @@ class _CategoriesViewState extends State<CategoriesView> {
                                 child: Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.start,
+
                                   children: [
                                     Text(
                                       category.name,
+
                                       style:
                                           AppTextStyles.bodyLarge(
                                         isDark,
@@ -407,19 +465,23 @@ class _CategoriesViewState extends State<CategoriesView> {
                                         horizontal: 8,
                                         vertical: 2,
                                       ),
+
                                       decoration: BoxDecoration(
                                         color: isDark
                                             ? Colors.grey[800]
                                             : const Color(
                                                 0xFFF0F2F5,
                                               ),
+
                                         borderRadius:
                                             BorderRadius.circular(
                                           12,
                                         ),
                                       ),
+
                                       child: Text(
                                         '$transactionCount transactions',
+
                                         style: TextStyle(
                                           fontSize: 11,
                                           color: isDark
@@ -454,19 +516,25 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       });
                                     }
                                   },
+
                                   borderRadius:
                                       BorderRadius.circular(8),
+
                                   child: Container(
                                     padding:
                                         const EdgeInsets.all(8),
+
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFFFEBEE),
+                                      color:
+                                          const Color(0xFFFFEBEE),
                                       borderRadius:
                                           BorderRadius.circular(8),
                                     ),
+
                                     child: const Icon(
                                       Icons.delete_outline_rounded,
-                                      color: Color(0xFFE57373),
+                                      color:
+                                          Color(0xFFE57373),
                                       size: 18,
                                     ),
                                   ),
@@ -483,6 +551,7 @@ class _CategoriesViewState extends State<CategoriesView> {
             }),
           ),
 
+          // DRAWER
           Obx(() {
             if (!isDrawerOpen.value) {
               return const SizedBox.shrink();
@@ -502,21 +571,26 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                   Align(
                     alignment: Alignment.centerLeft,
+
                     child: SafeArea(
                       child: Container(
                         width:
                             MediaQuery.of(context).size.width * 0.78,
+
                         margin: const EdgeInsets.only(
                           left: 12,
                           top: 8,
                           bottom: 8,
                         ),
+
                         decoration: BoxDecoration(
                           color: isDark
                               ? const Color(0xFF1E1E1E)
                               : const Color(0xFFF9FAFB),
+
                           borderRadius:
                               BorderRadius.circular(28),
+
                           boxShadow: [
                             BoxShadow(
                               color:
@@ -526,13 +600,16 @@ class _CategoriesViewState extends State<CategoriesView> {
                             ),
                           ],
                         ),
+
                         child: ClipRRect(
                           borderRadius:
                               BorderRadius.circular(28),
+
                           child: Column(
                             children: [
                               UserAccountsDrawerHeader(
                                 margin: EdgeInsets.zero,
+
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: isDark
@@ -548,6 +625,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     end: Alignment.bottomRight,
                                   ),
                                 ),
+
                                 currentAccountPictureSize:
                                     const Size.square(64),
 
@@ -560,13 +638,16 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       width: 2,
                                     ),
                                   ),
+
                                   child: CircleAvatar(
                                     backgroundColor: Colors.white,
+
                                     child: Text(
                                       _userName.isNotEmpty
                                           ? _userName[0]
                                               .toUpperCase()
                                           : 'U',
+
                                       style: const TextStyle(
                                         fontSize: 26,
                                         fontWeight:
@@ -580,6 +661,7 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                                 accountName: Text(
                                   _userName,
+
                                   style: const TextStyle(
                                     fontWeight:
                                         FontWeight.bold,
@@ -593,6 +675,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                           .currentUser
                                           ?.email ??
                                       '',
+
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.white
@@ -608,8 +691,10 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     horizontal: 14,
                                     vertical: 16,
                                   ),
+
                                   physics:
                                       const BouncingScrollPhysics(),
+
                                   children: [
                                     _buildDrawerOption(
                                       context: context,
@@ -620,6 +705,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       title: 'Wallets',
                                       subtitle:
                                           'Manage your cash, bank and other wallets',
+
                                       onTap: () =>
                                           _closeDrawerAndNavigate(
                                         () =>
@@ -640,6 +726,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       title: 'Budgets',
                                       subtitle:
                                           'Set and track monthly spending limits',
+
                                       onTap: () =>
                                           _closeDrawerAndNavigate(
                                         () =>
@@ -660,9 +747,11 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       title: 'Goals',
                                       subtitle:
                                           'Track your financial targets and savings',
+
                                       onTap: () =>
                                           _closeDrawerAndNavigate(
-                                        () => const GoalsView(),
+                                        () =>
+                                            const GoalsView(),
                                         binding:
                                             GoalsBinding(),
                                       ),
@@ -680,6 +769,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                           'Bills & Reminders',
                                       subtitle:
                                           'Manage upcoming bills and reminders',
+
                                       onTap: () =>
                                           _closeDrawerAndNavigate(
                                         () =>
@@ -700,6 +790,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       title: 'Profile',
                                       subtitle:
                                           'Manage your profile and account settings',
+
                                       onTap: () =>
                                           _closeDrawerAndNavigate(
                                         () =>
@@ -731,13 +822,18 @@ class _CategoriesViewState extends State<CategoriesView> {
 
         return FloatingActionButton(
           onPressed: _openAddCategoryDialog,
+
           backgroundColor:
               const Color(0xFF2E7D32),
+
           elevation: 4,
+
           mini: true,
+
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
+
           child: const Icon(
             Icons.add,
             color: Colors.white,
@@ -757,6 +853,7 @@ class _CategoriesViewState extends State<CategoriesView> {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
+
     final bool isDarkMode =
         theme.brightness == Brightness.dark;
 
@@ -765,7 +862,9 @@ class _CategoriesViewState extends State<CategoriesView> {
         color: isDarkMode
             ? const Color(0xFF2A2A2A)
             : Colors.white,
+
         borderRadius: BorderRadius.circular(16),
+
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(
@@ -776,26 +875,34 @@ class _CategoriesViewState extends State<CategoriesView> {
           ),
         ],
       ),
+
       child: Material(
         color: Colors.transparent,
+
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+
+          borderRadius:
+              BorderRadius.circular(16),
+
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
             ),
+
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
+
                   decoration: BoxDecoration(
                     color: iconColor.withOpacity(0.12),
                     borderRadius:
                         BorderRadius.circular(12),
                   ),
+
                   child: Icon(
                     icon,
                     color: iconColor,
@@ -809,9 +916,11 @@ class _CategoriesViewState extends State<CategoriesView> {
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
+
                     children: [
                       Text(
                         title,
+
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -825,8 +934,11 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                       Text(
                         subtitle,
+
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        overflow:
+                            TextOverflow.ellipsis,
+
                         style: TextStyle(
                           fontSize: 12,
                           color: isDarkMode
