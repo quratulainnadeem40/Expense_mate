@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/widgets/transaction_card.dart';
-import 'package:expense_mate/core/constants/app_keys.dart';
+import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'transaction_details_screen.dart';
 
 class CategoryTransactionsScreen extends StatelessWidget {
