@@ -229,6 +229,10 @@ class SettingsController extends GetxController {
 // UPDATE PROFILE
 // ============================================================
 
+// ============================================================
+// UPDATE PROFILE
+// ============================================================
+
 Future<void> updateProfile({
   required String name,
   String? email,
@@ -258,7 +262,7 @@ Future<void> updateProfile({
     isUpdatingProfile.value = true;
 
     // --------------------------------------------------------
-    // GET CURRENT AUTHENTICATED USER
+    // GET CURRENT AUTH USER
     // --------------------------------------------------------
 
     final session = _supabase.auth.currentSession;
@@ -274,8 +278,12 @@ Future<void> updateProfile({
       return;
     }
 
-    debugPrint('LOGGED IN USER ID: ${user.id}');
-    debugPrint('LOGGED IN EMAIL: ${user.email}');
+    debugPrint('================================');
+    debugPrint('PROFILE UPDATE START');
+    debugPrint('USER ID: ${user.id}');
+    debugPrint('CURRENT AUTH EMAIL: ${user.email}');
+    debugPrint('NEW EMAIL FROM TEXT FIELD: $newEmail');
+    debugPrint('================================');
 
     // --------------------------------------------------------
     // CURRENT VALUES
@@ -320,55 +328,105 @@ Future<void> updateProfile({
       return;
     }
 
-    // --------------------------------------------------------
-    // PREPARE USER METADATA
-    // --------------------------------------------------------
-
-    final metadata = Map<String, dynamic>.from(
-      user.userMetadata ?? {},
-    );
-
-    metadata['name'] = newName;
-
-    // --------------------------------------------------------
-    // UPDATE SUPABASE AUTH
-    // --------------------------------------------------------
+    // ========================================================
+    // 1. UPDATE EMAIL IN SUPABASE AUTH
+    // ========================================================
 
     if (emailChanged) {
-  debugPrint('UPDATING EMAIL ONLY: $finalEmail');
+      debugPrint('================================');
+      debugPrint('UPDATING AUTH EMAIL');
+      debugPrint('OLD EMAIL: $currentEmail');
+      debugPrint('NEW EMAIL: $finalEmail');
+      debugPrint('================================');
 
-  await _supabase.auth.updateUser(
-    UserAttributes(
-      email: finalEmail,
-    ),
+      final authResponse =
+          await _supabase.auth.updateUser(
+        UserAttributes(
+          email: finalEmail,
+        ),
+      );
+
+      // ------------------------------------------------------
+      // GET THE USER AFTER EMAIL UPDATE
+      // ------------------------------------------------------
+
+      final updatedUser = authResponse.user;
+
+      debugPrint('================================');
+      debugPrint('AFTER AUTH EMAIL UPDATE');
+      debugPrint(
+        'AUTH EMAIL: ${updatedUser?.email}',
+      );
+      debugPrint(
+        'USER ID: ${updatedUser?.id}',
+      );
+      debugPrint('================================');
+
+      // ------------------------------------------------------
+      // IMPORTANT:
+      // Only continue if Supabase Auth actually accepted
+      // the new email.
+      // ------------------------------------------------------
+
+      final authEmailAfterUpdate =
+          updatedUser?.email?.trim() ?? '';
+
+      if (authEmailAfterUpdate != finalEmail) {
+  debugPrint('EMAIL CHANGE IS PENDING CONFIRMATION');
+
+  if (Get.isDialogOpen == true) {
+    Get.back();
+  }
+
+  Get.snackbar(
+    'Confirmation Required',
+    'A confirmation email has been sent to your new email address. '
+    'Please confirm it before the email change becomes active.',
+    snackPosition: SnackPosition.BOTTOM,
+    duration: const Duration(seconds: 6),
   );
+
+  return;
 }
+    }
 
-if (passwordChanged) {
-  debugPrint('UPDATING PASSWORD ONLY');
+    // ========================================================
+    // 2. UPDATE PASSWORD IN SUPABASE AUTH
+    // ========================================================
 
-  await _supabase.auth.updateUser(
-    UserAttributes(
-      password: newPassword,
-    ),
-  );
-}
+    if (passwordChanged) {
+      debugPrint('UPDATING AUTH PASSWORD');
 
-if (nameChanged) {
-  debugPrint('UPDATING NAME METADATA');
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          password: newPassword,
+        ),
+      );
+    }
 
-  await _supabase.auth.updateUser(
-    UserAttributes(
-      data: {
-        'name': newName,
-      },
-    ),
-  );
-}
+    // ========================================================
+    // 3. UPDATE NAME IN SUPABASE AUTH
+    // ========================================================
 
-    // --------------------------------------------------------
-    // UPDATE PROFILES TABLE
-    // --------------------------------------------------------
+    if (nameChanged) {
+      debugPrint('UPDATING AUTH NAME');
+
+      final metadata = Map<String, dynamic>.from(
+        user.userMetadata ?? {},
+      );
+
+      metadata['name'] = newName;
+
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: metadata,
+        ),
+      );
+    }
+
+    // ========================================================
+    // 4. UPDATE PROFILES TABLE
+    // ========================================================
 
     final profileData = <String, dynamic>{
       'name': newName,
@@ -378,40 +436,68 @@ if (nameChanged) {
       profileData['email'] = finalEmail;
     }
 
+    debugPrint('UPDATING PROFILES TABLE');
+    debugPrint('PROFILE DATA: $profileData');
+
+    await _supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id);
+
+    // ========================================================
+    // 5. REFRESH AUTH SESSION
+    // ========================================================
+
     try {
-      await _supabase
-          .from('profiles')
-          .update(profileData)
-          .eq('id', user.id);
-    } on PostgrestException catch (e) {
+      await _supabase.auth.refreshSession();
+    } catch (e) {
       debugPrint(
-        'Profile table update error: ${e.message}',
+        'Session refresh warning: $e',
       );
     }
 
-    // --------------------------------------------------------
-    // UPDATE LOCAL UI
-    // --------------------------------------------------------
+    // ========================================================
+    // 6. GET FINAL AUTH USER
+    // ========================================================
+
+    final finalUser =
+        _supabase.auth.currentUser;
+
+    final verifiedEmail =
+        finalUser?.email?.trim() ?? '';
+
+    debugPrint('================================');
+    debugPrint('FINAL PROFILE UPDATE RESULT');
+    debugPrint('AUTH USER ID: ${finalUser?.id}');
+    debugPrint('FINAL AUTH EMAIL: $verifiedEmail');
+    debugPrint('FINAL PROFILE EMAIL: $finalEmail');
+    debugPrint('================================');
+
+    // ========================================================
+    // 7. UPDATE LOCAL UI
+    // ========================================================
 
     profileName.value = newName;
 
     if (emailChanged) {
-      profileEmail.value = finalEmail;
+      profileEmail.value = verifiedEmail.isNotEmpty
+          ? verifiedEmail
+          : finalEmail;
     } else {
       profileEmail.value = currentEmail;
     }
 
-    // --------------------------------------------------------
-    // CLOSE EDIT PROFILE DIALOG
-    // --------------------------------------------------------
+    // ========================================================
+    // 8. CLOSE DIALOG
+    // ========================================================
 
     if (Get.isDialogOpen == true) {
       Get.back();
     }
 
-    // --------------------------------------------------------
-    // SUCCESS MESSAGE
-    // --------------------------------------------------------
+    // ========================================================
+    // 9. SUCCESS MESSAGE
+    // ========================================================
 
     if (nameChanged && emailChanged) {
       Get.snackbar(
@@ -439,10 +525,6 @@ if (nameChanged) {
       );
     }
   } on AuthException catch (e) {
-    // --------------------------------------------------------
-    // SUPABASE AUTH ERROR DEBUG
-    // --------------------------------------------------------
-
     debugPrint('================================');
     debugPrint('PROFILE UPDATE AUTH ERROR');
     debugPrint('Message: ${e.message}');
@@ -453,11 +535,17 @@ if (nameChanged) {
     _showError(
       '${e.message} (Code: ${e.code})',
     );
-  } catch (e) {
-    // --------------------------------------------------------
-    // GENERAL ERROR
-    // --------------------------------------------------------
+  } on PostgrestException catch (e) {
+    debugPrint('================================');
+    debugPrint('PROFILE TABLE UPDATE ERROR');
+    debugPrint('Message: ${e.message}');
+    debugPrint('Code: ${e.code}');
+    debugPrint('================================');
 
+    _showError(
+      'Profile database update failed.',
+    );
+  } catch (e) {
     debugPrint('================================');
     debugPrint('PROFILE UPDATE ERROR');
     debugPrint('Error: $e');
