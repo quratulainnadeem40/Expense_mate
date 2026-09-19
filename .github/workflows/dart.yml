@@ -1,14 +1,14 @@
-name: Build Flutter APK
+name: Build Expense Mate APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Flutter
@@ -17,6 +17,12 @@ jobs:
           flutter-version: '3.47.5'
           channel: stable
           cache: true
+
+      - name: Show Project Structure
+        run: |
+          echo "===== LIB STRUCTURE ====="
+          find lib -type f | sort
+          echo "===== END LIB STRUCTURE ====="
 
       - name: Flutter Clean
         run: flutter clean
@@ -32,3 +38,4 @@ jobs:
         with:
           name: expense-mate-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
