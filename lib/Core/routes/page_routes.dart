@@ -3,11 +3,11 @@ import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 
 import 'package:expense_mate/Feature/Categories/binding/categories_binding.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
-import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
+import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 
-import 'package:expense_mate/Feature/Home/binding/home_binding.dart';
-import 'package:expense_mate/Feature/Home/view/main_screen.dart';
-import 'package:expense_mate/Feature/Reports/bindings/report_bindings.dart';
+import 'package:expense_mate/Feature/home/binding/home_binding.dart';
+import 'package:expense_mate/Feature/home/view/main_screen.dart';
+import 'package:expense_mate/Feature/reports/bindings/report_bindings.dart';
 
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
@@ -30,11 +30,11 @@ import 'package:expense_mate/Feature/auth/view/forgot_password_view.dart';
 
 import 'package:get/get.dart';
 // GOALS IMPORTS
-import 'package:expense_mate/Feature/Goals/binding/goals_binding.dart';
+import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 
 
 // REPORTS
-import 'package:expense_mate/Feature/Reports/view/report_view.dart';
+import 'package:expense_mate/Feature/reports/view/report_view.dart';
 
 import 'package:get/get.dart';
 import 'app_routes.dart';

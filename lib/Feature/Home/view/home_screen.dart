@@ -15,12 +15,12 @@ import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 
 // Existing Home Imports
-import 'package:expense_mate/Feature/Home/widgets/balance_card.dart';
+import 'package:expense_mate/Feature/home/widgets/balance_card.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
-import 'package:expense_mate/Feature/Home/controller/home_controller.dart';
+import 'package:expense_mate/Feature/home/controller/home_controller.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 

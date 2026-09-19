@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../Categories/controller/categories_controller.dart';
-import '../../Home/controller/home_controller.dart';
+import '../../home/controller/home_controller.dart';
 import '../../transactions/controller/transcation_controller.dart';
 import '../../transactions/model/transcation_model.dart';
 import '../../wallets/controller/wallets_controller.dart';

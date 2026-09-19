@@ -1,8 +1,8 @@
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-import 'package:expense_mate/Feature/Goals/binding/goals_binding.dart';
-import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
+import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
+import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
