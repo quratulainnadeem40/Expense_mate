@@ -7,7 +7,6 @@ import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
 
 import 'package:expense_mate/Feature/Home/binding/home_binding.dart';
 import 'package:expense_mate/Feature/Home/view/main_screen.dart';
-import 'package:expense_mate/Feature/Home/view/home_screen.dart';
 import 'package:expense_mate/Feature/Reports/bindings/report_bindings.dart';
 
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
@@ -76,13 +75,13 @@ GetPage(
 ),
     GetPage(
       name: AppRoutes.transactions,
-      page: () => const TransactionsView(),
+      page: () =>  TransactionsView(),
       binding: TransactionsBinding(),
     ),
 
     GetPage(
       name: AppRoutes.categories,
-      page: () => const CategoriesView(),
+      page: () => CategoriesView(),
       binding: CategoriesBinding(),
     ),
 
@@ -121,7 +120,7 @@ GetPage(
 
     GetPage(
       name: AppRoutes.reports,
-      page: () => const ReportsView(),
+      page: () =>  ReportsView(),
       binding: ReportBindings(),
     ),
 

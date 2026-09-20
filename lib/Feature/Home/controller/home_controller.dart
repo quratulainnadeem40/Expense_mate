@@ -1,52 +1,124 @@
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../../core/constants/app_keys.dart';
+
+import '../../transactions/controller/transcation_controller.dart';
+import '../../transactions/model/transcation_model.dart';
 
 class HomeController extends GetxController {
-  // Bottom Navigation ke liye added property
-  var currentIndex = 0.obs;
+  // ==========================================================
+  // BOTTOM NAVIGATION
+  // ==========================================================
 
-  var totalBalance = 0.0.obs;
-  var totalIncome = 0.0.obs;
-  var totalExpense = 0.0.obs;
-  var recentTransactions = <Map<dynamic, dynamic>>[].obs;
+  final currentIndex = 0.obs;
+
+  // ==========================================================
+  // DASHBOARD TOTALS
+  // ==========================================================
+
+  final totalBalance = 0.0.obs;
+  final totalIncome = 0.0.obs;
+  final totalExpense = 0.0.obs;
+
+  // ==========================================================
+  // ONLY TODAY'S TRANSACTIONS
+  // ==========================================================
+
+  final recentTransactions = <TransactionModel>[].obs;
+
+  late TransactionsController transactionsController;
 
   @override
   void onInit() {
     super.onInit();
+
+    // Use the existing TransactionsController.
+    // Do NOT create another TransactionsController if one already exists.
+    if (!Get.isRegistered<TransactionsController>()) {
+      Get.put(TransactionsController());
+    }
+
+    transactionsController = Get.find<TransactionsController>();
+
+    // Refresh Home whenever transactions are:
+    // - added
+    // - edited
+    // - deleted
+    ever(
+      transactionsController.transactions,
+      (_) => loadDashboardData(),
+    );
+
     loadDashboardData();
   }
 
-  // Bottom navigation par jab user wapas is page par aaye toh data refresh karne ke liye
   @override
   void onReady() {
     super.onReady();
     loadDashboardData();
   }
 
-  // Bottom Navigation tab change karne ke liye added method
+  // ==========================================================
+  // BOTTOM NAVIGATION
+  // ==========================================================
+
   void changePage(int index) {
     currentIndex.value = index;
   }
 
+  // ==========================================================
+  // LOAD DASHBOARD DATA
+  // ==========================================================
+
   void loadDashboardData() {
-    final box = Hive.box(AppKeys.transactionsBox);
-    final data = box.values.toList();
-    
+    final allTransactions = transactionsController.transactions;
+
     double income = 0.0;
     double expense = 0.0;
-    
-    for (var item in data) {
-      if (item['type'] == 'Income') {
-        income += (item['amount'] ?? 0.0);
+
+    // ----------------------------------------------------------
+    // TOTAL INCOME / EXPENSE
+    // ----------------------------------------------------------
+
+    for (final transaction in allTransactions) {
+      if (transaction.isIncome) {
+        income += transaction.amount;
       } else {
-        expense += (item['amount'] ?? 0.0);
+        expense += transaction.amount;
       }
     }
 
     totalIncome.value = income;
     totalExpense.value = expense;
     totalBalance.value = income - expense;
-    recentTransactions.assignAll(data.reversed.take(5).map((e) => e as Map<dynamic, dynamic>).toList());
+
+    // ----------------------------------------------------------
+    // TODAY'S TRANSACTIONS ONLY
+    // ----------------------------------------------------------
+
+    final todayTransactions = allTransactions.where((transaction) {
+      return _isToday(transaction.transactionDate);
+    }).toList();
+
+    // ----------------------------------------------------------
+    // NEWEST TRANSACTION FIRST
+    // ----------------------------------------------------------
+
+    todayTransactions.sort((a, b) {
+      return b.transactionDate.compareTo(a.transactionDate);
+    });
+
+    // Update Home screen list
+    recentTransactions.assignAll(todayTransactions);
+  }
+
+  // ==========================================================
+  // CHECK WHETHER DATE IS TODAY
+  // ==========================================================
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 }

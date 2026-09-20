@@ -1,4 +1,5 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -15,104 +16,373 @@ class AddCategoryDialog extends StatefulWidget {
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final TextEditingController nameController = TextEditingController();
 
-  String selectedType = 'expense';
+  final CategoriesController controller = Get.find();
+
+  String selectedIcon = 'shopping_bag';
+
+  final List<Map<String, dynamic>> categoryIcons = [
+    {
+      'name': 'shopping_bag',
+      'icon': Icons.shopping_bag_rounded,
+      'color': const Color(0xFFE56B5D),
+    },
+    {
+      'name': 'restaurant',
+      'icon': Icons.restaurant_rounded,
+      'color': const Color(0xFFE58A3D),
+    },
+    {
+      'name': 'home',
+      'icon': Icons.home_rounded,
+      'color': const Color(0xFF5C83C6),
+    },
+    {
+      'name': 'directions_car',
+      'icon': Icons.directions_car_rounded,
+      'color': const Color(0xFF4E9A94),
+    },
+    {
+      'name': 'movie',
+      'icon': Icons.movie_rounded,
+      'color': const Color(0xFF8A6CC7),
+    },
+    {
+      'name': 'school',
+      'icon': Icons.school_rounded,
+      'color': const Color(0xFF4F75B8),
+    },
+    {
+      'name': 'health',
+      'icon': Icons.health_and_safety_rounded,
+      'color': const Color(0xFFD85C78),
+    },
+    {
+      'name': 'phone',
+      'icon': Icons.phone_android_rounded,
+      'color': const Color(0xFF5A9A8C),
+    },
+    {
+      'name': 'fitness',
+      'icon': Icons.fitness_center_rounded,
+      'color': const Color(0xFFE0784D),
+    },
+    {
+      'name': 'bookmark',
+      'icon': Icons.bookmark_rounded,
+      'color': const Color(0xFF6B78B8),
+    },
+    {
+      'name': 'receipt_long',
+      'icon': Icons.receipt_long_rounded,
+      'color': const Color(0xFF4C9A83),
+    },
+    {
+      'name': 'business',
+      'icon': Icons.business_center_rounded,
+      'color': const Color(0xFF5C6BC0),
+    },
+    {
+      'name': 'investment',
+      'icon': Icons.trending_up_rounded,
+      'color': const Color(0xFF3E9B72),
+    },
+    {
+      'name': 'gift',
+      'icon': Icons.card_giftcard_rounded,
+      'color': const Color(0xFFD45D82),
+    },
+    {
+      'name': 'work',
+      'icon': Icons.account_balance_wallet_rounded,
+      'color': const Color(0xFFB47A45),
+    },
+  ];
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final CategoriesController controller = Get.find();
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    const Color accent = AppColors.primary;
+    final Color surface = isDark
+        ? const Color(0xFF202522)
+        : const Color(0xFFF9FBF6);
 
     return AlertDialog(
-      title: Text(
-        'Add New Category',
-        style: AppTextStyles.headingMedium(isDark),
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 18,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      titlePadding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+      title: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [accent, const Color(0xFF1B5E20)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.white30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.white,
+                size: 25,
+              ),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'CATEGORY SETUP',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.72),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Add New Category',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: nameController,
-            decoration: const InputDecoration(
-              hintText: 'Enter category name',
-              border: OutlineInputBorder(),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          DropdownButtonFormField<String>(
-            value: selectedType,
-            decoration: const InputDecoration(
-              labelText: 'Category Type',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: 'expense',
-                child: Text('Expense'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                hintText: 'Enter category name',
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.grey[600],
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.edit_rounded,
+                  size: 20,
+                  color: isDark ? Colors.white54 : Colors.grey[600],
+                ),
+                filled: true,
+                fillColor: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.white.withOpacity(0.72),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.black26,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: accent, width: 1.5),
+                ),
               ),
-              DropdownMenuItem(
-                value: 'income',
-                child: Text('Income'),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              'Select Icon',
+              style: AppTextStyles.bodyMedium(isDark).copyWith(
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white70 : Colors.grey[700],
               ),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  selectedType = value;
-                });
-              }
-            },
-          ),
-        ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: categoryIcons.map((item) {
+                final String iconName = item['name'];
+                final IconData iconData = item['icon'];
+                final Color iconColor = item['color'];
+
+                final bool isSelected = selectedIcon == iconName;
+
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      selectedIcon = iconName;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? iconColor
+                          : (isDark
+                                ? Colors.white.withOpacity(0.04)
+                                : iconColor.withOpacity(0.10)),
+                      gradient: isSelected
+                          ? LinearGradient(
+                              colors: [
+                                iconColor,
+                                Color.lerp(iconColor, Colors.black, 0.18)!,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.white.withOpacity(0.85)
+                            : (isDark ? Colors.white24 : Colors.black12),
+                        width: isSelected ? 1.8 : 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: iconColor.withOpacity(0.38),
+                                blurRadius: 12,
+                                offset: const Offset(0, 5),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          iconData,
+                          size: 26,
+                          color: isSelected ? Colors.white : iconColor,
+                        ),
+                        if (isSelected)
+                          Positioned(
+                            right: 3,
+                            top: 3,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.16),
+                                    blurRadius: 3,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.check_rounded,
+                                size: 11,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
 
       actions: [
         TextButton(
           onPressed: () => Get.back(),
+          style: TextButton.styleFrom(
+            foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
           child: const Text('Cancel'),
         ),
 
-       ElevatedButton(
-  onPressed: () async {
-    final name = nameController.text.trim();
+        FilledButton(
+          onPressed: () async {
+            final String categoryName = nameController.text.trim();
 
-    if (name.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter category name.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
+            if (categoryName.isEmpty) {
+              Get.snackbar(
+                'Required',
+                'Please enter category name.',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
 
-    final newCategory = CategoryModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      icon: 'bookmark',
-      colorValue: 0xFF2E7D32,
-      isDefault: false,
-      type: selectedType,
-    );
+            final newCategory = CategoryModel(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              name: categoryName,
+              icon: selectedIcon,
+              colorValue: 0xFF2E7D32,
+              isDefault: false,
+              type: 'expense',
+            );
 
-    // Add category first
-    await controller.addCategory(newCategory);
+            await controller.addCategory(newCategory);
 
-    // Then close the dialog
-    if (Get.isDialogOpen == true) {
-      Get.back();
-    }
-  },
-  child: const Text('Add'),
-),
+            if (Get.isDialogOpen == true) {
+              Get.back();
+            }
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: accent,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: const Text('Add'),
+        ),
       ],
     );
-  }
-  @override
-  void dispose() {
-    nameController.dispose();
-    super.dispose();
+  
   }
 }

@@ -1,4 +1,3 @@
-
 class CategoryModel {
   final String id;
   final String name;
@@ -35,5 +34,15 @@ class CategoryModel {
         isDefault: json['isDefault'] == true,
         type: json['type']?.toString().toLowerCase() ?? 'expense',
       );
-}
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CategoryModel &&
+        other.name.trim().toLowerCase() == name.trim().toLowerCase();
+  }
+
+  @override
+  int get hashCode => name.trim().toLowerCase().hashCode;
+}

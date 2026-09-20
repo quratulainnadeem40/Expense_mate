@@ -1,5 +1,5 @@
-
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,6 +7,7 @@ class CategoriesController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   final categoryList = <CategoryModel>[].obs;
+  final categoryCounts = <String, int>{}.obs;
   final isLoading = false.obs;
 
   User? get currentUser => _supabase.auth.currentUser;
@@ -22,6 +23,7 @@ class CategoriesController extends GetxController {
 
     if (user == null) {
       categoryList.clear();
+      categoryCounts.clear();
       return;
     }
 
@@ -30,25 +32,58 @@ class CategoriesController extends GetxController {
 
       final response = await _supabase
           .from('categories')
-          .select()
+          .select('*, transactions(count)')
           .eq('user_id', user.id)
           .order('name');
 
-      final data = response as List;
+      final data = response;
+      final Map<String, int> countsMap = {};
+      final seenNames = <String>{};
+      final categories = <CategoryModel>[];
 
-      final categories = data
-          .map(
-            (item) => CategoryModel(
-              id: item['id'].toString(),
-              name: item['name'].toString(),
-              icon: item['icon']?.toString() ?? 'category',
-              colorValue: _parseColor(item['color']),
-              isDefault: false,
-              type: item['type']?.toString().toLowerCase() ?? 'expense',
-            ),
-          )
-          .toList();
+      for (final item in data) {
+        final rawName = item['name']?.toString() ?? '';
 
+        // Normalize aggressively: trim whitespace, convert to lowercase,
+        // and collapse multiple internal spaces into one
+        final normalizedName = rawName.trim().toLowerCase().replaceAll(
+          RegExp(r'\s+'),
+          ' ',
+        );
+
+        // Skip if this normalized name has already been processed
+        if (seenNames.contains(normalizedName)) {
+          continue;
+        }
+        seenNames.add(normalizedName);
+
+        final String catId = item['id'].toString();
+        int count = 0;
+
+        final transactions = item['transactions'];
+        if (transactions is List && transactions.isNotEmpty) {
+          count = (transactions.first['count'] as num?)?.toInt() ?? 0;
+        }
+
+        countsMap[catId] = count;
+
+        categories.add(
+          CategoryModel(
+            id: catId,
+            name: rawName, // Keep original casing/formatting for display
+            icon: item['icon']?.toString() ?? 'category',
+            colorValue: _parseColor(item['color']),
+            isDefault: false,
+            type: item['type']?.toString().toLowerCase() ?? 'expense',
+          ),
+        );
+      }
+
+      categories.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+
+      categoryCounts.assignAll(countsMap);
       categoryList.assignAll(categories);
     } on PostgrestException catch (e) {
       _showError(e.message);
@@ -57,6 +92,10 @@ class CategoriesController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  int getCategoryCount(String categoryId) {
+    return categoryCounts[categoryId] ?? 0;
   }
 
   Future<void> addCategory(CategoryModel category) async {
@@ -70,15 +109,39 @@ class CategoriesController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase.from('categories').insert({
-        'user_id': user.id,
-        'name': category.name,
-        'icon': category.icon,
-        'color': category.colorValue.toRadixString(16),
-        'type': category.type,
-      });
+      final response = await _supabase
+          .from('categories')
+          .insert({
+            'user_id': user.id,
+            'name': category.name,
+            'icon': category.icon,
+            'color': category.colorValue.toRadixString(16).padLeft(8, '0'),
+            'type': category.type,
+          })
+          .select()
+          .single();
 
-      await fetchCategories();
+      final String newId = response['id'].toString();
+
+      final newCategory = CategoryModel(
+        id: newId,
+        name: response['name']?.toString() ?? category.name,
+        icon: response['icon']?.toString() ?? category.icon,
+        colorValue: _parseColor(response['color']),
+        isDefault: false,
+        type: response['type']?.toString().toLowerCase() ?? 'expense',
+      );
+
+      categoryCounts[newId] = 0;
+      categoryList.add(newCategory);
+
+      categoryList.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
 
       Get.snackbar(
         'Success',
@@ -95,10 +158,18 @@ class CategoriesController extends GetxController {
   }
 
   Future<void> deleteCategory(String id) async {
+    await deleteCategories([id]);
+  }
+
+  Future<void> deleteCategories(List<String> ids) async {
     final user = currentUser;
 
     if (user == null) {
       _showError('Please login first.');
+      return;
+    }
+
+    if (ids.isEmpty) {
       return;
     }
 
@@ -108,14 +179,19 @@ class CategoriesController extends GetxController {
       await _supabase
           .from('categories')
           .delete()
-          .eq('id', id)
+          .inFilter('id', ids)
           .eq('user_id', user.id);
 
-      categoryList.removeWhere((cat) => cat.id == id);
+      categoryList.removeWhere((category) => ids.contains(category.id));
+      for (final id in ids) {
+        categoryCounts.remove(id);
+      }
 
       Get.snackbar(
         'Deleted',
-        'Category deleted successfully',
+        ids.length == 1
+            ? 'Category deleted successfully'
+            : '${ids.length} categories deleted successfully',
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
@@ -136,13 +212,17 @@ class CategoriesController extends GetxController {
       return value;
     }
 
-    final stringValue = value.toString();
+    String hex = value.toString().replaceAll('#', '').trim();
 
-    if (stringValue.startsWith('0x')) {
-      return int.tryParse(stringValue) ?? 0xFF757575;
+    if (hex.startsWith('0x')) {
+      hex = hex.substring(2);
     }
 
-    return int.tryParse(stringValue, radix: 16) ?? 0xFF757575;
+    if (hex.length == 6) {
+      hex = 'FF$hex';
+    }
+
+    return int.tryParse(hex, radix: 16) ?? 0xFF757575;
   }
 
   void _showError(String message) {
@@ -150,7 +230,9 @@ class CategoriesController extends GetxController {
       'Error',
       message,
       snackPosition: SnackPosition.BOTTOM,
+      snackStyle: SnackStyle.FLOATING,
+      backgroundColor: Colors.redAccent.withOpacity(0.8),
+      colorText: Colors.white,
     );
   }
 }
-

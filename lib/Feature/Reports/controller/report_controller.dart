@@ -8,11 +8,11 @@ class ReportController extends GetxController {
   RxList<TransactionModel> get transactions => _txController.transactions;
 
   double get totalIncome => transactions
-      .where((tx) => tx.isIncome)
+      .where((tx) => tx.isIncome == true)
       .fold(0.0, (sum, item) => sum + item.amount);
 
   double get totalExpense => transactions
-      .where((tx) => !tx.isIncome)
+      .where((tx) => tx.isIncome == false)
       .fold(0.0, (sum, item) => sum + item.amount);
 
   double get totalBalance => totalIncome - totalExpense;
@@ -23,14 +23,10 @@ class ReportController extends GetxController {
 
     if (Get.isRegistered<TransactionsController>()) {
       _txController = Get.find<TransactionsController>();
-      _txController.loadTransactions();
     } else {
-      Get.lazyPut<TransactionsController>(
-        () => TransactionsController(),
-      );
-
-      _txController = Get.find<TransactionsController>();
-      _txController.loadTransactions();
+      _txController = Get.put(TransactionsController());
     }
+    
+    _txController.loadTransactions();
   }
 }

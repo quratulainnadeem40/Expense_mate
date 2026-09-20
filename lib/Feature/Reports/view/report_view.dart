@@ -1,30 +1,38 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:expense_mate/Feature/more/view/custom_darwer.dart';
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
+import 'package:flutter/material.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+import 'package:get/get.dart';
 
 class ReportsView extends GetView<ReportController> {
-  const ReportsView({super.key});
+  ReportsView({super.key});
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ReportController>();
     final txController = Get.find<TransactionsController>();
-
-    // Dynamic Theme Variables
+final categoriesController = Get.find<CategoriesController>();
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      // ✅ Dynamic Background Color
+      key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Live Reports & Analytics'),
         centerTitle: true,
         backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
       ),
+      drawer: AppDrawer(scaffoldKey: _scaffoldKey),
       body: Obx(() {
         final totalIncome = controller.totalIncome;
         final totalExpense = controller.totalExpense;
@@ -39,10 +47,9 @@ class ReportsView extends GetView<ReportController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Totals Summary Card
               Card(
                 elevation: 0,
-                color: theme.cardColor, // ✅ Dynamic Card Color
+                color: theme.cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -57,7 +64,9 @@ class ReportsView extends GetView<ReportController> {
                             Text(
                               'Total Income',
                               style: TextStyle(
-                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                color: isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
                                 fontSize: 13,
                               ),
                             ),
@@ -79,7 +88,7 @@ class ReportsView extends GetView<ReportController> {
                       Container(
                         height: 40,
                         width: 1,
-                        color: theme.dividerColor, // ✅ Dynamic Divider Color
+                        color: theme.dividerColor,
                       ),
                       Expanded(
                         child: Column(
@@ -87,7 +96,9 @@ class ReportsView extends GetView<ReportController> {
                             Text(
                               'Total Expenses',
                               style: TextStyle(
-                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                color: isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
                                 fontSize: 13,
                               ),
                             ),
@@ -110,22 +121,19 @@ class ReportsView extends GetView<ReportController> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // 2. Financial Breakdown
               Text(
                 'Financial Breakdown',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black87, // ✅ Dynamic Text Color
+                  color: isDarkMode ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
               Card(
                 elevation: 0,
-                color: theme.cardColor, // ✅ Dynamic Card Color
+                color: theme.cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -140,7 +148,9 @@ class ReportsView extends GetView<ReportController> {
                           Text(
                             "Income vs Expense Ratio",
                             style: TextStyle(
-                              color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                              color: isDarkMode
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
@@ -153,16 +163,15 @@ class ReportsView extends GetView<ReportController> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 17,
-                                color: isDarkMode ? Colors.white : Colors.black87, // ✅ Dynamic Text
+                                color: isDarkMode
+                                    ? Colors.white
+                                    : Colors.black87,
                               ),
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Linear Indicator Bar
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: SizedBox(
@@ -172,27 +181,30 @@ class ReportsView extends GetView<ReportController> {
                               if (totalSum == 0)
                                 Expanded(
                                   child: Container(
-                                    color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+                                    color: isDarkMode
+                                        ? Colors.grey.shade800
+                                        : Colors.grey.shade300,
                                   ),
                                 )
                               else ...[
                                 Expanded(
                                   flex: (incomePct * 100).round(),
-                                  child: Container(color: const Color(0xFF4CAF50)),
+                                  child: Container(
+                                    color: const Color(0xFF4CAF50),
+                                  ),
                                 ),
                                 Expanded(
                                   flex: (expensePct * 100).round(),
-                                  child: Container(color: const Color(0xFFEB5757)),
+                                  child: Container(
+                                    color: const Color(0xFFEB5757),
+                                  ),
                                 ),
                               ],
                             ],
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
-                      // Percentage Labels
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -218,33 +230,31 @@ class ReportsView extends GetView<ReportController> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // 3. Recent Transactions Section
               Text(
                 'Recent Transactions',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black87, // ✅ Dynamic Text
+                  color: isDarkMode ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
-
               controller.transactions.isEmpty
                   ? Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: theme.cardColor, // ✅ Dynamic Container Background
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Text(
                           'No entries added yet.',
                           style: TextStyle(
-                            color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                            color: isDarkMode
+                                ? Colors.grey.shade400
+                                : Colors.grey,
                           ),
                         ),
                       ),
@@ -259,7 +269,7 @@ class ReportsView extends GetView<ReportController> {
 
                         return Card(
                           elevation: 0,
-                          color: theme.cardColor, // ✅ Dynamic List Item Card Color
+                          color: theme.cardColor,
                           margin: const EdgeInsets.symmetric(vertical: 4.0),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -268,8 +278,12 @@ class ReportsView extends GetView<ReportController> {
                             leading: CircleAvatar(
                               radius: 20,
                               backgroundColor: isIncome
-                                  ? (isDarkMode ? const Color(0xFF1E382B) : const Color(0xFFEBF9EE))
-                                  : (isDarkMode ? const Color(0xFF3B1E1E) : const Color(0xFFFDEEEE)),
+                                  ? (isDarkMode
+                                      ? const Color(0xFF1E382B)
+                                      : const Color(0xFFEBF9EE))
+                                  : (isDarkMode
+                                      ? const Color(0xFF3B1E1E)
+                                      : const Color(0xFFFDEEEE)),
                               child: Icon(
                                 isIncome
                                     ? Icons.arrow_downward_rounded
@@ -284,15 +298,20 @@ class ReportsView extends GetView<ReportController> {
                               tx.title,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isDarkMode ? Colors.white : Colors.black87, // ✅ Dynamic Title Color
+                                color: isDarkMode
+                                    ? Colors.white
+                                    : Colors.black87,
                               ),
                             ),
                             subtitle: Text(
-                              '${tx.category} • ${tx.date.day}/${tx.date.month}/${tx.date.year}',
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                              ),
-                            ),
+  '${_getCategoryName(tx.category, categoriesController)} • '
+  '${tx.date.day}/${tx.date.month}/${tx.date.year}',
+  style: TextStyle(
+    color: isDarkMode
+        ? Colors.grey.shade400
+        : Colors.grey.shade600,
+  ),
+),
                             trailing: Text(
                               '${isIncome ? '+' : '-'} PKR ${tx.amount.toStringAsFixed(2)}',
                               style: TextStyle(
@@ -319,6 +338,17 @@ class ReportsView extends GetView<ReportController> {
     );
   }
 
+  String _getCategoryName(
+  String categoryId,
+  CategoriesController categoriesController,
+) {
+  final category = categoriesController.categoryList.firstWhereOrNull(
+    (item) => item.id == categoryId,
+  );
+
+  return category?.name ?? categoryId;
+}
+
   void _showAddEntryBottomSheet(
     BuildContext context,
     TransactionsController txController,
@@ -333,7 +363,7 @@ class ReportsView extends GetView<ReportController> {
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.cardColor, // ✅ Dynamic Bottom Sheet Background Color
+          color: theme.cardColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SingleChildScrollView(
@@ -351,24 +381,30 @@ class ReportsView extends GetView<ReportController> {
               const SizedBox(height: 12),
               TextField(
                 controller: titleCtrl,
-                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87),
                 decoration: InputDecoration(
                   labelText: 'Title',
                   labelStyle: TextStyle(color: theme.hintColor),
-                  enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF4CAF50))),
+                  enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: theme.dividerColor)),
+                  focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF4CAF50))),
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: amountCtrl,
                 keyboardType: TextInputType.number,
-                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87),
                 decoration: InputDecoration(
                   labelText: 'Amount',
                   labelStyle: TextStyle(color: theme.hintColor),
-                  enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF4CAF50))),
+                  enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: theme.dividerColor)),
+                  focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF4CAF50))),
                 ),
               ),
               const SizedBox(height: 16),
@@ -384,10 +420,11 @@ class ReportsView extends GetView<ReportController> {
                           txController: txController,
                           titleCtrl: titleCtrl,
                           amountCtrl: amountCtrl,
-                          isIncome: true,
+                          isIncome: true, // Expressly Income
                         );
                       },
-                      child: const Text('Add Income', style: TextStyle(color: Colors.white)),
+                      child: const Text('Add Income',
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -401,10 +438,11 @@ class ReportsView extends GetView<ReportController> {
                           txController: txController,
                           titleCtrl: titleCtrl,
                           amountCtrl: amountCtrl,
-                          isIncome: false,
+                          isIncome: false, // Expressly Expense
                         );
                       },
-                      child: const Text('Add Expense', style: TextStyle(color: Colors.white)),
+                      child: const Text('Add Expense',
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],
@@ -445,6 +483,7 @@ class ReportsView extends GetView<ReportController> {
       isIncome: isIncome,
     );
 
+    // Directly call TransactionsController, which updates shared state
     txController.addTransaction(newTx);
 
     if (Get.isBottomSheetOpen ?? false) {
