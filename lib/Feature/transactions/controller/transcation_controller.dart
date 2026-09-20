@@ -264,11 +264,19 @@ class TransactionsController extends GetxController {
   // ERROR
   // ============================================================
 
-  void _showError(String message) {
+ void _showError(String message) {
+  if (Get.context == null) {
+    return;
+  }
+
+  try {
     Get.snackbar(
       'Error',
       message,
       snackPosition: SnackPosition.BOTTOM,
     );
+  } catch (_) {
+    // The widget tree may already be disposed.
   }
+}
 }

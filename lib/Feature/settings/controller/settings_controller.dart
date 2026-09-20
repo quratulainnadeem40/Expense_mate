@@ -1,18 +1,30 @@
+import 'dart:async';
+
 import 'package:expense_mate/Core/constants/app_keys.dart';
-import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
+import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsController extends GetxController {
+  StreamSubscription<AuthState>? _authSubscription;
+
+  // ============================================================
+  // SETTINGS
+  // ============================================================
+
   late Box settingsBox;
 
   final isDarkMode = false.obs;
   final selectedCurrency = 'PKR'.obs;
   final notificationsEnabled = true.obs;
+
+  // ============================================================
+  // ACCOUNT
+  // ============================================================
 
   final isDeletingAccount = false.obs;
 
@@ -21,17 +33,21 @@ class SettingsController extends GetxController {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-// ============================================================
-// PROFILE
-// ============================================================
+  // ============================================================
+  // PROFILE
+  // ============================================================
 
-final profileName = ''.obs;
-final profileEmail = ''.obs;
-final profilePictureUrl = ''.obs;
+  final profileName = ''.obs;
+  final profileEmail = ''.obs;
+  final profilePictureUrl = ''.obs;
 
-final isUpdatingProfile = false.obs;
+  final isUpdatingProfile = false.obs;
 
-final ImagePicker _imagePicker = ImagePicker();
+  final ImagePicker _imagePicker = ImagePicker();
+
+  // Prevent multiple profile requests at the same time.
+  bool _isLoadingProfile = false;
+
   // ============================================================
   // INIT
   // ============================================================
@@ -43,176 +59,650 @@ final ImagePicker _imagePicker = ImagePicker();
     settingsBox = Hive.box(AppKeys.settingsBox);
 
     loadSettings();
-    loadProfile();
-  }
 
-// ============================================================
-// LOAD PROFILE
-// ============================================================
+    // ----------------------------------------------------------
+    // Load profile once if a session already exists.
+    // ----------------------------------------------------------
 
-void loadProfile() {
-  final user = _supabase.auth.currentUser;
+    if (_supabase.auth.currentSession != null) {
+      loadProfile();
+    }
 
-  if (user == null) {
-    profileName.value = 'User';
-    profileEmail.value = '';
-    profilePictureUrl.value = '';
-    return;
-  }
+    // ----------------------------------------------------------
+    // Listen ONLY for real login/logout events.
+    //
+    // Do NOT call loadProfile() for tokenRefreshed or
+    // userUpdated. That can create repeated requests and
+    // eventually cause Supabase 429 rate-limit errors.
+    // ----------------------------------------------------------
 
-  profileEmail.value = user.email ?? '';
+    _authSubscription =
+        _supabase.auth.onAuthStateChange.listen((authState) {
+      final event = authState.event;
+      final session = authState.session;
 
-  profileName.value =
-      user.userMetadata?['name']?.toString() ?? 'User';
-
-  profilePictureUrl.value =
-      user.userMetadata?['avatar_url']?.toString() ?? '';
-}
-
-// ============================================================
-// UPDATE NAME
-// ============================================================
-
-Future<void> updateName(String name) async {
-  final trimmedName = name.trim();
-
-  if (trimmedName.isEmpty) {
-    Get.snackbar(
-      'Error',
-      'Please enter your name.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    return;
-  }
-
-  try {
-    isUpdatingProfile.value = true;
-
-    await _supabase.auth.updateUser(
-      UserAttributes(
-        data: {
-          'name': trimmedName,
-        },
-      ),
-    );
-
-    profileName.value = trimmedName;
-
-    Get.snackbar(
-      'Success',
-      'Name updated successfully.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } on AuthException catch (e) {
-    Get.snackbar(
-      'Update Failed',
-      e.message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } catch (e) {
-    Get.snackbar(
-      'Update Failed',
-      'Unable to update name.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } finally {
-    isUpdatingProfile.value = false;
-  }
-}
-
-// ============================================================
-// PICK PROFILE PICTURE
-// ============================================================
-
-Future<void> pickProfilePicture() async {
-  try {
-    final XFile? pickedImage = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-
-    if (pickedImage == null) return;
-
-    isUpdatingProfile.value = true;
-
-    final user = _supabase.auth.currentUser;
-
-    if (user == null) {
-      Get.snackbar(
-        'Error',
-        'No logged-in account found.',
-        snackPosition: SnackPosition.BOTTOM,
+      debugPrint(
+        'AUTH EVENT: $event | SESSION: ${session != null}',
       );
+
+      // User logged in.
+      if (event == AuthChangeEvent.signedIn) {
+        if (session?.user != null) {
+          loadProfile();
+        }
+      }
+
+      // User logged out.
+      if (event == AuthChangeEvent.signedOut) {
+        profileName.value = '';
+        profileEmail.value = '';
+        profilePictureUrl.value = '';
+      }
+    });
+  }
+
+  // ============================================================
+  // CURRENT USER
+  // ============================================================
+
+  User? get currentUser => _supabase.auth.currentUser;
+
+  // ============================================================
+  // LOAD PROFILE
+  // ============================================================
+
+  Future<void> loadProfile() async {
+    if (_isLoadingProfile) {
+      debugPrint('LOAD PROFILE: Already loading. Skipping.');
       return;
     }
 
-    // Read image as bytes instead of using dart:io File.
-    final bytes = await pickedImage.readAsBytes();
+    final session = _supabase.auth.currentSession;
+    final user = session?.user;
 
-    final filePath =
-        '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    if (user == null) {
+      debugPrint('LOAD PROFILE: No active session.');
+      return;
+    }
 
-debugPrint('USER: ${_supabase.auth.currentUser?.id}');
-debugPrint('SESSION: ${_supabase.auth.currentSession != null}');
-    await _supabase.storage
-        .from('profile-pictures')
-        .uploadBinary(
-          filePath,
-          bytes,
-         fileOptions: const FileOptions(
-  upsert: false,
-  contentType: 'image/jpeg',
-),
+    _isLoadingProfile = true;
+
+    try {
+      // --------------------------------------------------------
+      // AUTH DATA
+      // --------------------------------------------------------
+
+      final metadata = user.userMetadata ?? {};
+
+      final authName =
+          metadata['name']?.toString().trim() ?? '';
+
+      final authEmail =
+          user.email?.trim() ?? '';
+
+      final authAvatar =
+          metadata['avatar_url']?.toString().trim() ?? '';
+
+      // --------------------------------------------------------
+      // PROFILE TABLE DATA
+      // --------------------------------------------------------
+
+      String databaseName = '';
+      String databaseEmail = '';
+
+      try {
+        final profileResponse = await _supabase
+            .from('profiles')
+            .select('name, email')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (profileResponse != null) {
+          databaseName =
+              profileResponse['name']?.toString().trim() ?? '';
+
+          databaseEmail =
+              profileResponse['email']?.toString().trim() ?? '';
+        }
+      } on PostgrestException catch (e) {
+        debugPrint(
+          'Profiles table error: ${e.message}',
         );
+      }
 
-    final imageUrl = _supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(filePath);
+      // --------------------------------------------------------
+      // SELECT PROFILE VALUES
+      // --------------------------------------------------------
 
-    await _supabase.auth.updateUser(
-      UserAttributes(
-        data: {
-          'avatar_url': imageUrl,
-        },
-      ),
+      final finalName = authName.isNotEmpty
+          ? authName
+          : databaseName.isNotEmpty
+              ? databaseName
+              : 'User';
+
+      final finalEmail = authEmail.isNotEmpty
+          ? authEmail
+          : databaseEmail.isNotEmpty
+              ? databaseEmail
+              : 'No Email';
+
+      // --------------------------------------------------------
+      // UPDATE CONTROLLER
+      // --------------------------------------------------------
+
+      profileName.value = finalName;
+      profileEmail.value = finalEmail;
+      profilePictureUrl.value = authAvatar;
+
+      // --------------------------------------------------------
+      // DEBUG
+      // --------------------------------------------------------
+
+      debugPrint('================================');
+      debugPrint('PROFILE LOADED');
+      debugPrint('User ID: ${user.id}');
+      debugPrint('Auth Email: ${user.email}');
+      debugPrint('Database Name: $databaseName');
+      debugPrint('Database Email: $databaseEmail');
+      debugPrint('Final Name: ${profileName.value}');
+      debugPrint('Final Email: ${profileEmail.value}');
+      debugPrint('Avatar URL: ${profilePictureUrl.value}');
+      debugPrint('================================');
+    } on AuthException catch (e) {
+      debugPrint(
+        'Auth profile error: ${e.message}',
+      );
+    } catch (e) {
+      debugPrint(
+        'Load profile error: $e',
+      );
+    } finally {
+      _isLoadingProfile = false;
+    }
+  }
+
+  // ============================================================
+  // UPDATE PROFILE
+  // ============================================================
+
+ // ============================================================
+// UPDATE PROFILE
+// ============================================================
+
+Future<void> updateProfile({
+  required String name,
+  String? email,
+  String? password,
+}) async {
+  final newName = name.trim();
+  final newEmail = email?.trim() ?? '';
+  final newPassword = password?.trim();
+
+  // ----------------------------------------------------------
+  // VALIDATION
+  // ----------------------------------------------------------
+
+  if (newName.isEmpty) {
+    _showError('Please enter your name.');
+    return;
+  }
+
+  if (newPassword != null &&
+      newPassword.isNotEmpty &&
+      newPassword.length < 6) {
+    _showError('Password must be at least 6 characters.');
+    return;
+  }
+
+  try {
+    isUpdatingProfile.value = true;
+
+    // --------------------------------------------------------
+    // GET CURRENT AUTHENTICATED USER
+    // --------------------------------------------------------
+
+    final session = _supabase.auth.currentSession;
+    final user = session?.user;
+
+    if (user == null) {
+      debugPrint('SESSION IS NULL');
+      debugPrint(
+        'CURRENT USER: ${_supabase.auth.currentUser}',
+      );
+
+      _showError('No logged-in account found.');
+      return;
+    }
+
+    debugPrint('LOGGED IN USER ID: ${user.id}');
+    debugPrint('LOGGED IN EMAIL: ${user.email}');
+
+    // --------------------------------------------------------
+    // CURRENT VALUES
+    // --------------------------------------------------------
+
+    final currentName =
+        user.userMetadata?['name']?.toString().trim() ?? '';
+
+    final currentEmail =
+        user.email?.trim() ?? '';
+
+    final finalEmail =
+        newEmail.isEmpty ? currentEmail : newEmail;
+
+    final nameChanged =
+        newName != currentName;
+
+    final emailChanged =
+        finalEmail != currentEmail;
+
+    final passwordChanged =
+        newPassword != null &&
+        newPassword.isNotEmpty;
+
+    // --------------------------------------------------------
+    // NOTHING CHANGED
+    // --------------------------------------------------------
+
+    if (!nameChanged &&
+        !emailChanged &&
+        !passwordChanged) {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      Get.snackbar(
+        'No Changes',
+        'There are no changes to save.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------------
+    // PREPARE USER METADATA
+    // --------------------------------------------------------
+
+    final metadata = Map<String, dynamic>.from(
+      user.userMetadata ?? {},
     );
 
-    profilePictureUrl.value = imageUrl;
+    metadata['name'] = newName;
 
-    Get.snackbar(
-      'Success',
-      'Profile picture updated successfully.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } on StorageException catch (e) {
-    debugPrint('Storage error: ${e.message}');
+    // --------------------------------------------------------
+    // UPDATE SUPABASE AUTH
+    // --------------------------------------------------------
 
-    Get.snackbar(
-      'Upload Failed',
-      e.message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    if (emailChanged) {
+  debugPrint('UPDATING EMAIL ONLY: $finalEmail');
+
+  await _supabase.auth.updateUser(
+    UserAttributes(
+      email: finalEmail,
+    ),
+  );
+}
+
+if (passwordChanged) {
+  debugPrint('UPDATING PASSWORD ONLY');
+
+  await _supabase.auth.updateUser(
+    UserAttributes(
+      password: newPassword,
+    ),
+  );
+}
+
+if (nameChanged) {
+  debugPrint('UPDATING NAME METADATA');
+
+  await _supabase.auth.updateUser(
+    UserAttributes(
+      data: {
+        'name': newName,
+      },
+    ),
+  );
+}
+
+    // --------------------------------------------------------
+    // UPDATE PROFILES TABLE
+    // --------------------------------------------------------
+
+    final profileData = <String, dynamic>{
+      'name': newName,
+    };
+
+    if (emailChanged) {
+      profileData['email'] = finalEmail;
+    }
+
+    try {
+      await _supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', user.id);
+    } on PostgrestException catch (e) {
+      debugPrint(
+        'Profile table update error: ${e.message}',
+      );
+    }
+
+    // --------------------------------------------------------
+    // UPDATE LOCAL UI
+    // --------------------------------------------------------
+
+    profileName.value = newName;
+
+    if (emailChanged) {
+      profileEmail.value = finalEmail;
+    } else {
+      profileEmail.value = currentEmail;
+    }
+
+    // --------------------------------------------------------
+    // CLOSE EDIT PROFILE DIALOG
+    // --------------------------------------------------------
+
+    if (Get.isDialogOpen == true) {
+      Get.back();
+    }
+
+    // --------------------------------------------------------
+    // SUCCESS MESSAGE
+    // --------------------------------------------------------
+
+    if (nameChanged && emailChanged) {
+      Get.snackbar(
+        'Profile Updated',
+        'Name and email updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } else if (nameChanged) {
+      Get.snackbar(
+        'Profile Updated',
+        'Name updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } else if (emailChanged) {
+      Get.snackbar(
+        'Profile Updated',
+        'Email updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } else if (passwordChanged) {
+      Get.snackbar(
+        'Profile Updated',
+        'Password updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   } on AuthException catch (e) {
-    debugPrint('Auth error: ${e.message}');
+    // --------------------------------------------------------
+    // SUPABASE AUTH ERROR DEBUG
+    // --------------------------------------------------------
 
-    Get.snackbar(
-      'Error',
-      e.message,
-      snackPosition: SnackPosition.BOTTOM,
+    debugPrint('================================');
+    debugPrint('PROFILE UPDATE AUTH ERROR');
+    debugPrint('Message: ${e.message}');
+    debugPrint('Status: ${e.statusCode}');
+    debugPrint('Code: ${e.code}');
+    debugPrint('================================');
+
+    _showError(
+      '${e.message} (Code: ${e.code})',
     );
   } catch (e) {
-    debugPrint('Profile picture error: $e');
+    // --------------------------------------------------------
+    // GENERAL ERROR
+    // --------------------------------------------------------
 
-    Get.snackbar(
-      'Upload Failed',
-      e.toString(),
-      snackPosition: SnackPosition.BOTTOM,
+    debugPrint('================================');
+    debugPrint('PROFILE UPDATE ERROR');
+    debugPrint('Error: $e');
+    debugPrint('================================');
+
+    _showError(
+      'Unable to update profile. Please try again.',
     );
   } finally {
     isUpdatingProfile.value = false;
   }
 }
+ // ============================================================
+  // UPDATE NAME ONLY
+  // ============================================================
 
+  Future<void> updateName(String name) async {
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      _showError('Please enter your name.');
+      return;
+    }
+
+    try {
+      isUpdatingProfile.value = true;
+
+      // --------------------------------------------------------
+      // GET CURRENT AUTHENTICATED USER
+      // --------------------------------------------------------
+
+      final session = _supabase.auth.currentSession;
+      final user = session?.user;
+
+      if (user == null) {
+        debugPrint('SESSION IS NULL');
+        debugPrint(
+          'CURRENT USER: ${_supabase.auth.currentUser}',
+        );
+
+        _showError('No logged-in account found.');
+        return;
+      }
+
+      debugPrint('LOGGED IN USER ID: ${user.id}');
+      debugPrint('LOGGED IN EMAIL: ${user.email}');
+
+      // --------------------------------------------------------
+      // UPDATE USER METADATA
+      // --------------------------------------------------------
+
+      final metadata = Map<String, dynamic>.from(
+        user.userMetadata ?? {},
+      );
+
+      metadata['name'] = trimmedName;
+
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: metadata,
+        ),
+      );
+
+      // --------------------------------------------------------
+      // UPDATE LOCAL UI
+      // --------------------------------------------------------
+
+      profileName.value = trimmedName;
+
+      // --------------------------------------------------------
+      // UPDATE PROFILES TABLE
+      // --------------------------------------------------------
+
+      await _supabase
+          .from('profiles')
+          .update({
+            'name': trimmedName,
+          })
+          .eq('id', user.id);
+
+      // --------------------------------------------------------
+      // SUCCESS
+      // --------------------------------------------------------
+
+      Get.snackbar(
+        'Success',
+        'Name updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on AuthException catch (e) {
+      debugPrint(
+        'Update name auth error: ${e.message}',
+      );
+
+      _showError(e.message);
+    } catch (e) {
+      debugPrint(
+        'Update name error: $e',
+      );
+
+      _showError(
+        'Unable to update name.',
+      );
+    } finally {
+      isUpdatingProfile.value = false;
+    }
+  }
+
+  // ============================================================
+  // PICK PROFILE PICTURE
+  // ============================================================
+
+  Future<void> pickProfilePicture() async {
+    try {
+      final XFile? pickedImage =
+          await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedImage == null) {
+        return;
+      }
+
+      final user = _supabase.auth.currentUser;
+
+      if (user == null) {
+        _showError('No logged-in account found.');
+        return;
+      }
+
+      isUpdatingProfile.value = true;
+
+      final bytes = await pickedImage.readAsBytes();
+
+      final filePath =
+          '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      await _supabase.storage
+          .from('profile-pictures')
+          .uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(
+              upsert: false,
+              contentType: 'image/jpeg',
+            ),
+          );
+
+      final imageUrl = _supabase.storage
+          .from('profile-pictures')
+          .getPublicUrl(filePath);
+
+      final metadata = Map<String, dynamic>.from(
+        user.userMetadata ?? {},
+      );
+
+      metadata['avatar_url'] = imageUrl;
+
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: metadata,
+        ),
+      );
+
+      profilePictureUrl.value = imageUrl;
+
+      Get.snackbar(
+        'Success',
+        'Profile picture updated successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on StorageException catch (e) {
+      debugPrint(
+        'Storage error: ${e.message}',
+      );
+
+      _showError(e.message);
+    } on AuthException catch (e) {
+      debugPrint(
+        'Auth error: ${e.message}',
+      );
+
+      _showError(e.message);
+    } catch (e) {
+      debugPrint(
+        'Profile picture error: $e',
+      );
+
+      _showError(
+        'Unable to update profile picture.',
+      );
+    } finally {
+      isUpdatingProfile.value = false;
+    }
+  }
+
+  // ============================================================
+  // CLEAR PROFILE PICTURE
+  // ============================================================
+
+  Future<void> clearProfilePicture() async {
+    final user = _supabase.auth.currentUser;
+
+    if (user == null) {
+      _showError('No logged-in account found.');
+      return;
+    }
+
+    try {
+      isUpdatingProfile.value = true;
+
+      final metadata = Map<String, dynamic>.from(
+        user.userMetadata ?? {},
+      );
+
+      metadata.remove('avatar_url');
+
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: metadata,
+        ),
+      );
+
+      profilePictureUrl.value = '';
+
+      Get.snackbar(
+        'Profile Picture Removed',
+        'Your profile picture has been cleared.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      debugPrint(
+        'Clear profile picture error: $e',
+      );
+
+      _showError(
+        'Unable to clear profile picture.',
+      );
+    } finally {
+      isUpdatingProfile.value = false;
+    }
+  }
 
   // ============================================================
   // LOAD SETTINGS
@@ -326,16 +816,10 @@ debugPrint('SESSION: ${_supabase.auth.currentSession != null}');
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
-      Get.snackbar(
-        'Logout Failed',
-        e.message,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _showError(e.message);
     } catch (e) {
-      Get.snackbar(
-        'Logout Failed',
+      _showError(
         'Unable to logout. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
@@ -353,44 +837,41 @@ debugPrint('SESSION: ${_supabase.auth.currentSession != null}');
       final user = _supabase.auth.currentUser;
 
       if (user == null) {
-        Get.snackbar(
-          'Error',
-          'No logged-in account found.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        _showError('No logged-in account found.');
         return;
       }
 
       isDeletingAccount.value = true;
 
-      final response = await _supabase.functions.invoke(
+      final response =
+          await _supabase.functions.invoke(
         'delete-account',
       );
 
       if (response.status != 200) {
-        String errorMessage = 'Unable to delete account.';
+        String errorMessage =
+            'Unable to delete account.';
 
         if (response.data is Map &&
             response.data['error'] != null) {
-          errorMessage = response.data['error'].toString();
+          errorMessage =
+              response.data['error'].toString();
         }
 
         throw Exception(errorMessage);
       }
 
-      // Clear local settings.
       await settingsBox.clear();
 
-      // Cancel any locally scheduled notifications.
       try {
-        await notificationService.cancelAllNotifications();
+        await notificationService
+            .cancelAllNotifications();
       } catch (e) {
         debugPrint(
           'Notification cleanup error: $e',
         );
       }
 
-      // Sign out locally after successful account deletion.
       await _supabase.auth.signOut();
 
       Get.offAllNamed(AppRoutes.login);
@@ -401,43 +882,39 @@ debugPrint('SESSION: ${_supabase.auth.currentSession != null}');
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
-      Get.snackbar(
-        'Delete Account Failed',
-        e.message,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _showError(e.message);
     } catch (e) {
       debugPrint(
         'Delete account exception: $e',
       );
 
-      Get.snackbar(
-        'Delete Account Failed',
+      _showError(
         'Unable to delete account. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isDeletingAccount.value = false;
     }
-   void loadProfile() {
-  final user = _supabase.auth.currentUser;
-
-  if (user == null) {
-    profileName.value = 'User';
-    profileEmail.value = '';
-    profilePictureUrl.value = '';
-    return;
   }
 
-  profileName.value =
-      user.userMetadata?['name']?.toString() ?? 'User';
+  // ============================================================
+  // ERROR
+  // ============================================================
 
-  // Login wali email
-  profileEmail.value = user.email ?? '';
+  void _showError(String message) {
+    Get.snackbar(
+      'Error',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
 
-  profilePictureUrl.value =
-      user.userMetadata?['avatar_url']?.toString() ?? '';
-}
+  // ============================================================
+  // CLOSE
+  // ============================================================
+
+  @override
+  void onClose() {
+    _authSubscription?.cancel();
+    super.onClose();
   }
 }
-
