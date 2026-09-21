@@ -397,15 +397,25 @@ class _SummaryCard extends StatelessWidget {
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppTextStyles.bodyMedium(isDark),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '$currency ${amount.toStringAsFixed(2)}',
-                  style: AppTextStyles.bodyLarge(isDark).copyWith(
-                    fontWeight: FontWeight.bold,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$currency ${amount.toStringAsFixed(2)}',
+                    maxLines: 1,
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

@@ -45,7 +45,7 @@ class BalanceCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoItem('Income', totalIncome, AppColors.incomeGreen, settingsController),
+              _buildInfoItem('Income', totalIncome, Colors.white, settingsController),
               _buildInfoItem('Expense', totalExpense, AppColors.expenseRed, settingsController),
             ],
           ),

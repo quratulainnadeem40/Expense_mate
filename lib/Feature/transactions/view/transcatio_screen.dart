@@ -245,7 +245,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF4CAF50),
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
