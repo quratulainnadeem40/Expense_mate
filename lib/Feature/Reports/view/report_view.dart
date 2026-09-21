@@ -45,8 +45,6 @@ class ReportView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ---------------- SUMMARY ----------------
-
             Row(
               children: [
                 Expanded(
@@ -73,9 +71,7 @@ class ReportView extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 20),
-
-            // ---------------- BAR CHART ----------------
+            const SizedBox(height: 20), 
 
             Text(
               'Income vs Expense',
@@ -133,20 +129,25 @@ class ReportView extends StatelessWidget {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
+                          reservedSize: 35,
+                          interval: 1,
                           getTitlesWidget: (value, meta) {
-                            String text = '';
+                            String title = '';
 
                             if (value == 0) {
-                              text = 'Income';
+                              title = 'Income';
                             } else if (value == 1) {
-                              text = 'Expense';
+                              title = 'Expense';
                             }
 
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8),
+                            return SideTitleWidget(
+                              meta: meta,
+                              space: 8,
                               child: Text(
-                                text,
+                                title,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: textColor,
                                 ),
@@ -168,6 +169,8 @@ class ReportView extends StatelessWidget {
                         ),
                       ),
                     ),
+
+                    alignment: BarChartAlignment.spaceAround,
 
                     barGroups: [
                       BarChartGroupData(
@@ -198,8 +201,6 @@ class ReportView extends StatelessWidget {
             ),
 
             const SizedBox(height: 25),
-
-            // ---------------- PIE CHART ----------------
 
             Text(
               'Expense Categories',
@@ -303,8 +304,6 @@ class ReportView extends StatelessWidget {
 
             const SizedBox(height: 25),
 
-            // ---------------- LINE CHART ----------------
-
             Text(
               'Monthly Expenses',
               style: TextStyle(
@@ -322,12 +321,20 @@ class ReportView extends StatelessWidget {
                 height: 280,
                 child: LineChart(
                   LineChartData(
+                    minX: 0,
+                    maxX: 5,
+                    minY: 12000,
+                    maxY: 22000,
+
                     borderData: FlBorderData(
                       show: false,
                     ),
 
                     gridData: FlGridData(
                       show: true,
+                      drawHorizontalLine: true,
+                      drawVerticalLine: true,
+
                       getDrawingHorizontalLine: (value) {
                         return FlLine(
                           color: isDark
@@ -336,6 +343,7 @@ class ReportView extends StatelessWidget {
                           strokeWidth: 1,
                         );
                       },
+
                       getDrawingVerticalLine: (value) {
                         return FlLine(
                           color: isDark
@@ -350,7 +358,8 @@ class ReportView extends StatelessWidget {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 40,
+                          reservedSize: 45,
+                          interval: 2000,
                           getTitlesWidget: (value, meta) {
                             return Text(
                               value.toInt().toString(),
@@ -366,7 +375,9 @@ class ReportView extends StatelessWidget {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
+                          reservedSize: 30,
                           interval: 1,
+
                           getTitlesWidget: (value, meta) {
                             const months = [
                               'Jan',
@@ -379,16 +390,21 @@ class ReportView extends StatelessWidget {
 
                             if (value >= 0 &&
                                 value < months.length) {
-                              return Text(
-                                months[value.toInt()],
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: textColor,
+                              return SideTitleWidget(
+                                meta: meta,
+                                space: 8,
+                                child: Text(
+                                  months[value.toInt()],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: textColor,
+                                  ),
                                 ),
                               );
                             }
 
-                            return const Text('');
+                            return const SizedBox.shrink();
                           },
                         ),
                       ),
@@ -416,13 +432,21 @@ class ReportView extends StatelessWidget {
                           FlSpot(4, 17000),
                           FlSpot(5, 20000),
                         ],
-
-                        isCurved: true,
-
-                        barWidth: 4,
+                        isCurved: false,
+                        barWidth: 4,  
 
                         dotData: FlDotData(
                           show: true,
+                          getDotPainter:
+                              (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 5,
+                              color: const Color(0xff11B5C9),
+                              strokeWidth: 2,
+                              strokeColor:
+                                  const Color(0xff11B5C9),
+                            );
+                          },
                         ),
 
                         belowBarData: BarAreaData(
@@ -435,16 +459,17 @@ class ReportView extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
 
-            // ---------------- BALANCE ----------------
-
+            
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
+
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(18),
+
                 boxShadow: [
                   BoxShadow(
                     blurRadius: 10,
@@ -476,15 +501,12 @@ class ReportView extends StatelessWidget {
                 ],
               ),
             ),
-
-            const SizedBox(height: 30),
+            const SizedBox(height: 120),
           ],
         ),
       ),
     );
   }
-
-  // ---------------- SUMMARY CARD ----------------
 
   static Widget _summaryCard({
     required BuildContext context,
@@ -553,8 +575,6 @@ class ReportView extends StatelessWidget {
     );
   }
 
-  // ---------------- CHART CONTAINER ----------------
-
   static Widget _chartContainer({
     required BuildContext context,
     required Widget child,
@@ -586,8 +606,6 @@ class ReportView extends StatelessWidget {
   }
 }
 
-// ---------------- LEGEND ----------------
-
 class _Legend extends StatelessWidget {
   final String title;
   final Color color;
@@ -607,7 +625,7 @@ class _Legend extends StatelessWidget {
           height: 12,
           decoration: BoxDecoration(
             color: color,
-            shape: BoxShape.circle,
+           shape: BoxShape.circle,
           ),
         ),
 
@@ -624,4 +642,4 @@ class _Legend extends StatelessWidget {
       ],
     );
   }
-}
+} 

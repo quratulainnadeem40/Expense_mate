@@ -13,6 +13,10 @@ import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+
+// Home Controller
+import 'package:expense_mate/Feature/Home/controller/home_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,7 +30,8 @@ class TransactionsView extends StatefulWidget {
   State<TransactionsView> createState() => _TransactionsViewState();
 }
 
-class _TransactionsViewState extends State<TransactionsView> with WidgetsBindingObserver {
+class _TransactionsViewState extends State<TransactionsView>
+    with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
   final RxString searchQuery = ''.obs;
   final RxBool isSearching = false.obs;
@@ -143,7 +148,8 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
               size: 28,
             ),
             onPressed: () {
-              Get.back();
+              final homeController = Get.find<HomeController>();
+              homeController.changePage(0);
             },
           ),
 
@@ -160,21 +166,25 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
           scrolledUnderElevation: 0,
 
           actions: [
-            Obx(() => IconButton(
-                  icon: Icon(
-                    isSearching.value ? Icons.close_rounded : Icons.search_rounded,
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                  ),
-                  onPressed: () {
-                    if (isSearching.value) {
-                      isSearching.value = false;
-                      searchQuery.value = '';
-                      _searchController.clear();
-                    } else {
-                      isSearching.value = true;
-                    }
-                  },
-                )),
+            Obx(
+              () => IconButton(
+                icon: Icon(
+                  isSearching.value
+                      ? Icons.close_rounded
+                      : Icons.search_rounded,
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                ),
+                onPressed: () {
+                  if (isSearching.value) {
+                    isSearching.value = false;
+                    searchQuery.value = '';
+                    _searchController.clear();
+                  } else {
+                    isSearching.value = true;
+                  }
+                },
+              ),
+            ),
           ],
         ),
 
@@ -293,11 +303,18 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                 Expanded(
                   child: Obx(() {
                     final query = searchQuery.value.toLowerCase();
-                    final list = transactionsController.transactions.where((tx) {
+
+                    final list =
+                        transactionsController.transactions.where((tx) {
                       if (query.isEmpty) return true;
-                      final categoryName = _getCategoryName(tx.categoryId).toLowerCase();
+
+                      final categoryName =
+                          _getCategoryName(tx.categoryId).toLowerCase();
+
                       final title = tx.title.toLowerCase();
-                      return title.contains(query) || categoryName.contains(query);
+
+                      return title.contains(query) ||
+                          categoryName.contains(query);
                     }).toList();
 
                     if (list.isEmpty) {
@@ -335,6 +352,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                       itemCount: list.length,
                       itemBuilder: (context, index) {
                         final TransactionModel transaction = list[index];
+
                         final bool isIncome = transaction.isIncome;
 
                         final String categoryName =
@@ -531,7 +549,8 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                                 children: [
                                   _buildDrawerOption(
                                     context: context,
-                                    icon: Icons.account_balance_wallet_rounded,
+                                    icon:
+                                        Icons.account_balance_wallet_rounded,
                                     iconColor: const Color(0xFF2B82FB),
                                     title: 'Wallets',
                                     subtitle:
@@ -624,11 +643,13 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
     TransactionsController controller,
     TransactionModel transaction,
   ) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode =
+        Theme.of(context).brightness == Brightness.dark;
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor:
+            isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
           'Delete Transaction',
           style: TextStyle(
@@ -684,7 +705,8 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final isDarkMode =
+        theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
@@ -732,7 +754,8 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
@@ -775,3 +798,4 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
     );
   }
 }
+
