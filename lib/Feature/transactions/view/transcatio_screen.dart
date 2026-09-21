@@ -15,9 +15,6 @@ import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
 
-// Home Controller
-import 'package:expense_mate/Feature/Home/controller/home_controller.dart';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -690,62 +687,6 @@ class _TransactionsViewState extends State<TransactionsView>
     );
   }
 
-  void _showDeleteConfirmation(
-    BuildContext context,
-    TransactionsController controller,
-    TransactionModel transaction,
-  ) {
-    final isDarkMode =
-        Theme.of(context).brightness == Brightness.dark;
-
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
-        title: Text(
-          'Delete Transaction',
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this transaction?',
-          style: TextStyle(
-            color: isDarkMode
-                ? Colors.grey.shade300
-                : Colors.grey.shade700,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-
-              final success = await controller.deleteTransaction(
-                transaction.id,
-              );
-
-              if (success) {
-                Get.snackbar(
-                  'Deleted',
-                  'Transaction deleted successfully.',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              }
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildDrawerOption({
     required BuildContext context,
