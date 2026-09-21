@@ -2,6 +2,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:expense_mate/Feature/about/view/about_view.dart';
 
 import '../controller/settings_controller.dart';
 
@@ -358,6 +359,7 @@ class SettingsView extends StatelessWidget {
               isDark: isDark,
               children: [
                 ListTile(
+                  onTap: () => Get.to(() => const AboutView()),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 4,
