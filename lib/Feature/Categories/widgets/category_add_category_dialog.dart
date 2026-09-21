@@ -16,85 +16,111 @@ class AddCategoryDialog extends StatefulWidget {
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final TextEditingController nameController = TextEditingController();
 
-  final CategoriesController controller = Get.find();
+  final CategoriesController controller =
+      Get.find<CategoriesController>();
 
-  String selectedIcon = 'shopping_bag';
+  String selectedIcon = 'food';
 
   final List<Map<String, dynamic>> categoryIcons = [
     {
-      'name': 'shopping_bag',
-      'icon': Icons.shopping_bag_rounded,
-      'color': const Color(0xFFE56B5D),
-    },
-    {
-      'name': 'restaurant',
+      'name': 'food',
       'icon': Icons.restaurant_rounded,
-      'color': const Color(0xFFE58A3D),
+      'color': Color(0xFFE58A3D),
     },
     {
-      'name': 'home',
-      'icon': Icons.home_rounded,
-      'color': const Color(0xFF5C83C6),
-    },
-    {
-      'name': 'directions_car',
+      'name': 'transport',
       'icon': Icons.directions_car_rounded,
-      'color': const Color(0xFF4E9A94),
+      'color': Color(0xFF4E9A94),
     },
     {
-      'name': 'movie',
-      'icon': Icons.movie_rounded,
-      'color': const Color(0xFF8A6CC7),
+      'name': 'groceries',
+      'icon': Icons.shopping_basket_rounded,
+      'color': Color(0xFF66BB6A),
     },
     {
-      'name': 'school',
-      'icon': Icons.school_rounded,
-      'color': const Color(0xFF4F75B8),
+      'name': 'shopping',
+      'icon': Icons.shopping_bag_rounded,
+      'color': Color(0xFFE56B5D),
+    },
+    {
+      'name': 'rent',
+      'icon': Icons.home_work_rounded,
+      'color': Color(0xFF5C83C6),
+    },
+    {
+      'name': 'bills',
+      'icon': Icons.receipt_long_rounded,
+      'color': Color(0xFFFF9800),
+    },
+    {
+      'name': 'fuel',
+      'icon': Icons.local_gas_station_rounded,
+      'color': Color(0xFFE53935),
     },
     {
       'name': 'health',
       'icon': Icons.health_and_safety_rounded,
-      'color': const Color(0xFFD85C78),
+      'color': Color(0xFFD85C78),
     },
     {
-      'name': 'phone',
+      'name': 'education',
+      'icon': Icons.school_rounded,
+      'color': Color(0xFF4F75B8),
+    },
+    {
+      'name': 'mobile',
       'icon': Icons.phone_android_rounded,
-      'color': const Color(0xFF5A9A8C),
+      'color': Color(0xFF5A9A8C),
+    },
+    {
+      'name': 'internet',
+      'icon': Icons.wifi_rounded,
+      'color': Color(0xFF29B6F6),
+    },
+    {
+      'name': 'clothing',
+      'icon': Icons.checkroom_rounded,
+      'color': Color(0xFFEC407A),
+    },
+    {
+      'name': 'travel',
+      'icon': Icons.flight_rounded,
+      'color': Color(0xFF26A69A),
+    },
+    {
+      'name': 'entertainment',
+      'icon': Icons.movie_rounded,
+      'color': Color(0xFF8A6CC7),
     },
     {
       'name': 'fitness',
       'icon': Icons.fitness_center_rounded,
-      'color': const Color(0xFFE0784D),
+      'color': Color(0xFFE0784D),
     },
     {
-      'name': 'bookmark',
-      'icon': Icons.bookmark_rounded,
-      'color': const Color(0xFF6B78B8),
-    },
-    {
-      'name': 'receipt_long',
-      'icon': Icons.receipt_long_rounded,
-      'color': const Color(0xFF4C9A83),
-    },
-    {
-      'name': 'business',
-      'icon': Icons.business_center_rounded,
-      'color': const Color(0xFF5C6BC0),
-    },
-    {
-      'name': 'investment',
-      'icon': Icons.trending_up_rounded,
-      'color': const Color(0xFF3E9B72),
-    },
-    {
-      'name': 'gift',
+      'name': 'gifts',
       'icon': Icons.card_giftcard_rounded,
-      'color': const Color(0xFFD45D82),
+      'color': Color(0xFFD45D82),
     },
     {
-      'name': 'work',
-      'icon': Icons.account_balance_wallet_rounded,
-      'color': const Color(0xFFB47A45),
+      'name': 'beauty',
+      'icon': Icons.face_retouching_natural_rounded,
+      'color': Color(0xFFEC407A),
+    },
+    {
+      'name': 'pets',
+      'icon': Icons.pets_rounded,
+      'color': Color(0xFF8D6E63),
+    },
+    {
+      'name': 'home',
+      'icon': Icons.house_rounded,
+      'color': Color(0xFF5C83C6),
+    },
+    {
+      'name': 'other',
+      'icon': Icons.more_horiz_rounded,
+      'color': Color(0xFF78909C),
     },
   ];
 
@@ -106,9 +132,11 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     const Color accent = AppColors.primary;
+
     final Color surface = isDark
         ? const Color(0xFF202522)
         : const Color(0xFFF9FBF6);
@@ -117,18 +145,41 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       backgroundColor: surface,
       surfaceTintColor: Colors.transparent,
       elevation: 18,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 24,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
       clipBehavior: Clip.antiAlias,
       titlePadding: EdgeInsets.zero,
-      contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+      contentPadding: const EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        0,
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(
+        16,
+        6,
+        16,
+        14,
+      ),
       title: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
-        decoration: BoxDecoration(
+        padding: const EdgeInsets.fromLTRB(
+          24,
+          22,
+          24,
+          20,
+        ),
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [accent, const Color(0xFF1B5E20)],
+            colors: [
+              accent,
+              Color(0xFF1B5E20),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -141,7 +192,9 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.white30),
+                border: Border.all(
+                  color: Colors.white30,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.12),
@@ -159,7 +212,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             const SizedBox(width: 13),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     'CATEGORY SETUP',
@@ -188,39 +242,49 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             TextField(
               controller: nameController,
-              textCapitalization: TextCapitalization.words,
+              textCapitalization:
+                  TextCapitalization.words,
               decoration: InputDecoration(
                 hintText: 'Enter category name',
                 hintStyle: TextStyle(
-                  color: isDark ? Colors.white54 : Colors.grey[600],
+                  color: isDark
+                      ? Colors.white54
+                      : Colors.grey[600],
                   fontSize: 14,
                 ),
-                prefixIcon: Icon(
-                  Icons.edit_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white54 : Colors.grey[600],
-                ),
+
+                // Pencil/Edit icon intentionally removed.
+
                 filled: true,
                 fillColor: isDark
                     ? Colors.white.withOpacity(0.05)
                     : Colors.white.withOpacity(0.72),
-                contentPadding: const EdgeInsets.symmetric(
+                contentPadding:
+                    const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: isDark ? Colors.white24 : Colors.black26,
+                    color: isDark
+                        ? Colors.white24
+                        : Colors.black26,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: accent, width: 1.5),
+                  borderRadius:
+                      BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: accent,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -229,9 +293,13 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
 
             Text(
               'Select Icon',
-              style: AppTextStyles.bodyMedium(isDark).copyWith(
+              style: AppTextStyles.bodyMedium(
+                isDark,
+              ).copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : Colors.grey[700],
+                color: isDark
+                    ? Colors.white70
+                    : Colors.grey[700],
               ),
             ),
 
@@ -241,11 +309,17 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               spacing: 10,
               runSpacing: 10,
               children: categoryIcons.map((item) {
-                final String iconName = item['name'];
-                final IconData iconData = item['icon'];
-                final Color iconColor = item['color'];
+                final String iconName =
+                    item['name'] as String;
 
-                final bool isSelected = selectedIcon == iconName;
+                final IconData iconData =
+                    item['icon'] as IconData;
+
+                final Color iconColor =
+                    item['color'] as Color;
+
+                final bool isSelected =
+                    selectedIcon == iconName;
 
                 return InkWell(
                   onTap: () {
@@ -253,7 +327,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                       selectedIcon = iconName;
                     });
                   },
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius:
+                      BorderRadius.circular(12),
                   child: Container(
                     width: 54,
                     height: 54,
@@ -261,31 +336,46 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                       color: isSelected
                           ? iconColor
                           : (isDark
-                                ? Colors.white.withOpacity(0.04)
-                                : iconColor.withOpacity(0.10)),
+                              ? Colors.white
+                                  .withOpacity(0.04)
+                              : iconColor
+                                  .withOpacity(0.10)),
                       gradient: isSelected
                           ? LinearGradient(
                               colors: [
                                 iconColor,
-                                Color.lerp(iconColor, Colors.black, 0.18)!,
+                                Color.lerp(
+                                  iconColor,
+                                  Colors.black,
+                                  0.18,
+                                )!,
                               ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                              begin:
+                                  Alignment.topLeft,
+                              end:
+                                  Alignment.bottomRight,
                             )
                           : null,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                          BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? Colors.white.withOpacity(0.85)
-                            : (isDark ? Colors.white24 : Colors.black12),
-                        width: isSelected ? 1.8 : 1,
+                            ? Colors.white
+                                .withOpacity(0.85)
+                            : (isDark
+                                ? Colors.white24
+                                : Colors.black12),
+                        width:
+                            isSelected ? 1.8 : 1,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: iconColor.withOpacity(0.38),
+                                color: iconColor
+                                    .withOpacity(0.38),
                                 blurRadius: 12,
-                                offset: const Offset(0, 5),
+                                offset:
+                                    const Offset(0, 5),
                               ),
                             ]
                           : null,
@@ -296,8 +386,11 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                         Icon(
                           iconData,
                           size: 26,
-                          color: isSelected ? Colors.white : iconColor,
+                          color: isSelected
+                              ? Colors.white
+                              : iconColor,
                         ),
+
                         if (isSelected)
                           Positioned(
                             right: 3,
@@ -305,12 +398,17 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                             child: Container(
                               width: 14,
                               height: 14,
-                              decoration: BoxDecoration(
+                              decoration:
+                                  BoxDecoration(
                                 color: Colors.white,
-                                shape: BoxShape.circle,
+                                shape:
+                                    BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.16),
+                                    color: Colors.black
+                                        .withOpacity(
+                                      0.16,
+                                    ),
                                     blurRadius: 3,
                                   ),
                                 ],
@@ -331,32 +429,40 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
           ],
         ),
       ),
-
       actions: [
         TextButton(
           onPressed: () => Get.back(),
           style: TextButton.styleFrom(
-            foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            foregroundColor:
+                isDark ? Colors.white70 : Colors.grey[700],
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
           ),
           child: const Text('Cancel'),
         ),
 
         FilledButton(
           onPressed: () async {
-            final String categoryName = nameController.text.trim();
+            final String categoryName =
+                nameController.text.trim();
 
             if (categoryName.isEmpty) {
               Get.snackbar(
                 'Required',
                 'Please enter category name.',
-                snackPosition: SnackPosition.BOTTOM,
+                snackPosition:
+                    SnackPosition.BOTTOM,
               );
               return;
             }
 
             final newCategory = CategoryModel(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              id: DateTime.now()
+                  .millisecondsSinceEpoch
+                  .toString(),
               name: categoryName,
               icon: selectedIcon,
               colorValue: 0xFF2E7D32,
@@ -364,7 +470,9 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               type: 'expense',
             );
 
-            await controller.addCategory(newCategory);
+            await controller.addCategory(
+              newCategory,
+            );
 
             if (Get.isDialogOpen == true) {
               Get.back();
@@ -374,9 +482,14 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             backgroundColor: accent,
             foregroundColor: Colors.white,
             elevation: 2,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 22,
+              vertical: 12,
+            ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius:
+                  BorderRadius.circular(14),
             ),
           ),
           child: const Text('Add'),
