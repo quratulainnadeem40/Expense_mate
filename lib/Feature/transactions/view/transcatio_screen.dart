@@ -7,6 +7,7 @@ import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_bin
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
+import 'package:expense_mate/Feature/home/controller/home_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
@@ -106,6 +107,32 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
     return "${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}";
   }
 
+  /// Transactions is a tab inside MainScreen's IndexedStack, so there is
+  /// normally nothing on the navigator to pop. Go back to the Home tab
+  /// instead, and only pop when this screen really was pushed.
+  void _handleBack() {
+    if (isSearching.value) {
+      _closeSearch();
+      return;
+    }
+
+    if (Navigator.of(context).canPop()) {
+      Get.back();
+      return;
+    }
+
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().changePage(0);
+    }
+  }
+
+  void _closeSearch() {
+    isSearching.value = false;
+    searchQuery.value = '';
+    _searchController.clear();
+    FocusScope.of(context).unfocus();
+  }
+
   void _closeDrawerAndNavigate(
     Widget Function() page, {
     Bindings? binding,
@@ -130,6 +157,11 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
           return false;
         }
 
+        if (isSearching.value) {
+          _closeSearch();
+          return false;
+        }
+
         return true;
       },
       child: Scaffold(
@@ -142,18 +174,45 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
               color: isDarkMode ? Colors.white : Colors.black87,
               size: 28,
             ),
-            onPressed: () {
-              Get.back();
-            },
+            onPressed: _handleBack,
           ),
 
-          title: Text(
-            'Transactions',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.black87,
-            ),
-          ),
+          titleSpacing: 0,
+          title: Obx(() {
+            if (!isSearching.value) {
+              return Text(
+                'Transactions',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                ),
+              );
+            }
+
+            return TextField(
+              controller: _searchController,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              onChanged: (value) => searchQuery.value = value,
+              style: TextStyle(
+                fontSize: 16,
+                color: isDarkMode ? Colors.white : Colors.black87,
+              ),
+              cursorColor: const Color(0xFF4CAF50),
+              decoration: InputDecoration(
+                isDense: true,
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                hintText: 'Search title or category...',
+                hintStyle: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            );
+          }),
 
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
@@ -167,9 +226,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                   ),
                   onPressed: () {
                     if (isSearching.value) {
-                      isSearching.value = false;
-                      searchQuery.value = '';
-                      _searchController.clear();
+                      _closeSearch();
                     } else {
                       isSearching.value = true;
                     }
@@ -212,7 +269,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                     ),
                     decoration: BoxDecoration(
                       color: isDarkMode
-                          ? const Color(0xFF1E1E1E)
+                          ? const Color(0xFF121212)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
@@ -349,7 +406,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
                             color: isDarkMode
-                                ? const Color(0xFF1E1E1E)
+                                ? const Color(0xFF121212)
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
@@ -458,7 +515,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
                       ),
                       decoration: BoxDecoration(
                         color: isDarkMode
-                            ? const Color(0xFF1E1E1E)
+                            ? const Color(0xFF121212)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
@@ -628,7 +685,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF121212) : Colors.white,
         title: Text(
           'Delete Transaction',
           style: TextStyle(
@@ -689,7 +746,7 @@ class _TransactionsViewState extends State<TransactionsView> with WidgetsBinding
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode
-            ? const Color(0xFF2A2A2A)
+            ? const Color(0xFF1C1C1C)
             : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
