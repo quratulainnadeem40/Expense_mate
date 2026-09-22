@@ -4,6 +4,14 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesController extends GetxController {
+  static const List<String> protectedCategoryOrder = [
+    'education',
+    'food',
+    'bills',
+    'transport',
+    'health',
+  ];
+
   final SupabaseClient _supabase = Supabase.instance.client;
 
   final categoryList = <CategoryModel>[].obs;
@@ -11,6 +19,98 @@ class CategoriesController extends GetxController {
   final isLoading = false.obs;
 
   User? get currentUser => _supabase.auth.currentUser;
+
+  static String _normalizeCategoryName(String? name) {
+    return (name ?? '').trim().toLowerCase().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+  }
+
+  static bool isProtectedCategoryName(String? name) {
+    return protectedCategoryOrder.contains(_normalizeCategoryName(name));
+  }
+
+  static List<Map<String, dynamic>> filterVisibleCategories(
+    List<dynamic> rawCategories,
+  ) {
+    final filtered = <Map<String, dynamic>>[];
+    final seen = <String>{};
+
+    for (final item in rawCategories) {
+      if (item is! Map) {
+        continue;
+      }
+
+      final name = item['name']?.toString() ?? '';
+      final normalizedName = _normalizeCategoryName(name);
+
+      if (!protectedCategoryOrder.contains(normalizedName) ||
+          seen.contains(normalizedName)) {
+        continue;
+      }
+
+      seen.add(normalizedName);
+      filtered.add(item as Map<String, dynamic>);
+    }
+
+    final ordered = <Map<String, dynamic>>[];
+    for (final categoryName in protectedCategoryOrder) {
+      final match = filtered.firstWhereOrNull(
+        (item) => _normalizeCategoryName(item['name']?.toString() ?? '') == categoryName,
+      );
+
+      if (match != null) {
+        ordered.add(match);
+        continue;
+      }
+
+      ordered.add({
+        'id': 'default_$categoryName',
+        'name': _defaultDisplayName(categoryName),
+        'icon': categoryName,
+        'color': _defaultColorValue(categoryName),
+        'isDefault': true,
+        'type': 'expense',
+      });
+    }
+
+    return ordered;
+  }
+
+  static String _defaultDisplayName(String categoryName) {
+    switch (categoryName) {
+      case 'education':
+        return 'Education';
+      case 'food':
+        return 'Food';
+      case 'bills':
+        return 'Bills';
+      case 'transport':
+        return 'Transport';
+      case 'health':
+        return 'Health';
+      default:
+        return categoryName[0].toUpperCase() + categoryName.substring(1);
+    }
+  }
+
+  static int _defaultColorValue(String categoryName) {
+    switch (categoryName) {
+      case 'education':
+        return 0xFF5C6BC0;
+      case 'food':
+        return 0xFFFF7043;
+      case 'bills':
+        return 0xFFFF9800;
+      case 'transport':
+        return 0xFF42A5F5;
+      case 'health':
+        return 0xFFE53935;
+      default:
+        return 0xFF757575;
+    }
+  }
 
   @override
   void onInit() {
@@ -36,28 +136,15 @@ class CategoriesController extends GetxController {
           .eq('user_id', user.id)
           .order('name');
 
-      final data = response;
+      final visibleData = filterVisibleCategories(response);
       final Map<String, int> countsMap = {};
-      final seenNames = <String>{};
       final categories = <CategoryModel>[];
 
-      for (final item in data) {
+      for (final item in visibleData) {
         final rawName = item['name']?.toString() ?? '';
+        final normalizedName = _normalizeCategoryName(rawName);
 
-        // Normalize aggressively: trim whitespace, convert to lowercase,
-        // and collapse multiple internal spaces into one
-        final normalizedName = rawName.trim().toLowerCase().replaceAll(
-          RegExp(r'\s+'),
-          ' ',
-        );
-
-        // Skip if this normalized name has already been processed
-        if (seenNames.contains(normalizedName)) {
-          continue;
-        }
-        seenNames.add(normalizedName);
-
-        final String catId = item['id'].toString();
+        final String catId = item['id']?.toString() ?? 'default_$normalizedName';
         int count = 0;
 
         final transactions = item['transactions'];
@@ -70,18 +157,14 @@ class CategoriesController extends GetxController {
         categories.add(
           CategoryModel(
             id: catId,
-            name: rawName, // Keep original casing/formatting for display
-            icon: item['icon']?.toString() ?? 'category',
+            name: rawName,
+            icon: item['icon']?.toString() ?? normalizedName,
             colorValue: _parseColor(item['color']),
-            isDefault: false,
+            isDefault: isProtectedCategoryName(rawName),
             type: item['type']?.toString().toLowerCase() ?? 'expense',
           ),
         );
       }
-
-      categories.sort(
-        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-      );
 
       categoryCounts.assignAll(countsMap);
       categoryList.assignAll(categories);
@@ -170,6 +253,20 @@ class CategoriesController extends GetxController {
     }
 
     if (ids.isEmpty) {
+      return;
+    }
+
+    final protectedIds = categoryList
+        .where((category) => ids.contains(category.id) && category.isDefault)
+        .map((category) => category.id)
+        .toList();
+
+    if (protectedIds.isNotEmpty) {
+      Get.snackbar(
+        'Protected',
+        'Default categories cannot be deleted.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
 
