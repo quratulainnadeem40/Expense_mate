@@ -1,21 +1,14 @@
-import 'package:expense_mate/Feature/reports/view/report_view.dart';
-import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:expense_mate/Feature/reports/view/report_view.dart';
-// Categories
+
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart' hide TransactionsView;
+import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
-// Transactions
-import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
-
-// Reports
-
-
-// Expense
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+import 'package:expense_mate/Feature/reports/view/report_view.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
+import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 
 // Home
 import '../controller/home_controller.dart';
@@ -71,10 +64,6 @@ class MainScreen extends StatelessWidget {
     height: 54,
     child: FloatingActionButton(
       onPressed: () {
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
-
         if (isCategories) {
           Get.dialog(
             const AddCategoryDialog(),
@@ -202,9 +191,6 @@ class MainScreen extends StatelessWidget {
 
       return InkWell(
         onTap: () {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
           controller.changePage(index);
         },
         splashColor: Colors.transparent,
@@ -213,8 +199,7 @@ class MainScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 4,

@@ -12,5 +12,6 @@ class StorageService {
     await Hive.openBox(AppKeys.billsRemindersBox);
 
     await Hive.openBox(AppKeys.settingsBox);
+    await Hive.openBox(AppKeys.budgetBox);
   }
 }

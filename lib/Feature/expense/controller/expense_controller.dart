@@ -50,8 +50,11 @@ class ExpenseController extends GetxController {
   // CONTROLLERS
   // ------------------------------------------------------------
 
-  late CategoriesController categoriesController;
-  late WalletsController walletsController;
+  CategoriesController get categoriesController =>
+      Get.find<CategoriesController>();
+
+  WalletsController get walletsController =>
+      Get.find<WalletsController>();
 
   // ------------------------------------------------------------
   // CATEGORY LISTS
@@ -73,31 +76,32 @@ class ExpenseController extends GetxController {
   // INIT
   // ------------------------------------------------------------
 
- @override
-void onInit() {
-  super.onInit();
+  @override
+  void onInit() {
+    super.onInit();
 
-  if (!Get.isRegistered<CategoriesController>()) {
-    Get.put(CategoriesController());
+    if (!Get.isRegistered<CategoriesController>()) {
+      Get.put(CategoriesController());
+    }
+
+    if (!Get.isRegistered<WalletsController>()) {
+      Get.put(WalletsController());
+    }
+
+    ever(categoriesController.categoryList, (_) => applyDefaultSelections());
+    ever(walletsController.wallets, (_) => applyDefaultSelections());
+
+    categoriesController.fetchCategories();
+    walletsController.loadWallets();
+
+    final argument = Get.arguments;
+
+    if (argument is TransactionModel) {
+      loadTransactionForEdit(argument);
+    } else {
+      Future.microtask(applyDefaultSelections);
+    }
   }
-
-  if (!Get.isRegistered<WalletsController>()) {
-    Get.put(WalletsController());
-  }
-
-  categoriesController = Get.find<CategoriesController>();
-  walletsController = Get.find<WalletsController>();
-
-  // Refresh latest categories from Supabase
-  categoriesController.fetchCategories();
-
-  // CHECK IF THIS IS EDIT MODE
-  final argument = Get.arguments;
-
-  if (argument is TransactionModel) {
-    loadTransactionForEdit(argument);
-  }
-}
 
   // ------------------------------------------------------------
   // EXPENSE / INCOME TOGGLE
@@ -107,7 +111,39 @@ void onInit() {
     isExpense.value = isExp;
 
     if (!isEditMode.value) {
-      selectedCategoryId.value = ''; // Reset category on type switch
+      applyDefaultSelections();
+    }
+  }
+
+  void applyDefaultSelections() {
+    final typeKey = isExpense.value ? 'expense' : 'income';
+
+    final categoryList = categoriesController.categoryList
+        .where((category) => category.type == typeKey)
+        .toList();
+
+    if (categoryList.isNotEmpty) {
+      final selectedExists = categoryList.any(
+        (category) => category.id == selectedCategoryId.value,
+      );
+
+      if (!selectedExists || selectedCategoryId.value.isEmpty) {
+        selectedCategoryId.value = categoryList.first.id;
+      }
+    } else {
+      selectedCategoryId.value = '';
+    }
+
+    if (walletsController.wallets.isNotEmpty) {
+      final walletExists = walletsController.wallets.any(
+        (wallet) => wallet.id == selectedWalletId.value,
+      );
+
+      if (!walletExists || selectedWalletId.value.isEmpty) {
+        selectedWalletId.value = walletsController.wallets.first.id;
+      }
+    } else {
+      selectedWalletId.value = '';
     }
   }
 
