@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../controller/expense_controller.dart';
@@ -45,9 +46,6 @@ class AddExpenseView extends GetView<ExpenseController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --------------------------------------------------
-                    // EXPENSE / INCOME SEGMENTED TOGGLE
-                    // --------------------------------------------------
                     Obx(() {
                       final isExpense = controller.isExpense.value;
 
@@ -75,7 +73,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     boxShadow: isExpense
                                         ? [
                                             BoxShadow(
-                                              color: expenseRed.withOpacity(0.3),
+                                              color:
+                                                  expenseRed.withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
                                             ),
@@ -128,7 +127,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     boxShadow: !isExpense
                                         ? [
                                             BoxShadow(
-                                              color: primaryGreen.withOpacity(0.3),
+                                              color:
+                                                  primaryGreen.withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
                                             ),
@@ -175,9 +175,6 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                     const SizedBox(height: 20),
 
-                    // --------------------------------------------------
-                    // AMOUNT FIELD (CARD STYLE)
-                    // --------------------------------------------------
                     Obx(() {
                       final isExpense = controller.isExpense.value;
                       final currentColor =
@@ -216,6 +213,9 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   const TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
+                              inputFormatters: [
+                                ThousandsSeparatorInputFormatter(),
+                              ],
                               style: TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.bold,
@@ -246,9 +246,6 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                     const SizedBox(height: 20),
 
-                    // --------------------------------------------------
-                    // CATEGORY DROPDOWN
-                    // --------------------------------------------------
                     _buildFieldLabel(theme, 'Category'),
                     const SizedBox(height: 6),
                     Obx(() {
@@ -322,9 +319,6 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                     const SizedBox(height: 16),
 
-                    // --------------------------------------------------
-                    // WALLET DROPDOWN
-                    // --------------------------------------------------
                     _buildFieldLabel(theme, 'Wallet'),
                     const SizedBox(height: 6),
                     Obx(() {
@@ -407,9 +401,6 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                     const SizedBox(height: 16),
 
-                    // --------------------------------------------------
-                    // NOTE FIELD  (hint changes with selected category)
-                    // --------------------------------------------------
                     _buildFieldLabel(theme, 'Note (Optional)'),
                     const SizedBox(height: 6),
                     Obx(() {
@@ -444,14 +435,11 @@ class AddExpenseView extends GetView<ExpenseController> {
                         ),
                       );
                     }),
-                  ], // <-- Scrollable Column children close HERE
+                  ],
                 ),
               ),
             ),
 
-            // --------------------------------------------------
-            // ACTION BUTTONS (BOTTOM PINNED)
-            // --------------------------------------------------
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -482,6 +470,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   );
                                   return;
                                 }
+
                                 if (controller
                                     .selectedWalletId.value.isEmpty) {
                                   Get.snackbar(
@@ -491,6 +480,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   );
                                   return;
                                 }
+
                                 controller.saveExpense();
                               },
                         child: controller.isLoading.value
@@ -538,11 +528,7 @@ class AddExpenseView extends GetView<ExpenseController> {
     );
   }
 
-  // Helper Methods & Styles
 
-  /// Returns a note placeholder based on the selected category.
-  /// Matching is keyword based, so small naming differences
-  /// (e.g. "Food", "Food & Drinks", "Foods") still work.
   String _noteHint(String? categoryName, bool isExpense) {
     final name = (categoryName ?? '').toLowerCase().trim();
 
@@ -558,91 +544,149 @@ class AddExpenseView extends GetView<ExpenseController> {
       if (has(['food', 'restaurant', 'dining', 'lunch', 'dinner'])) {
         return 'e.g., Lunch with team';
       }
+
       if (has(['grocer', 'kitchen', 'vegetable', 'market'])) {
         return 'e.g., Monthly grocery shopping';
       }
-      if (has(['transport', 'travel', 'fuel', 'petrol', 'taxi', 'uber',
-          'careem', 'bus', 'rickshaw'])) {
+
+      if (has([
+        'transport',
+        'travel',
+        'fuel',
+        'petrol',
+        'taxi',
+        'uber',
+        'careem',
+        'bus',
+        'rickshaw'
+      ])) {
         return 'e.g., Fuel for the bike';
       }
+
       if (has(['shop', 'cloth', 'fashion', 'apparel'])) {
         return 'e.g., New pair of shoes';
       }
+
       if (has(['bill', 'utilit', 'electric', 'gas', 'water'])) {
         return 'e.g., Electricity bill for this month';
       }
+
       if (has(['rent', 'house', 'home'])) {
         return 'e.g., House rent payment';
       }
-      if (has(['health', 'medical', 'doctor', 'medicine', 'hospital',
-          'pharmac'])) {
+
+      if (has([
+        'health',
+        'medical',
+        'doctor',
+        'medicine',
+        'hospital',
+        'pharmac'
+      ])) {
         return 'e.g., Doctor visit and medicines';
       }
-      if (has(['educat', 'school', 'college', 'universit', 'fee', 'tuition',
-          'book', 'course'])) {
+
+      if (has([
+        'educat',
+        'school',
+        'college',
+        'universit',
+        'fee',
+        'tuition',
+        'book',
+        'course'
+      ])) {
         return 'e.g., Semester fee payment';
       }
+
       if (has(['entertain', 'movie', 'game', 'fun', 'outing'])) {
         return 'e.g., Movie tickets with friends';
       }
-      if (has(['mobile', 'phone', 'internet', 'wifi', 'recharge', 'load',
-          'subscription', 'netflix'])) {
+
+      if (has([
+        'mobile',
+        'phone',
+        'internet',
+        'wifi',
+        'recharge',
+        'load',
+        'subscription',
+        'netflix'
+      ])) {
         return 'e.g., Monthly internet package';
       }
+
       if (has(['gift', 'donat', 'charity', 'zakat', 'sadqa'])) {
         return 'e.g., Gift for a friend\'s wedding';
       }
+
       if (has(['personal', 'care', 'salon', 'grooming', 'beauty'])) {
         return 'e.g., Haircut and grooming';
       }
+
       if (has(['famil', 'kid', 'child', 'parent'])) {
         return 'e.g., Kids\' monthly expenses';
       }
+
       if (has(['repair', 'maintain', 'maintenance', 'service'])) {
         return 'e.g., Bike servicing and repair';
       }
+
       if (has(['insur', 'tax', 'loan', 'installment', 'emi'])) {
         return 'e.g., Monthly installment payment';
       }
+
       if (has(['pet', 'animal'])) {
         return 'e.g., Pet food and vet visit';
       }
+
       return 'e.g., Add a short note for $categoryName';
     }
 
-    // ---------------- INCOME ----------------
+
     if (has(['salary', 'wage', 'pay'])) {
       return 'e.g., Salary for this month';
     }
+
     if (has(['business', 'shop', 'sale', 'profit'])) {
       return 'e.g., Profit from shop sales';
     }
+
     if (has(['freelanc', 'client', 'project', 'fiverr', 'upwork'])) {
       return 'e.g., Payment from a client project';
     }
+
     if (has(['invest', 'stock', 'dividend', 'interest', 'saving'])) {
       return 'e.g., Return on investment';
     }
+
     if (has(['bonus', 'commission', 'incentive', 'overtime'])) {
       return 'e.g., Performance bonus from office';
     }
+
     if (has(['gift', 'eidi', 'award', 'prize'])) {
       return 'e.g., Eidi received from family';
     }
+
     if (has(['rent', 'property'])) {
       return 'e.g., Rent received from tenant';
     }
+
     if (has(['refund', 'cashback', 'return'])) {
       return 'e.g., Refund for a cancelled order';
     }
+
     if (has(['loan', 'borrow', 'debt', 'repay'])) {
       return 'e.g., Loan amount returned by a friend';
     }
+
     if (has(['pension', 'allowance', 'stipend', 'scholarship'])) {
       return 'e.g., Monthly allowance received';
     }
+
     return 'e.g., Add a short note for $categoryName';
   }
+
 
   Widget _buildFieldLabel(ThemeData theme, String title) {
     return Text(
@@ -655,10 +699,12 @@ class AddExpenseView extends GetView<ExpenseController> {
     );
   }
 
+
   InputDecoration _buildInputDecoration(ThemeData theme, bool isDark) {
     return InputDecoration(
       filled: true,
-      fillColor: isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
+      fillColor:
+          isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 14,
@@ -679,15 +725,18 @@ class AddExpenseView extends GetView<ExpenseController> {
     );
   }
 
+
   BoxDecoration _inputBoxDecoration(ThemeData theme, bool isDark) {
     return BoxDecoration(
-      color: isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
+      color:
+          isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
         color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
       ),
     );
   }
+
 
   IconData _walletIcon(String type) {
     switch (type) {
@@ -710,5 +759,66 @@ class AddExpenseView extends GetView<ExpenseController> {
       default:
         return Icons.payments;
     }
+  }
+}
+
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String value = newValue.text;
+
+    if (value.isEmpty) {
+      return newValue;
+    }
+
+    value = value.replaceAll(',', '');
+
+    
+    value = value.replaceAll(RegExp(r'[^0-9.]'), '');
+
+    final firstDot = value.indexOf('.');
+
+    if (firstDot != -1) {
+      final beforeDecimal = value.substring(0, firstDot);
+      var afterDecimal = value.substring(firstDot + 1);
+
+      
+      if (afterDecimal.length > 2) {
+        afterDecimal = afterDecimal.substring(0, 2);
+      }
+
+      value = '$beforeDecimal.$afterDecimal';
+    }
+
+    final parts = value.split('.');
+
+    String integerPart = parts[0];
+    final decimalPart = parts.length > 1 ? parts[1] : null;
+
+    if (integerPart.isEmpty) {
+      integerPart = '0';
+    }
+
+    // Add commas from right to left.
+    final formattedInteger = integerPart.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => ',',
+    );
+
+    final formattedValue = decimalPart != null
+        ? '$formattedInteger.$decimalPart'
+        : formattedInteger;
+
+    
+    return TextEditingValue(
+      text: formattedValue,
+      selection: TextSelection.collapsed(
+        offset: formattedValue.length,
+      ),
+    );
   }
 }

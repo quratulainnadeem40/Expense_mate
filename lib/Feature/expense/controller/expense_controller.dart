@@ -11,51 +11,30 @@ import '../../wallets/controller/wallets_controller.dart';
 class ExpenseController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // ------------------------------------------------------------
-  // TYPE
-  // ------------------------------------------------------------
-
   final isExpense = true.obs;
 
-  // ------------------------------------------------------------
-  // EDIT MODE
-  // ------------------------------------------------------------
+ 
 
   final isEditMode = false.obs;
   String? editingTransactionId;
 
-  // ------------------------------------------------------------
-  // TEXT CONTROLLERS
-  // ------------------------------------------------------------
 
   final amountController = TextEditingController();
   final noteController = TextEditingController();
 
-  // ------------------------------------------------------------
-  // SELECTIONS (Initially empty)
-  // ------------------------------------------------------------
-
+  
   final selectedCategoryId = ''.obs;
   final selectedWalletId = ''.obs;
 
-  // ------------------------------------------------------------
-  // LOADING
-  // ------------------------------------------------------------
 
   final isLoading = false.obs;
 
   User? get currentUser => _supabase.auth.currentUser;
 
-  // ------------------------------------------------------------
-  // CONTROLLERS
-  // ------------------------------------------------------------
-
+  
   late CategoriesController categoriesController;
   late WalletsController walletsController;
 
-  // ------------------------------------------------------------
-  // CATEGORY LISTS
-  // ------------------------------------------------------------
 
   List<dynamic> get expenseCategories {
     return categoriesController.categoryList
@@ -69,48 +48,40 @@ class ExpenseController extends GetxController {
         .toList();
   }
 
-  // ------------------------------------------------------------
-  // INIT
-  // ------------------------------------------------------------
 
- @override
-void onInit() {
-  super.onInit();
+  @override
+  void onInit() {
+    super.onInit();
 
-  if (!Get.isRegistered<CategoriesController>()) {
-    Get.put(CategoriesController());
+    if (!Get.isRegistered<CategoriesController>()) {
+      Get.put(CategoriesController());
+    }
+
+    if (!Get.isRegistered<WalletsController>()) {
+      Get.put(WalletsController());
+    }
+
+    categoriesController = Get.find<CategoriesController>();
+    walletsController = Get.find<WalletsController>();
+
+    
+    final argument = Get.arguments;
+
+    if (argument is TransactionModel) {
+      loadTransactionForEdit(argument);
+    }
   }
 
-  if (!Get.isRegistered<WalletsController>()) {
-    Get.put(WalletsController());
-  }
-
-  categoriesController = Get.find<CategoriesController>();
-  walletsController = Get.find<WalletsController>();
-
-  // CHECK IF THIS IS EDIT MODE
-  final argument = Get.arguments;
-
-  if (argument is TransactionModel) {
-    loadTransactionForEdit(argument);
-  }
-}
-
-  // ------------------------------------------------------------
-  // EXPENSE / INCOME TOGGLE
-  // ------------------------------------------------------------
 
   void toggleType(bool isExp) {
     isExpense.value = isExp;
 
     if (!isEditMode.value) {
-      selectedCategoryId.value = ''; // Reset category on type switch
+      selectedCategoryId.value = '';
     }
   }
 
-  // ------------------------------------------------------------
-  // LOAD TRANSACTION FOR EDIT
-  // ------------------------------------------------------------
+  
 
   void loadTransactionForEdit(TransactionModel transaction) {
     isEditMode.value = true;
@@ -124,9 +95,7 @@ void onInit() {
     selectedWalletId.value = transaction.walletId;
   }
 
-  // ------------------------------------------------------------
-  // SAVE TRANSACTION
-  // ------------------------------------------------------------
+  
 
   Future<void> saveExpense() async {
     final user = currentUser;
@@ -139,16 +108,16 @@ void onInit() {
     final amountText = amountController.text.trim();
     final note = noteController.text.trim();
 
-    // ----------------------------------------------------------
-    // VALIDATIONS
-    // ----------------------------------------------------------
-
+    
     if (amountText.isEmpty) {
       _showError('Please enter amount.');
       return;
     }
 
-    final amount = double.tryParse(amountText);
+   
+    final cleanAmountText = amountText.replaceAll(',', '');
+
+    final amount = double.tryParse(cleanAmountText);
 
     if (amount == null || amount <= 0) {
       _showError('Please enter a valid amount.');
@@ -165,10 +134,7 @@ void onInit() {
       return;
     }
 
-    // ----------------------------------------------------------
-    // SAVE PROCESS
-    // ----------------------------------------------------------
-
+    
     try {
       isLoading.value = true;
 
@@ -193,7 +159,8 @@ void onInit() {
         Get.put(TransactionsController());
       }
 
-      final transactionsController = Get.find<TransactionsController>();
+      final transactionsController =
+          Get.find<TransactionsController>();
 
       bool success;
 
@@ -247,10 +214,7 @@ void onInit() {
     }
   }
 
-  // ------------------------------------------------------------
-  // RESET FORM
-  // ------------------------------------------------------------
-
+  
   void resetForm() {
     amountController.clear();
     noteController.clear();
@@ -264,9 +228,6 @@ void onInit() {
     selectedWalletId.value = '';
   }
 
-  // ------------------------------------------------------------
-  // ERROR SNACKBAR
-  // ------------------------------------------------------------
 
   void _showError(String message) {
     Get.snackbar(
@@ -275,17 +236,18 @@ void onInit() {
       snackPosition: SnackPosition.TOP,
       backgroundColor: const Color(0xFFE53935),
       colorText: Colors.white,
-      icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
+      icon: const Icon(
+        Icons.error_outline,
+        color: Colors.white,
+        size: 28,
+      ),
       margin: const EdgeInsets.all(15),
       borderRadius: 12,
       duration: const Duration(seconds: 3),
     );
   }
 
-  // ------------------------------------------------------------
-  // DISPOSE
-  // ------------------------------------------------------------
-
+  
   @override
   void onClose() {
     amountController.dispose();
