@@ -13,7 +13,7 @@ import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_bin
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
-
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 // Existing Home Imports
 import 'package:expense_mate/Feature/home/widgets/balance_card.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
@@ -102,8 +102,11 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reportController = Get.find<ReportController>();
-    final transactionsController =
-        Get.find<HomeController>().transactionsController;
+final transactionsController =
+    Get.find<HomeController>().transactionsController;
+
+final settingsController =
+    Get.find<SettingsController>();
     
 
     final theme = Theme.of(context);
@@ -182,35 +185,52 @@ class HomeScreen extends StatelessWidget {
                     currentAccountPictureSize:
                         const Size.square(64),
 
-                    currentAccountPicture: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          _userName.isNotEmpty
-                              ? _userName[0].toUpperCase()
-                              : 'U',
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E7D32),
-                          ),
-                        ),
-                      ),
-                    ),
+                    currentAccountPicture: Obx(() {
+  final imageUrl =
+      settingsController.profilePictureUrl.value;
+
+  final name =
+      settingsController.profileName.value;
+
+  final firstLetter = name.isNotEmpty
+      ? name[0].toUpperCase()
+      : 'U';
+
+  return Container(
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: Colors.white,
+        width: 2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: CircleAvatar(
+      backgroundColor: Colors.white,
+
+      backgroundImage: imageUrl.isNotEmpty
+          ? NetworkImage(imageUrl)
+          : null,
+
+      child: imageUrl.isEmpty
+          ? Text(
+              firstLetter,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E7D32),
+              ),
+            )
+          : null,
+    ),
+  );
+}),
 
                     accountName: Text(
                       _userName,
