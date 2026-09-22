@@ -2,15 +2,129 @@ import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-
 import '../controller/wallets_controller.dart';
 import '../widgets/wallet_balance_card.dart';
 import '../widgets/wallet_card.dart';
 import 'add_wallet_view.dart';
 import 'wallet_details_view.dart';
 
-class WalletsView extends GetView<WalletsController> {
+class WalletsView extends StatefulWidget {
   const WalletsView({super.key});
+
+  @override
+  State<WalletsView> createState() => _WalletsViewState();
+}
+
+class _WalletsViewState extends State<WalletsView> {
+  late final WalletsController controller;
+
+  final Set<String> selectedWalletIds = <String>{};
+
+  bool isSelectionMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = Get.find<WalletsController>();
+  }
+
+  // ============================================================
+  // ENTER SELECTION MODE
+  // ============================================================
+
+  void _enterSelectionMode(String walletId) {
+    setState(() {
+      isSelectionMode = true;
+      selectedWalletIds.add(walletId);
+    });
+  }
+
+  // ============================================================
+  // TOGGLE WALLET SELECTION
+  // ============================================================
+
+  void _toggleWalletSelection(String walletId) {
+    setState(() {
+      if (selectedWalletIds.contains(walletId)) {
+        selectedWalletIds.remove(walletId);
+      } else {
+        selectedWalletIds.add(walletId);
+      }
+
+      if (selectedWalletIds.isEmpty) {
+        isSelectionMode = false;
+      }
+    });
+  }
+
+  // ============================================================
+  // EXIT SELECTION MODE
+  // ============================================================
+
+  void _exitSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedWalletIds.clear();
+    });
+  }
+
+  // ============================================================
+  // DELETE SELECTED WALLETS
+  // ============================================================
+
+  void _deleteSelectedWallets(BuildContext context) {
+    if (selectedWalletIds.isEmpty) {
+      return;
+    }
+
+    final int count = selectedWalletIds.length;
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Wallets'),
+        content: Text(
+          count == 1
+              ? 'Are you sure you want to delete this wallet?'
+              : 'Are you sure you want to delete $count wallets?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+
+              final idsToDelete = selectedWalletIds.toList();
+
+              for (final walletId in idsToDelete) {
+                await controller.deleteWallet(walletId);
+              }
+
+              if (mounted) {
+                _exitSelectionMode();
+              }
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +133,31 @@ class WalletsView extends GetView<WalletsController> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Wallets',
+          isSelectionMode
+              ? '${selectedWalletIds.length} selected'
+              : 'Wallets',
           style: AppTextStyles.headingMedium(isDark),
         ),
+
+        leading: isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: _exitSelectionMode,
+              )
+            : null,
+
+        actions: [
+          if (isSelectionMode)
+            IconButton(
+              tooltip: 'Delete selected wallets',
+              onPressed: selectedWalletIds.isEmpty
+                  ? null
+                  : () => _deleteSelectedWallets(context),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+              ),
+            ),
+        ],
       ),
 
       body: Obx(() {
@@ -33,14 +169,18 @@ class WalletsView extends GetView<WalletsController> {
 
         return RefreshIndicator(
           onRefresh: () async {
-  await controller.loadWallets();
-},
+            await controller.loadWallets();
+          },
 
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
 
             children: [
+              // ==================================================
+              // TOTAL BALANCE
+              // ==================================================
+
               WalletBalanceCard(
                 totalBalance: controller.totalBalance,
                 currency: controller.wallets.isNotEmpty
@@ -49,6 +189,10 @@ class WalletsView extends GetView<WalletsController> {
               ),
 
               const SizedBox(height: 28),
+
+              // ==================================================
+              // MY WALLETS HEADER
+              // ==================================================
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -67,78 +211,92 @@ class WalletsView extends GetView<WalletsController> {
 
               const SizedBox(height: 14),
 
+              // ==================================================
+              // EMPTY STATE
+              // ==================================================
+
               if (controller.wallets.isEmpty)
                 _EmptyWalletState(isDark: isDark)
+
+              // ==================================================
+              // WALLET LIST
+              // ==================================================
+
               else
                 ...controller.wallets.map(
-                 (wallet) => WalletCard(
-  wallet: wallet,
-  onTap: () {
-    Get.to(
-      () => WalletDetailsView(wallet: wallet),
-    );
-  },
-  onDelete: () {
-    _showDeleteDialog(
-      context,
-      wallet.name,
-      wallet.id,
-    );
-  },
-),
+                  (wallet) {
+                    final bool isSelected =
+                        selectedWalletIds.contains(wallet.id);
+
+                    return WalletCard(
+                      wallet: wallet,
+
+                      isSelectionMode: isSelectionMode,
+
+                      isSelected: isSelected,
+
+                      // Normal tap
+                      onTap: () {
+                        if (isSelectionMode) {
+                          _toggleWalletSelection(wallet.id);
+                        } else {
+                          Get.to(
+                            () => WalletDetailsView(
+                              wallet: wallet,
+                            ),
+                          );
+                        }
+                      },
+
+                      // Long press
+                      onLongPress: () {
+                        if (!isSelectionMode) {
+                          _enterSelectionMode(wallet.id);
+                        }
+                      },
+                    );
+                  },
                 ),
+
+              const SizedBox(height: 80),
             ],
           ),
         );
       }),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Get.to(
-            () => const AddWalletView(),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Wallet'),
-      ),
-    );
-  }
+      // ==========================================================
+      // ADD WALLET FAB
+      // ==========================================================
 
-  void _showDeleteDialog(
-    BuildContext context,
-    String walletName,
-    String walletId,
-  ) {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Delete Wallet'),
-        content: Text(
-          'Are you sure you want to delete "$walletName"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.back();
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              controller.deleteWallet(walletId);
-              Get.back();
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Colors.red,
-              ),
-            ),
-          ),
-        ],
-      ),
+      floatingActionButton: FloatingActionButton(
+  heroTag: 'walletAddFab',
+  onPressed: () {
+    Get.to(
+      () => const AddWalletView(),
+    );
+  },
+  backgroundColor: const Color(0xFF2E7D32),
+  foregroundColor: Colors.white,
+  elevation: 6,
+  shape: const CircleBorder(),
+  child: const Icon(
+    Icons.add,
+    size: 30,
+  ),
+),
+
+floatingActionButtonLocation:
+    FloatingActionButtonLocation.centerFloat,
+
+      // Bottom center
+      
     );
   }
 }
+
+// ================================================================
+// EMPTY WALLET STATE
+// ================================================================
 
 class _EmptyWalletState extends StatelessWidget {
   final bool isDark;
@@ -150,7 +308,9 @@ class _EmptyWalletState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 70),
+      padding: const EdgeInsets.symmetric(
+        vertical: 70,
+      ),
       child: Column(
         children: [
           Icon(

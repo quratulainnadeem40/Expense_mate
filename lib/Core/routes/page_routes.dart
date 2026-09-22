@@ -148,10 +148,9 @@ GetPage(
     // SETTINGS
     // ==========================================================
 
-    GetPage(
-      name: AppRoutes.settings,
-      page: () => const SettingsView(),
-      binding: SettingsBinding(),
-    ),
+   GetPage(
+  name: AppRoutes.settings,
+  page: () => const SettingsView(),
+),
   ];
 }

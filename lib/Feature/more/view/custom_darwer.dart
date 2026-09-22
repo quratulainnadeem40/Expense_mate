@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:expense_mate/core/routes/app_routes.dart';
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -11,11 +12,123 @@ class CustomDrawer extends StatelessWidget {
     final isDarkMode =
         Theme.of(context).brightness == Brightness.dark;
 
+    final settingsController =
+        Get.find<SettingsController>();
+
     return Drawer(
       child: SafeArea(
         child: Column(
           children: [
-            // Header
+            // ==================================================
+            // PROFILE HEADER
+            // ==================================================
+
+            Obx(() {
+              final imageUrl =
+                  settingsController.profilePictureUrl.value;
+
+              final name =
+                  settingsController.profileName.value;
+
+              final email =
+                  settingsController.profileEmail.value;
+
+              // First letter for fallback avatar
+              final firstLetter = name.isNotEmpty
+                  ? name[0].toUpperCase()
+                  : 'U';
+
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  20,
+                  20,
+                  18,
+                ),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? const Color(0xFF1B5E20)
+                      : const Color(0xFF2E7D32),
+                ),
+                child: Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center,
+                  children: [
+                    // ------------------------------------------
+                    // PROFILE PICTURE
+                    // ------------------------------------------
+
+                    CircleAvatar(
+                      radius: 38,
+                      backgroundColor: Colors.white,
+                      backgroundImage:
+                          imageUrl.isNotEmpty
+                              ? NetworkImage(imageUrl)
+                              : null,
+                      child: imageUrl.isEmpty
+                          ? Text(
+                              firstLetter,
+                              style: const TextStyle(
+                                fontSize: 34,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2E7D32),
+                              ),
+                            )
+                          : null,
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // ------------------------------------------
+                    // NAME + EMAIL
+                    // ------------------------------------------
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name.isNotEmpty
+                                ? name
+                                : 'User',
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            email.isNotEmpty
+                                ? email
+                                : 'No Email',
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            // ==================================================
+            // APP TITLE + CLOSE BUTTON
+            // ==================================================
+
             SizedBox(
               height: 60,
               width: double.infinity,
@@ -58,7 +171,10 @@ class CustomDrawer extends StatelessWidget {
 
             const Divider(),
 
-            // Wallets
+            // ==================================================
+            // WALLETS
+            // ==================================================
+
             ListTile(
               leading: const Icon(
                 Icons.account_balance_wallet_outlined,
@@ -70,7 +186,10 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
 
-            // Budgets
+            // ==================================================
+            // BUDGETS
+            // ==================================================
+
             ListTile(
               leading: const Icon(
                 Icons.account_balance_outlined,
@@ -82,7 +201,10 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
 
-            // Goals
+            // ==================================================
+            // GOALS
+            // ==================================================
+
             ListTile(
               leading: const Icon(
                 Icons.flag_outlined,
@@ -94,7 +216,10 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
 
-            // Bills & Reminders
+            // ==================================================
+            // BILLS & REMINDERS
+            // ==================================================
+
             ListTile(
               leading: const Icon(
                 Icons.notifications_none,
@@ -102,21 +227,26 @@ class CustomDrawer extends StatelessWidget {
               title: const Text('Bills & Reminders'),
               onTap: () {
                 Get.back();
-                Get.toNamed(AppRoutes.billsReminders);
+                Get.toNamed(
+                  AppRoutes.billsReminders,
+                );
               },
             ),
 
-            // Settings
-            ListTile(
-              leading: const Icon(
-                Icons.settings_outlined,
-              ),
-              title: const Text('Settings'),
-              onTap: () {
-                Get.back();
-                Get.toNamed(AppRoutes.settings);
-              },
-            ),
+            // ==================================================
+            // SETTINGS
+            // ==================================================
+ListTile(
+  leading: const Icon(
+    Icons.settings_outlined,
+  ),
+  title: const Text('Settings'),
+  onTap: () {
+    Get.back();
+    Get.toNamed(AppRoutes.settings);
+  },
+),
+
           ],
         ),
       ),

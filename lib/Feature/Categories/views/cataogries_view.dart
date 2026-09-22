@@ -13,6 +13,7 @@ import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 
 import '../controller/categories_controller.dart';
 import 'category_transactions_screen.dart';
@@ -399,10 +400,11 @@ class _CategoriesViewState extends State<CategoriesView> {
   // BUILD
   // ============================================================
 
-  @override
-  Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+ @override
+Widget build(BuildContext context) {
+  final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+  final settingsController = Get.find<SettingsController>();
 
     return PopScope(
       canPop: true,
@@ -836,44 +838,51 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     ),
                                   ),
 
-                                  currentAccountPictureSize:
-                                      const Size.square(64),
-
-                                  currentAccountPicture:
-                                      Container(
-                                    decoration:
-                                        BoxDecoration(
-                                      shape:
-                                          BoxShape.circle,
-                                      border: Border.all(
-                                        color:
-                                            Colors.white,
-                                        width: 2,
-                                      ),
-                                    ),
-
-                                    child: CircleAvatar(
-                                      backgroundColor:
-                                          Colors.white,
-
-                                      child: Text(
-                                        _userName.isNotEmpty
-                                            ? _userName[0]
-                                                .toUpperCase()
-                                            : 'U',
-
-                                        style:
-                                            const TextStyle(
-                                          fontSize: 26,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                          color: Color(
-                                            0xFF2E7D32,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                  currentAccountPictureSize: const Size.square(
+                                    64,
                                   ),
+
+                                  currentAccountPicture: Obx(() {
+  final imageUrl = settingsController.profilePictureUrl.value;
+  final name = settingsController.profileName.value;
+
+  final firstLetter = name.isNotEmpty
+      ? name[0].toUpperCase()
+      : 'U';
+
+  return Container(
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: Colors.white,
+        width: 2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: CircleAvatar(
+      backgroundColor: Colors.white,
+      backgroundImage: imageUrl.isNotEmpty
+          ? NetworkImage(imageUrl)
+          : null,
+      child: imageUrl.isEmpty
+          ? Text(
+              firstLetter,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E7D32),
+              ),
+            )
+          : null,
+    ),
+  );
+}),
 
                                   accountName: Text(
                                     _userName,

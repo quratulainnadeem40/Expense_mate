@@ -2,72 +2,129 @@ import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 
 import '../../../Core/theme/custom_colors.dart';
-
 import '../model/wallet_model.dart';
 
 class WalletCard extends StatelessWidget {
   final WalletModel wallet;
-  final VoidCallback? onDelete;
+
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  final bool isSelectionMode;
+  final bool isSelected;
 
   const WalletCard({
     super.key,
     required this.wallet,
-    this.onDelete,
     this.onTap,
+    this.onLongPress,
+    this.isSelectionMode = false,
+    this.isSelected = false,
   });
 
- IconData _getWalletIcon() {
-  switch (wallet.type) {
-    case 'Cash':
-      return Icons.payments_outlined;
+  // ============================================================
+  // WALLET ICON
+  // ============================================================
 
-    case 'Bank Account':
-      return Icons.account_balance;
+  IconData _getWalletIcon() {
+    switch (wallet.type) {
+      case 'Cash':
+        return Icons.payments_outlined;
 
-    case 'JazzCash':
-      return Icons.account_balance_wallet;
+      case 'Bank Account':
+        return Icons.account_balance;
 
-    case 'Easypaisa':
-      return Icons.account_balance_wallet;
+      case 'JazzCash':
+        return Icons.account_balance_wallet;
 
-    case 'Credit Card':
-      return Icons.credit_card;
+      case 'Easypaisa':
+        return Icons.account_balance_wallet;
 
-    case 'Other':
-    default:
-      return Icons.account_balance_wallet_outlined;
+      case 'Credit Card':
+        return Icons.credit_card;
+
+      case 'Other':
+      default:
+        return Icons.account_balance_wallet_outlined;
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
     final isNegative = wallet.balance < 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: isDark
-          ? AppColors.surfaceDark
-          : AppColors.surfaceLight,
+
+      color: isSelected
+          ? (isDark
+              ? const Color(0xFF263D2A)
+              : const Color(0xFFE8F5E9))
+          : (isDark
+              ? AppColors.surfaceDark
+              : AppColors.surfaceLight),
+
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isSelected
+            ? const BorderSide(
+                color: AppColors.primary,
+                width: 2,
+              )
+            : BorderSide.none,
+      ),
+
       child: ListTile(
         onTap: onTap,
+        onLongPress: onLongPress,
 
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 8,
         ),
 
-        leading: CircleAvatar(
-          backgroundColor: AppColors.secondary.withValues(
-            alpha: 0.25,
-          ),
-          child: Icon(
-            _getWalletIcon(),
-            color: AppColors.primary,
-          ),
+        // ======================================================
+        // WALLET ICON
+        // ======================================================
+
+        leading: Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            CircleAvatar(
+              backgroundColor:
+                  AppColors.secondary.withValues(
+                alpha: 0.25,
+              ),
+              child: Icon(
+                _getWalletIcon(),
+                color: AppColors.primary,
+              ),
+            ),
+
+            if (isSelectionMode && isSelected)
+              Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+          ],
         ),
+
+        // ======================================================
+        // WALLET NAME
+        // ======================================================
 
         title: Text(
           wallet.name,
@@ -76,10 +133,18 @@ class WalletCard extends StatelessWidget {
           ),
         ),
 
+        // ======================================================
+        // WALLET TYPE
+        // ======================================================
+
         subtitle: Text(
           wallet.type,
           style: AppTextStyles.bodyMedium(isDark),
         ),
+
+        // ======================================================
+        // BALANCE + SELECTION
+        // ======================================================
 
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -94,14 +159,19 @@ class WalletCard extends StatelessWidget {
               ),
             ),
 
-            if (onDelete != null)
-              IconButton(
-                onPressed: onDelete,
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: AppColors.expenseRed,
-                ),
+            if (isSelectionMode) ...[
+              const SizedBox(width: 10),
+
+              Icon(
+                isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.circle_outlined,
+                color: isSelected
+                    ? AppColors.primary
+                    : Colors.grey,
+                size: 24,
               ),
+            ],
           ],
         ),
       ),
