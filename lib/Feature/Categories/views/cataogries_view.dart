@@ -96,12 +96,52 @@ class _CategoriesViewState extends State<CategoriesView> {
     });
   }
 
-  Future<void> _deleteSelectedCategories() async {
-    if (selectedCategoryIds.isEmpty) {
+  Future<void> _showDeleteConfirmationDialog(
+    List<String> idsToDelete,
+  ) async {
+    final selectedCategories = controller.categoryList
+        .where((category) => idsToDelete.contains(category.id))
+        .toList();
+
+    final categoryNames = selectedCategories.map((category) => category.name).toList();
+    final linkedCount = selectedCategories.fold<int>(
+      0,
+      (sum, category) => sum + controller.getCategoryCount(category.id),
+    );
+
+    final hasLinkedData = linkedCount > 0;
+
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Delete category?'),
+        content: Text(
+          categoryNames.length == 1
+              ? hasLinkedData
+                  ? 'This will permanently delete "${categoryNames.first}" and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
+                  : 'This will permanently delete "${categoryNames.first}".\n\nDo you want to continue?'
+              : hasLinkedData
+                  ? 'This will permanently delete ${categoryNames.length} categories and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
+                  : 'This will permanently delete ${categoryNames.length} categories.\n\nDo you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+            ),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) {
       return;
     }
-
-    final idsToDelete = selectedCategoryIds.toList();
 
     await controller.deleteCategories(idsToDelete);
 
@@ -111,6 +151,15 @@ class _CategoriesViewState extends State<CategoriesView> {
         selectedCategoryIds.clear();
       });
     }
+  }
+
+  Future<void> _deleteSelectedCategories() async {
+    if (selectedCategoryIds.isEmpty) {
+      return;
+    }
+
+    final idsToDelete = selectedCategoryIds.toList();
+    await _showDeleteConfirmationDialog(idsToDelete);
   }
 
   // ============================================================
@@ -139,7 +188,6 @@ class _CategoriesViewState extends State<CategoriesView> {
         }
       }
     }
-
     return 'User';
   }
 

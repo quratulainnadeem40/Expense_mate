@@ -31,10 +31,38 @@ class CategoriesController extends GetxController {
     return protectedCategoryOrder.contains(_normalizeCategoryName(name));
   }
 
+  static int compareCategoryOrder(CategoryModel a, CategoryModel b) {
+    final aProtected = isProtectedCategoryName(a.name);
+    final bProtected = isProtectedCategoryName(b.name);
+
+    if (aProtected && !bProtected) {
+      return -1;
+    }
+    if (!aProtected && bProtected) {
+      return 1;
+    }
+
+    if (aProtected && bProtected) {
+      final aIndex = protectedCategoryOrder.indexOf(_normalizeCategoryName(a.name));
+      final bIndex = protectedCategoryOrder.indexOf(_normalizeCategoryName(b.name));
+      return aIndex.compareTo(bIndex);
+    }
+
+    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+  }
+
+  static List<String> filterDeletableCategoryIds(
+    List<String> ids,
+    Set<String> idsInUseByTransactions,
+  ) {
+    return ids.where((id) => !idsInUseByTransactions.contains(id)).toList();
+  }
+
   static List<Map<String, dynamic>> filterVisibleCategories(
     List<dynamic> rawCategories,
   ) {
-    final filtered = <Map<String, dynamic>>[];
+    final protectedItems = <Map<String, dynamic>>[];
+    final customItems = <Map<String, dynamic>>[];
     final seen = <String>{};
 
     for (final item in rawCategories) {
@@ -45,19 +73,31 @@ class CategoriesController extends GetxController {
       final name = item['name']?.toString() ?? '';
       final normalizedName = _normalizeCategoryName(name);
 
-      if (!protectedCategoryOrder.contains(normalizedName) ||
-          seen.contains(normalizedName)) {
+      if (normalizedName.isEmpty || seen.contains(normalizedName)) {
         continue;
       }
 
       seen.add(normalizedName);
-      filtered.add(item as Map<String, dynamic>);
+
+      if (protectedCategoryOrder.contains(normalizedName)) {
+        protectedItems.add(item as Map<String, dynamic>);
+      } else {
+        customItems.add(item as Map<String, dynamic>);
+      }
     }
 
+    customItems.sort(
+      (a, b) => (_normalizeCategoryName(a['name']?.toString() ?? '')).compareTo(
+        _normalizeCategoryName(b['name']?.toString() ?? ''),
+      ),
+    );
+
     final ordered = <Map<String, dynamic>>[];
+
     for (final categoryName in protectedCategoryOrder) {
-      final match = filtered.firstWhereOrNull(
-        (item) => _normalizeCategoryName(item['name']?.toString() ?? '') == categoryName,
+      final match = protectedItems.firstWhereOrNull(
+        (item) =>
+            _normalizeCategoryName(item['name']?.toString() ?? '') == categoryName,
       );
 
       if (match != null) {
@@ -75,6 +115,7 @@ class CategoriesController extends GetxController {
       });
     }
 
+    ordered.addAll(customItems);
     return ordered;
   }
 
@@ -168,6 +209,7 @@ class CategoriesController extends GetxController {
 
       categoryCounts.assignAll(countsMap);
       categoryList.assignAll(categories);
+      categoryList.sort(compareCategoryOrder);
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
@@ -217,10 +259,7 @@ class CategoriesController extends GetxController {
 
       categoryCounts[newId] = 0;
       categoryList.add(newCategory);
-
-      categoryList.sort(
-        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-      );
+      categoryList.sort(compareCategoryOrder);
 
       if (Get.isDialogOpen ?? false) {
         Get.back();
@@ -273,22 +312,35 @@ class CategoriesController extends GetxController {
     try {
       isLoading.value = true;
 
+      final idsToDelete = ids.toSet().toList();
+
+      if (idsToDelete.isNotEmpty) {
+        await _supabase
+            .from('transactions')
+            .delete()
+            .inFilter('category_id', idsToDelete)
+            .eq('user_id', user.id);
+      }
+
       await _supabase
           .from('categories')
           .delete()
-          .inFilter('id', ids)
+          .inFilter('id', idsToDelete)
           .eq('user_id', user.id);
 
-      categoryList.removeWhere((category) => ids.contains(category.id));
-      for (final id in ids) {
+      final removedIds = idsToDelete;
+
+      categoryList.removeWhere((category) => removedIds.contains(category.id));
+      categoryList.sort(compareCategoryOrder);
+      for (final id in removedIds) {
         categoryCounts.remove(id);
       }
 
       Get.snackbar(
         'Deleted',
-        ids.length == 1
+        removedIds.length == 1
             ? 'Category deleted successfully'
-            : '${ids.length} categories deleted successfully',
+            : '${removedIds.length} categories deleted successfully',
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
