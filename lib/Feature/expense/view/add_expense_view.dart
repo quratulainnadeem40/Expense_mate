@@ -214,6 +214,11 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   const TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
+                              onTap: () {
+                                if (controller.amountController.text == '0.00') {
+                                  controller.amountController.clear();
+                                }
+                              },
                               style: TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.bold,

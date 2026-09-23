@@ -28,7 +28,7 @@ class ExpenseController extends GetxController {
   // TEXT CONTROLLERS
   // ------------------------------------------------------------
 
-  final amountController = TextEditingController();
+  final amountController = TextEditingController(text: '0.00');
   final noteController = TextEditingController();
 
   // ------------------------------------------------------------

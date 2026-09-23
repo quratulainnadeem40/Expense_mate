@@ -129,7 +129,7 @@ class _BudgetViewState extends State<BudgetView> {
 
   Future<void> _showAddCategoryDialog(BuildContext context) async {
     final nameController = TextEditingController();
-    final amountController = TextEditingController(text: '10000');
+    final amountController = TextEditingController();
 
     final result = await showDialog<bool>(
       context: context,
@@ -196,6 +196,11 @@ class _BudgetViewState extends State<BudgetView> {
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
                   ),
+                  onTap: () {
+                    if (amountController.text == '0') {
+                      amountController.clear();
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: 'Monthly Limit',
                     hintText: 'e.g., 20000',
@@ -442,7 +447,7 @@ class _BudgetViewState extends State<BudgetView> {
     double currentLimit,
   ) {
     final amountController = TextEditingController(
-      text: currentLimit.toStringAsFixed(0),
+      text: currentLimit > 0 ? currentLimit.toStringAsFixed(0) : '',
     );
 
     showDialog(
@@ -485,6 +490,11 @@ class _BudgetViewState extends State<BudgetView> {
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
                   ),
+                  onTap: () {
+                    if (amountController.text == '0') {
+                      amountController.clear();
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: 'Monthly Limit',
                     hintText: 'e.g., 20000',
@@ -581,7 +591,7 @@ class _BudgetViewState extends State<BudgetView> {
     double currentTotalLimit,
   ) {
     final amountController = TextEditingController(
-      text: currentTotalLimit.toStringAsFixed(0),
+      text: currentTotalLimit > 0 ? currentTotalLimit.toStringAsFixed(0) : '',
     );
 
     showDialog(
@@ -624,6 +634,11 @@ class _BudgetViewState extends State<BudgetView> {
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
                   ),
+                  onTap: () {
+                    if (amountController.text == '0') {
+                      amountController.clear();
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: 'Total Limit',
                     hintText: 'e.g., 60000',

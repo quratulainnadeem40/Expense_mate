@@ -260,6 +260,9 @@ class _TransactionsViewState extends State<TransactionsView>
                         (sum, tx) => sum + tx.amount,
                       );
 
+                  final safeIncome = totalIncome.isNaN || totalIncome.isInfinite ? 0.0 : totalIncome;
+                  final safeExpense = totalExpense.isNaN || totalExpense.isInfinite ? 0.0 : totalExpense;
+
                   return Container(
                     margin: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -300,11 +303,11 @@ class _TransactionsViewState extends State<TransactionsView>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'PKR ${totalIncome.toStringAsFixed(2)}',
+                                'PKR ${safeIncome.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Colors.green,
                                 ),
                               ),
                             ],
@@ -333,7 +336,7 @@ class _TransactionsViewState extends State<TransactionsView>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'PKR ${totalExpense.toStringAsFixed(2)}',
+                                'PKR ${safeExpense.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

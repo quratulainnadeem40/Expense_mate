@@ -437,11 +437,28 @@ final settingsController =
                         ),
                       ),
 
-                      TextButton(
-                        onPressed: () => Get.to(
-                          () => TransactionsView(),
+                      SizedBox(
+                        height: 38,
+                        child: TextButton(
+                          onPressed: () => Get.to(
+                            () => TransactionsView(),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50).withOpacity(0.12),
+                            foregroundColor: const Color(0xFF2E7D32),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'View All',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
-                        child: const Text('View All'),
                       ),
                     ],
                   ),
