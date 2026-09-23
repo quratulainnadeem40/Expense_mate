@@ -108,23 +108,31 @@ class GoalsCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'Rs. ${formatMoney(goal.savedAmount)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: kGoalGreen,
+              Flexible(
+                child: Text(
+                  'Rs. ${formatMoney(goal.savedAmount)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: kGoalGreen,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  'of Rs. ${formatMoney(goal.targetAmount)}',
-                  style: TextStyle(fontSize: 13, color: theme.hintColor),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    'of Rs. ${formatMoney(goal.targetAmount)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: theme.hintColor),
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 '${goal.progressPercent}%',
                 style: TextStyle(
@@ -176,6 +184,8 @@ class GoalsCard extends StatelessWidget {
                     children: [
                       Text(
                         'Rs. ${formatMoney(goal.remaining)} to go',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -188,6 +198,8 @@ class GoalsCard extends StatelessWidget {
                             ? 'Save about Rs. '
                                 '${formatMoney(goal.monthlyTarget)} a month'
                             : 'Target date has passed',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11, color: theme.hintColor),
                       ),
                     ],

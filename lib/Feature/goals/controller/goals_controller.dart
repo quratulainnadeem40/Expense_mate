@@ -28,8 +28,37 @@ class GoalsController extends GetxController {
 
   /// Emoji choices shown in the sheet. Kept short on purpose.
   static const List<String> emojiChoices = [
-    '🎯', '🏠', '🚗', '📱', '💻', '✈️', '🎓', '💍', '🏥', '🎁',
+    '🎯',
+    '🏠',
+    '🚗',
+    '📱',
+    '💻',
+    '✈️',
+    '🎓',
+    '💍',
+    '🏥',
+    '🎁',
   ];
+
+  /// Example goal name for each icon, shown as the hint under "Goal name".
+  /// Changing the icon changes the example, so the user gets a nudge
+  /// about what to type instead of a generic placeholder.
+  static const Map<String, String> emojiHints = {
+    '🎯': 'e.g. Emergency fund',
+    '🏠': 'e.g. House down payment',
+    '🚗': 'e.g. New bike',
+    '📱': 'e.g. New phone',
+    '💻': 'e.g. New laptop',
+    '✈️': 'e.g. Umrah trip',
+    '🎓': 'e.g. University fee',
+    '💍': 'e.g. Wedding savings',
+    '🏥': 'e.g. Medical emergency',
+    '🎁': 'e.g. Eid gifts',
+  };
+
+  /// Hint for the goal name field, based on the icon that is selected.
+  String get nameHint =>
+      emojiHints[selectedEmoji.value] ?? 'e.g. Emergency fund';
 
   // ----------------------------------------------------------------
   // SUMMARY  (for the header card)
@@ -41,11 +70,9 @@ class GoalsController extends GetxController {
   List<GoalModel> get completedGoals =>
       goals.where((g) => g.isCompleted).toList();
 
-  double get totalSaved =>
-      goals.fold(0.0, (sum, g) => sum + g.savedAmount);
+  double get totalSaved => goals.fold(0.0, (sum, g) => sum + g.savedAmount);
 
-  double get totalTarget =>
-      goals.fold(0.0, (sum, g) => sum + g.targetAmount);
+  double get totalTarget => goals.fold(0.0, (sum, g) => sum + g.targetAmount);
 
   double get overallProgress =>
       totalTarget > 0 ? (totalSaved / totalTarget).clamp(0.0, 1.0) : 0.0;
@@ -238,18 +265,18 @@ class GoalsController extends GetxController {
   // FEEDBACK
   // ----------------------------------------------------------------
   void _warn(String message) => Get.snackbar(
-        'Almost there',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-      );
+    'Almost there',
+    message,
+    snackPosition: SnackPosition.BOTTOM,
+    margin: const EdgeInsets.all(16),
+  );
 
   void _ok(String message) => Get.snackbar(
-        'Done',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-      );
+    'Done',
+    message,
+    snackPosition: SnackPosition.BOTTOM,
+    margin: const EdgeInsets.all(16),
+  );
 
   @override
   void onClose() {

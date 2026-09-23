@@ -109,7 +109,11 @@ class GoalsView extends GetView<GoalsController> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (sheetContext) => Padding(
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(sheetContext).size.height * 0.92,
+        ),
+        child: Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
@@ -143,14 +147,19 @@ class GoalsView extends GetView<GoalsController> {
               const SizedBox(height: 8),
               SizedBox(
                 height: 50,
-                child: Obx(
-                  () => ListView.separated(
+                child: Obx(() {
+                  // Read the observable HERE, inside the Obx builder.
+                  // Reading it only inside itemBuilder runs too late and
+                  // GetX throws "improper use of a GetX".
+                  final current = controller.selectedEmoji.value;
+
+                  return ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: GoalsController.emojiChoices.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (_, i) {
                       final emoji = GoalsController.emojiChoices[i];
-                      final selected = controller.selectedEmoji.value == emoji;
+                      final selected = current == emoji;
                       return GestureDetector(
                         onTap: () => controller.selectedEmoji.value = emoji,
                         child: Container(
@@ -175,19 +184,25 @@ class GoalsView extends GetView<GoalsController> {
                         ),
                       );
                     },
-                  ),
-                ),
+                  );
+                }),
               ),
 
               const SizedBox(height: 18),
 
               _Label(text: 'Goal name'),
               const SizedBox(height: 8),
-              _Field(
-                controller: controller.titleController,
-                hint: 'e.g. New laptop',
-                textCapitalization: TextCapitalization.sentences,
-              ),
+              Obx(() {
+                // Reading nameHint touches selectedEmoji, so the hint
+                // refreshes as soon as a different icon is tapped.
+                final hint = controller.nameHint;
+
+                return _Field(
+                  controller: controller.titleController,
+                  hint: hint,
+                  textCapitalization: TextCapitalization.sentences,
+                );
+              }),
 
               const SizedBox(height: 16),
 
@@ -211,18 +226,18 @@ class GoalsView extends GetView<GoalsController> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         _DateChip(
                           label: '3 months',
                           onTap: () => controller.setDateInMonths(3),
                         ),
-                        const SizedBox(width: 8),
                         _DateChip(
                           label: '6 months',
                           onTap: () => controller.setDateInMonths(6),
                         ),
-                        const SizedBox(width: 8),
                         _DateChip(
                           label: '1 year',
                           onTap: () => controller.setDateInMonths(12),
@@ -320,6 +335,7 @@ class GoalsView extends GetView<GoalsController> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -338,13 +354,18 @@ class GoalsView extends GetView<GoalsController> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (sheetContext) => Padding(
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(sheetContext).size.height * 0.92,
+        ),
+        child: Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
           top: 10,
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
         ),
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,11 +404,11 @@ class GoalsView extends GetView<GoalsController> {
 
             const SizedBox(height: 14),
 
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [500, 1000, 5000].map((amount) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
+                return GestureDetector(
                     onTap: () {
                       controller.amountController.text = amount.toString();
                       controller.amountController.selection =
@@ -417,8 +438,7 @@ class GoalsView extends GetView<GoalsController> {
                         ),
                       ),
                     ),
-                  ),
-                );
+                  );
               }).toList(),
             ),
 
@@ -451,6 +471,8 @@ class GoalsView extends GetView<GoalsController> {
             ),
           ],
         ),
+        ),
+      ),
       ),
     );
   }
@@ -545,20 +567,28 @@ class _SummaryCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'Rs. ${formatMoney(saved)}',
-                style: const TextStyle(
-                  fontSize: 27,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              Flexible(
+                child: Text(
+                  'Rs. ${formatMoney(saved)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 27,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'of Rs. ${formatMoney(target)}',
-                  style: const TextStyle(fontSize: 13, color: Colors.white70),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'of Rs. ${formatMoney(target)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
                 ),
               ),
             ],
@@ -574,13 +604,14 @@ class _SummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _Pill(
                 icon: Icons.trending_up_rounded,
                 text: '$activeCount in progress',
               ),
-              const SizedBox(width: 8),
               _Pill(
                 icon: Icons.check_circle_rounded,
                 text: '$completedCount completed',
