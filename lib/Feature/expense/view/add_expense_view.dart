@@ -65,8 +65,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                             Expanded(
                               child: GestureDetector(
                                 onTap: () => controller.toggleType(true),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
+                                child: Container(
                                   decoration: BoxDecoration(
                                     color: isExpense
                                         ? expenseRed
@@ -118,8 +117,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                             Expanded(
                               child: GestureDetector(
                                 onTap: () => controller.toggleType(false),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
+                                child: Container(
                                   decoration: BoxDecoration(
                                     color: !isExpense
                                         ? primaryGreen

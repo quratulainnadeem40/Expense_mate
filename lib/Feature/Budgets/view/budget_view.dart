@@ -15,6 +15,118 @@ class _BudgetViewState extends State<BudgetView> {
 
   BudgetController get controller => Get.find<BudgetController>();
 
+  Future<void> _showMonthlyLimitExceededDialog({
+    required BuildContext context,
+    required String categoryName,
+    required double proposedLimit,
+  }) async {
+    final monthlyLimit = controller.customTotalBudget.value;
+    if (monthlyLimit == null) return;
+
+    final projectedTotal = controller.projectedAllocationAfterUpdate(
+      categoryName,
+      proposedLimit,
+    );
+    final amountOver = projectedTotal - monthlyLimit;
+
+    final action = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Monthly budget exceeded',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'This category would push your total monthly budget from RS ${monthlyLimit.toStringAsFixed(0)} to RS ${projectedTotal.toStringAsFixed(0)}.\n\nYou are over by RS ${amountOver.toStringAsFixed(0)}.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Get.back(result: false),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(result: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                        ),
+                        child: const Text(
+                          'Edit Monthly Limit',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (action == true) {
+      final activeContext = Get.context;
+      if (activeContext != null && activeContext.mounted) {
+        _showEditTotalBudgetDialog(
+          activeContext,
+          controller.customTotalBudget.value ?? controller.totalAllocated,
+        );
+      }
+    }
+  }
+
   Future<void> _showAddCategoryDialog(BuildContext context) async {
     final nameController = TextEditingController();
     final amountController = TextEditingController(text: '10000');
@@ -130,6 +242,24 @@ class _BudgetViewState extends State<BudgetView> {
                               'Please enter a category name.',
                               snackPosition: SnackPosition.BOTTOM,
                             );
+                            return;
+                          }
+
+                          if (controller.customTotalBudget.value != null &&
+                              controller.projectedAllocationAfterUpdate(
+                                      categoryName,
+                                      amount,
+                                    ) >
+                                    controller.customTotalBudget.value!) {
+                            final parentContext = Get.context;
+                            Get.back(result: false);
+                            if (parentContext != null && parentContext.mounted) {
+                              _showMonthlyLimitExceededDialog(
+                                context: parentContext,
+                                categoryName: categoryName,
+                                proposedLimit: amount,
+                              );
+                            }
                             return;
                           }
 
@@ -398,6 +528,23 @@ class _BudgetViewState extends State<BudgetView> {
                           final limit =
                               double.tryParse(amountController.text.trim()) ??
                                   currentLimit;
+
+                          if (controller.customTotalBudget.value != null &&
+                              controller.willExceedMonthlyBudget(
+                                categoryName,
+                                limit,
+                              )) {
+                            final parentContext = Get.context;
+                            Get.back();
+                            if (parentContext != null && parentContext.mounted) {
+                              _showMonthlyLimitExceededDialog(
+                                context: parentContext,
+                                categoryName: categoryName,
+                                proposedLimit: limit,
+                              );
+                            }
+                            return;
+                          }
 
                           controller.setCategoryLimit(categoryName, limit);
                           Get.back();
