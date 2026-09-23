@@ -1,122 +1,262 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+
 import '../model/goals_model.dart';
 
 class GoalsController extends GetxController {
-  var goals = <GoalModel>[].obs;
-  final GetStorage _storage = GetStorage();
-  final String _storageKey = 'saved_user_goals';
+  final goals = <GoalModel>[].obs;
 
-  // Form Controllers
+  final GetStorage _storage = GetStorage();
+  static const String _storageKey = 'saved_user_goals';
+
+  // ----------------------------------------------------------------
+  // FORM STATE  (used by the add / edit sheet)
+  // ----------------------------------------------------------------
   final titleController = TextEditingController();
   final targetController = TextEditingController();
   final savedController = TextEditingController();
-  final addMoneyController = TextEditingController();
+  final amountController = TextEditingController();
 
-  var selectedDate = Rxn<DateTime>();
+  final selectedDate = Rxn<DateTime>();
+  final selectedEmoji = '🎯'.obs;
+
+  /// Null when creating, set to the goal id when editing.
+  final editingId = RxnString();
+
+  bool get isEditing => editingId.value != null;
+
+  /// Emoji choices shown in the sheet. Kept short on purpose.
+  static const List<String> emojiChoices = [
+    '🎯', '🏠', '🚗', '📱', '💻', '✈️', '🎓', '💍', '🏥', '🎁',
+  ];
+
+  // ----------------------------------------------------------------
+  // SUMMARY  (for the header card)
+  // ----------------------------------------------------------------
+  List<GoalModel> get activeGoals =>
+      goals.where((g) => !g.isCompleted).toList()
+        ..sort((a, b) => a.targetDate.compareTo(b.targetDate));
+
+  List<GoalModel> get completedGoals =>
+      goals.where((g) => g.isCompleted).toList();
+
+  double get totalSaved =>
+      goals.fold(0.0, (sum, g) => sum + g.savedAmount);
+
+  double get totalTarget =>
+      goals.fold(0.0, (sum, g) => sum + g.targetAmount);
+
+  double get overallProgress =>
+      totalTarget > 0 ? (totalSaved / totalTarget).clamp(0.0, 1.0) : 0.0;
 
   @override
   void onInit() {
     super.onInit();
-    _loadGoalsFromStorage(); // Page open hote hi local storage se load karega
+    _load();
   }
 
-  // 1. Storage se goals load karna
-  void _loadGoalsFromStorage() {
-    List? storedData = _storage.read<List>(_storageKey);
-    if (storedData != null) {
+  // ----------------------------------------------------------------
+  // STORAGE
+  // ----------------------------------------------------------------
+  void _load() {
+    final stored = _storage.read<List>(_storageKey);
+    if (stored == null) return;
+
+    try {
       goals.assignAll(
-        storedData.map((e) => GoalModel.fromMap(Map<String, dynamic>.from(e))).toList(),
+        stored
+            .map((e) => GoalModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList(),
       );
+    } catch (_) {
+      // A corrupt entry should never crash the screen.
+      goals.clear();
     }
   }
 
-  // 2. Local Storage me save karna
-  void _saveGoalsToStorage() {
-    List<Map<String, dynamic>> dataToSave = goals.map((g) => g.toMap()).toList();
-    _storage.write(_storageKey, dataToSave);
+  void _save() {
+    _storage.write(_storageKey, goals.map((g) => g.toMap()).toList());
   }
 
-  // Date Picker
-  void pickDate(BuildContext context) async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2035),
-    );
-    if (picked != null) {
-      selectedDate.value = picked;
-    }
-  }
-
-  // Submit New Goal
-  void submitNewGoal(BuildContext context) {
-    final title = titleController.text.trim();
-    final target = double.tryParse(targetController.text.trim());
-    final initialSaved = double.tryParse(savedController.text.trim()) ?? 0.0;
-
-    if (title.isEmpty || target == null || target <= 0 || selectedDate.value == null) {
-      Get.snackbar(
-        'Required', 
-        'Please fill title, target amount & select target date',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    addGoal(GoalModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
-      targetAmount: target,
-      savedAmount: initialSaved,
-      targetDate: selectedDate.value!,
-    ));
-
-    clearForm();
-    Get.back();
-  }
-
-  void addGoal(GoalModel goal) {
-    goals.add(goal);
-    _saveGoalsToStorage(); // Auto save on add
-  }
-
-  // Update Collected Amount
-  void addSavings(String id) {
-    final amount = double.tryParse(addMoneyController.text.trim());
-    if (amount == null || amount <= 0) return;
-
-    int index = goals.indexWhere((g) => g.id == id);
-    if (index != -1) {
-      goals[index].savedAmount += amount;
-      goals.refresh();
-      _saveGoalsToStorage(); // Auto save on update
-    }
-
-    addMoneyController.clear();
-    Get.back();
-  }
-
-  void deleteGoal(String id) {
-    goals.removeWhere((g) => g.id == id);
-    _saveGoalsToStorage(); // Auto save on delete
-  }
-
-  void clearForm() {
+  // ----------------------------------------------------------------
+  // FORM HELPERS
+  // ----------------------------------------------------------------
+  void prepareForCreate() {
+    editingId.value = null;
     titleController.clear();
     targetController.clear();
     savedController.clear();
     selectedDate.value = null;
+    selectedEmoji.value = '🎯';
   }
+
+  void prepareForEdit(GoalModel goal) {
+    editingId.value = goal.id;
+    titleController.text = goal.title;
+    targetController.text = goal.targetAmount.toStringAsFixed(0);
+    savedController.text = goal.savedAmount.toStringAsFixed(0);
+    selectedDate.value = goal.targetDate;
+    selectedEmoji.value = goal.emoji;
+  }
+
+  /// Quick date chips: 3 months, 6 months, 1 year.
+  void setDateInMonths(int months) {
+    final now = DateTime.now();
+    selectedDate.value = DateTime(now.year, now.month + months, now.day);
+  }
+
+  Future<void> pickDate(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate.value ?? now.add(const Duration(days: 90)),
+      firstDate: now,
+      lastDate: DateTime(now.year + 15),
+    );
+    if (picked != null) selectedDate.value = picked;
+  }
+
+  // ----------------------------------------------------------------
+  // CREATE / UPDATE
+  // ----------------------------------------------------------------
+  void saveGoal() {
+    final title = titleController.text.trim();
+    final target = double.tryParse(targetController.text.trim());
+    final saved = double.tryParse(savedController.text.trim()) ?? 0.0;
+
+    if (title.isEmpty) {
+      _warn('Please give your goal a name');
+      return;
+    }
+    if (target == null || target <= 0) {
+      _warn('Please enter a target amount');
+      return;
+    }
+    if (saved > target) {
+      _warn('Saved amount cannot be more than the target');
+      return;
+    }
+    if (selectedDate.value == null) {
+      _warn('Please choose a target date');
+      return;
+    }
+
+    if (isEditing) {
+      final index = goals.indexWhere((g) => g.id == editingId.value);
+      if (index != -1) {
+        final goal = goals[index];
+        goal.title = title;
+        goal.emoji = selectedEmoji.value;
+        goal.targetAmount = target;
+        goal.savedAmount = saved;
+        goal.targetDate = selectedDate.value!;
+        goals.refresh();
+        _save();
+        Get.back();
+        _ok('Goal updated');
+      }
+      return;
+    }
+
+    goals.add(
+      GoalModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+        emoji: selectedEmoji.value,
+        targetAmount: target,
+        savedAmount: saved,
+        targetDate: selectedDate.value!,
+      ),
+    );
+    _save();
+    Get.back();
+    _ok('Goal created');
+  }
+
+  // ----------------------------------------------------------------
+  // MONEY IN / OUT
+  // ----------------------------------------------------------------
+  void deposit(String id) {
+    final amount = double.tryParse(amountController.text.trim());
+    if (amount == null || amount <= 0) {
+      _warn('Please enter a valid amount');
+      return;
+    }
+
+    final index = goals.indexWhere((g) => g.id == id);
+    if (index == -1) return;
+
+    final goal = goals[index];
+    final wasCompleted = goal.isCompleted;
+    goal.savedAmount += amount;
+    goals.refresh();
+    _save();
+
+    amountController.clear();
+    Get.back();
+
+    if (!wasCompleted && goal.isCompleted) {
+      _ok('🎉 Goal reached! ${goal.title} is complete.');
+    } else {
+      _ok('Rs. ${amount.toStringAsFixed(0)} added');
+    }
+  }
+
+  void withdraw(String id) {
+    final amount = double.tryParse(amountController.text.trim());
+    if (amount == null || amount <= 0) {
+      _warn('Please enter a valid amount');
+      return;
+    }
+
+    final index = goals.indexWhere((g) => g.id == id);
+    if (index == -1) return;
+
+    final goal = goals[index];
+    if (amount > goal.savedAmount) {
+      _warn('You have only Rs. ${goal.savedAmount.toStringAsFixed(0)} saved');
+      return;
+    }
+
+    goal.savedAmount -= amount;
+    goals.refresh();
+    _save();
+
+    amountController.clear();
+    Get.back();
+    _ok('Rs. ${amount.toStringAsFixed(0)} withdrawn');
+  }
+
+  void deleteGoal(String id) {
+    goals.removeWhere((g) => g.id == id);
+    _save();
+    _ok('Goal deleted');
+  }
+
+  // ----------------------------------------------------------------
+  // FEEDBACK
+  // ----------------------------------------------------------------
+  void _warn(String message) => Get.snackbar(
+        'Almost there',
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+
+  void _ok(String message) => Get.snackbar(
+        'Done',
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
 
   @override
   void onClose() {
     titleController.dispose();
     targetController.dispose();
     savedController.dispose();
-    addMoneyController.dispose();
+    amountController.dispose();
     super.onClose();
   }
 }
