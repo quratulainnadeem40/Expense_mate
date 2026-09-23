@@ -11,54 +11,30 @@ import '../../wallets/controller/wallets_controller.dart';
 class ExpenseController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // ------------------------------------------------------------
-  // TYPE
-  // ------------------------------------------------------------
-
   final isExpense = true.obs;
 
-  // ------------------------------------------------------------
-  // EDIT MODE
-  // ------------------------------------------------------------
+ 
 
   final isEditMode = false.obs;
   String? editingTransactionId;
 
-  // ------------------------------------------------------------
-  // TEXT CONTROLLERS
-  // ------------------------------------------------------------
 
-  final amountController = TextEditingController();
+  final amountController = TextEditingController(text: '0.00');
   final noteController = TextEditingController();
 
-  // ------------------------------------------------------------
-  // SELECTIONS (Initially empty)
-  // ------------------------------------------------------------
-
+  
   final selectedCategoryId = ''.obs;
   final selectedWalletId = ''.obs;
 
-  // ------------------------------------------------------------
-  // LOADING
-  // ------------------------------------------------------------
 
   final isLoading = false.obs;
 
   User? get currentUser => _supabase.auth.currentUser;
 
-  // ------------------------------------------------------------
-  // CONTROLLERS
-  // ------------------------------------------------------------
+  
+  late CategoriesController categoriesController;
+  late WalletsController walletsController;
 
-  CategoriesController get categoriesController =>
-      Get.find<CategoriesController>();
-
-  WalletsController get walletsController =>
-      Get.find<WalletsController>();
-
-  // ------------------------------------------------------------
-  // CATEGORY LISTS
-  // ------------------------------------------------------------
 
   List<dynamic> get expenseCategories {
     return categoriesController.categoryList
@@ -72,9 +48,6 @@ class ExpenseController extends GetxController {
         .toList();
   }
 
-  // ------------------------------------------------------------
-  // INIT
-  // ------------------------------------------------------------
 
   @override
   void onInit() {
@@ -88,68 +61,27 @@ class ExpenseController extends GetxController {
       Get.put(WalletsController());
     }
 
-    ever(categoriesController.categoryList, (_) => applyDefaultSelections());
-    ever(walletsController.wallets, (_) => applyDefaultSelections());
+    categoriesController = Get.find<CategoriesController>();
+    walletsController = Get.find<WalletsController>();
 
-    categoriesController.fetchCategories();
-    walletsController.loadWallets();
-
+    
     final argument = Get.arguments;
 
     if (argument is TransactionModel) {
       loadTransactionForEdit(argument);
-    } else {
-      Future.microtask(applyDefaultSelections);
     }
   }
 
-  // ------------------------------------------------------------
-  // EXPENSE / INCOME TOGGLE
-  // ------------------------------------------------------------
 
   void toggleType(bool isExp) {
     isExpense.value = isExp;
 
     if (!isEditMode.value) {
-      applyDefaultSelections();
-    }
-  }
-
-  void applyDefaultSelections() {
-    final typeKey = isExpense.value ? 'expense' : 'income';
-
-    final categoryList = categoriesController.categoryList
-        .where((category) => category.type == typeKey)
-        .toList();
-
-    if (categoryList.isNotEmpty) {
-      final selectedExists = categoryList.any(
-        (category) => category.id == selectedCategoryId.value,
-      );
-
-      if (!selectedExists || selectedCategoryId.value.isEmpty) {
-        selectedCategoryId.value = categoryList.first.id;
-      }
-    } else {
       selectedCategoryId.value = '';
     }
-
-    if (walletsController.wallets.isNotEmpty) {
-      final walletExists = walletsController.wallets.any(
-        (wallet) => wallet.id == selectedWalletId.value,
-      );
-
-      if (!walletExists || selectedWalletId.value.isEmpty) {
-        selectedWalletId.value = walletsController.wallets.first.id;
-      }
-    } else {
-      selectedWalletId.value = '';
-    }
   }
 
-  // ------------------------------------------------------------
-  // LOAD TRANSACTION FOR EDIT
-  // ------------------------------------------------------------
+  
 
   void loadTransactionForEdit(TransactionModel transaction) {
     isEditMode.value = true;
@@ -163,9 +95,7 @@ class ExpenseController extends GetxController {
     selectedWalletId.value = transaction.walletId;
   }
 
-  // ------------------------------------------------------------
-  // SAVE TRANSACTION
-  // ------------------------------------------------------------
+  
 
   Future<void> saveExpense() async {
     final user = currentUser;
@@ -178,16 +108,16 @@ class ExpenseController extends GetxController {
     final amountText = amountController.text.trim();
     final note = noteController.text.trim();
 
-    // ----------------------------------------------------------
-    // VALIDATIONS
-    // ----------------------------------------------------------
-
+    
     if (amountText.isEmpty) {
       _showError('Please enter amount.');
       return;
     }
 
-    final amount = double.tryParse(amountText);
+   
+    final cleanAmountText = amountText.replaceAll(',', '');
+
+    final amount = double.tryParse(cleanAmountText);
 
     if (amount == null || amount <= 0) {
       _showError('Please enter a valid amount.');
@@ -204,10 +134,7 @@ class ExpenseController extends GetxController {
       return;
     }
 
-    // ----------------------------------------------------------
-    // SAVE PROCESS
-    // ----------------------------------------------------------
-
+    
     try {
       isLoading.value = true;
 
@@ -232,7 +159,8 @@ class ExpenseController extends GetxController {
         Get.put(TransactionsController());
       }
 
-      final transactionsController = Get.find<TransactionsController>();
+      final transactionsController =
+          Get.find<TransactionsController>();
 
       bool success;
 
@@ -286,10 +214,7 @@ class ExpenseController extends GetxController {
     }
   }
 
-  // ------------------------------------------------------------
-  // RESET FORM
-  // ------------------------------------------------------------
-
+  
   void resetForm() {
     amountController.clear();
     noteController.clear();
@@ -303,9 +228,6 @@ class ExpenseController extends GetxController {
     selectedWalletId.value = '';
   }
 
-  // ------------------------------------------------------------
-  // ERROR SNACKBAR
-  // ------------------------------------------------------------
 
   void _showError(String message) {
     Get.snackbar(
@@ -314,17 +236,18 @@ class ExpenseController extends GetxController {
       snackPosition: SnackPosition.TOP,
       backgroundColor: const Color(0xFFE53935),
       colorText: Colors.white,
-      icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
+      icon: const Icon(
+        Icons.error_outline,
+        color: Colors.white,
+        size: 28,
+      ),
       margin: const EdgeInsets.all(15),
       borderRadius: 12,
       duration: const Duration(seconds: 3),
     );
   }
 
-  // ------------------------------------------------------------
-  // DISPOSE
-  // ------------------------------------------------------------
-
+  
   @override
   void onClose() {
     amountController.dispose();
