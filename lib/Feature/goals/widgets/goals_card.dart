@@ -1,132 +1,321 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+
 import '../controller/goals_controller.dart';
 import '../model/goals_model.dart';
 
-class GoalsCard extends StatelessWidget {
-  final GoalModel goal;
+const Color kGoalGreen = Color(0xFF2EA44F);
 
-  const GoalsCard({super.key, required this.goal});
+String formatMoney(double value) =>
+    NumberFormat('#,##0', 'en_US').format(value);
+
+class GoalsCard extends StatelessWidget {
+  const GoalsCard({
+    super.key,
+    required this.goal,
+    required this.onAddMoney,
+    required this.onEdit,
+    required this.onWithdraw,
+    required this.onDelete,
+  });
+
+  final GoalModel goal;
+  final VoidCallback onAddMoney;
+  final VoidCallback onEdit;
+  final VoidCallback onWithdraw;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final controller = Get.find<GoalsController>();
+    final isDark = theme.brightness == Brightness.dark;
+    final done = goal.isCompleted;
 
-    return Card(
-      color: theme.cardColor,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title and Add Funds Button Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    goal.title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.textTheme.titleMedium?.color,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: done
+              ? kGoalGreen.withOpacity(0.45)
+              : (isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ---------------------------------------------------- header
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: kGoalGreen.withOpacity(isDark ? 0.18 : 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(goal.emoji, style: const TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      goal.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 3),
+                    _StatusChip(goal: goal),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert_rounded, color: theme.hintColor),
+                color: theme.cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') onEdit();
+                  if (value == 'withdraw') onWithdraw();
+                  if (value == 'delete') onDelete();
+                },
+                itemBuilder: (_) => [
+                  _menuItem('edit', Icons.edit_outlined, 'Edit goal', theme),
+                  _menuItem('withdraw', Icons.south_west_rounded,
+                      'Withdraw money', theme),
+                  _menuItem('delete', Icons.delete_outline_rounded,
+                      'Delete goal', theme, danger: true),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // ---------------------------------------------------- amounts
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  'Rs. ${formatMoney(goal.savedAmount)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: kGoalGreen,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Color(0xFF2EA44F)),
-                  onPressed: () => _showAddMoneyDialog(context, controller, goal),
-                  tooltip: 'Add Savings',
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Custom Styled Green Progress Line
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: goal.progress,
-                minHeight: 8,
-                backgroundColor: theme.dividerColor.withOpacity(0.2),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2EA44F)),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    'of Rs. ${formatMoney(goal.targetAmount)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: theme.hintColor),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${goal.progressPercent}%',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
+          ),
 
-            // Saved and Target Amounts
+          const SizedBox(height: 10),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: goal.progress,
+              minHeight: 9,
+              backgroundColor:
+                  isDark ? Colors.white12 : Colors.black.withOpacity(0.07),
+              valueColor: const AlwaysStoppedAnimation<Color>(kGoalGreen),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ---------------------------------------------------- footer
+          if (done)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              children: const [
+                Icon(Icons.check_circle_rounded, size: 18, color: kGoalGreen),
+                SizedBox(width: 8),
                 Text(
-                  'Saved: Rs. ${goal.savedAmount.toStringAsFixed(0)}',
-                  style: TextStyle(color: theme.hintColor, fontSize: 13),
+                  'Goal completed. Well done!',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: kGoalGreen,
+                  ),
                 ),
-                Text(
-                  'Target: Rs. ${goal.targetAmount.toStringAsFixed(0)}',
-                  style: TextStyle(color: theme.hintColor, fontSize: 13),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Rs. ${formatMoney(goal.remaining)} to go',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        goal.daysLeft > 0
+                            ? 'Save about Rs. '
+                                '${formatMoney(goal.monthlyTarget)} a month'
+                            : 'Target date has passed',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, color: theme.hintColor),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: onAddMoney,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Add money'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGoalGreen,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-
-            // Target Date Display
-            Text(
-              'Target Date: ${goal.targetDate.day}/${goal.targetDate.month}/${goal.targetDate.year}',
-              style: TextStyle(
-                color: theme.hintColor.withOpacity(0.8),
-                fontSize: 11,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  // Quick Deposit Dialog
-  void _showAddMoneyDialog(BuildContext context, GoalsController controller, GoalModel goal) {
-    final theme = Theme.of(context);
+  PopupMenuItem<String> _menuItem(
+    String value,
+    IconData icon,
+    String label,
+    ThemeData theme, {
+    bool danger = false,
+  }) {
+    final colour = danger ? const Color(0xFFE53935) : theme.hintColor;
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: colour),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: danger
+                  ? const Color(0xFFE53935)
+                  : theme.textTheme.bodyLarge?.color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: theme.cardColor,
-          title: Text(
-            'Add Funds to ${goal.title}',
-            style: TextStyle(color: theme.textTheme.titleLarge?.color, fontSize: 18),
-          ),
-          content: TextField(
-            controller: controller.addMoneyController,
-            keyboardType: TextInputType.number,
-            style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-            decoration: InputDecoration(
-              labelText: 'Enter Saved Amount (Rs.)',
-              labelStyle: TextStyle(color: theme.hintColor),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2EA44F))),
+// =====================================================================
+// STATUS CHIP - days left / overdue / completed
+// =====================================================================
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.goal});
+
+  final GoalModel goal;
+
+  @override
+  Widget build(BuildContext context) {
+    late final String label;
+    late final Color colour;
+    late final IconData icon;
+
+    if (goal.isCompleted) {
+      label = 'Completed';
+      colour = kGoalGreen;
+      icon = Icons.check_circle_rounded;
+    } else if (goal.isOverdue) {
+      label = '${goal.daysLeft.abs()} days overdue';
+      colour = const Color(0xFFE53935);
+      icon = Icons.error_outline_rounded;
+    } else if (goal.daysLeft == 0) {
+      label = 'Due today';
+      colour = const Color(0xFFFF9800);
+      icon = Icons.today_rounded;
+    } else if (goal.daysLeft <= 30) {
+      label = '${goal.daysLeft} days left';
+      colour = const Color(0xFFFF9800);
+      icon = Icons.schedule_rounded;
+    } else {
+      label = 'By ${DateFormat('d MMM yyyy').format(goal.targetDate)}';
+      colour = Theme.of(context).hintColor;
+      icon = Icons.event_outlined;
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: colour),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: colour,
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: Text('Cancel', style: TextStyle(color: theme.hintColor)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2EA44F)),
-              onPressed: () => controller.addSavings(goal.id),
-              child: const Text('Add', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+        ),
+      ],
     );
   }
 }
