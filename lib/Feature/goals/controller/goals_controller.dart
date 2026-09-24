@@ -287,3 +287,4 @@ class GoalsController extends GetxController {
     super.onClose();
   }
 }
+
