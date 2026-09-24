@@ -45,7 +45,7 @@ class BalanceCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoItem('Income', totalIncome, Colors.white, settingsController),
+              _buildInfoItem('Income', totalIncome, Colors.green, settingsController),
               _buildInfoItem('Expense', totalExpense, AppColors.expenseRed, settingsController),
             ],
           ),
@@ -60,13 +60,15 @@ class BalanceCard extends StatelessWidget {
     Color color, 
     SettingsController settingsController
   ) {
+    final safeAmount = amount.isNaN || amount.isInfinite ? 0.0 : amount;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 4),
         Obx(() => Text(
-              '${settingsController.selectedCurrency.value} ${amount.toStringAsFixed(2)}',
+              '${settingsController.selectedCurrency.value} ${safeAmount.toStringAsFixed(2)}',
               style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
             )),
       ],
