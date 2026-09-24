@@ -98,4 +98,40 @@ void main() {
       DateTime(2026, 2, 28),
     );
   });
+
+  test('manual reset clears spent amount without changing the budget limit', () {
+    final controller = BudgetController();
+    controller.categoriesController = CategoriesController();
+    controller.transactionsController = TransactionsController();
+    controller.categoriesController.categoryList.value = [
+      CategoryModel(
+        id: 'cat_food',
+        name: 'Food',
+        icon: 'food',
+        colorValue: 0xFFFF7043,
+        isDefault: true,
+      ),
+    ];
+    controller.customTotalBudget.value = 600000.0;
+    controller.transactionsController.transactions.value = [
+      TransactionModel(
+        id: 'tx_1',
+        userId: 'u1',
+        walletId: 'w1',
+        categoryId: 'cat_food',
+        title: 'Groceries',
+        amount: 350000,
+        type: 'expense',
+      ),
+    ];
+
+    controller.calculateBudgets();
+    expect(controller.totalSpent, 350000.0);
+    expect(controller.customTotalBudget.value, 600000.0);
+
+    controller.resetMonthlySpent();
+
+    expect(controller.totalSpent, 0.0);
+    expect(controller.customTotalBudget.value, 600000.0);
+  });
 }

@@ -124,7 +124,22 @@ class BudgetController extends GetxController {
   double get totalAllocated => customTotalBudget.value ??
       categoriesController.categoryList.fold(0.0, (sum, category) => sum + _resolvedCategoryLimit(category));
 
-  double get totalSpent => budgetList.fold(0.0, (sum, item) => sum + item.spentAmount);
+  double get totalSpent => budgetList.fold(0.0, (sum, item) => sum + item.spentAmount).clamp(0.0, double.infinity);
+
+  void resetMonthlySpent() {
+    if (budgetList.isEmpty) return;
+
+    budgetList.assignAll(
+      budgetList.map(
+        (budget) => BudgetModel(
+          id: budget.id,
+          categoryName: budget.categoryName,
+          allocatedAmount: budget.allocatedAmount,
+          spentAmount: 0.0,
+        ),
+      ),
+    );
+  }
 
   double get currentCategoryAllocationTotal {
     return categoriesController.categoryList.fold(0.0, (sum, category) {
