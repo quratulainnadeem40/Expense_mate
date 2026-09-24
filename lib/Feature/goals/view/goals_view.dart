@@ -15,6 +15,8 @@ class GoalsView extends GetView<GoalsController> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        // No back arrow - the only way out is the cross on the right.
+        automaticallyImplyLeading: false,
         title: const Text(
           'Savings Goals',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -23,6 +25,14 @@ class GoalsView extends GetView<GoalsController> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Close',
+            icon: const Icon(Icons.close_rounded, size: 26),
+            onPressed: () => Get.back(),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: kGoalGreen,
