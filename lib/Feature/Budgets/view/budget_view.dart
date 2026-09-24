@@ -2,6 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/budget_controller.dart';
 
+DateTime calculateNextBudgetResetDate({
+  required DateTime now,
+  required int selectedDay,
+}) {
+  final currentMonth = now.month;
+  final currentYear = now.year;
+
+  final nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+  final nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
+  final normalizedNextMonthDay = _normalizeSelectedDayForDateCalculation(
+    selectedDay,
+    nextYear,
+    nextMonth,
+  );
+
+  return DateTime(nextYear, nextMonth, normalizedNextMonthDay);
+}
+
+int _normalizeSelectedDayForDateCalculation(int selectedDay, int year, int month) {
+  final lastDay = DateTime(year, month + 1, 0).day;
+  return selectedDay > lastDay ? lastDay : selectedDay;
+}
+
 class BudgetView extends StatefulWidget {
   const BudgetView({Key? key}) : super(key: key);
 
@@ -101,9 +124,7 @@ class _BudgetViewState extends State<BudgetView> {
                         ),
                         child: const Text(
                           'Edit Monthly Limit',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -125,6 +146,584 @@ class _BudgetViewState extends State<BudgetView> {
         );
       }
     }
+  }
+
+  int _getLastDayOfMonth(int year, int month) {
+    final nextMonth = month == 12
+        ? DateTime(year + 1, 1, 0)
+        : DateTime(year, month + 1, 0);
+    return nextMonth.day;
+  }
+
+  int _normalizeSelectedDay(int selectedDay, int year, int month) {
+    final lastDay = _getLastDayOfMonth(year, month);
+    return selectedDay > lastDay ? lastDay : selectedDay;
+  }
+
+  Future<void> _showBudgetCycleBottomSheet(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    int selectedMonthStartDay = 25;
+    int selectedResetMode = 0;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final now = DateTime.now();
+            final currentMonth = now.month;
+            final currentYear = now.year;
+
+            final candidateResetDate = calculateNextBudgetResetDate(
+              now: now,
+              selectedDay: selectedMonthStartDay,
+            );
+
+            final nextResetText =
+                '${candidateResetDate.day} ${_monthName(candidateResetDate.month)} ${candidateResetDate.year}';
+            final monthStartLabel = '${selectedMonthStartDay}th of every month';
+
+            return Container(
+              margin: const EdgeInsets.only(top: 18),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141414) : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 52,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Budget Cycle',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E1E1E),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(sheetContext),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1C1C1C)
+                              : const Color(0xFFF4F7F1),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Budget Cycle',
+                              style: TextStyle(
+                                fontSize: 12,
+                                letterSpacing: 0.4,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white70 : Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final picked = await showDialog<int>(
+                                    context: sheetContext,
+                                    builder: (dialogContext) {
+                                      int dialogSelectedDay =
+                                          selectedMonthStartDay;
+
+                                      return StatefulBuilder(
+                                        builder: (context, setDialogState) {
+                                          return Dialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(20),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Select Month Start',
+                                                    style: TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: isDark
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF1F2937,
+                                                            ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 20),
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          12,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFF1F1F1F,
+                                                            )
+                                                          : const Color(
+                                                              0xFFF3F6F2,
+                                                            ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            18,
+                                                          ),
+                                                    ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 8,
+                                                          ),
+                                                          decoration: BoxDecoration(
+                                                            color: isDark
+                                                                ? const Color(
+                                                                    0xFF262626,
+                                                                  )
+                                                                : Colors.white,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                          child: Row(
+                                                            children: [
+                                                              IconButton(
+                                                                padding:
+                                                                    EdgeInsets.zero,
+                                                                constraints:
+                                                                    const BoxConstraints(),
+                                                                onPressed: () {},
+                                                                icon: Icon(
+                                                                  Icons
+                                                                      .chevron_left_rounded,
+                                                                  color: isDark
+                                                                      ? Colors
+                                                                          .white70
+                                                                      : Colors.black54,
+                                                                ),
+                                                              ),
+                                                              Expanded(
+                                                                child: Center(
+                                                                  child: Text(
+                                                                    '${_monthName(DateTime.now().month)} ${DateTime.now().year}',
+                                                                    style: TextStyle(
+                                                                      fontSize: 18,
+                                                                      fontWeight:
+                                                                          FontWeight.w700,
+                                                                      color: isDark
+                                                                          ? Colors.white
+                                                                          : const Color(
+                                                                              0xFF1F2937,
+                                                                            ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              IconButton(
+                                                                padding:
+                                                                    EdgeInsets.zero,
+                                                                constraints:
+                                                                    const BoxConstraints(),
+                                                                onPressed: () {},
+                                                                icon: Icon(
+                                                                  Icons
+                                                                      .chevron_right_rounded,
+                                                                  color: isDark
+                                                                      ? Colors
+                                                                          .white70
+                                                                      : Colors.black54,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        const SizedBox(height: 12),
+                                                        Wrap(
+                                                          spacing: 12,
+                                                          runSpacing: 12,
+                                                          children: List.generate(31, (
+                                                            index,
+                                                          ) {
+                                                            final day = index + 1;
+                                                            final isSelected =
+                                                                day ==
+                                                                dialogSelectedDay;
+                                                            return MouseRegion(
+                                                              cursor:
+                                                                  SystemMouseCursors
+                                                                      .click,
+                                                              child:
+                                                                  GestureDetector(
+                                                                    onTap: () {
+                                                                      setDialogState(
+                                                                        () {
+                                                                          dialogSelectedDay =
+                                                                              day;
+                                                                        },
+                                                                      );
+                                                                    },
+                                                                    child:
+                                                                        Container(
+                                                                          width: 42,
+                                                                          height: 42,
+                                                                          alignment:
+                                                                              Alignment
+                                                                                  .center,
+                                                                          decoration:
+                                                                              BoxDecoration(
+                                                                                color:
+                                                                                    isSelected
+                                                                                    ? const Color(
+                                                                                        0xFF4CAF50,
+                                                                                      )
+                                                                                    : (isDark
+                                                                                          ? const Color(
+                                                                                              0xFF2A2A2A,
+                                                                                            )
+                                                                                          : Colors.white),
+                                                                                borderRadius:
+                                                                                    BorderRadius.circular(
+                                                                                      12,
+                                                                                    ),
+                                                                                border: Border.all(
+                                                                                  color:
+                                                                                      isSelected
+                                                                                      ? const Color(
+                                                                                          0xFF4CAF50,
+                                                                                        )
+                                                                                      : (isDark
+                                                                                            ? Colors.white12
+                                                                                            : Colors.black12),
+                                                                                ),
+                                                                              ),
+                                                                          child: Text(
+                                                                            '$day',
+                                                                            style: TextStyle(
+                                                                              color:
+                                                                                  isSelected
+                                                                                  ? Colors.white
+                                                                                  : (isDark
+                                                                                        ? Colors.white70
+                                                                                        : Colors.black87),
+                                                                              fontWeight:
+                                                                                  isSelected
+                                                                                  ? FontWeight
+                                                                                      .w700
+                                                                                  : FontWeight
+                                                                                      .w500,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                  ),
+                                                            );
+                                                          }),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 20),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              dialogContext,
+                                                            ),
+                                                        child: const Text(
+                                                          'Cancel',
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      ElevatedButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              dialogContext,
+                                                              dialogSelectedDay,
+                                                            ),
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              const Color(
+                                                                0xFF4CAF50,
+                                                              ),
+                                                          foregroundColor:
+                                                              Colors.white,
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  10,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        child: const Text(
+                                                          'Save',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+
+                                  if (picked != null) {
+                                    setSheetState(() {
+                                      selectedMonthStartDay = picked;
+                                    });
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Month Start',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF1F2937),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      monthStartLabel,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: isDark
+                                          ? Colors.white54
+                                          : Colors.black54,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              'Reset Mode',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1F2937),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF202020)
+                                    : const Color(0xFFEAEFEA),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () => setSheetState(
+                                          () => selectedResetMode = 0,
+                                        ),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 180),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: selectedResetMode == 0
+                                                ? const Color(0xFF4CAF50)
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            'Automatic',
+                                            style: TextStyle(
+                                              color: selectedResetMode == 0
+                                                  ? Colors.white
+                                                  : (isDark
+                                                        ? Colors.white70
+                                                        : Colors.black54),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () => setSheetState(
+                                          () => selectedResetMode = 1,
+                                        ),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 180),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: selectedResetMode == 1
+                                                ? const Color(0xFF4CAF50)
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            'Manual',
+                                            style: TextStyle(
+                                              color: selectedResetMode == 1
+                                                  ? Colors.white
+                                                  : (isDark
+                                                        ? Colors.white70
+                                                        : Colors.black54),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              'Next Reset',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1F2937),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              nextResetText,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF2B82FB),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Budget Cycle Information',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        selectedResetMode == 0
+                            ? 'Your budget will automatically reset\non your selected monthly start date.'
+                            : 'Your budget will reset according\nto your selected monthly start date.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _monthName(int month) {
+    const months = [
+      '',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month];
   }
 
   Future<void> _showAddCategoryDialog(BuildContext context) async {
@@ -168,9 +767,7 @@ class _BudgetViewState extends State<BudgetView> {
                 const SizedBox(height: 20),
                 TextField(
                   controller: nameController,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Category Name',
                     hintText: 'e.g., Travel',
@@ -183,9 +780,7 @@ class _BudgetViewState extends State<BudgetView> {
                       ),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFF4CAF50),
-                      ),
+                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
                     ),
                   ),
                 ),
@@ -193,9 +788,7 @@ class _BudgetViewState extends State<BudgetView> {
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                   onTap: () {
                     if (amountController.text == '0') {
                       amountController.clear();
@@ -213,9 +806,7 @@ class _BudgetViewState extends State<BudgetView> {
                       ),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFF4CAF50),
-                      ),
+                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
                     ),
                   ),
                 ),
@@ -239,7 +830,9 @@ class _BudgetViewState extends State<BudgetView> {
                       child: ElevatedButton(
                         onPressed: () {
                           final categoryName = nameController.text.trim();
-                          final amount = double.tryParse(amountController.text.trim()) ?? 10000;
+                          final amount =
+                              double.tryParse(amountController.text.trim()) ??
+                              10000;
 
                           if (categoryName.isEmpty) {
                             Get.snackbar(
@@ -252,13 +845,14 @@ class _BudgetViewState extends State<BudgetView> {
 
                           if (controller.customTotalBudget.value != null &&
                               controller.projectedAllocationAfterUpdate(
-                                      categoryName,
-                                      amount,
-                                    ) >
-                                    controller.customTotalBudget.value!) {
+                                    categoryName,
+                                    amount,
+                                  ) >
+                                  controller.customTotalBudget.value!) {
                             final parentContext = Get.context;
                             Get.back(result: false);
-                            if (parentContext != null && parentContext.mounted) {
+                            if (parentContext != null &&
+                                parentContext.mounted) {
                               _showMonthlyLimitExceededDialog(
                                 context: parentContext,
                                 categoryName: categoryName,
@@ -282,9 +876,7 @@ class _BudgetViewState extends State<BudgetView> {
                         ),
                         child: const Text(
                           'Add',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -313,8 +905,9 @@ class _BudgetViewState extends State<BudgetView> {
 
     final removableIds = _selectedCategoryIds
         .where(
-          (id) => !controller.categoriesController.categoryList
-              .any((category) => category.id == id && category.isDefault),
+          (id) => !controller.categoriesController.categoryList.any(
+            (category) => category.id == id && category.isDefault,
+          ),
         )
         .toList();
 
@@ -334,7 +927,11 @@ class _BudgetViewState extends State<BudgetView> {
     _isSelectionMode = false;
   }
 
-  void _showDeleteOption(BuildContext context, String categoryId, bool isDefault) {
+  void _showDeleteOption(
+    BuildContext context,
+    String categoryId,
+    bool isDefault,
+  ) {
     if (isDefault) {
       Get.snackbar(
         'Protected',
@@ -348,8 +945,8 @@ class _BudgetViewState extends State<BudgetView> {
       context: context,
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final linkedTransactions =
-            controller.categoriesController.getCategoryCount(categoryId);
+        final linkedTransactions = controller.categoriesController
+            .getCategoryCount(categoryId);
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -412,7 +1009,8 @@ class _BudgetViewState extends State<BudgetView> {
                       child: TextButton(
                         onPressed: () async {
                           Get.back();
-                          await controller.categoriesController.deleteCategories([categoryId]);
+                          await controller.categoriesController
+                              .deleteCategories([categoryId]);
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
@@ -487,9 +1085,7 @@ class _BudgetViewState extends State<BudgetView> {
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                   onTap: () {
                     if (amountController.text == '0') {
                       amountController.clear();
@@ -510,9 +1106,7 @@ class _BudgetViewState extends State<BudgetView> {
                       ),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFF4CAF50),
-                      ),
+                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
                     ),
                   ),
                 ),
@@ -537,7 +1131,7 @@ class _BudgetViewState extends State<BudgetView> {
                         onPressed: () {
                           final limit =
                               double.tryParse(amountController.text.trim()) ??
-                                  currentLimit;
+                              currentLimit;
 
                           if (controller.customTotalBudget.value != null &&
                               controller.willExceedMonthlyBudget(
@@ -546,7 +1140,8 @@ class _BudgetViewState extends State<BudgetView> {
                               )) {
                             final parentContext = Get.context;
                             Get.back();
-                            if (parentContext != null && parentContext.mounted) {
+                            if (parentContext != null &&
+                                parentContext.mounted) {
                               _showMonthlyLimitExceededDialog(
                                 context: parentContext,
                                 categoryName: categoryName,
@@ -570,9 +1165,7 @@ class _BudgetViewState extends State<BudgetView> {
                         ),
                         child: const Text(
                           'Update',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -631,9 +1224,7 @@ class _BudgetViewState extends State<BudgetView> {
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                   onTap: () {
                     if (amountController.text == '0') {
                       amountController.clear();
@@ -654,9 +1245,7 @@ class _BudgetViewState extends State<BudgetView> {
                       ),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFF4CAF50),
-                      ),
+                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
                     ),
                   ),
                 ),
@@ -681,7 +1270,7 @@ class _BudgetViewState extends State<BudgetView> {
                         onPressed: () {
                           final totalLimit =
                               double.tryParse(amountController.text.trim()) ??
-                                  currentTotalLimit;
+                              currentTotalLimit;
 
                           controller.setTotalBudget(totalLimit);
                           Get.back();
@@ -697,9 +1286,7 @@ class _BudgetViewState extends State<BudgetView> {
                         ),
                         child: const Text(
                           'Update',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -727,9 +1314,7 @@ class _BudgetViewState extends State<BudgetView> {
         ? const Color(0xFF1A1A1A)
         : const Color(0xFFF2F6ED);
 
-    final primaryTextColor = isDark
-        ? Colors.white
-        : const Color(0xFF1E1E1E);
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF1E1E1E);
 
     final secondaryTextColor = isDark
         ? Colors.white70
@@ -750,17 +1335,23 @@ class _BudgetViewState extends State<BudgetView> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark
-            ? const Color(0xFF1A1A1A)
-            : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: primaryTextColor,
-          ),
+          icon: Icon(Icons.arrow_back, color: primaryTextColor),
           onPressed: () => Get.back(),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Budget cycle settings',
+            onPressed: () => _showBudgetCycleBottomSheet(context),
+            icon: Icon(
+              Icons.calendar_month_rounded,
+              color: primaryTextColor,
+              size: 24,
+            ),
+          ),
+        ],
       ),
 
       body: Obx(() {
@@ -770,9 +1361,7 @@ class _BudgetViewState extends State<BudgetView> {
           return Center(
             child: Text(
               'No categories found.',
-              style: TextStyle(
-                color: secondaryTextColor,
-              ),
+              style: TextStyle(color: secondaryTextColor),
             ),
           );
         }
@@ -782,7 +1371,6 @@ class _BudgetViewState extends State<BudgetView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ============================================================
               // TOTAL BUDGET CARD
               // ============================================================
@@ -812,12 +1400,9 @@ class _BudgetViewState extends State<BudgetView> {
                           icon: Icon(
                             Icons.edit,
                             size: 18,
-                            color: isDark
-                                ? Colors.white70
-                                : Colors.grey,
+                            color: isDark ? Colors.white70 : Colors.grey,
                           ),
-                          onPressed: () =>
-                              _showEditTotalBudgetDialog(
+                          onPressed: () => _showEditTotalBudgetDialog(
                             context,
                             controller.totalAllocated,
                           ),
@@ -844,8 +1429,8 @@ class _BudgetViewState extends State<BudgetView> {
                         value: controller.totalAllocated == 0
                             ? 0
                             : (controller.totalSpent /
-                                    controller.totalAllocated)
-                                .clamp(0.0, 1.0),
+                                      controller.totalAllocated)
+                                  .clamp(0.0, 1.0),
                         backgroundColor: progressBackgroundColor,
                         color: const Color(0xFF4CAF50),
                         minHeight: 8,
@@ -860,7 +1445,6 @@ class _BudgetViewState extends State<BudgetView> {
               // ============================================================
               // CATEGORY TITLE
               // ============================================================
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -907,7 +1491,9 @@ class _BudgetViewState extends State<BudgetView> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4CAF50).withOpacity(0.22),
+                                color: const Color(
+                                  0xFF4CAF50,
+                                ).withOpacity(0.22),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
@@ -926,7 +1512,9 @@ class _BudgetViewState extends State<BudgetView> {
                           height: 40,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                            color: isDark
+                                ? const Color(0xFF2A2A2A)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isDark ? Colors.white12 : Colors.black12,
@@ -947,7 +1535,9 @@ class _BudgetViewState extends State<BudgetView> {
                           height: 40,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                            color: isDark
+                                ? const Color(0xFF2A2A2A)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isDark ? Colors.white12 : Colors.black12,
@@ -972,24 +1562,29 @@ class _BudgetViewState extends State<BudgetView> {
               // ============================================================
               // CATEGORY BUDGETS
               // ============================================================
-
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: budgets.length,
                 itemBuilder: (context, index) {
                   final item = budgets[index];
-                  final category = controller.categoriesController.categoryList.firstWhere(
-                    (element) => element.name.trim().toLowerCase() == item.categoryName.trim().toLowerCase(),
-                    orElse: () => controller.categoriesController.categoryList.first,
-                  );
+                  final category = controller.categoriesController.categoryList
+                      .firstWhere(
+                        (element) =>
+                            element.name.trim().toLowerCase() ==
+                            item.categoryName.trim().toLowerCase(),
+                        orElse: () =>
+                            controller.categoriesController.categoryList.first,
+                      );
                   final isProtected = category.isDefault;
                   final isSelected = _selectedCategoryIds.contains(category.id);
 
                   final progress = item.allocatedAmount == 0
                       ? 0.0
-                      : (item.spentAmount / item.allocatedAmount)
-                          .clamp(0.0, 1.0);
+                      : (item.spentAmount / item.allocatedAmount).clamp(
+                          0.0,
+                          1.0,
+                        );
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -1015,9 +1610,13 @@ class _BudgetViewState extends State<BudgetView> {
                                         onChanged: (_) {
                                           setState(() {
                                             if (isSelected) {
-                                              _selectedCategoryIds.remove(category.id);
+                                              _selectedCategoryIds.remove(
+                                                category.id,
+                                              );
                                             } else {
-                                              _selectedCategoryIds.add(category.id);
+                                              _selectedCategoryIds.add(
+                                                category.id,
+                                              );
                                             }
                                             if (_selectedCategoryIds.isEmpty) {
                                               _isSelectionMode = false;
@@ -1060,16 +1659,22 @@ class _BudgetViewState extends State<BudgetView> {
                                   Icons.more_vert_rounded,
                                   color: isDark ? Colors.white70 : Colors.grey,
                                 ),
-                                color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                                color: isDark
+                                    ? const Color(0xFF1F1F1F)
+                                    : Colors.white,
                                 elevation: 12,
                                 shadowColor: Colors.black.withOpacity(0.12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                   side: BorderSide(
-                                    color: isDark ? Colors.white12 : Colors.black12,
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
                                   ),
                                 ),
-                                constraints: const BoxConstraints(minWidth: 180),
+                                constraints: const BoxConstraints(
+                                  minWidth: 180,
+                                ),
                                 onSelected: (value) {
                                   if (value == 'edit') {
                                     _showEditLimitDialog(
@@ -1078,7 +1683,11 @@ class _BudgetViewState extends State<BudgetView> {
                                       item.allocatedAmount,
                                     );
                                   } else if (value == 'delete') {
-                                    _showDeleteOption(context, category.id, false);
+                                    _showDeleteOption(
+                                      context,
+                                      category.id,
+                                      false,
+                                    );
                                   }
                                 },
                                 itemBuilder: (context) => [
@@ -1086,12 +1695,17 @@ class _BudgetViewState extends State<BudgetView> {
                                     value: 'edit',
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.edit_outlined, size: 18),
+                                        const Icon(
+                                          Icons.edit_outlined,
+                                          size: 18,
+                                        ),
                                         const SizedBox(width: 10),
                                         Text(
                                           'Edit limit',
                                           style: TextStyle(
-                                            color: isDark ? Colors.white : Colors.black87,
+                                            color: isDark
+                                                ? Colors.white
+                                                : Colors.black87,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -1102,7 +1716,11 @@ class _BudgetViewState extends State<BudgetView> {
                                     value: 'delete',
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                                        const Icon(
+                                          Icons.delete_outline_rounded,
+                                          size: 18,
+                                          color: Colors.red,
+                                        ),
                                         const SizedBox(width: 10),
                                         const Text(
                                           'Delete',
@@ -1123,7 +1741,9 @@ class _BudgetViewState extends State<BudgetView> {
                           child: LinearProgressIndicator(
                             value: progress,
                             backgroundColor: progressBackgroundColor,
-                            color: progress > 0.9 ? Colors.red : const Color(0xFF2B82FB),
+                            color: progress > 0.9
+                                ? Colors.red
+                                : const Color(0xFF2B82FB),
                             minHeight: 6,
                           ),
                         ),

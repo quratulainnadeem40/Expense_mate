@@ -1,4 +1,5 @@
 import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
+import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
@@ -73,5 +74,28 @@ void main() {
     expect(transportBudget.allocatedAmount, 3000.0);
     expect(budgetController.totalAllocated, 8000.0);
     expect(budgetController.totalSpent, 2500.0);
+  });
+
+  test('budget reset date always follows the selected day in the next month with month-end clamping', () {
+    expect(
+      calculateNextBudgetResetDate(now: DateTime(2026, 9, 1), selectedDay: 8),
+      DateTime(2026, 10, 8),
+    );
+    expect(
+      calculateNextBudgetResetDate(now: DateTime(2026, 9, 24), selectedDay: 24),
+      DateTime(2026, 10, 24),
+    );
+    expect(
+      calculateNextBudgetResetDate(now: DateTime(2026, 9, 30), selectedDay: 30),
+      DateTime(2026, 10, 30),
+    );
+    expect(
+      calculateNextBudgetResetDate(now: DateTime(2026, 4, 30), selectedDay: 31),
+      DateTime(2026, 5, 31),
+    );
+    expect(
+      calculateNextBudgetResetDate(now: DateTime(2026, 1, 15), selectedDay: 31),
+      DateTime(2026, 2, 28),
+    );
   });
 }
