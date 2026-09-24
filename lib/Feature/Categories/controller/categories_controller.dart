@@ -1,5 +1,4 @@
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,40 +21,58 @@ class CategoriesController extends GetxController {
 
   static String _normalizeCategoryName(String? name) {
     return (name ?? '').trim().toLowerCase().replaceAll(
-      RegExp(r'\s+'),
-      ' ',
-    );
+          RegExp(r'\s+'),
+          ' ',
+        );
   }
 
   static bool isProtectedCategoryName(String? name) {
-    return protectedCategoryOrder.contains(_normalizeCategoryName(name));
+    return protectedCategoryOrder.contains(
+      _normalizeCategoryName(name),
+    );
   }
 
-  static int compareCategoryOrder(CategoryModel a, CategoryModel b) {
+  static int compareCategoryOrder(
+    CategoryModel a,
+    CategoryModel b,
+  ) {
     final aProtected = isProtectedCategoryName(a.name);
     final bProtected = isProtectedCategoryName(b.name);
 
     if (aProtected && !bProtected) {
       return -1;
     }
+
     if (!aProtected && bProtected) {
       return 1;
     }
 
     if (aProtected && bProtected) {
-      final aIndex = protectedCategoryOrder.indexOf(_normalizeCategoryName(a.name));
-      final bIndex = protectedCategoryOrder.indexOf(_normalizeCategoryName(b.name));
+      final aIndex = protectedCategoryOrder.indexOf(
+        _normalizeCategoryName(a.name),
+      );
+
+      final bIndex = protectedCategoryOrder.indexOf(
+        _normalizeCategoryName(b.name),
+      );
+
       return aIndex.compareTo(bIndex);
     }
 
-    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    return a.name.toLowerCase().compareTo(
+          b.name.toLowerCase(),
+        );
   }
 
   static List<String> filterDeletableCategoryIds(
     List<String> ids,
     Set<String> idsInUseByTransactions,
   ) {
-    return ids.where((id) => !idsInUseByTransactions.contains(id)).toList();
+    return ids
+        .where(
+          (id) => !idsInUseByTransactions.contains(id),
+        )
+        .toList();
   }
 
   static List<Map<String, dynamic>> filterVisibleCategories(
@@ -73,22 +90,29 @@ class CategoriesController extends GetxController {
       final name = item['name']?.toString() ?? '';
       final normalizedName = _normalizeCategoryName(name);
 
-      if (normalizedName.isEmpty || seen.contains(normalizedName)) {
+      if (normalizedName.isEmpty ||
+          seen.contains(normalizedName)) {
         continue;
       }
 
       seen.add(normalizedName);
 
+      final map = Map<String, dynamic>.from(item);
+
       if (protectedCategoryOrder.contains(normalizedName)) {
-        protectedItems.add(item as Map<String, dynamic>);
+        protectedItems.add(map);
       } else {
-        customItems.add(item as Map<String, dynamic>);
+        customItems.add(map);
       }
     }
 
     customItems.sort(
-      (a, b) => (_normalizeCategoryName(a['name']?.toString() ?? '')).compareTo(
-        _normalizeCategoryName(b['name']?.toString() ?? ''),
+      (a, b) => _normalizeCategoryName(
+        a['name']?.toString() ?? '',
+      ).compareTo(
+        _normalizeCategoryName(
+          b['name']?.toString() ?? '',
+        ),
       ),
     );
 
@@ -97,7 +121,10 @@ class CategoriesController extends GetxController {
     for (final categoryName in protectedCategoryOrder) {
       final match = protectedItems.firstWhereOrNull(
         (item) =>
-            _normalizeCategoryName(item['name']?.toString() ?? '') == categoryName,
+            _normalizeCategoryName(
+              item['name']?.toString() ?? '',
+            ) ==
+            categoryName,
       );
 
       if (match != null) {
@@ -116,6 +143,7 @@ class CategoriesController extends GetxController {
     }
 
     ordered.addAll(customItems);
+
     return ordered;
   }
 
@@ -132,7 +160,8 @@ class CategoriesController extends GetxController {
       case 'health':
         return 'Health';
       default:
-        return categoryName[0].toUpperCase() + categoryName.substring(1);
+        return categoryName[0].toUpperCase() +
+            categoryName.substring(1);
     }
   }
 
@@ -159,6 +188,10 @@ class CategoriesController extends GetxController {
     fetchCategories();
   }
 
+  // ============================================================
+  // FETCH CATEGORIES
+  // ============================================================
+
   Future<void> fetchCategories() async {
     final user = currentUser;
 
@@ -178,19 +211,29 @@ class CategoriesController extends GetxController {
           .order('name');
 
       final visibleData = filterVisibleCategories(response);
+
       final Map<String, int> countsMap = {};
       final categories = <CategoryModel>[];
 
       for (final item in visibleData) {
         final rawName = item['name']?.toString() ?? '';
-        final normalizedName = _normalizeCategoryName(rawName);
+        final normalizedName =
+            _normalizeCategoryName(rawName);
 
-        final String catId = item['id']?.toString() ?? 'default_$normalizedName';
+        final String catId =
+            item['id']?.toString() ??
+                'default_$normalizedName';
+
         int count = 0;
 
         final transactions = item['transactions'];
-        if (transactions is List && transactions.isNotEmpty) {
-          count = (transactions.first['count'] as num?)?.toInt() ?? 0;
+
+        if (transactions is List &&
+            transactions.isNotEmpty) {
+          count =
+              (transactions.first['count'] as num?)
+                      ?.toInt() ??
+                  0;
         }
 
         countsMap[catId] = count;
@@ -199,10 +242,15 @@ class CategoriesController extends GetxController {
           CategoryModel(
             id: catId,
             name: rawName,
-            icon: item['icon']?.toString() ?? normalizedName,
+            icon: item['icon']?.toString() ??
+                normalizedName,
             colorValue: _parseColor(item['color']),
-            isDefault: isProtectedCategoryName(rawName),
-            type: item['type']?.toString().toLowerCase() ?? 'expense',
+            isDefault:
+                isProtectedCategoryName(rawName),
+            type: item['type']
+                    ?.toString()
+                    .toLowerCase() ??
+                'expense',
           ),
         );
       }
@@ -211,23 +259,33 @@ class CategoriesController extends GetxController {
       categoryList.assignAll(categories);
       categoryList.sort(compareCategoryOrder);
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Fetch categories error: ${e.message}');
     } catch (e) {
-      _showError('Unable to load categories.');
+      print('Fetch categories error: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ============================================================
+  // GET CATEGORY COUNT
+  // ============================================================
+
   int getCategoryCount(String categoryId) {
     return categoryCounts[categoryId] ?? 0;
   }
 
-  Future<void> addCategory(CategoryModel category) async {
+  // ============================================================
+  // ADD CATEGORY
+  // ============================================================
+
+  Future<void> addCategory(
+    CategoryModel category,
+  ) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Add category error: User is not logged in.');
       return;
     }
 
@@ -240,54 +298,66 @@ class CategoriesController extends GetxController {
             'user_id': user.id,
             'name': category.name,
             'icon': category.icon,
-            'color': category.colorValue.toRadixString(16).padLeft(8, '0'),
+            'color': category.colorValue
+                .toRadixString(16)
+                .padLeft(8, '0'),
             'type': category.type,
           })
           .select()
           .single();
 
-      final String newId = response['id'].toString();
+      final String newId =
+          response['id'].toString();
 
       final newCategory = CategoryModel(
         id: newId,
-        name: response['name']?.toString() ?? category.name,
-        icon: response['icon']?.toString() ?? category.icon,
-        colorValue: _parseColor(response['color']),
+        name: response['name']?.toString() ??
+            category.name,
+        icon: response['icon']?.toString() ??
+            category.icon,
+        colorValue:
+            _parseColor(response['color']),
         isDefault: false,
-        type: response['type']?.toString().toLowerCase() ?? 'expense',
+        type: response['type']
+                ?.toString()
+                .toLowerCase() ??
+            'expense',
       );
 
       categoryCounts[newId] = 0;
+
       categoryList.add(newCategory);
       categoryList.sort(compareCategoryOrder);
 
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
-
-      Get.snackbar(
-        'Success',
-        'Category added successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Add category error: ${e.message}');
     } catch (e) {
-      _showError('Unable to add category.');
+      print('Add category error: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ============================================================
+  // DELETE CATEGORY
+  // ============================================================
+
   Future<void> deleteCategory(String id) async {
     await deleteCategories([id]);
   }
 
-  Future<void> deleteCategories(List<String> ids) async {
+  Future<void> deleteCategories(
+    List<String> ids,
+  ) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print(
+        'Delete category error: User is not logged in.',
+      );
       return;
     }
 
@@ -296,15 +366,17 @@ class CategoriesController extends GetxController {
     }
 
     final protectedIds = categoryList
-        .where((category) => ids.contains(category.id) && category.isDefault)
+        .where(
+          (category) =>
+              ids.contains(category.id) &&
+              category.isDefault,
+        )
         .map((category) => category.id)
         .toList();
 
     if (protectedIds.isNotEmpty) {
-      Get.snackbar(
-        'Protected',
-        'Default categories cannot be deleted.',
-        snackPosition: SnackPosition.BOTTOM,
+      print(
+        'Delete category blocked: Default categories cannot be deleted.',
       );
       return;
     }
@@ -318,39 +390,44 @@ class CategoriesController extends GetxController {
         await _supabase
             .from('transactions')
             .delete()
-            .inFilter('category_id', idsToDelete)
+            .inFilter(
+              'category_id',
+              idsToDelete,
+            )
             .eq('user_id', user.id);
       }
 
       await _supabase
           .from('categories')
           .delete()
-          .inFilter('id', idsToDelete)
+          .inFilter(
+            'id',
+            idsToDelete,
+          )
           .eq('user_id', user.id);
 
-      final removedIds = idsToDelete;
+      categoryList.removeWhere(
+        (category) =>
+            idsToDelete.contains(category.id),
+      );
 
-      categoryList.removeWhere((category) => removedIds.contains(category.id));
       categoryList.sort(compareCategoryOrder);
-      for (final id in removedIds) {
+
+      for (final id in idsToDelete) {
         categoryCounts.remove(id);
       }
-
-      Get.snackbar(
-        'Deleted',
-        removedIds.length == 1
-            ? 'Category deleted successfully'
-            : '${removedIds.length} categories deleted successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Delete category error: ${e.message}');
     } catch (e) {
-      _showError('Unable to delete category.');
+      print('Delete category error: $e');
     } finally {
       isLoading.value = false;
     }
   }
+
+  // ============================================================
+  // PARSE COLOR
+  // ============================================================
 
   int _parseColor(dynamic value) {
     if (value == null) {
@@ -361,7 +438,8 @@ class CategoriesController extends GetxController {
       return value;
     }
 
-    String hex = value.toString().replaceAll('#', '').trim();
+    String hex =
+        value.toString().replaceAll('#', '').trim();
 
     if (hex.startsWith('0x')) {
       hex = hex.substring(2);
@@ -371,17 +449,10 @@ class CategoriesController extends GetxController {
       hex = 'FF$hex';
     }
 
-    return int.tryParse(hex, radix: 16) ?? 0xFF757575;
-  }
-
-  void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      snackStyle: SnackStyle.FLOATING,
-      backgroundColor: Colors.redAccent.withOpacity(0.8),
-      colorText: Colors.white,
-    );
+    return int.tryParse(
+          hex,
+          radix: 16,
+        ) ??
+        0xFF757575;
   }
 }

@@ -48,9 +48,9 @@ class WalletsController extends GetxController {
             .toList(),
       );
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Load wallets error: ${e.message}');
     } catch (e) {
-      _showError('Unable to load wallets. Please try again.');
+      print('Load wallets error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -73,19 +73,19 @@ class WalletsController extends GetxController {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Add wallet error: User is not logged in.');
       return;
     }
 
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
-      _showError('Please enter wallet name.');
+      print('Add wallet error: Wallet name is empty.');
       return;
     }
 
     if (balance < 0) {
-      _showError('Balance cannot be negative.');
+      print('Add wallet error: Balance cannot be negative.');
       return;
     }
 
@@ -103,16 +103,10 @@ class WalletsController extends GetxController {
       await loadWallets();
 
       Get.back();
-
-      Get.snackbar(
-        'Success',
-        'Wallet added successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Add wallet error: ${e.message}');
     } catch (e) {
-      _showError('Unable to add wallet. Please try again.');
+      print('Add wallet error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -132,19 +126,19 @@ class WalletsController extends GetxController {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Update wallet error: User is not logged in.');
       return;
     }
 
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
-      _showError('Please enter wallet name.');
+      print('Update wallet error: Wallet name is empty.');
       return;
     }
 
     if (balance < 0) {
-      _showError('Balance cannot be negative.');
+      print('Update wallet error: Balance cannot be negative.');
       return;
     }
 
@@ -165,16 +159,10 @@ class WalletsController extends GetxController {
       await loadWallets();
 
       Get.back();
-
-      Get.snackbar(
-        'Success',
-        'Wallet updated successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Update wallet error: ${e.message}');
     } catch (e) {
-      _showError('Unable to update wallet. Please try again.');
+      print('Update wallet error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -191,7 +179,7 @@ class WalletsController extends GetxController {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Change balance error: User is not logged in.');
       return;
     }
 
@@ -205,7 +193,7 @@ class WalletsController extends GetxController {
       final newBalance = wallet.balance + amount;
 
       if (newBalance < 0) {
-        _showError('Wallet balance cannot be negative.');
+        print('Change balance error: Wallet balance cannot be negative.');
         return;
       }
 
@@ -219,11 +207,11 @@ class WalletsController extends GetxController {
 
       await loadWallets();
     } on StateError {
-      _showError('Wallet not found.');
+      print('Change balance error: Wallet not found.');
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Change balance error: ${e.message}');
     } catch (e) {
-      _showError('Unable to change wallet balance.');
+      print('Change balance error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -237,7 +225,7 @@ class WalletsController extends GetxController {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Delete wallet error: User is not logged in.');
       return;
     }
 
@@ -253,16 +241,10 @@ class WalletsController extends GetxController {
       wallets.removeWhere(
         (wallet) => wallet.id == walletId,
       );
-
-      Get.snackbar(
-        'Success',
-        'Wallet deleted successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Delete wallet error: ${e.message}');
     } catch (e) {
-      _showError('Unable to delete wallet. Please try again.');
+      print('Delete wallet error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -276,18 +258,6 @@ class WalletsController extends GetxController {
     return wallets.fold(
       0,
       (total, wallet) => total + wallet.balance,
-    );
-  }
-
-  // ==========================================================
-  // ERROR
-  // ==========================================================
-
-  void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
     );
   }
 }

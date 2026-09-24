@@ -49,8 +49,8 @@ class TransactionsController extends GetxController {
         return TransactionModel(
           id: item['id'].toString(),
           userId: item['user_id'].toString(),
-          walletId: item['wallet_id'].toString(),
-          categoryId: item['category_id'].toString(),
+          walletId: item['wallet_id']?.toString() ?? '',
+          categoryId: item['category_id']?.toString() ?? '',
           title: item['title']?.toString() ?? '',
           amount: (item['amount'] as num).toDouble(),
           type: item['type'].toString(),
@@ -65,9 +65,10 @@ class TransactionsController extends GetxController {
 
       _calculateTotals();
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      // Do not use Get.snackbar here.
+      print('Load transactions error: ${e.message}');
     } catch (e) {
-      _showError('Unable to load transactions.');
+      print('Load transactions error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -81,7 +82,7 @@ class TransactionsController extends GetxController {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Add transaction error: User is not logged in.');
       return false;
     }
 
@@ -107,8 +108,8 @@ class TransactionsController extends GetxController {
       final addedTransaction = TransactionModel(
         id: response['id'].toString(),
         userId: response['user_id'].toString(),
-        walletId: response['wallet_id'].toString(),
-        categoryId: response['category_id'].toString(),
+        walletId: response['wallet_id']?.toString() ?? '',
+        categoryId: response['category_id']?.toString() ?? '',
         title: response['title']?.toString() ?? '',
         amount: (response['amount'] as num).toDouble(),
         type: response['type'].toString(),
@@ -123,10 +124,10 @@ class TransactionsController extends GetxController {
 
       return true;
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Add transaction error: ${e.message}');
       return false;
     } catch (e) {
-      _showError('Unable to add transaction.');
+      print('Add transaction error: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -137,11 +138,13 @@ class TransactionsController extends GetxController {
   // UPDATE TRANSACTION
   // ============================================================
 
-  Future<bool> updateTransaction(TransactionModel transaction) async {
+  Future<bool> updateTransaction(
+    TransactionModel transaction,
+  ) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Update transaction error: User is not logged in.');
       return false;
     }
 
@@ -168,8 +171,8 @@ class TransactionsController extends GetxController {
       final updatedTransaction = TransactionModel(
         id: response['id'].toString(),
         userId: response['user_id'].toString(),
-        walletId: response['wallet_id'].toString(),
-        categoryId: response['category_id'].toString(),
+        walletId: response['wallet_id']?.toString() ?? '',
+        categoryId: response['category_id']?.toString() ?? '',
         title: response['title']?.toString() ?? '',
         amount: (response['amount'] as num).toDouble(),
         type: response['type'].toString(),
@@ -190,10 +193,10 @@ class TransactionsController extends GetxController {
 
       return true;
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Update transaction error: ${e.message}');
       return false;
     } catch (e) {
-      _showError('Unable to update transaction.');
+      print('Update transaction error: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -208,7 +211,7 @@ class TransactionsController extends GetxController {
     final user = currentUser;
 
     if (user == null) {
-      _showError('Please login first.');
+      print('Delete transaction error: User is not logged in.');
       return false;
     }
 
@@ -229,10 +232,10 @@ class TransactionsController extends GetxController {
 
       return true;
     } on PostgrestException catch (e) {
-      _showError(e.message);
+      print('Delete transaction error: ${e.message}');
       return false;
     } catch (e) {
-      _showError('Unable to delete transaction.');
+      print('Delete transaction error: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -259,24 +262,4 @@ class TransactionsController extends GetxController {
     totalExpense.value = expense;
     totalBalance.value = income - expense;
   }
-
-  // ============================================================
-  // ERROR
-  // ============================================================
-
- void _showError(String message) {
-  if (Get.context == null) {
-    return;
-  }
-
-  try {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } catch (_) {
-    // The widget tree may already be disposed.
-  }
-}
 }
