@@ -109,7 +109,10 @@ class BudgetController extends GetxController {
     final walletsController = Get.isRegistered<WalletsController>()
         ? Get.find<WalletsController>()
         : null;
-    await walletsController?.resetAllBalances();
+
+    if (walletsController != null && walletsController.wallets.isNotEmpty) {
+      await walletsController.resetAllBalances();
+    }
 
     if (!auto) return;
 
