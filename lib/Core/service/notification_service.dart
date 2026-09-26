@@ -83,7 +83,31 @@ class NotificationService {
     debugPrint('INSTANT NOTIFICATION SENT');
   }
 
-  
+  // Committee simple notification
+  Future<void> showCommitteeNotification() async {
+    const androidDetails = AndroidNotificationDetails(
+      'committee_reminders',
+      'Committee Reminders',
+      channelDescription:
+          'Notifications for committee payments',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+    );
+
+    await _notifications.show(
+      1000,
+      'Committee Reminder',
+      'Your committee contribution is due today.',
+      details,
+    );
+
+    debugPrint('COMMITTEE NOTIFICATION SENT');
+  }
+
   Future<void> scheduleBillNotification({
     required int notificationId,
     required String billName,
@@ -122,7 +146,8 @@ class NotificationService {
             '$currency ${amount.toStringAsFixed(2)}',
         reminderDate,
         details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode:
+            AndroidScheduleMode.inexactAllowWhileIdle,
       );
 
       debugPrint('DAY-BEFORE REMINDER SCHEDULED');
@@ -145,38 +170,46 @@ class NotificationService {
             '$currency ${amount.toStringAsFixed(2)}',
         dueNotificationDate,
         details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode:
+            AndroidScheduleMode.inexactAllowWhileIdle,
       );
 
       debugPrint('DUE-DATE NOTIFICATION SCHEDULED');
     }
   }
 
-  Future<void> cancelNotification(int notificationId) async {
+  Future<void> cancelNotification(
+    int notificationId,
+  ) async {
     await _notifications.cancel(notificationId);
-    await _notifications.cancel(notificationId + 1000000);
+    await _notifications.cancel(
+      notificationId + 1000000,
+    );
 
     debugPrint(
       'NOTIFICATION CANCELLED: $notificationId',
     );
   }
 
-Future<void> checkPendingNotifications() async {
-  final pending = await _notifications.pendingNotificationRequests();
+  Future<void> checkPendingNotifications() async {
+    final pending =
+        await _notifications.pendingNotificationRequests();
 
-  debugPrint('================================');
-  debugPrint('PENDING NOTIFICATIONS: ${pending.length}');
-
-  for (final notification in pending) {
+    debugPrint('================================');
     debugPrint(
-      'ID: ${notification.id} | '
-      'TITLE: ${notification.title} | '
-      'BODY: ${notification.body}',
+      'PENDING NOTIFICATIONS: ${pending.length}',
     );
-  }
 
-  debugPrint('================================');
-}
+    for (final notification in pending) {
+      debugPrint(
+        'ID: ${notification.id} | '
+        'TITLE: ${notification.title} | '
+        'BODY: ${notification.body}',
+      );
+    }
+
+    debugPrint('================================');
+  }
 
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();

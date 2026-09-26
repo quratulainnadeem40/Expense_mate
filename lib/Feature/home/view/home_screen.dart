@@ -3,8 +3,7 @@ import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// Feature Views & Bindings
+import 'package:expense_mate/Feature/Committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
@@ -14,13 +13,13 @@ import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.d
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
-// Existing Home Imports
 import 'package:expense_mate/Feature/home/widgets/balance_card.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:expense_mate/Feature/home/controller/home_controller.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -102,12 +101,12 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reportController = Get.find<ReportController>();
-final transactionsController =
-    Get.find<HomeController>().transactionsController;
 
-final settingsController =
-    Get.find<SettingsController>();
-    
+    final transactionsController =
+        Get.find<HomeController>().transactionsController;
+
+    final settingsController =
+        Get.find<SettingsController>();
 
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -133,10 +132,8 @@ final settingsController =
               backgroundColor: isDarkMode
                   ? const Color(0xFF1E1E1E)
                   : const Color(0xFFF9FAFB),
-
               child: Column(
                 children: [
-
                   // =========================
                   // X BUTTON - TOP RIGHT
                   // =========================
@@ -172,11 +169,11 @@ final settingsController =
                         colors: isDarkMode
                             ? [
                                 const Color(0xFF2E7D32),
-                                const Color(0xFF1B5E20)
+                                const Color(0xFF1B5E20),
                               ]
                             : [
                                 const Color(0xFF4CAF50),
-                                const Color(0xFF388E3C)
+                                const Color(0xFF388E3C),
                               ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -186,51 +183,49 @@ final settingsController =
                         const Size.square(64),
 
                     currentAccountPicture: Obx(() {
-  final imageUrl =
-      settingsController.profilePictureUrl.value;
+                      final imageUrl =
+                          settingsController.profilePictureUrl.value;
 
-  final name =
-      settingsController.profileName.value;
+                      final name =
+                          settingsController.profileName.value;
 
-  final firstLetter = name.isNotEmpty
-      ? name[0].toUpperCase()
-      : 'U';
+                      final firstLetter = name.isNotEmpty
+                          ? name[0].toUpperCase()
+                          : 'U';
 
-  return Container(
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(
-        color: Colors.white,
-        width: 2,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.15),
-          blurRadius: 8,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: CircleAvatar(
-      backgroundColor: Colors.white,
-
-      backgroundImage: imageUrl.isNotEmpty
-          ? NetworkImage(imageUrl)
-          : null,
-
-      child: imageUrl.isEmpty
-          ? Text(
-              firstLetter,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E7D32),
-              ),
-            )
-          : null,
-    ),
-  );
-}),
+                      return Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          backgroundImage: imageUrl.isNotEmpty
+                              ? NetworkImage(imageUrl)
+                              : null,
+                          child: imageUrl.isEmpty
+                              ? Text(
+                                  firstLetter,
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      );
+                    }),
 
                     accountName: Text(
                       _userName,
@@ -260,6 +255,9 @@ final settingsController =
                         vertical: 16,
                       ),
                       children: [
+                        // =========================
+                        // WALLETS
+                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.account_balance_wallet_rounded,
@@ -275,6 +273,9 @@ final settingsController =
 
                         const SizedBox(height: 12),
 
+                        // =========================
+                        // BUDGETS
+                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.pie_chart_rounded,
@@ -290,6 +291,9 @@ final settingsController =
 
                         const SizedBox(height: 12),
 
+                        // =========================
+                        // GOALS
+                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.stars_rounded,
@@ -305,6 +309,9 @@ final settingsController =
 
                         const SizedBox(height: 12),
 
+                        // =========================
+                        // BILLS & REMINDERS
+                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.notifications_active_rounded,
@@ -320,6 +327,26 @@ final settingsController =
 
                         const SizedBox(height: 12),
 
+                        // =========================
+                        // DIGITAL COMMITTEE
+                        // =========================
+                        _buildDrawerOption(
+                          context: context,
+                          icon: Icons.groups_rounded,
+                          iconColor: const Color(0xFF4CAF50),
+                          title: 'Digital Committee',
+                          subtitle:
+                              'Manage your committee and member payments',
+                          onTap: () => _closeDrawerAndNavigate(
+                            () => const CommitteeView(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // =========================
+                        // PROFILE
+                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.person_rounded,
@@ -328,8 +355,8 @@ final settingsController =
                           subtitle:
                               'Manage your profile and account settings',
                           onTap: () => _closeDrawerAndNavigate(
-  () => const SettingsView(),
-),
+                            () => const SettingsView(),
+                          ),
                         ),
                       ],
                     ),
@@ -444,11 +471,18 @@ final settingsController =
                             () => TransactionsView(),
                           ),
                           style: TextButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50).withOpacity(0.12),
-                            foregroundColor: const Color(0xFF2E7D32),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            backgroundColor:
+                                const Color(0xFF4CAF50)
+                                    .withOpacity(0.12),
+                            foregroundColor:
+                                const Color(0xFF2E7D32),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                                  BorderRadius.circular(12),
                             ),
                           ),
                           child: const Text(
