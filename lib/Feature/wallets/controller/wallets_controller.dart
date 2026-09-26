@@ -41,9 +41,8 @@ class WalletsController extends GetxController {
       wallets.assignAll(
         (response as List)
             .map(
-              (wallet) => WalletModel.fromMap(
-                Map<String, dynamic>.from(wallet),
-              ),
+              (wallet) =>
+                  WalletModel.fromMap(Map<String, dynamic>.from(wallet)),
             )
             .toList(),
       );
@@ -198,9 +197,7 @@ class WalletsController extends GetxController {
     try {
       isLoading.value = true;
 
-      final wallet = wallets.firstWhere(
-        (wallet) => wallet.id == walletId,
-      );
+      final wallet = wallets.firstWhere((wallet) => wallet.id == walletId);
 
       final newBalance = wallet.balance + amount;
 
@@ -211,9 +208,7 @@ class WalletsController extends GetxController {
 
       await _supabase
           .from('wallets')
-          .update({
-            'balance': newBalance,
-          })
+          .update({'balance': newBalance})
           .eq('id', walletId)
           .eq('user_id', user.id);
 
@@ -224,6 +219,35 @@ class WalletsController extends GetxController {
       _showError(e.message);
     } catch (e) {
       _showError('Unable to change wallet balance.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ==========================================================
+  // RESET ALL BALANCES  (used by the budget cycle reset)
+  // ==========================================================
+  //
+  // Puts every wallet of this user back to zero in one query. The
+  // wallets themselves are kept, so the screen never goes blank.
+  Future<void> resetAllBalances() async {
+    final user = currentUser;
+    if (user == null) return;
+    if (wallets.isEmpty) return;
+
+    try {
+      isLoading.value = true;
+
+      await _supabase
+          .from('wallets')
+          .update({'balance': 0})
+          .eq('user_id', user.id);
+
+      await loadWallets();
+    } on PostgrestException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Unable to reset wallet balances.');
     } finally {
       isLoading.value = false;
     }
@@ -250,9 +274,7 @@ class WalletsController extends GetxController {
           .eq('id', walletId)
           .eq('user_id', user.id);
 
-      wallets.removeWhere(
-        (wallet) => wallet.id == walletId,
-      );
+      wallets.removeWhere((wallet) => wallet.id == walletId);
 
       Get.snackbar(
         'Success',
@@ -273,10 +295,7 @@ class WalletsController extends GetxController {
   // ==========================================================
 
   double get totalBalance {
-    return wallets.fold(
-      0,
-      (total, wallet) => total + wallet.balance,
-    );
+    return wallets.fold(0, (total, wallet) => total + wallet.balance);
   }
 
   // ==========================================================
@@ -284,10 +303,6 @@ class WalletsController extends GetxController {
   // ==========================================================
 
   void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
   }
 }
