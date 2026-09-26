@@ -195,19 +195,58 @@ class _WalletsViewState extends State<WalletsView> {
               // ==================================================
 
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'My Wallets',
-                    style: AppTextStyles.headingMedium(isDark),
-                  ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Text(
+      'My Wallets',
+      style: AppTextStyles.headingMedium(isDark),
+    ),
 
-                  Text(
-                    '${controller.wallets.length} wallet(s)',
-                    style: AppTextStyles.bodyMedium(isDark),
-                  ),
-                ],
-              ),
+    if (!isSelectionMode)
+      Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Get.to(() => const AddWalletView());
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 13,
+    vertical: 8,
+  ),
+  decoration: BoxDecoration(
+    color: const Color(0xFF2E7D32),
+    borderRadius: BorderRadius.circular(10),
+    border: Border.all(
+      color: Color(0xFFE8F5E9),
+      width: 1,
+    ),
+  ),
+  child: const Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(
+        Icons.add_rounded,
+        size: 18,
+        color:Color(0xFFE8F5E9),
+      ),
+      SizedBox(width: 5),
+      Text(
+        'Add',
+        style: TextStyle(
+          color:Color(0xFFE8F5E9),
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  ),
+)
+        ),
+      ),
+  ],
+),
 
               const SizedBox(height: 14),
 
@@ -268,25 +307,25 @@ class _WalletsViewState extends State<WalletsView> {
       // ADD WALLET FAB
       // ==========================================================
 
-      floatingActionButton: FloatingActionButton(
-  heroTag: 'walletAddFab',
-  onPressed: () {
-    Get.to(
-      () => const AddWalletView(),
-    );
-  },
-  backgroundColor: const Color(0xFF2E7D32),
-  foregroundColor: Colors.white,
-  elevation: 6,
-  shape: const CircleBorder(),
-  child: const Icon(
-    Icons.add,
-    size: 30,
-  ),
-),
+//       floatingActionButton: FloatingActionButton(
+//   heroTag: 'walletAddFab',
+//   onPressed: () {
+//     Get.to(
+//       () => const AddWalletView(),
+//     );
+//   },
+//   backgroundColor: const Color(0xFF2E7D32),
+//   foregroundColor: Colors.white,
+//   elevation: 6,
+//   shape: const CircleBorder(),
+//   child: const Icon(
+//     Icons.add,
+//     size: 30,
+//   ),
+// ),
 
-floatingActionButtonLocation:
-    FloatingActionButtonLocation.centerFloat,
+// floatingActionButtonLocation:
+//     FloatingActionButtonLocation.centerFloat,
 
       // Bottom center
       
