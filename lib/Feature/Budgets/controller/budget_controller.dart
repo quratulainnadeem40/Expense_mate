@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../Core/constants/app_keys.dart';
 import '../../Categories/controller/categories_controller.dart';
-import '../../Categories/model/categories_model.dart';
+import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import '../../transactions/controller/transcation_controller.dart';
-import '../../../Core/service/notification_service.dart';
+import 'package:expense_mate/Core/service/notification_service.dart';
 import '../../wallets/controller/wallets_controller.dart';
 import '../model/budget_model.dart';
 

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../Core/service/notification_service.dart';
+import 'package:expense_mate/Core/service/notification_service.dart';
 import '../../settings/controller/settings_controller.dart';
 import '../model/bill_model.dart';
 
