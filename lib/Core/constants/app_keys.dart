@@ -17,5 +17,9 @@ class AppKeys {
   static const String budgetMonthStartDayKey = 'budget_month_start_day';
   static const String budgetResetModeKey = 'budget_reset_is_automatic';
   static const String budgetLastResetKey = 'budget_last_reset_date';
+  static const String budgetNextResetKey = 'budget_next_reset_date';
+  static const String budgetReminderOnKey = 'budget_reset_reminder_on';
+  static const String budgetReminderDaysKey = 'budget_reset_reminder_days';
+  static const String budgetCycleConfiguredKey = 'budget_cycle_configured';
   static const String budgetHistoryKey = 'budget_cycle_history';
 }

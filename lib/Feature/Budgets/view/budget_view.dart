@@ -43,6 +43,269 @@ class _BudgetViewState extends State<BudgetView> {
 
   BudgetController get controller => Get.find<BudgetController>();
 
+  /// Offered once per app run. If the user closes it without saving we do
+  /// not nag them again until the next launch.
+  static bool _setupOfferedThisSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (controller.isCycleConfigured.value) return;
+      if (_setupOfferedThisSession) return;
+
+      _setupOfferedThisSession = true;
+      _showFirstTimeSetup(context);
+    });
+  }
+
+  // ==================================================================
+  // STEP 22 - first-time budget cycle setup
+  // ==================================================================
+  Future<void> _showFirstTimeSetup(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    int day = controller.monthStartDay.value;
+    bool automatic = controller.isAutomaticReset.value;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              margin: const EdgeInsets.only(top: 18),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141414) : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 52,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color:
+                                  isDark ? Colors.white24 : Colors.black12,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Set Up Your Budget Cycle',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E1E1E),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Choose when your monthly budget should start.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        Text(
+                          'Month Start',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(31, (index) {
+                            final value = index + 1;
+                            final active = value == day;
+
+                            return MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () =>
+                                    setSheetState(() => day = value),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: active
+                                        ? const Color(0xFF4CAF50)
+                                        : (isDark
+                                            ? const Color(0xFF202020)
+                                            : const Color(0xFFF1F4F0)),
+                                    borderRadius:
+                                        BorderRadius.circular(11),
+                                  ),
+                                  child: Text(
+                                    '$value',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: active
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: active
+                                          ? Colors.white
+                                          : (isDark
+                                              ? Colors.white70
+                                              : Colors.black87),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        Text(
+                          'Reset Mode',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF202020)
+                                : const Color(0xFFEAEFEA),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [true, false].map((auto) {
+                              final active = automatic == auto;
+
+                              return Expanded(
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    onTap: () => setSheetState(
+                                      () => automatic = auto,
+                                    ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 180,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: active
+                                            ? const Color(0xFF4CAF50)
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        auto ? 'Automatic' : 'Manual',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: active
+                                              ? Colors.white
+                                              : (isDark
+                                                  ? Colors.white70
+                                                  : Colors.black54),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Text(
+                          automatic
+                              ? 'Your budget will reset automatically on '
+                                  'the selected date every month.'
+                              : 'You will reset the budget yourself '
+                                  'whenever you want.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.5,
+                            color:
+                                isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              controller.setMonthStartDay(day);
+                              controller.setAutomaticReset(automatic);
+                              controller.markCycleConfigured();
+                              Navigator.pop(sheetContext);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              'Save Budget Cycle',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _showMonthlyLimitExceededDialog({
     required BuildContext context,
     required String categoryName,
@@ -561,12 +824,28 @@ class _BudgetViewState extends State<BudgetView> {
                                     },
                                   );
 
-                                  if (picked != null) {
-                                    controller.setMonthStartDay(picked);
-                                    setSheetState(() {
-                                      selectedMonthStartDay = picked;
-                                    });
+                                  if (picked == null) return;
+
+                                  // Same day picked again: nothing to warn
+                                  // about.
+                                  if (picked ==
+                                      controller.monthStartDay.value) {
+                                    return;
                                   }
+
+                                  final confirmed =
+                                      await _confirmStartDayChange(
+                                    sheetContext,
+                                    picked,
+                                    isDark,
+                                  );
+
+                                  if (confirmed != true) return;
+
+                                  controller.setMonthStartDay(picked);
+                                  setSheetState(() {
+                                    selectedMonthStartDay = picked;
+                                  });
                                 },
                                 child: Row(
                                   children: [
@@ -709,233 +988,287 @@ class _BudgetViewState extends State<BudgetView> {
                                 ],
                               ),
                             ),
+                            // ------------------------------------
+                            // Step 18 - reset reminder
+                            // Only meaningful in Automatic mode, so it is
+                            // hidden entirely in Manual.
+                            // ------------------------------------
                             if (selectedResetMode == 0) ...[
                               const SizedBox(height: 18),
-                              Text(
-                                'Next Reset',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? Colors.white
-                                      : const Color(0xFF1F2937),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                nextResetText,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF2B82FB),
-                                ),
-                              ),
-                            ] else ...[
-                              const SizedBox(height: 18),
-                              Text(
-                                'Budget will not reset automatically.',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? Colors.white70
-                                      : const Color(0xFF4B5563),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
                               Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Last Reset',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: isDark
-                                                ? Colors.white
-                                                : const Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          _formatDisplayDate(lastResetDate),
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2B82FB),
-                                          ),
-                                        ),
-                                      ],
+                                    child: Text(
+                                      'Reset Reminder',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1F2937),
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Next Reset',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: isDark
-                                                ? Colors.white
-                                                : const Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          nextResetText,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2B82FB),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  Switch(
+                                    value: controller.resetReminderOn.value,
+                                    activeColor: const Color(0xFF4CAF50),
+                                    onChanged: (value) {
+                                      controller.setResetReminderOn(value);
+                                      setSheetState(() {});
+                                    },
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 18),
-                              Center(
-                                child: SizedBox(
-                                  width: 220,
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      final confirmed = await showDialog<bool>(
-                                        context: sheetContext,
-                                        builder: (dialogContext) {
-                                          final monthlyBudget =
-                                              controller
-                                                  .customTotalBudget
-                                                  .value ??
-                                              controller.totalAllocated;
+                              if (controller.resetReminderOn.value) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Remind me',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [1, 2, 3].map((days) {
+                                    final active =
+                                        controller.reminderDaysBefore.value ==
+                                            days;
 
-                                          return AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            title: const Text('Reset Budget?'),
-                                            content: RichText(
-                                              text: TextSpan(
-                                                style: TextStyle(
-                                                  color: isDark
-                                                      ? Colors.white
-                                                      : const Color(0xFF1F2937),
-                                                  fontSize: 15,
-                                                  height: 1.5,
-                                                ),
-                                                children: [
-                                                  const TextSpan(
-                                                    text:
-                                                        'Your spent amount will be reset to\n',
-                                                  ),
-                                                  const TextSpan(
-                                                    text: 'Rs 0.\n\n',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                                  ),
-                                                  TextSpan(
-                                                    text:
-                                                        'Your monthly budget of Rs ${monthlyBudget.toStringAsFixed(0)}\n',
-                                                  ),
-                                                  const TextSpan(
-                                                    text:
-                                                        'will remain unchanged.',
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                  dialogContext,
-                                                  false,
-                                                ),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () => Navigator.pop(
-                                                  dialogContext,
-                                                  true,
-                                                ),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: const Color(
-                                                    0xFF4CAF50,
-                                                  ),
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          10,
-                                                        ),
-                                                  ),
-                                                ),
-                                                child: const Text('Reset'),
-                                              ),
-                                            ],
-                                          );
+                                    return MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          controller
+                                              .setReminderDaysBefore(days);
+                                          setSheetState(() {});
                                         },
-                                      );
+                                        child: Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 9,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: active
+                                                ? const Color(0xFF4CAF50)
+                                                : (isDark
+                                                    ? const Color(0xFF202020)
+                                                    : const Color(
+                                                        0xFFEAEFEA,
+                                                      )),
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            days == 1
+                                                ? '1 day before'
+                                                : '$days days before',
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: active
+                                                  ? Colors.white
+                                                  : (isDark
+                                                      ? Colors.white70
+                                                      : Colors.black54),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
 
-                                      if (confirmed == true) {
-                                        await controller.performReset();
-                                        setSheetState(() {});
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF4CAF50),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 16,
+                            const SizedBox(height: 18),
+
+                            // One line about what the chosen mode does.
+                            Text(
+                              selectedResetMode == 0
+                                  ? 'Budget resets on its own each cycle.'
+                                  : 'Budget will not reset automatically.',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w500,
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF4B5563),
+                              ),
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // Both dates are useful in either mode, so
+                            // they are no longer hidden behind Manual.
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Last Reset',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF1F2937),
+                                        ),
                                       ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        _formatDisplayDate(lastResetDate),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF2B82FB),
+                                        ),
                                       ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Next Reset',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF1F2937),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        nextResetText,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF2B82FB),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            Divider(
+                              height: 1,
+                              color:
+                                  isDark ? Colors.white12 : Colors.black12,
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // Available in both modes now. Automatic used
+                            // to have no button at all, which made reset
+                            // look broken.
+                            Center(
+                              child: SizedBox(
+                                width: 220,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final confirmed = await showDialog<bool>(
+                                      context: sheetContext,
+                                      builder: (dialogContext) {
+                                        return AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          title: const Text('Reset Budget?'),
+                                          content: Text(
+                                            "This will reset your current "
+                                            "cycle's spent amount to Rs 0."
+                                            "\n\nYour transactions will not "
+                                            "be deleted.",
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              height: 1.5,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF1F2937),
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(
+                                                dialogContext,
+                                                false,
+                                              ),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.pop(
+                                                dialogContext,
+                                                true,
+                                              ),
+                                              style:
+                                                  ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color(0xFF4CAF50),
+                                                foregroundColor:
+                                                    Colors.white,
+                                                shape:
+                                                    RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                    10,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: const Text('Reset'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+
+                                    if (confirmed == true) {
+                                      await controller.performReset();
+                                      setSheetState(() {});
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4CAF50),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 16,
                                     ),
-                                    child: const Text(
-                                      'Reset Budget Now',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 15,
-                                      ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Reset Budget Now',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ),
                               ),
+                            ),
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'Budget Cycle Information',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        selectedResetMode == 0
-                            ? 'Your budget will automatically reset\non your selected monthly start date.'
-                            : 'Your budget will reset according\nto your selected monthly start date.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.5,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                        
                         ),
                       ),
                     ],
@@ -944,6 +1277,129 @@ class _BudgetViewState extends State<BudgetView> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  /// Step 16 - warn before changing the start day.
+  ///
+  /// The change never clears anything; it only moves where the current
+  /// cycle ends. Spending stays exactly as it is.
+  Future<bool?> _confirmStartDayChange(
+    BuildContext context,
+    int newDay,
+    bool isDark,
+  ) {
+    final currentCycle = controller.previewCycleLabel(newDay);
+    final nextCycle = controller.previewNextCycleLabel(newDay);
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor:
+              isDark ? const Color(0xFF1F1F1F) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Change Budget Start Date?',
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1F2937),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your current budget cycle will become:',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                currentCycle,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B82FB),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'The cycle after that:',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                nextCycle,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2B82FB),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50)
+                      .withOpacity(isDark ? 0.14 : 0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: Color(0xFF4CAF50),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Your spent amount, limits and transactions stay '
+                        'as they are. Only the reset date moves.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.45,
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Continue'),
+            ),
+          ],
         );
       },
     );
@@ -1637,12 +2093,29 @@ class _BudgetViewState extends State<BudgetView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Total Monthly Budget Spent',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: secondaryTextColor,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Total Monthly Budget Spent',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              // Which cycle these figures belong to.
+                              Text(
+                                '${controller.cycleLabel}  ·  '
+                                '${controller.daysLeftInCycle} days left',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
@@ -1664,10 +2137,12 @@ class _BudgetViewState extends State<BudgetView> {
 
                     Text(
                       'RS ${controller.totalSpent.toStringAsFixed(0)} / RS ${controller.totalAllocated.toStringAsFixed(0)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2B82FB),
+                        color: controller.isOverBudget
+                            ? const Color(0xFFE53935)
+                            : const Color(0xFF2B82FB),
                       ),
                     ),
 
@@ -1676,16 +2151,65 @@ class _BudgetViewState extends State<BudgetView> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
-                        value: controller.totalAllocated == 0
-                            ? 0
-                            : (controller.totalSpent /
-                                      controller.totalAllocated)
-                                  .clamp(0.0, 1.0),
+                        value: controller.spendProgress,
                         backgroundColor: progressBackgroundColor,
-                        color: const Color(0xFF4CAF50),
+                        color: controller.isOverBudget
+                            ? const Color(0xFFE53935)
+                            : const Color(0xFF4CAF50),
                         minHeight: 8,
                       ),
                     ),
+
+                    // Step 27 - say it plainly when the budget is passed.
+                    if (controller.isOverBudget) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE53935)
+                              .withOpacity(isDark ? 0.18 : 0.10),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              size: 18,
+                              color: Color(0xFFE53935),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Budget Exceeded',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFE53935),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Rs ${controller.overspentAmount.toStringAsFixed(0)} over budget',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      color: secondaryTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1991,19 +2515,38 @@ class _BudgetViewState extends State<BudgetView> {
                           child: LinearProgressIndicator(
                             value: progress,
                             backgroundColor: progressBackgroundColor,
-                            color: progress > 0.9
-                                ? Colors.red
-                                : const Color(0xFF2B82FB),
+                            color: item.allocatedAmount > 0 &&
+                                    item.spentAmount > item.allocatedAmount
+                                ? const Color(0xFFE53935)
+                                : (progress > 0.9
+                                    ? const Color(0xFFFF9800)
+                                    : const Color(0xFF2B82FB)),
                             minHeight: 6,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          'Spent: RS ${item.spentAmount.toStringAsFixed(0)} / RS ${item.allocatedAmount.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: secondaryTextColor,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Spent: RS ${item.spentAmount.toStringAsFixed(0)} / RS ${item.allocatedAmount.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ),
+                            if (item.allocatedAmount > 0 &&
+                                item.spentAmount > item.allocatedAmount)
+                              Text(
+                                'Over by RS ${(item.spentAmount - item.allocatedAmount).toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFE53935),
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),

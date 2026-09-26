@@ -16,6 +16,17 @@ class NotificationService {
 
   static const String _channelId = 'bill_reminders';
   static const String _channelName = 'Bill Reminders';
+  // Budget reset lives on its own channel so the user can silence it
+  // without losing bill reminders.
+  static const String _budgetChannelId = 'budget_reset';
+  static const String _budgetChannelName = 'Budget Reset';
+  static const String _budgetChannelDescription =
+      'Reminders before your budget cycle resets';
+
+  // Bills use notificationId and notificationId + 1000000. This sits far
+  // above both so the two can never collide.
+  static const int _budgetReminderId = 9000001;
+
   static const String _channelDescription =
       'Notifications for upcoming and due bills';
 
@@ -150,6 +161,68 @@ class NotificationService {
 
       debugPrint('DUE-DATE NOTIFICATION SCHEDULED');
     }
+  }
+
+  /// Reminder before the budget cycle resets.
+  ///
+  /// Only one is ever scheduled: the previous one is cancelled first, so
+  /// changing the start day or the reminder setting can never leave an
+  /// old notification behind.
+  Future<void> scheduleBudgetResetReminder({
+    required DateTime resetDate,
+    required int daysBefore,
+    required double budgetAmount,
+    required double spentAmount,
+  }) async {
+    await cancelBudgetResetReminder();
+
+    final now = tz.TZDateTime.now(tz.local);
+
+    final fireDate = tz.TZDateTime(
+      tz.local,
+      resetDate.year,
+      resetDate.month,
+      resetDate.day,
+      9,
+    ).subtract(Duration(days: daysBefore));
+
+    // Already in the past - nothing to schedule.
+    if (!fireDate.isAfter(now)) {
+      debugPrint('BUDGET REMINDER SKIPPED (date already passed)');
+      return;
+    }
+
+    const androidDetails = AndroidNotificationDetails(
+      _budgetChannelId,
+      _budgetChannelName,
+      channelDescription: _budgetChannelDescription,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+
+    const details = NotificationDetails(android: androidDetails);
+
+    final whenText = daysBefore == 1
+        ? 'tomorrow'
+        : 'in $daysBefore days';
+
+    await _notifications.zonedSchedule(
+      _budgetReminderId,
+      'Budget Reset Reminder',
+      'Your monthly budget will reset $whenText. '
+          'Budget: Rs ${budgetAmount.toStringAsFixed(0)} · '
+          'Spent: Rs ${spentAmount.toStringAsFixed(0)}',
+      fireDate,
+      details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+
+    debugPrint('BUDGET REMINDER SCHEDULED FOR $fireDate');
+  }
+
+  Future<void> cancelBudgetResetReminder() async {
+    await _notifications.cancel(_budgetReminderId);
+    debugPrint('BUDGET REMINDER CANCELLED');
   }
 
   Future<void> cancelNotification(int notificationId) async {
