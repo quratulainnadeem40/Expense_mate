@@ -3,7 +3,7 @@ import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:expense_mate/Feature/Committee/view/committee_view.dart';
+import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
