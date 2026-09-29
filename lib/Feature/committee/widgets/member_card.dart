@@ -2,20 +2,18 @@ import 'package:flutter/material.dart';
 
 class MemberCard extends StatelessWidget {
   final String memberName;
+  final String fatherName;
   final String phone;
   final String contribution;
   final String paymentStatus;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
 
   const MemberCard({
     super.key,
     this.memberName = 'Member Name',
+    this.fatherName = '',
     this.phone = '',
     this.contribution = 'PKR 0',
     this.paymentStatus = 'Pending',
-    this.onEdit,
-    this.onDelete,
   });
 
   @override
@@ -81,8 +79,7 @@ class MemberCard extends StatelessWidget {
                   children: [
                     Text(
                       memberName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -90,9 +87,37 @@ class MemberCard extends StatelessWidget {
                       ),
                     ),
 
+                    if (fatherName.trim().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.person_outline_rounded,
+                            size: 14,
+                            color: secondaryTextColor,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              'Father: $fatherName',
+                              softWrap: true,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
                     if (phone.trim().isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Icon(
                             Icons.phone_rounded,
@@ -103,13 +128,10 @@ class MemberCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               phone,
-                              maxLines: 1,
-                              overflow:
-                                  TextOverflow.ellipsis,
+                              softWrap: true,
                               style: TextStyle(
                                 fontSize: 12,
-                                color:
-                                    secondaryTextColor,
+                                color: secondaryTextColor,
                               ),
                             ),
                           ),
@@ -120,6 +142,8 @@ class MemberCard extends StatelessWidget {
                     const SizedBox(height: 6),
 
                     Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.payments_rounded,
@@ -127,53 +151,21 @@ class MemberCard extends StatelessWidget {
                           color: secondaryTextColor,
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          contribution,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: primaryTextColor,
+                        Expanded(
+                          child: Text(
+                            contribution,
+                            softWrap: true,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: primaryTextColor,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // Edit Menu
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    onEdit?.call();
-                  } else if (value == 'delete') {
-                    onDelete?.call();
-                  }
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_rounded),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline_rounded),
-                        SizedBox(width: 10),
-                        Text('Delete'),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
@@ -213,15 +205,18 @@ class MemberCard extends StatelessWidget {
 
                 const SizedBox(width: 8),
 
-                Text(
-                  'Payment Status',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryTextColor,
+                Expanded(
+                  child: Text(
+                    'Payment Status',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: secondaryTextColor,
+                    ),
+                    softWrap: true,
                   ),
                 ),
 
-                const Spacer(),
+                const SizedBox(width: 8),
 
                 Text(
                   paymentStatus,

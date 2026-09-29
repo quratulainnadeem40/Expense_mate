@@ -23,7 +23,6 @@ import 'package:expense_mate/Feature/home/controller/home_controller.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // Scaffold Key to force-close drawer directly
   static final GlobalKey<ScaffoldState> _scaffoldKey =
       GlobalKey<ScaffoldState>();
 
@@ -84,7 +83,6 @@ class HomeScreen extends StatelessWidget {
     return category?.name ?? categoryId;
   }
 
-  // Guaranteed Drawer Close Helper Method
   void _closeDrawerAndNavigate(
     Widget Function() page, {
     Bindings? binding,
@@ -135,7 +133,7 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 children: [
                   // =========================
-                  // X BUTTON - TOP RIGHT
+                  // X BUTTON
                   // =========================
                   Align(
                     alignment: Alignment.topRight,
@@ -332,13 +330,13 @@ class HomeScreen extends StatelessWidget {
                         // =========================
                         _buildDrawerOption(
                           context: context,
-                          icon: Icons.groups_rounded,
+                          icon: Icons.account_balance_rounded,
                           iconColor: const Color(0xFF4CAF50),
                           title: 'Digital Committee',
                           subtitle:
                               'Manage your committee and member payments',
                           onTap: () => _closeDrawerAndNavigate(
-                            () => const CommitteeView(),
+                            () => CommitteeView(),
                           ),
                         ),
 

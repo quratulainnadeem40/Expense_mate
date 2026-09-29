@@ -6,12 +6,18 @@ class StorageService {
     await Hive.initFlutter();
 
     await Hive.openBox(AppKeys.transactionsBox);
+
     await Hive.openBox(AppKeys.categoriesBox);
 
     await Hive.openBox(AppKeys.walletsBox);
+
     await Hive.openBox(AppKeys.billsRemindersBox);
 
     await Hive.openBox(AppKeys.settingsBox);
+
     await Hive.openBox(AppKeys.budgetBox);
+
+    
+    await Hive.openBox(AppKeys.committeeBox);
   }
 }
