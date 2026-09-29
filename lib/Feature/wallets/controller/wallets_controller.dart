@@ -1,13 +1,19 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:expense_mate/Core/database/repository_provider.dart';
+import 'package:expense_mate/Core/database/sync/sync_manager.dart';
+import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../model/wallet_model.dart';
 
 class WalletsController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   final wallets = <WalletModel>[].obs;
   final isLoading = false.obs;
+
+  final RepositoryProvider _repositories = RepositoryProvider.instance;
 
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -32,23 +38,32 @@ class WalletsController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _supabase
-          .from('wallets')
-          .select()
-          .eq('user_id', user.id)
-          .order('created_at', ascending: true);
+      // --------------------------------------------------------
+      // 1. Load from local SQLite first.
+      // --------------------------------------------------------
 
-      wallets.assignAll(
-        (response as List)
-            .map(
-              (wallet) =>
-                  WalletModel.fromMap(Map<String, dynamic>.from(wallet)),
-            )
-            .toList(),
-      );
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+      await _loadFromLocal(user.id);
+
+      // --------------------------------------------------------
+      // 2. Try to synchronize with Supabase.
+      // --------------------------------------------------------
+
+      try {
+        if (Get.isRegistered<SyncManager>()) {
+          await Get.find<SyncManager>().sync();
+
+          // ----------------------------------------------------
+          // 3. Reload local data after synchronization.
+          // ----------------------------------------------------
+
+          await _loadFromLocal(user.id);
+        }
+      } catch (_) {
+        // Offline/cloud failure.
+        //
+        // Local data remains available.
+      }
+    } catch (_) {
       _showError('Unable to load wallets. Please try again.');
     } finally {
       isLoading.value = false;
@@ -57,6 +72,28 @@ class WalletsController extends GetxController {
 
   Future<void> fetchWallets() async {
     await loadWallets();
+  }
+
+  // ==========================================================
+  // LOAD FROM LOCAL DATABASE
+  // ==========================================================
+
+  Future<void> _loadFromLocal(String userId) async {
+    final localWallets = await _repositories.wallets.getWallets(userId);
+
+    final loadedWallets = localWallets.map((wallet) {
+      return WalletModel(
+        id: wallet.id,
+        userId: wallet.userId,
+        name: wallet.name,
+        type: wallet.type,
+        balance: wallet.balance,
+        currency: wallet.currency,
+        createdAt: wallet.createdAt,
+      );
+    }).toList();
+
+    wallets.assignAll(loadedWallets);
   }
 
   // ==========================================================
@@ -91,26 +128,46 @@ class WalletsController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase.from('wallets').insert({
-        'user_id': user.id,
-        'name': trimmedName,
-        'type': type,
-        'balance': balance,
-        'currency': currency,
-      });
+      final walletId = _generateUuid();
 
-      await loadWallets();
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
 
-      Get.back();
-
-      Get.snackbar(
-        'Success',
-        'Wallet added successfully.',
-        snackPosition: SnackPosition.BOTTOM,
+      await _repositories.walletSync.createWallet(
+        userId: user.id,
+        id: walletId,
+        name: trimmedName,
+        type: type,
+        balance: balance,
+        currency: currency,
       );
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+
+      // --------------------------------------------------------
+      // Update UI immediately.
+      // --------------------------------------------------------
+
+      wallets.add(
+        WalletModel(
+          id: walletId,
+          userId: user.id,
+          name: trimmedName,
+          type: type,
+          balance: balance,
+          currency: currency,
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      // --------------------------------------------------------
+      // Try cloud sync in background.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+
+      // Close Add Wallet screen/dialog.
+      Get.back();
+    } catch (_) {
       _showError('Unable to add wallet. Please try again.');
     } finally {
       isLoading.value = false;
@@ -150,29 +207,51 @@ class WalletsController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase
-          .from('wallets')
-          .update({
-            'name': trimmedName,
-            'type': type,
-            'balance': balance,
-            'currency': currency,
-          })
-          .eq('id', walletId)
-          .eq('user_id', user.id);
+      final index = wallets.indexWhere((wallet) => wallet.id == walletId);
 
-      await loadWallets();
+      if (index == -1) {
+        _showError('Wallet not found.');
+        return;
+      }
+
+      final existingWallet = wallets[index];
+
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
+
+      await _repositories.walletSync.updateWallet(
+        userId: user.id,
+        id: walletId,
+        name: trimmedName,
+        type: type,
+        balance: balance,
+        currency: currency,
+        createdAt: existingWallet.createdAt,
+      );
+
+      // --------------------------------------------------------
+      // Update UI immediately.
+      // --------------------------------------------------------
+
+      wallets[index] = WalletModel(
+        id: existingWallet.id,
+        userId: existingWallet.userId,
+        name: trimmedName,
+        type: type,
+        balance: balance,
+        currency: currency,
+        createdAt: existingWallet.createdAt,
+      );
+
+      // --------------------------------------------------------
+      // Background sync.
+      // --------------------------------------------------------
+
+      _syncInBackground();
 
       Get.back();
-
-      Get.snackbar(
-        'Success',
-        'Wallet updated successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+    } catch (_) {
       _showError('Unable to update wallet. Please try again.');
     } finally {
       isLoading.value = false;
@@ -197,7 +276,14 @@ class WalletsController extends GetxController {
     try {
       isLoading.value = true;
 
-      final wallet = wallets.firstWhere((wallet) => wallet.id == walletId);
+      final index = wallets.indexWhere((wallet) => wallet.id == walletId);
+
+      if (index == -1) {
+        _showError('Wallet not found.');
+        return;
+      }
+
+      final wallet = wallets[index];
 
       final newBalance = wallet.balance + amount;
 
@@ -206,18 +292,40 @@ class WalletsController extends GetxController {
         return;
       }
 
-      await _supabase
-          .from('wallets')
-          .update({'balance': newBalance})
-          .eq('id', walletId)
-          .eq('user_id', user.id);
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
 
-      await loadWallets();
-    } on StateError {
-      _showError('Wallet not found.');
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+      await _repositories.walletSync.updateWallet(
+        userId: user.id,
+        id: wallet.id,
+        name: wallet.name,
+        type: wallet.type,
+        balance: newBalance,
+        currency: wallet.currency,
+        createdAt: wallet.createdAt,
+      );
+
+      // --------------------------------------------------------
+      // Update UI immediately.
+      // --------------------------------------------------------
+
+      wallets[index] = WalletModel(
+        id: wallet.id,
+        userId: wallet.userId,
+        name: wallet.name,
+        type: wallet.type,
+        balance: newBalance,
+        currency: wallet.currency,
+        createdAt: wallet.createdAt,
+      );
+
+      // --------------------------------------------------------
+      // Background sync.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+    } catch (_) {
       _showError('Unable to change wallet balance.');
     } finally {
       isLoading.value = false;
@@ -225,28 +333,66 @@ class WalletsController extends GetxController {
   }
 
   // ==========================================================
-  // RESET ALL BALANCES  (used by the budget cycle reset)
+  // RESET ALL BALANCES
   // ==========================================================
-  //
-  // Puts every wallet of this user back to zero in one query. The
-  // wallets themselves are kept, so the screen never goes blank.
+
   Future<void> resetAllBalances() async {
     final user = currentUser;
-    if (user == null) return;
-    if (wallets.isEmpty) return;
+
+    if (user == null) {
+      return;
+    }
+
+    if (wallets.isEmpty) {
+      return;
+    }
 
     try {
       isLoading.value = true;
 
-      await _supabase
-          .from('wallets')
-          .update({'balance': 0})
-          .eq('user_id', user.id);
+      // --------------------------------------------------------
+      // Update every wallet locally.
+      //
+      // Each update is queued separately, so every wallet will
+      // eventually be synchronized with Supabase.
+      // --------------------------------------------------------
 
-      await loadWallets();
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+      for (final wallet in wallets.toList()) {
+        await _repositories.walletSync.updateWallet(
+          userId: user.id,
+          id: wallet.id,
+          name: wallet.name,
+          type: wallet.type,
+          balance: 0,
+          currency: wallet.currency,
+          createdAt: wallet.createdAt,
+        );
+      }
+
+      // --------------------------------------------------------
+      // Update UI.
+      // --------------------------------------------------------
+
+      wallets.assignAll(
+        wallets.map(
+          (wallet) => WalletModel(
+            id: wallet.id,
+            userId: wallet.userId,
+            name: wallet.name,
+            type: wallet.type,
+            balance: 0,
+            currency: wallet.currency,
+            createdAt: wallet.createdAt,
+          ),
+        ),
+      );
+
+      // --------------------------------------------------------
+      // Background sync.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+    } catch (_) {
       _showError('Unable to reset wallet balances.');
     } finally {
       isLoading.value = false;
@@ -268,25 +414,53 @@ class WalletsController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase
-          .from('wallets')
-          .delete()
-          .eq('id', walletId)
-          .eq('user_id', user.id);
+      final exists = wallets.any((wallet) => wallet.id == walletId);
+
+      if (!exists) {
+        _showError('Wallet not found.');
+        return;
+      }
+
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
+
+      await _repositories.walletSync.deleteWallet(
+        userId: user.id,
+        id: walletId,
+      );
+
+      // --------------------------------------------------------
+      // Remove from UI immediately.
+      // --------------------------------------------------------
 
       wallets.removeWhere((wallet) => wallet.id == walletId);
 
-      Get.snackbar(
-        'Success',
-        'Wallet deleted successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+      // --------------------------------------------------------
+      // Background sync.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+    } catch (_) {
       _showError('Unable to delete wallet. Please try again.');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // ==========================================================
+  // BACKGROUND SYNC
+  // ==========================================================
+
+  void _syncInBackground() {
+    try {
+      if (Get.isRegistered<SyncManager>()) {
+        unawaited(Get.find<SyncManager>().sync());
+      }
+    } catch (_) {
+      // Local operation is already stored safely.
+      //
+      // SyncManager will retry the queued operation later.
     }
   }
 
@@ -303,6 +477,51 @@ class WalletsController extends GetxController {
   // ==========================================================
 
   void _showError(String message) {
-    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+    // Intentionally no Get.snackbar().
+    //
+    // GetX snackbar previously caused:
+    // LateInitializationError: Field '_animation'
+    // has not been initialized.
+    //
+    // The controller stays UI-independent.
+  }
+
+  // ==========================================================
+  // LOCAL UUID
+  // ==========================================================
+
+  String _generateUuid() {
+    final random = Random();
+
+    String hex(int count) {
+      final bytes = List<int>.generate(count, (_) => random.nextInt(256));
+
+      return bytes
+          .map((value) => value.toRadixString(16).padLeft(2, '0'))
+          .join();
+    }
+
+    final part1 = hex(4);
+    final part2 = hex(2);
+
+    final part3Bytes = List<int>.generate(2, (_) => random.nextInt(256));
+
+    part3Bytes[0] = (part3Bytes[0] & 0x0f) | 0x40;
+
+    final part3 = part3Bytes
+        .map((value) => value.toRadixString(16).padLeft(2, '0'))
+        .join();
+
+    final part4Bytes = List<int>.generate(2, (_) => random.nextInt(256));
+
+    part4Bytes[0] = (part4Bytes[0] & 0x3f) | 0x80;
+
+    final part4 = part4Bytes
+        .map((value) => value.toRadixString(16).padLeft(2, '0'))
+        .join();
+
+    final part5 = hex(6);
+
+    return '$part1-$part2-$part3-$part4-$part5';
   }
 }

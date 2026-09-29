@@ -1,3 +1,10 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:drift/drift.dart';
+import 'package:expense_mate/Core/database/app_database.dart';
+import 'package:expense_mate/Core/database/repository_provider.dart';
+import 'package:expense_mate/Core/database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,6 +19,9 @@ class TransactionsController extends GetxController {
   final totalExpense = 0.0.obs;
 
   final isLoading = false.obs;
+
+  final RepositoryProvider _repositories =
+      RepositoryProvider.instance;
 
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -37,36 +47,34 @@ class TransactionsController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _supabase
-          .from('transactions')
-          .select()
-          .eq('user_id', user.id)
-          .order('transaction_date', ascending: false);
+      // --------------------------------------------------------
+      // STEP 1: Load local SQLite data first.
+      // --------------------------------------------------------
 
-      final data = response as List;
+      await _loadFromLocal(user.id);
 
-      final loadedTransactions = data.map((item) {
-        return TransactionModel(
-          id: item['id'].toString(),
-          userId: item['user_id'].toString(),
-          walletId: item['wallet_id'].toString(),
-          categoryId: item['category_id'].toString(),
-          title: item['title']?.toString() ?? '',
-          amount: (item['amount'] as num).toDouble(),
-          type: item['type'].toString(),
-          transactionDate: DateTime.parse(
-            item['transaction_date'].toString(),
-          ),
-          note: item['note']?.toString(),
-        );
-      }).toList();
+      // --------------------------------------------------------
+      // STEP 2: Try to synchronize with Supabase.
+      //
+      // If internet is unavailable, local data remains usable.
+      // --------------------------------------------------------
 
-      transactions.assignAll(loadedTransactions);
+      try {
+        final syncManager = Get.find<SyncManager>();
 
-      _calculateTotals();
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+        await syncManager.sync();
+
+        // ------------------------------------------------------
+        // STEP 3: Reload local data after synchronization.
+        // ------------------------------------------------------
+
+        await _loadFromLocal(user.id);
+      } catch (_) {
+        // Offline or temporary cloud failure.
+        //
+        // We intentionally keep the local data already loaded.
+      }
+    } catch (_) {
       _showError('Unable to load transactions.');
     } finally {
       isLoading.value = false;
@@ -74,10 +82,33 @@ class TransactionsController extends GetxController {
   }
 
   // ============================================================
+  // LOAD FROM LOCAL DATABASE
+  // ============================================================
+
+  Future<void> _loadFromLocal(
+    String userId,
+  ) async {
+    final localTransactions =
+        await _repositories.transactions.getTransactions(
+      userId,
+    );
+
+    final loadedTransactions = localTransactions
+        .map(_localToModel)
+        .toList();
+
+    transactions.assignAll(loadedTransactions);
+
+    _calculateTotals();
+  }
+
+  // ============================================================
   // ADD TRANSACTION
   // ============================================================
 
-  Future<bool> addTransaction(TransactionModel transaction) async {
+  Future<bool> addTransaction(
+    TransactionModel transaction,
+  ) async {
     final user = currentUser;
 
     if (user == null) {
@@ -88,44 +119,66 @@ class TransactionsController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _supabase
-          .from('transactions')
-          .insert({
-            'user_id': user.id,
-            'wallet_id': transaction.walletId,
-            'category_id': transaction.categoryId,
-            'title': transaction.title,
-            'amount': transaction.amount,
-            'type': transaction.type,
-            'transaction_date':
-                transaction.transactionDate.toIso8601String(),
-            'note': transaction.note,
-          })
-          .select()
-          .single();
+      // --------------------------------------------------------
+      // Generate a UUID locally.
+      //
+      // This allows the transaction to be created while offline.
+      // --------------------------------------------------------
 
-      final addedTransaction = TransactionModel(
-        id: response['id'].toString(),
-        userId: response['user_id'].toString(),
-        walletId: response['wallet_id'].toString(),
-        categoryId: response['category_id'].toString(),
-        title: response['title']?.toString() ?? '',
-        amount: (response['amount'] as num).toDouble(),
-        type: response['type'].toString(),
-        transactionDate:
-            DateTime.parse(response['transaction_date'].toString()),
-        note: response['note']?.toString(),
+      final transactionId = _generateUuid();
+
+      final transactionWithId = TransactionModel(
+        id: transactionId,
+        userId: user.id,
+        walletId: transaction.walletId,
+        categoryId: transaction.categoryId,
+        title: transaction.title,
+        amount: transaction.amount,
+        type: transaction.type,
+        transactionDate: transaction.transactionDate,
+        note: transaction.note,
+        createdAt: transaction.createdAt,
       );
 
-      transactions.insert(0, addedTransaction);
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
+
+      await _repositories.transactionSync.createTransaction(
+        userId: user.id,
+        id: transactionWithId.id,
+        walletId: transactionWithId.walletId,
+        categoryId: transactionWithId.categoryId,
+        title: transactionWithId.title,
+        amount: transactionWithId.amount,
+        type: transactionWithId.type,
+        transactionDate: transactionWithId.transactionDate,
+        note: transactionWithId.note,
+        createdAt: transactionWithId.createdAt,
+      );
+
+      // --------------------------------------------------------
+      // Update UI immediately.
+      // --------------------------------------------------------
+
+      transactions.insert(
+        0,
+        transactionWithId,
+      );
 
       _calculateTotals();
 
+      // --------------------------------------------------------
+      // Try cloud synchronization.
+      //
+      // Local operation is already safe in SQLite, so a cloud
+      // failure does not make the add operation fail.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+
       return true;
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-      return false;
-    } catch (e) {
+    } catch (_) {
       _showError('Unable to add transaction.');
       return false;
     } finally {
@@ -137,7 +190,9 @@ class TransactionsController extends GetxController {
   // UPDATE TRANSACTION
   // ============================================================
 
-  Future<bool> updateTransaction(TransactionModel transaction) async {
+  Future<bool> updateTransaction(
+    TransactionModel transaction,
+  ) async {
     final user = currentUser;
 
     if (user == null) {
@@ -148,51 +203,50 @@ class TransactionsController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _supabase
-          .from('transactions')
-          .update({
-            'wallet_id': transaction.walletId,
-            'category_id': transaction.categoryId,
-            'title': transaction.title,
-            'amount': transaction.amount,
-            'type': transaction.type,
-            'transaction_date':
-                transaction.transactionDate.toIso8601String(),
-            'note': transaction.note,
-          })
-          .eq('id', transaction.id)
-          .eq('user_id', user.id)
-          .select()
-          .single();
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
 
-      final updatedTransaction = TransactionModel(
-        id: response['id'].toString(),
-        userId: response['user_id'].toString(),
-        walletId: response['wallet_id'].toString(),
-        categoryId: response['category_id'].toString(),
-        title: response['title']?.toString() ?? '',
-        amount: (response['amount'] as num).toDouble(),
-        type: response['type'].toString(),
-        transactionDate:
-            DateTime.parse(response['transaction_date'].toString()),
-        note: response['note']?.toString(),
+      await _repositories.transactionSync.updateTransaction(
+        userId: user.id,
+        id: transaction.id,
+        walletId: transaction.walletId,
+        categoryId: transaction.categoryId,
+        title: transaction.title,
+        amount: transaction.amount,
+        type: transaction.type,
+        transactionDate: transaction.transactionDate,
+        note: transaction.note,
+        createdAt: transaction.createdAt,
       );
+
+      // --------------------------------------------------------
+      // Update observable list immediately.
+      // --------------------------------------------------------
 
       final index = transactions.indexWhere(
         (item) => item.id == transaction.id,
       );
 
       if (index != -1) {
-        transactions[index] = updatedTransaction;
+        transactions[index] = transaction;
+      } else {
+        transactions.insert(
+          0,
+          transaction,
+        );
       }
 
       _calculateTotals();
 
+      // --------------------------------------------------------
+      // Background synchronization.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+
       return true;
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-      return false;
-    } catch (e) {
+    } catch (_) {
       _showError('Unable to update transaction.');
       return false;
     } finally {
@@ -204,7 +258,9 @@ class TransactionsController extends GetxController {
   // DELETE TRANSACTION
   // ============================================================
 
-  Future<bool> deleteTransaction(String transactionId) async {
+  Future<bool> deleteTransaction(
+    String transactionId,
+  ) async {
     final user = currentUser;
 
     if (user == null) {
@@ -215,11 +271,18 @@ class TransactionsController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase
-          .from('transactions')
-          .delete()
-          .eq('id', transactionId)
-          .eq('user_id', user.id);
+      // --------------------------------------------------------
+      // LOCAL FIRST
+      // --------------------------------------------------------
+
+      await _repositories.transactionSync.deleteTransaction(
+        userId: user.id,
+        id: transactionId,
+      );
+
+      // --------------------------------------------------------
+      // Remove from UI immediately.
+      // --------------------------------------------------------
 
       transactions.removeWhere(
         (transaction) => transaction.id == transactionId,
@@ -227,16 +290,58 @@ class TransactionsController extends GetxController {
 
       _calculateTotals();
 
+      // --------------------------------------------------------
+      // Background synchronization.
+      // --------------------------------------------------------
+
+      _syncInBackground();
+
       return true;
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-      return false;
-    } catch (e) {
+    } catch (_) {
       _showError('Unable to delete transaction.');
       return false;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // ============================================================
+  // BACKGROUND SYNC
+  // ============================================================
+
+  void _syncInBackground() {
+    try {
+      if (Get.isRegistered<SyncManager>()) {
+        unawaited(
+          Get.find<SyncManager>().sync(),
+        );
+      }
+    } catch (_) {
+      // The local operation has already been saved.
+      //
+      // SyncManager will retry the queued operation later.
+    }
+  }
+
+  // ============================================================
+  // LOCAL DATABASE → MODEL
+  // ============================================================
+
+  TransactionModel _localToModel(
+    LocalTransaction local,
+  ) {
+    return TransactionModel(
+      id: local.id,
+      userId: local.userId,
+      walletId: local.walletId ?? '',
+      categoryId: local.categoryId ?? '',
+      title: local.title,
+      amount: local.amount,
+      type: local.type,
+      transactionDate: local.transactionDate,
+      note: local.note,
+      createdAt: local.createdAt,
+    );
   }
 
   // ============================================================
@@ -264,19 +369,80 @@ class TransactionsController extends GetxController {
   // ERROR
   // ============================================================
 
- void _showError(String message) {
-  if (Get.context == null) {
-    return;
+  void _showError(
+    String message,
+  ) {
+    // We intentionally do not use Get.snackbar here.
+    //
+    // GetX snackbar previously caused:
+    // LateInitializationError: Field '_animation'
+    // has not been initialized.
+    //
+    // The controller remains UI-independent.
+    //
+    // The calling screen can display errors using its own
+    // ScaffoldMessenger if required.
   }
 
-  try {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
+  // ============================================================
+  // LOCAL UUID GENERATOR
+  // ============================================================
+
+  String _generateUuid() {
+    final random = Random();
+
+    String hex(int count) {
+      final value = List<int>.generate(
+        count,
+        (_) => random.nextInt(256),
+      );
+
+      return value
+          .map(
+            (number) => number
+                .toRadixString(16)
+                .padLeft(2, '0'),
+          )
+          .join();
+    }
+
+    final part1 = hex(4);
+    final part2 = hex(2);
+
+    final part3Bytes = List<int>.generate(
+      2,
+      (_) => random.nextInt(256),
     );
-  } catch (_) {
-    // The widget tree may already be disposed.
+
+    part3Bytes[0] =
+        (part3Bytes[0] & 0x0f) | 0x40;
+
+    final part3 = part3Bytes
+        .map(
+          (number) => number
+              .toRadixString(16)
+              .padLeft(2, '0'),
+        )
+        .join();
+
+    final part4Bytes = List<int>.generate(
+      2,
+      (_) => random.nextInt(256),
+    );
+
+    part4Bytes[0] =
+        (part4Bytes[0] & 0x3f) | 0x80;
+
+    final part4 = part4Bytes
+        .map(
+          (number) => number
+              .toRadixString(16)
+              .padLeft(2, '0'),
+        )
+        .join();
+
+    final part5 = hex(6);
+
+    return '$part1-$part2-$part3-$part4-$part5';
   }
-}
 }

@@ -24,6 +24,11 @@ dependencies:
   fl_chart: ^1.2.0
   image_picker: ^1.2.1
 
+  # Drift / SQLite
+  drift: ^2.28.1
+  sqlite3_flutter_libs: ^0.5.28
+  path: ^1.9.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,6 +36,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
   icons_launcher: ^3.1.0
+
+  # Drift code generation
+  drift_dev: ^2.28.1
+  build_runner: ^2.4.15
 
 flutter:
   uses-material-design: true
