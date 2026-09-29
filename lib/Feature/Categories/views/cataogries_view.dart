@@ -2,6 +2,7 @@ import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
+import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
@@ -26,6 +27,9 @@ class CategoriesView extends StatefulWidget {
 }
 
 class _CategoriesViewState extends State<CategoriesView> {
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>();
+
   final Set<String> selectedCategoryIds = <String>{};
 
   bool isSelectionMode = false;
@@ -48,8 +52,8 @@ class _CategoriesViewState extends State<CategoriesView> {
   // ============================================================
 
   void _closeDrawerInstantly() {
-    if (isDrawerOpen.value) {
-      isDrawerOpen.value = false;
+    if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
+      _scaffoldKey.currentState?.closeEndDrawer();
     }
   }
 
@@ -57,9 +61,9 @@ class _CategoriesViewState extends State<CategoriesView> {
     Widget Function() page, {
     Bindings? binding,
   }) {
-    isDrawerOpen.value = false;
+    _scaffoldKey.currentState?.closeEndDrawer();
 
-    Future.delayed(const Duration(milliseconds: 180), () {
+    Future.delayed(const Duration(milliseconds: 150), () {
       Get.to(page, binding: binding);
     });
   }
@@ -462,9 +466,16 @@ Widget build(BuildContext context) {
         }
       },
       child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: isDark
             ? const Color(0xFF121212)
             : const Color(0xFFF7F9F8),
+
+        endDrawer: _buildNavigationDrawer(
+          context,
+          isDark,
+          settingsController,
+        ),
 
         // ========================================================
         // APP BAR
@@ -474,6 +485,7 @@ Widget build(BuildContext context) {
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: false,
+          automaticallyImplyLeading: false,
 
           leading: isSelectionMode
               ? IconButton(
@@ -482,18 +494,8 @@ Widget build(BuildContext context) {
                   ),
                   onPressed: _exitSelectionMode,
                 )
-              : IconButton(
-                  icon: Icon(
-                    Icons.menu_rounded,
-                    color: isDark
-                        ? Colors.white
-                        : const Color(0xFF2E7D32),
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    isDrawerOpen.value = true;
-                  },
-                ),
+              : null,
+          leadingWidth: isSelectionMode ? null : 0,
 
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,13 +538,31 @@ Widget build(BuildContext context) {
                 ),
               )
             else
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    isSelectionMode = true;
-                  });
-                },
-                child: const Text('Select'),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        isSelectionMode = true;
+                      });
+                    },
+                    child: const Text('Select'),
+                  ),
+                  IconButton(
+                    tooltip: 'Open navigation menu',
+                    icon: Icon(
+                      Icons.menu_rounded,
+                      color: isDark
+                          ? Colors.white
+                          : const Color(0xFF2E7D32),
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      _scaffoldKey.currentState?.openEndDrawer();
+                    },
+                  ),
+                ],
               ),
           ],
         ),
@@ -817,18 +837,16 @@ Widget build(BuildContext context) {
                     ),
 
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
 
                       child: SafeArea(
                         child: Container(
-                          width:
-                              MediaQuery.of(context).size.width *
-                                  0.78,
+                          width: DrawerTheme.of(context).width ?? 304,
 
                           margin: const EdgeInsets.only(
-                            left: 12,
-                            top: 8,
-                            bottom: 8,
+                            right: 12,
+                            top: 12,
+                            bottom: 16,
                           ),
 
                           decoration: BoxDecoration(
@@ -856,6 +874,27 @@ Widget build(BuildContext context) {
 
                             child: Column(
                               children: [
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 6,
+                                      right: 6,
+                                    ),
+                                    child: IconButton(
+                                      onPressed: () {
+                                        isDrawerOpen.value = false;
+                                      },
+                                      icon: Icon(
+                                        Icons.close,
+                                        size: 28,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 UserAccountsDrawerHeader(
                                   margin: EdgeInsets.zero,
 
@@ -1073,6 +1112,23 @@ Widget build(BuildContext context) {
 
                                       _buildDrawerOption(
                                         context: context,
+                                        icon: Icons.account_balance_rounded,
+                                        iconColor: const Color(0xFF4CAF50),
+                                        title: 'Digital Committee',
+                                        subtitle:
+                                            'Manage your committee and member payments',
+                                        onTap: () =>
+                                            _closeDrawerAndNavigate(
+                                          () => CommitteeView(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+
+                                      _buildDrawerOption(
+                                        context: context,
                                         icon: Icons
                                             .person_rounded,
                                         iconColor:
@@ -1165,6 +1221,201 @@ Widget build(BuildContext context) {
   // ============================================================
   // DRAWER OPTION
   // ============================================================
+
+  Widget _buildNavigationDrawer(
+    BuildContext context,
+    bool isDark,
+    SettingsController settingsController,
+  ) {
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.only(
+          top: 12,
+          bottom: 16,
+          right: 12,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Drawer(
+            elevation: 4,
+            backgroundColor: isDark
+                ? const Color(0xFF1E1E1E)
+                : const Color(0xFFF9FAFB),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6, right: 6),
+                    child: IconButton(
+                      onPressed: _closeDrawerInstantly,
+                      icon: Icon(
+                        Icons.close,
+                        size: 28,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+                UserAccountsDrawerHeader(
+                  margin: EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [
+                              const Color(0xFF2E7D32),
+                              const Color(0xFF1B5E20),
+                            ]
+                          : [
+                              const Color(0xFF4CAF50),
+                              const Color(0xFF388E3C),
+                            ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  currentAccountPictureSize: const Size.square(64),
+                  currentAccountPicture: Obx(() {
+                    final imageUrl =
+                        settingsController.profilePictureUrl.value;
+                    final name = settingsController.profileName.value;
+                    final firstLetter =
+                        name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        backgroundImage: imageUrl.isNotEmpty
+                            ? NetworkImage(imageUrl)
+                            : null,
+                        child: imageUrl.isEmpty
+                            ? Text(
+                                firstLetter,
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              )
+                            : null,
+                      ),
+                    );
+                  }),
+                  accountName: Text(
+                    _userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  accountEmail: Text(
+                    Supabase.instance.client.auth.currentUser?.email ?? '',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 16,
+                    ),
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFF2B82FB),
+                        title: 'Wallets',
+                        subtitle: 'Manage your cash, bank and other wallets',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const WalletsView(),
+                          binding: WalletsBinding(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.pie_chart_rounded,
+                        iconColor: const Color(0xFFFF9800),
+                        title: 'Budgets',
+                        subtitle: 'Set and track monthly spending limits',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const BudgetView(),
+                          binding: BudgetBinding(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.stars_rounded,
+                        iconColor: const Color(0xFFE91E63),
+                        title: 'Goals',
+                        subtitle: 'Track your financial targets and savings',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const GoalsView(),
+                          binding: GoalsBinding(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.notifications_active_rounded,
+                        iconColor: const Color(0xFF9C27B0),
+                        title: 'Bills & Reminders',
+                        subtitle: 'Manage upcoming bills and reminders',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const BillsRemindersView(),
+                          binding: BillsRemindersBinding(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.account_balance_rounded,
+                        iconColor: const Color(0xFF4CAF50),
+                        title: 'Digital Committee',
+                        subtitle: 'Manage your committee and member payments',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => CommitteeView(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.person_rounded,
+                        iconColor: const Color(0xFF00BCD4),
+                        title: 'Profile',
+                        subtitle: 'Manage your profile and account settings',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const SettingsView(),
+                          binding: SettingsBinding(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildDrawerOption({
     required BuildContext context,
