@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_database.dart';
@@ -13,7 +16,7 @@ import '../remote/category_remote_repository.dart';
 import '../remote/transaction_remote_repository.dart';
 import '../remote/wallet_remote_repository.dart';
 
-class SyncManager {
+class SyncManager extends GetxController {
   final SupabaseClient supabase;
 
   late final TransactionLocalRepository transactionLocal;
@@ -27,25 +30,136 @@ class SyncManager {
 
   bool _isSyncing = false;
 
+  Timer? _retryTimer;
+
+  // ==========================================================
+  // SYNC STATUS
+  // ==========================================================
+
+  final RxString syncStatus = 'Synced'.obs;
+
+  final RxInt pendingCount = 0.obs;
+
+  final RxString lastError = ''.obs;
+
+  DateTime? _lastSuccessfulSync;
+
+  DateTime? get lastSuccessfulSync => _lastSuccessfulSync;
+
+  bool get isSyncing => _isSyncing;
+
+  bool get hasPendingChanges => pendingCount.value > 0;
+
+  bool get hasSyncError => lastError.value.isNotEmpty;
+
+  // ==========================================================
+  // CONSTRUCTOR
+  // ==========================================================
+
   SyncManager({
     SupabaseClient? supabaseClient,
-  }) : supabase = supabaseClient ?? Supabase.instance.client {
-    final database = DatabaseProvider.instance.database;
+  }) : supabase =
+            supabaseClient ?? Supabase.instance.client {
+    final database =
+        DatabaseProvider.instance.database;
 
-    transactionLocal = TransactionLocalRepository(database);
-    walletLocal = WalletLocalRepository(database);
-    categoryLocal = CategoryLocalRepository(database);
-    syncQueue = SyncQueueRepository(database);
+    transactionLocal =
+        TransactionLocalRepository(database);
 
-    transactionRemote = TransactionRemoteRepository(supabase);
-    walletRemote = WalletRemoteRepository(supabase);
-    categoryRemote = CategoryRemoteRepository(supabase);
+    walletLocal =
+        WalletLocalRepository(database);
+
+    categoryLocal =
+        CategoryLocalRepository(database);
+
+    syncQueue =
+        SyncQueueRepository(database);
+
+    transactionRemote =
+        TransactionRemoteRepository(supabase);
+
+    walletRemote =
+        WalletRemoteRepository(supabase);
+
+    categoryRemote =
+        CategoryRemoteRepository(supabase);
   }
 
-  /// Main synchronization entry point.
-  ///
-  /// 1. Uploads pending local changes.
-  /// 2. Downloads cloud data into local SQLite.
+  // ==========================================================
+  // LIFECYCLE
+  // ==========================================================
+
+  @override
+  void onInit() {
+    super.onInit();
+
+    _startAutomaticRetry();
+  }
+
+  @override
+  void onClose() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+
+    super.onClose();
+  }
+
+  // ==========================================================
+  // AUTOMATIC RETRY
+  // ==========================================================
+
+  void _startAutomaticRetry() {
+    _retryTimer?.cancel();
+
+    _retryTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) async {
+        if (_isSyncing) {
+          return;
+        }
+
+        final user = supabase.auth.currentUser;
+
+        if (user == null) {
+          return;
+        }
+
+        await _refreshPendingCount(user.id);
+
+        // Only retry when there is actually something
+        // waiting to be synchronized.
+        if (pendingCount.value == 0) {
+          return;
+        }
+
+        try {
+          debugPrint(
+            '================================',
+          );
+          debugPrint(
+            'AUTOMATIC SYNC RETRY',
+          );
+          debugPrint(
+            'Pending: ${pendingCount.value}',
+          );
+          debugPrint(
+            '================================',
+          );
+
+          await sync();
+        } catch (e) {
+          debugPrint(
+            'Automatic sync retry failed: $e',
+          );
+        }
+      },
+    );
+  }
+
+  // ==========================================================
+  // MAIN SYNC
+  // ==========================================================
+
   Future<void> sync() async {
     if (_isSyncing) {
       return;
@@ -54,48 +168,247 @@ class SyncManager {
     final user = supabase.auth.currentUser;
 
     if (user == null) {
+      syncStatus.value = 'Not signed in';
+      pendingCount.value = 0;
       return;
     }
 
     _isSyncing = true;
 
+    syncStatus.value = 'Syncing...';
+    lastError.value = '';
+
+    debugPrint(
+      '================================',
+    );
+    debugPrint(
+      'SYNC STARTED',
+    );
+    debugPrint(
+      'User: ${user.id}',
+    );
+    debugPrint(
+      '================================',
+    );
+
     try {
-      // First upload all pending local changes.
+      await _refreshPendingCount(user.id);
+
+      debugPrint(
+        'Pending operations: ${pendingCount.value}',
+      );
+
+      // ------------------------------------------------------
+      // STEP 1
+      // Upload local pending changes first.
+      // ------------------------------------------------------
+
       await _syncPendingOperations(user.id);
 
-      // Then download the latest cloud data.
+      // ------------------------------------------------------
+      // STEP 2
+      // Download cloud changes.
+      // ------------------------------------------------------
+
       await _syncCloudToLocal(user.id);
+
+      // ------------------------------------------------------
+      // STEP 3
+      // Check remaining pending operations.
+      // ------------------------------------------------------
+
+      await _refreshPendingCount(user.id);
+
+      if (pendingCount.value == 0) {
+        syncStatus.value = 'Synced';
+
+        _lastSuccessfulSync = DateTime.now();
+
+        debugPrint(
+          'SYNC SUCCESSFUL',
+        );
+      } else {
+        syncStatus.value = 'Pending';
+
+        debugPrint(
+          'SYNC STILL PENDING: '
+          '${pendingCount.value}',
+        );
+      }
+    } catch (e, stackTrace) {
+      await _refreshPendingCount(user.id);
+
+      syncStatus.value = 'Sync failed';
+
+      lastError.value = e.toString();
+
+      debugPrint(
+        '================================',
+      );
+      debugPrint(
+        'SYNC FAILED',
+      );
+      debugPrint(
+        'ERROR: $e',
+      );
+      debugPrint(
+        'STACK TRACE: $stackTrace',
+      );
+      debugPrint(
+        'PENDING: ${pendingCount.value}',
+      );
+      debugPrint(
+        '================================',
+      );
+
+      rethrow;
     } finally {
       _isSyncing = false;
     }
   }
 
-  /// Upload all pending local operations to Supabase.
+  // ==========================================================
+  // REFRESH PENDING COUNT
+  // ==========================================================
+
+  Future<void> _refreshPendingCount(
+    String userId,
+  ) async {
+    try {
+      final operations =
+          await syncQueue.getPendingOperations(
+        userId,
+      );
+
+      pendingCount.value =
+          operations.length;
+    } catch (e) {
+      debugPrint(
+        'Could not refresh pending count: $e',
+      );
+    }
+  }
+
+  // ==========================================================
+  // PENDING OPERATIONS
+  // ==========================================================
+
   Future<void> _syncPendingOperations(
     String userId,
   ) async {
     final pendingOperations =
-        await syncQueue.getPendingOperations(userId);
+        await syncQueue.getPendingOperations(
+      userId,
+    );
 
-    for (final queueItem in pendingOperations) {
+    pendingCount.value =
+        pendingOperations.length;
+
+    debugPrint(
+      'Processing ${pendingOperations.length} '
+      'pending operation(s)',
+    );
+
+    for (final queueItem
+        in pendingOperations) {
       try {
+        debugPrint(
+          '--------------------------------',
+        );
+        debugPrint(
+          'SYNC QUEUE ITEM',
+        );
+        debugPrint(
+          'ID: ${queueItem.id}',
+        );
+        debugPrint(
+          'Entity: ${queueItem.entityTable}',
+        );
+        debugPrint(
+          'Record: ${queueItem.recordId}',
+        );
+        debugPrint(
+          'Operation: ${queueItem.operation}',
+        );
+
         await _processQueueItem(queueItem);
-      } catch (e) {
-        final nextRetryCount = queueItem.retryCount + 1;
+
+        if (pendingCount.value > 0) {
+          pendingCount.value--;
+        }
+
+        debugPrint(
+          'QUEUE ITEM SYNCED',
+        );
+      } catch (e, stackTrace) {
+        final nextRetryCount =
+            queueItem.retryCount + 1;
+
+        final errorMessage =
+            e.toString();
 
         await syncQueue.updateRetryInfo(
           id: queueItem.id,
           retryCount: nextRetryCount,
-          lastError: e.toString(),
+          lastError: errorMessage,
         );
+
+        // IMPORTANT:
+        // Keep the actual error visible so we can
+        // diagnose Supabase/RLS/payload problems.
+        lastError.value = errorMessage;
+
+        syncStatus.value = 'Sync failed';
+
+        debugPrint(
+          '--------------------------------',
+        );
+        debugPrint(
+          'QUEUE ITEM FAILED',
+        );
+        debugPrint(
+          'Entity: ${queueItem.entityTable}',
+        );
+        debugPrint(
+          'Record: ${queueItem.recordId}',
+        );
+        debugPrint(
+          'Operation: ${queueItem.operation}',
+        );
+        debugPrint(
+          'Retry count: $nextRetryCount',
+        );
+        debugPrint(
+          'ERROR: $errorMessage',
+        );
+        debugPrint(
+          'STACK TRACE: $stackTrace',
+        );
+        debugPrint(
+          '--------------------------------',
+        );
+
+        // Do NOT remove the queue item.
+        // It must remain pending for the next retry.
       }
     }
+
+    await _refreshPendingCount(userId);
   }
+
+  // ==========================================================
+  // PROCESS QUEUE ITEM
+  // ==========================================================
 
   Future<void> _processQueueItem(
     SyncQueueData queueItem,
   ) async {
-    final payload = _decodePayload(queueItem.payload);
+    final payload =
+        _decodePayload(queueItem.payload);
+
+    debugPrint(
+      'Payload: $payload',
+    );
 
     switch (queueItem.entityTable) {
       case 'transactions':
@@ -121,46 +434,69 @@ class SyncManager {
 
       default:
         throw Exception(
-          'Unknown sync entity: ${queueItem.entityTable}',
+          'Unknown sync entity: '
+          '${queueItem.entityTable}',
         );
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ==========================================================
   // TRANSACTION SYNC
-  // ---------------------------------------------------------------------------
+  // ==========================================================
 
   Future<void> _syncTransaction({
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
-    switch (queueItem.operation.toLowerCase()) {
+    switch (
+        queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await transactionRemote.insertTransaction(payload);
+        debugPrint(
+          'Uploading transaction to Supabase...',
+        );
 
-        await syncQueue.remove(queueItem.id);
+        await transactionRemote
+            .insertTransaction(payload);
+
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
+        debugPrint(
+          'Transaction uploaded successfully.',
+        );
+
         break;
 
       case 'update':
-        await transactionRemote.updateTransaction(
+        await transactionRemote
+            .updateTransaction(
           queueItem.recordId,
           payload,
         );
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       case 'delete':
-        await transactionRemote.deleteTransaction(
+        await transactionRemote
+            .deleteTransaction(
           queueItem.recordId,
         );
 
-        await transactionLocal.permanentlyDeleteTransaction(
+        await transactionLocal
+            .permanentlyDeleteTransaction(
           queueItem.recordId,
         );
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       default:
@@ -171,20 +507,25 @@ class SyncManager {
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ==========================================================
   // WALLET SYNC
-  // ---------------------------------------------------------------------------
+  // ==========================================================
 
   Future<void> _syncWallet({
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
-    switch (queueItem.operation.toLowerCase()) {
+    switch (
+        queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await walletRemote.insertWallet(payload);
+        await walletRemote
+            .insertWallet(payload);
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       case 'update':
@@ -193,7 +534,10 @@ class SyncManager {
           payload,
         );
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       case 'delete':
@@ -201,11 +545,15 @@ class SyncManager {
           queueItem.recordId,
         );
 
-        await walletLocal.permanentlyDeleteWallet(
+        await walletLocal
+            .permanentlyDeleteWallet(
           queueItem.recordId,
         );
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       default:
@@ -216,20 +564,25 @@ class SyncManager {
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ==========================================================
   // CATEGORY SYNC
-  // ---------------------------------------------------------------------------
+  // ==========================================================
 
   Future<void> _syncCategory({
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
-    switch (queueItem.operation.toLowerCase()) {
+    switch (
+        queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await categoryRemote.insertCategory(payload);
+        await categoryRemote
+            .insertCategory(payload);
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       case 'update':
@@ -238,7 +591,10 @@ class SyncManager {
           payload,
         );
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       case 'delete':
@@ -246,11 +602,15 @@ class SyncManager {
           queueItem.recordId,
         );
 
-        await categoryLocal.permanentlyDeleteCategory(
+        await categoryLocal
+            .permanentlyDeleteCategory(
           queueItem.recordId,
         );
 
-        await syncQueue.remove(queueItem.id);
+        await syncQueue.remove(
+          queueItem.id,
+        );
+
         break;
 
       default:
@@ -261,38 +621,49 @@ class SyncManager {
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ==========================================================
   // CLOUD → LOCAL
-  // ---------------------------------------------------------------------------
+  // ==========================================================
 
   Future<void> _syncCloudToLocal(
     String userId,
   ) async {
-    await _syncTransactionsFromCloud(userId);
-    await _syncWalletsFromCloud(userId);
-    await _syncCategoriesFromCloud(userId);
+    await _syncTransactionsFromCloud(
+      userId,
+    );
+
+    await _syncWalletsFromCloud(
+      userId,
+    );
+
+    await _syncCategoriesFromCloud(
+      userId,
+    );
   }
 
-  // ---------------------------------------------------------------------------
-  // TRANSACTIONS: CLOUD → LOCAL
-  // ---------------------------------------------------------------------------
+  // ==========================================================
+  // TRANSACTIONS CLOUD → LOCAL
+  // ==========================================================
 
   Future<void> _syncTransactionsFromCloud(
     String userId,
   ) async {
     final transactions =
-        await transactionRemote.getTransactions(userId);
+        await transactionRemote
+            .getTransactions(userId);
 
-    for (final transaction in transactions) {
-      final id = transaction['id']?.toString();
+    for (final transaction
+        in transactions) {
+      final id =
+          transaction['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      // Do not overwrite a local record that still has
-      // a pending local operation.
-      final pending = await syncQueue.getByEntityAndRecord(
+      final pending =
+          await syncQueue
+              .getByEntityAndRecord(
         userId: userId,
         entityTable: 'transactions',
         recordId: id,
@@ -303,48 +674,72 @@ class SyncManager {
       }
 
       final existing =
-          await transactionLocal.getTransactionById(id);
+          await transactionLocal
+              .getTransactionById(id);
+
+      if (existing != null &&
+          existing.isDeleted) {
+        continue;
+      }
 
       final transactionDate =
-          _parseDate(transaction['transaction_date']);
+          _parseDate(
+        transaction['transaction_date'],
+      );
 
       final createdAt =
-          _parseDate(transaction['created_at']);
+          _parseDate(
+        transaction['created_at'],
+      );
 
-      final companion = LocalTransactionsCompanion(
-        id: Value(id),
-        userId: Value(userId),
+      final companion =
+          LocalTransactionsCompanion(
+        id: drift.Value(id),
+        userId: drift.Value(userId),
         walletId: _nullableValue(
           transaction['wallet_id'],
         ),
         categoryId: _nullableValue(
           transaction['category_id'],
         ),
-        title: Value(
-          transaction['title']?.toString() ?? '',
+        title: drift.Value(
+          transaction['title']
+                  ?.toString() ??
+              '',
         ),
-        amount: Value(
-          (transaction['amount'] as num?)?.toDouble() ?? 0.0,
+        amount: drift.Value(
+          (transaction['amount'] as num?)
+                  ?.toDouble() ??
+              0.0,
         ),
-        type: Value(
-          transaction['type']?.toString() ?? 'expense',
+        type: drift.Value(
+          transaction['type']
+                  ?.toString() ??
+              'expense',
         ),
-        transactionDate: Value(transactionDate),
+        transactionDate:
+            drift.Value(transactionDate),
         note: _nullableValue(
           transaction['note'],
         ),
-        createdAt: Value(createdAt),
-        updatedAt: Value(DateTime.now()),
-        version: const Value(1),
-        isDeleted: const Value(false),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await transactionLocal.insertTransaction(
+        await transactionLocal
+            .insertTransaction(
           companion,
         );
       } else {
-        await transactionLocal.updateTransaction(
+        await transactionLocal
+            .updateTransaction(
           id,
           companion,
         );
@@ -352,25 +747,28 @@ class SyncManager {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // WALLETS: CLOUD → LOCAL
-  // ---------------------------------------------------------------------------
+  // ==========================================================
+  // WALLETS CLOUD → LOCAL
+  // ==========================================================
 
   Future<void> _syncWalletsFromCloud(
     String userId,
   ) async {
-    final wallets = await walletRemote.getWallets(userId);
+    final wallets =
+        await walletRemote
+            .getWallets(userId);
 
     for (final wallet in wallets) {
-      final id = wallet['id']?.toString();
+      final id =
+          wallet['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      // Do not overwrite a local record that still has
-      // a pending local operation.
-      final pending = await syncQueue.getByEntityAndRecord(
+      final pending =
+          await syncQueue
+              .getByEntityAndRecord(
         userId: userId,
         entityTable: 'wallets',
         recordId: id,
@@ -381,38 +779,59 @@ class SyncManager {
       }
 
       final existing =
-          await walletLocal.getWalletById(id);
+          await walletLocal
+              .getWalletById(id);
+
+      if (existing != null &&
+          existing.isDeleted) {
+        continue;
+      }
 
       final createdAt =
-          _parseDate(wallet['created_at']);
+          _parseDate(
+        wallet['created_at'],
+      );
 
-      final companion = LocalWalletsCompanion(
-        id: Value(id),
-        userId: Value(userId),
-        name: Value(
-          wallet['name']?.toString() ?? '',
+      final companion =
+          LocalWalletsCompanion(
+        id: drift.Value(id),
+        userId: drift.Value(userId),
+        name: drift.Value(
+          wallet['name']?.toString() ??
+              '',
         ),
-        balance: Value(
-          (wallet['balance'] as num?)?.toDouble() ?? 0.0,
+        balance: drift.Value(
+          (wallet['balance'] as num?)
+                  ?.toDouble() ??
+              0.0,
         ),
-        currency: Value(
-          wallet['currency']?.toString() ?? 'PKR',
+        currency: drift.Value(
+          wallet['currency']
+                  ?.toString() ??
+              'PKR',
         ),
-        type: Value(
-          wallet['type']?.toString() ?? 'Cash',
+        type: drift.Value(
+          wallet['type']?.toString() ??
+              'Cash',
         ),
-        createdAt: Value(createdAt),
-        updatedAt: Value(DateTime.now()),
-        version: const Value(1),
-        isDeleted: const Value(false),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await walletLocal.insertWallet(
+        await walletLocal
+            .insertWallet(
           companion,
         );
       } else {
-        await walletLocal.updateWallet(
+        await walletLocal
+            .updateWallet(
           id,
           companion,
         );
@@ -420,26 +839,29 @@ class SyncManager {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // CATEGORIES: CLOUD → LOCAL
-  // ---------------------------------------------------------------------------
+  // ==========================================================
+  // CATEGORIES CLOUD → LOCAL
+  // ==========================================================
 
   Future<void> _syncCategoriesFromCloud(
     String userId,
   ) async {
     final categories =
-        await categoryRemote.getCategories(userId);
+        await categoryRemote
+            .getCategories(userId);
 
-    for (final category in categories) {
-      final id = category['id']?.toString();
+    for (final category
+        in categories) {
+      final id =
+          category['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      // Do not overwrite a local record that still has
-      // a pending local operation.
-      final pending = await syncQueue.getByEntityAndRecord(
+      final pending =
+          await syncQueue
+              .getByEntityAndRecord(
         userId: userId,
         entityTable: 'categories',
         recordId: id,
@@ -450,19 +872,32 @@ class SyncManager {
       }
 
       final existing =
-          await categoryLocal.getCategoryById(id);
+          await categoryLocal
+              .getCategoryById(id);
+
+      if (existing != null &&
+          existing.isDeleted) {
+        continue;
+      }
 
       final createdAt =
-          _parseDate(category['created_at']);
+          _parseDate(
+        category['created_at'],
+      );
 
-      final companion = LocalCategoriesCompanion(
-        id: Value(id),
-        userId: Value(userId),
-        name: Value(
-          category['name']?.toString() ?? '',
+      final companion =
+          LocalCategoriesCompanion(
+        id: drift.Value(id),
+        userId: drift.Value(userId),
+        name: drift.Value(
+          category['name']
+                  ?.toString() ??
+              '',
         ),
-        type: Value(
-          category['type']?.toString() ?? 'expense',
+        type: drift.Value(
+          category['type']
+                  ?.toString() ??
+              'expense',
         ),
         icon: _nullableValue(
           category['icon'],
@@ -470,18 +905,24 @@ class SyncManager {
         color: _nullableValue(
           category['color'],
         ),
-        createdAt: Value(createdAt),
-        updatedAt: Value(DateTime.now()),
-        version: const Value(1),
-        isDeleted: const Value(false),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await categoryLocal.insertCategory(
+        await categoryLocal
+            .insertCategory(
           companion,
         );
       } else {
-        await categoryLocal.updateCategory(
+        await categoryLocal
+            .updateCategory(
           id,
           companion,
         );
@@ -489,14 +930,15 @@ class SyncManager {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // HELPERS
-  // ---------------------------------------------------------------------------
+  // ==========================================================
+  // PAYLOAD
+  // ==========================================================
 
   Map<String, dynamic> _decodePayload(
     String payload,
   ) {
-    final decoded = jsonDecode(payload);
+    final decoded =
+        jsonDecode(payload);
 
     if (decoded is! Map) {
       throw const FormatException(
@@ -504,8 +946,14 @@ class SyncManager {
       );
     }
 
-    return Map<String, dynamic>.from(decoded);
+    return Map<String, dynamic>.from(
+      decoded,
+    );
   }
+
+  // ==========================================================
+  // DATE
+  // ==========================================================
 
   DateTime _parseDate(
     dynamic value,
@@ -520,21 +968,24 @@ class SyncManager {
         DateTime.now();
   }
 
-  Value<String?> _nullableValue(
+  // ==========================================================
+  // NULLABLE STRING
+  // ==========================================================
+
+  drift.Value<String?> _nullableValue(
     dynamic value,
   ) {
     if (value == null) {
-      return const Value(null);
+      return const drift.Value(null);
     }
 
-    final stringValue = value.toString();
+    final stringValue =
+        value.toString();
 
     if (stringValue.isEmpty) {
-      return const Value(null);
+      return const drift.Value(null);
     }
 
-    return Value(stringValue);
+    return drift.Value(stringValue);
   }
-
-  bool get isSyncing => _isSyncing;
 }

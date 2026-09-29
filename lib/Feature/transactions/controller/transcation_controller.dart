@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:drift/drift.dart';
-import 'package:expense_mate/Core/database/app_database.dart';
-import 'package:expense_mate/Core/database/repository_provider.dart';
-import 'package:expense_mate/Core/database/sync/sync_manager.dart';
+import 'package:expense_mate/Core/Database/app_database.dart';
+import 'package:expense_mate/Core/Database/repository_provider.dart';
+import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

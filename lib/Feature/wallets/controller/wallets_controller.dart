@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:expense_mate/Core/database/repository_provider.dart';
-import 'package:expense_mate/Core/database/sync/sync_manager.dart';
+import 'package:expense_mate/Core/Database/repository_provider.dart';
+import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -19,6 +19,7 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:expense_mate/Feature/home/controller/home_controller.dart';
+import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -114,7 +115,15 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-
+appBar: AppBar(
+  title: const Text('Expense Mate'),
+  actions: const [
+    Padding(
+      padding: EdgeInsets.only(right: 16),
+      child: SyncStatusIndicator(),
+    ),
+  ],
+),
       // =========================
       // DRAWER
       // =========================
