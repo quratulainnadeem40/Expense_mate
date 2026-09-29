@@ -1,67 +1,103 @@
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
-import 'package:expense_mate/Feature/transactions/widgets/transaction_card.dart';
-import 'package:expense_mate/Core/constants/app_keys.dart';
-import 'transaction_details_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoryTransactionsScreen extends StatelessWidget {
+  final String categoryId;
   final String categoryName;
 
   const CategoryTransactionsScreen({
     super.key,
+    required this.categoryId,
     required this.categoryName,
   });
 
+  String _formatAmount(double amount) {
+    final int roundedAmount = amount.round();
+    final String formatted = roundedAmount.toString();
+    final StringBuffer buffer = StringBuffer();
+
+    for (int i = 0; i < formatted.length; i++) {
+      if (i > 0 && (formatted.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+
+      buffer.write(formatted[i]);
+    }
+
+    return 'Rs. ${buffer.toString()}';
+  }
+
+  Future<List<Map<String, dynamic>>> _loadTransactions() async {
+    final user = Supabase.instance.client.auth.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
+    final response = await Supabase.instance.client
+        .from('transactions')
+        .select()
+        .eq('user_id', user.id)
+        .eq('category_id', categoryId)
+        .order('transaction_date', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(categoryName),
         centerTitle: true,
       ),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box(AppKeys.transactionsBox).listenable(),
-        builder: (context, Box box, _) {
-          final data = box.values.toList();
-          
-          double totalAmount = 0.0;
-          bool isIncomeCategory = false;
-          List<TransactionModel> filteredList = [];
-
-          for (var item in data) {
-            if (item is Map && item['category'] == categoryName) {
-              final double amount = (item['amount'] as num?)?.toDouble() ?? 0.0;
-              final bool isIncome = item['type'] == 'Income';
-              isIncomeCategory = isIncome;
-
-              totalAmount += amount;
-
-              filteredList.add(
-                TransactionModel(
-                  id: item['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-                  title: (item['note'] != null && item['note'].toString().isNotEmpty)
-                      ? item['note'].toString()
-                      : (item['category']?.toString() ?? 'General'),
-                  amount: amount,
-                  category: item['category']?.toString() ?? 'General',
-                  date: item['date'] != null ? DateTime.parse(item['date'].toString()) : DateTime.now(),
-                  isIncome: isIncome,
-                ),
-              );
-            }
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _loadTransactions(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
-          final reversedList = filteredList.reversed.toList();
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Unable to load transactions.',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+            );
+          }
+
+          final transactions = snapshot.data ?? [];
+
+          double totalAmount = 0;
+
+          for (final transaction in transactions) {
+            final amount = transaction['amount'];
+
+            if (amount is num) {
+              totalAmount += amount.toDouble();
+            } else {
+              totalAmount +=
+                  double.tryParse(amount?.toString() ?? '') ?? 0;
+            }
+          }
 
           return Column(
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                  horizontal: 16,
+                ),
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
@@ -77,45 +113,125 @@ class CategoryTransactionsScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Total ($categoryName)',
+                      categoryName,
                       style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            isDark ? Colors.white : Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
-                      '${isIncomeCategory ? '+' : '-'}\$${totalAmount.toStringAsFixed(2)}',
+                      'Total Amount',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 13,
+                        color: isDark
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatAmount(totalAmount),
+                      style: const TextStyle(
+                        fontSize: 25,
                         fontWeight: FontWeight.bold,
-                        color: isIncomeCategory ? Colors.green : Colors.red,
+                        color: Colors.green,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      '${reversedList.length} Transactions',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      '${transactions.length} Transactions',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
               ),
+
               Expanded(
-                child: reversedList.isEmpty
+                child: transactions.isEmpty
                     ? const Center(
-                        child: Text('No transactions found in this category.'),
+                        child: Text(
+                          'No transactions found in this category.',
+                        ),
                       )
                     : ListView.builder(
-                        itemCount: reversedList.length,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        itemCount: transactions.length,
                         itemBuilder: (context, index) {
-                          final tx = reversedList[index];
-                          return GestureDetector(
-                            onTap: () {
-                              Get.to(() => TransactionDetailsScreen(transaction: tx));
-                            },
-                            child: TransactionCard(
-                              transaction: tx,
-                              isDark: isDark,
+                          final transaction =
+                              transactions[index];
+
+                          final amountValue =
+                              transaction['amount'];
+
+                          final double amount =
+                              amountValue is num
+                                  ? amountValue.toDouble()
+                                  : double.tryParse(
+                                        amountValue?.toString() ??
+                                            '',
+                                      ) ??
+                                      0;
+
+                          final String title =
+                              transaction['title']
+                                      ?.toString() ??
+                                  categoryName;
+
+                          final String type =
+                              transaction['type']
+                                      ?.toString() ??
+                                  'expense';
+
+                          return Container(
+                            margin: const EdgeInsets.only(
+                              bottom: 10,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 15,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF0A0A0A)
+                                  : Theme.of(context).cardColor,
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  type == 'income'
+                                      ? Icons.arrow_downward
+                                      : Icons.arrow_upward,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight:
+                                          FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  _formatAmount(amount),
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         },
@@ -128,3 +244,5 @@ class CategoryTransactionsScreen extends StatelessWidget {
     );
   }
 }
+
+

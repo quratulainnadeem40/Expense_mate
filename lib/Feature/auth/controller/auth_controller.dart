@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,10 +16,7 @@ class AuthController extends GetxController {
 
   User? get currentUser => _supabase.auth.currentUser;
 
-  // ============================================================
-  // SIGN UP
-  // ============================================================
-
+  
   Future<void> signUp() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
@@ -55,15 +53,15 @@ class AuthController extends GetxController {
         },
       );
 
-     if (response.user != null) {
-  Get.snackbar(
-    'Success',
-    'Account created successfully',
-    snackPosition: SnackPosition.BOTTOM,
-  );
+      if (response.user != null) {
+        Get.snackbar(
+          'Success',
+          'Account created successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
 
-  Get.offAllNamed(AppRoutes.home);
-}
+        Get.offAllNamed(AppRoutes.home);
+      }
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
@@ -73,10 +71,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // ============================================================
-  // LOGIN
-  // ============================================================
-
+ 
   Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -106,7 +101,7 @@ class AuthController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
 
-      Get.offAllNamed(AppRoutes.home);
+        Get.offAllNamed(AppRoutes.home);
       }
     } on AuthException catch (e) {
       _showError(e.message);
@@ -116,10 +111,6 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
-
-  // ============================================================
-  // LOGOUT
-  // ============================================================
 
   Future<void> logout() async {
     try {
@@ -133,10 +124,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // ============================================================
-  // FORGOT PASSWORD
-  // ============================================================
-
+  
   Future<void> resetPassword(String email) async {
     final trimmedEmail = email.trim();
 
@@ -166,23 +154,18 @@ class AuthController extends GetxController {
     }
   }
 
-  // ============================================================
-  // PASSWORD VISIBILITY
-  // ============================================================
 
   void togglePasswordVisibility() {
     obscurePassword.value = !obscurePassword.value;
   }
-
-  // ============================================================
-  // ERROR MESSAGE
-  // ============================================================
 
   void _showError(String message) {
     Get.snackbar(
       'Error',
       message,
       snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
     );
   }
 
