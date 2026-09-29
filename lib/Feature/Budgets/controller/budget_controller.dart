@@ -10,6 +10,15 @@ import '../../wallets/controller/wallets_controller.dart';
 import '../model/budget_model.dart';
 
 class BudgetController extends GetxController {
+  static const String _budgetMonthStartDayKey = 'budget_month_start_day';
+  static const String _budgetResetModeKey = 'budget_reset_is_automatic';
+  static const String _budgetLastResetKey = 'budget_last_reset_date';
+  static const String _budgetNextResetKey = 'budget_next_reset_date';
+  static const String _budgetReminderOnKey = 'budget_reset_reminder_on';
+  static const String _budgetReminderDaysKey = 'budget_reset_reminder_days';
+  static const String _budgetCycleConfiguredKey = 'budget_cycle_configured';
+  static const String _budgetHistoryKey = 'budget_cycle_history';
+
   late CategoriesController categoriesController;
   late TransactionsController transactionsController;
 
@@ -374,10 +383,10 @@ class BudgetController extends GetxController {
 
     _budgetBox.put(AppKeys.categoryBudgetKey, serializableLimits);
 
-    _budgetBox.put(AppKeys.budgetMonthStartDayKey, monthStartDay.value);
-    _budgetBox.put(AppKeys.budgetResetModeKey, isAutomaticReset.value);
+    _budgetBox.put(_budgetMonthStartDayKey, monthStartDay.value);
+    _budgetBox.put(_budgetResetModeKey, isAutomaticReset.value);
     _budgetBox.put(
-      AppKeys.budgetLastResetKey,
+      _budgetLastResetKey,
       lastResetDate.value?.toIso8601String(),
     );
 
@@ -385,14 +394,14 @@ class BudgetController extends GetxController {
     // never trusts this copy for its own logic - nextResetDate is always
     // recalculated, so a stale value can never send the cycle wrong.
     _budgetBox.put(
-      AppKeys.budgetNextResetKey,
+      _budgetNextResetKey,
       nextResetDate.toIso8601String(),
     );
 
-    _budgetBox.put(AppKeys.budgetReminderOnKey, resetReminderOn.value);
-    _budgetBox.put(AppKeys.budgetReminderDaysKey, reminderDaysBefore.value);
+    _budgetBox.put(_budgetReminderOnKey, resetReminderOn.value);
+    _budgetBox.put(_budgetReminderDaysKey, reminderDaysBefore.value);
     _budgetBox.put(
-      AppKeys.budgetCycleConfiguredKey,
+      _budgetCycleConfiguredKey,
       isCycleConfigured.value,
     );
   }
@@ -413,7 +422,7 @@ class BudgetController extends GetxController {
       }
     }
 
-    final storedDay = _budgetBox.get(AppKeys.budgetMonthStartDayKey);
+    final storedDay = _budgetBox.get(_budgetMonthStartDayKey);
     if (storedDay is int && storedDay >= 1 && storedDay <= 31) {
       monthStartDay.value = storedDay;
     }
@@ -421,14 +430,14 @@ class BudgetController extends GetxController {
     // Its own key, because savePersistedState() also runs when a category
     // limit changes - that must not count as configuring the cycle.
     isCycleConfigured.value =
-        _budgetBox.get(AppKeys.budgetCycleConfiguredKey) == true;
+        _budgetBox.get(_budgetCycleConfiguredKey) == true;
 
-    final storedMode = _budgetBox.get(AppKeys.budgetResetModeKey);
+    final storedMode = _budgetBox.get(_budgetResetModeKey);
     if (storedMode is bool) {
       isAutomaticReset.value = storedMode;
     }
 
-    final storedReset = _budgetBox.get(AppKeys.budgetLastResetKey);
+    final storedReset = _budgetBox.get(_budgetLastResetKey);
     if (storedReset is String) {
       lastResetDate.value = DateTime.tryParse(storedReset);
     }
@@ -436,19 +445,19 @@ class BudgetController extends GetxController {
     // budgetNextResetKey is deliberately not read back. It is a record,
     // not a source of truth.
 
-    final storedReminderOn = _budgetBox.get(AppKeys.budgetReminderOnKey);
+    final storedReminderOn = _budgetBox.get(_budgetReminderOnKey);
     if (storedReminderOn is bool) {
       resetReminderOn.value = storedReminderOn;
     }
 
-    final storedReminderDays = _budgetBox.get(AppKeys.budgetReminderDaysKey);
+    final storedReminderDays = _budgetBox.get(_budgetReminderDaysKey);
     if (storedReminderDays is int &&
         storedReminderDays >= 1 &&
         storedReminderDays <= 3) {
       reminderDaysBefore.value = storedReminderDays;
     }
 
-    final storedHistory = _budgetBox.get(AppKeys.budgetHistoryKey);
+    final storedHistory = _budgetBox.get(_budgetHistoryKey);
     if (storedHistory is List) {
       try {
         cycleHistory.assignAll(
@@ -466,7 +475,7 @@ class BudgetController extends GetxController {
 
   void _saveHistory() {
     _budgetBox.put(
-      AppKeys.budgetHistoryKey,
+      _budgetHistoryKey,
       cycleHistory.map((c) => c.toMap()).toList(),
     );
   }
