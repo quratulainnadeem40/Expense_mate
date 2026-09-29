@@ -33,8 +33,7 @@ class HomeScreen extends StatelessWidget {
       final nameFromMetaData =
           user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null &&
-          nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
@@ -60,7 +59,7 @@ class HomeScreen extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
     final month = months[date.month - 1];
@@ -69,7 +68,11 @@ class HomeScreen extends StatelessWidget {
     return "$month $day, ${date.year}";
   }
 
-  String _getCategoryName(String categoryId) {
+  String _getCategoryName(String categoryId, {String customCategory = ''}) {
+    if (customCategory.trim().isNotEmpty) {
+      return customCategory;
+    }
+
     if (!Get.isRegistered<CategoriesController>()) {
       return categoryId;
     }
@@ -83,10 +86,7 @@ class HomeScreen extends StatelessWidget {
     return category?.name ?? categoryId;
   }
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
       _scaffoldKey.currentState?.closeEndDrawer();
     }
@@ -103,8 +103,7 @@ class HomeScreen extends StatelessWidget {
     final transactionsController =
         Get.find<HomeController>().transactionsController;
 
-    final settingsController =
-        Get.find<SettingsController>();
+    final settingsController = Get.find<SettingsController>();
 
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -118,11 +117,7 @@ class HomeScreen extends StatelessWidget {
       // =========================
       endDrawer: SafeArea(
         child: Container(
-          margin: const EdgeInsets.only(
-            top: 12,
-            bottom: 16,
-            right: 12,
-          ),
+          margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
             child: Drawer(
@@ -138,10 +133,7 @@ class HomeScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
-                      padding: const EdgeInsets.only(
-                        top: 6,
-                        right: 6,
-                      ),
+                      padding: const EdgeInsets.only(top: 6, right: 6),
                       child: IconButton(
                         onPressed: () {
                           _scaffoldKey.currentState?.closeEndDrawer();
@@ -149,9 +141,7 @@ class HomeScreen extends StatelessWidget {
                         icon: Icon(
                           Icons.close,
                           size: 28,
-                          color: isDarkMode
-                              ? Colors.white
-                              : Colors.black87,
+                          color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
                     ),
@@ -165,10 +155,7 @@ class HomeScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isDarkMode
-                            ? [
-                                const Color(0xFF2E7D32),
-                                const Color(0xFF1B5E20),
-                              ]
+                            ? [const Color(0xFF2E7D32), const Color(0xFF1B5E20)]
                             : [
                                 const Color(0xFF4CAF50),
                                 const Color(0xFF388E3C),
@@ -177,15 +164,13 @@ class HomeScreen extends StatelessWidget {
                         end: Alignment.bottomRight,
                       ),
                     ),
-                    currentAccountPictureSize:
-                        const Size.square(64),
+                    currentAccountPictureSize: const Size.square(64),
 
                     currentAccountPicture: Obx(() {
                       final imageUrl =
                           settingsController.profilePictureUrl.value;
 
-                      final name =
-                          settingsController.profileName.value;
+                      final name = settingsController.profileName.value;
 
                       final firstLetter = name.isNotEmpty
                           ? name[0].toUpperCase()
@@ -194,10 +179,7 @@ class HomeScreen extends StatelessWidget {
                       return Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
-                          ),
+                          border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.15),
@@ -261,8 +243,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF2B82FB),
                           title: 'Wallets',
-                          subtitle:
-                              'Manage your cash, bank and other wallets',
+                          subtitle: 'Manage your cash, bank and other wallets',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const WalletsView(),
                             binding: WalletsBinding(),
@@ -279,8 +260,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.pie_chart_rounded,
                           iconColor: const Color(0xFFFF9800),
                           title: 'Budgets',
-                          subtitle:
-                              'Set and track monthly spending limits',
+                          subtitle: 'Set and track monthly spending limits',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const BudgetView(),
                             binding: BudgetBinding(),
@@ -297,8 +277,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.stars_rounded,
                           iconColor: const Color(0xFFE91E63),
                           title: 'Goals',
-                          subtitle:
-                              'Track your financial targets and savings',
+                          subtitle: 'Track your financial targets and savings',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const GoalsView(),
                             binding: GoalsBinding(),
@@ -315,8 +294,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.notifications_active_rounded,
                           iconColor: const Color(0xFF9C27B0),
                           title: 'Bills & Reminders',
-                          subtitle:
-                              'Manage upcoming bills and reminders',
+                          subtitle: 'Manage upcoming bills and reminders',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const BillsRemindersView(),
                             binding: BillsRemindersBinding(),
@@ -333,11 +311,9 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.account_balance_rounded,
                           iconColor: const Color(0xFF4CAF50),
                           title: 'Digital Committee',
-                          subtitle:
-                              'Manage your committee and member payments',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => CommitteeView(),
-                          ),
+                          subtitle: 'Manage your committee and member payments',
+                          onTap: () =>
+                              _closeDrawerAndNavigate(() => CommitteeView()),
                         ),
 
                         const SizedBox(height: 12),
@@ -350,8 +326,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.person_rounded,
                           iconColor: const Color(0xFF00BCD4),
                           title: 'Profile',
-                          subtitle:
-                              'Manage your profile and account settings',
+                          subtitle: 'Manage your profile and account settings',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const SettingsView(),
                           ),
@@ -379,12 +354,10 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Hello, $_userName 👋',
@@ -393,9 +366,7 @@ class HomeScreen extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               color:
                                   theme.textTheme.titleLarge?.color ??
-                                      (isDarkMode
-                                          ? Colors.white
-                                          : Colors.black87),
+                                  (isDarkMode ? Colors.white : Colors.black87),
                             ),
                           ),
 
@@ -418,13 +389,10 @@ class HomeScreen extends StatelessWidget {
                         icon: Icon(
                           Icons.menu_rounded,
                           size: 28,
-                          color: isDarkMode
-                              ? Colors.white
-                              : Colors.black87,
+                          color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                         onPressed: () {
-                          _scaffoldKey.currentState
-                              ?.openEndDrawer();
+                          _scaffoldKey.currentState?.openEndDrawer();
                         },
                       ),
                     ],
@@ -434,20 +402,16 @@ class HomeScreen extends StatelessWidget {
 
                   Obx(
                     () => BalanceCard(
-                      totalBalance:
-                          reportController.totalBalance,
-                      totalIncome:
-                          reportController.totalIncome,
-                      totalExpense:
-                          reportController.totalExpense,
+                      totalBalance: reportController.totalBalance,
+                      totalIncome: reportController.totalIncome,
+                      totalExpense: reportController.totalExpense,
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Recent Transactions',
@@ -456,31 +420,25 @@ class HomeScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color:
                               theme.textTheme.titleMedium?.color ??
-                                  (isDarkMode
-                                      ? Colors.white
-                                      : Colors.black87),
+                              (isDarkMode ? Colors.white : Colors.black87),
                         ),
                       ),
 
                       SizedBox(
                         height: 38,
                         child: TextButton(
-                          onPressed: () => Get.to(
-                            () => TransactionsView(),
-                          ),
+                          onPressed: () => Get.to(() => TransactionsView()),
                           style: TextButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFF4CAF50)
-                                    .withOpacity(0.12),
-                            foregroundColor:
-                                const Color(0xFF2E7D32),
+                            backgroundColor: const Color(
+                              0xFF4CAF50,
+                            ).withOpacity(0.12),
+                            foregroundColor: const Color(0xFF2E7D32),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 8,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: const Text(
@@ -498,16 +456,12 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   Obx(() {
-                    final list =
-                        transactionsController.transactions;
+                    final list = transactionsController.transactions;
 
                     if (list.isEmpty) {
                       return Container(
                         width: double.infinity,
-                        padding:
-                            const EdgeInsets.symmetric(
-                          vertical: 40.0,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 40.0),
                         alignment: Alignment.center,
                         child: Column(
                           children: [
@@ -535,51 +489,38 @@ class HomeScreen extends StatelessWidget {
                       );
                     }
 
-                    final recentItems =
-                        list.take(5).toList();
+                    final recentItems = list.take(5).toList();
 
                     return ListView.builder(
                       shrinkWrap: true,
-                      physics:
-                          const NeverScrollableScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: recentItems.length,
                       itemBuilder: (context, index) {
-                        final TransactionModel transaction =
-                            recentItems[index];
+                        final TransactionModel transaction = recentItems[index];
 
-                        final bool isIncome =
-                            transaction.isIncome;
+                        final bool isIncome = transaction.isIncome;
 
-                        final String categoryName =
-                            _getCategoryName(
+                        final String categoryName = _getCategoryName(
                           transaction.categoryId,
+                          customCategory: transaction.customCategoryName,
                         );
 
                         final String displayTitle =
                             transaction.title.trim().isEmpty
-                                ? categoryName
-                                : transaction.title;
+                            ? categoryName
+                            : transaction.title;
 
                         return Card(
                           elevation: 0,
                           color: theme.cardColor,
-                          margin:
-                              const EdgeInsets.symmetric(
-                            vertical: 6.0,
-                          ),
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(16),
+                          margin: const EdgeInsets.symmetric(vertical: 6.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(
-                              vertical: 6.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
                             child: ListTile(
-                              contentPadding:
-                                  const EdgeInsets.symmetric(
+                              contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 2,
                               ),
@@ -588,26 +529,18 @@ class HomeScreen extends StatelessWidget {
                                 radius: 22,
                                 backgroundColor: isIncome
                                     ? (isDarkMode
-                                        ? const Color(
-                                            0xFF1E382B)
-                                        : const Color(
-                                            0xFFEBF9EE))
+                                          ? const Color(0xFF1E382B)
+                                          : const Color(0xFFEBF9EE))
                                     : (isDarkMode
-                                        ? const Color(
-                                            0xFF3B1E1E)
-                                        : const Color(
-                                            0xFFFDEEEE)),
+                                          ? const Color(0xFF3B1E1E)
+                                          : const Color(0xFFFDEEEE)),
                                 child: Icon(
                                   isIncome
-                                      ? Icons
-                                          .arrow_downward_rounded
-                                      : Icons
-                                          .arrow_upward_rounded,
+                                      ? Icons.arrow_downward_rounded
+                                      : Icons.arrow_upward_rounded,
                                   color: isIncome
-                                      ? const Color(
-                                          0xFF4CAF50)
-                                      : const Color(
-                                          0xFFEB5757),
+                                      ? const Color(0xFF4CAF50)
+                                      : const Color(0xFFEB5757),
                                   size: 20,
                                 ),
                               ),
@@ -615,11 +548,9 @@ class HomeScreen extends StatelessWidget {
                               title: Text(
                                 displayTitle,
                                 maxLines: 1,
-                                overflow:
-                                    TextOverflow.ellipsis,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontWeight:
-                                      FontWeight.bold,
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   color: isDarkMode
                                       ? Colors.white
@@ -628,15 +559,11 @@ class HomeScreen extends StatelessWidget {
                               ),
 
                               subtitle: Padding(
-                                padding:
-                                    const EdgeInsets.only(
-                                  top: 4.0,
-                                ),
+                                padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
                                   "$categoryName • ${_getFormattedDate(transaction.date)}",
                                   maxLines: 1,
-                                  overflow:
-                                      TextOverflow.ellipsis,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: isDarkMode
                                         ? Colors.grey.shade400
@@ -650,12 +577,9 @@ class HomeScreen extends StatelessWidget {
                                 "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
                                 style: TextStyle(
                                   color: isIncome
-                                      ? const Color(
-                                          0xFF4CAF50)
-                                      : const Color(
-                                          0xFFEB5757),
-                                  fontWeight:
-                                      FontWeight.bold,
+                                      ? const Color(0xFF4CAF50)
+                                      : const Color(0xFFEB5757),
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                 ),
                               ),
@@ -686,20 +610,15 @@ class HomeScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    final isDarkMode =
-        theme.brightness == Brightness.dark;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? const Color(0xFF2A2A2A)
-            : Colors.white,
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              isDarkMode ? 0.2 : 0.04,
-            ),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -709,49 +628,35 @@ class HomeScreen extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius:
-              BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color:
-                        iconColor.withOpacity(0.12),
-                    borderRadius:
-                        BorderRadius.circular(12),
+                    color: iconColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
 
                 const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight:
-                              FontWeight.w700,
+                          fontWeight: FontWeight.w700,
                           color: isDarkMode
                               ? Colors.white
-                              : const Color(
-                                  0xFF212121),
+                              : const Color(0xFF212121),
                         ),
                       ),
 
@@ -760,14 +665,12 @@ class HomeScreen extends StatelessWidget {
                       Text(
                         subtitle,
                         maxLines: 1,
-                        overflow:
-                            TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           color: isDarkMode
                               ? Colors.grey.shade400
-                              : const Color(
-                                  0xFF757575),
+                              : const Color(0xFF757575),
                         ),
                       ),
                     ],

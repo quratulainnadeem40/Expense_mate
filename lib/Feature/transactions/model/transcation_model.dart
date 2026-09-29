@@ -3,6 +3,7 @@ class TransactionModel {
   final String userId;
   final String walletId;
   final String categoryId;
+  final String? customCategory;
   final String title;
   final double amount;
   final String type;
@@ -15,6 +16,7 @@ class TransactionModel {
     this.userId = '',
     this.walletId = '',
     this.categoryId = '',
+    this.customCategory,
     required this.title,
     required this.amount,
     this.type = 'expense',
@@ -24,14 +26,15 @@ class TransactionModel {
     String? category,
     DateTime? date,
     bool? isIncome,
-  })  : transactionDate =
-            transactionDate ?? date ?? DateTime.now(),
-        note = note ?? title,
-        createdAt =
-            createdAt ?? transactionDate ?? date ?? DateTime.now();
+  }) : transactionDate = transactionDate ?? date ?? DateTime.now(),
+       note = note ?? title,
+       createdAt = createdAt ?? transactionDate ?? date ?? DateTime.now();
 
   // Backward-compatible getters
-  String get category => categoryId;
+    String get customCategoryName => customCategory ?? '';
+
+    String get category =>
+      customCategoryName.isNotEmpty ? customCategoryName : categoryId;
 
   DateTime get date => transactionDate;
 
@@ -44,25 +47,27 @@ class TransactionModel {
       id: map['id']?.toString() ?? '',
       userId: map['user_id']?.toString() ?? '',
       walletId: map['wallet_id']?.toString() ?? '',
-      categoryId: map['category_id']?.toString() ??
-          map['category']?.toString() ??
+      categoryId:
+          map['category_id']?.toString() ?? map['category']?.toString() ?? '',
+      customCategory:
+          map['custom_category']?.toString() ??
+          map['customCategory']?.toString() ??
           '',
-      title: map['title']?.toString() ??
-          map['note']?.toString() ??
-          '',
+      title: map['title']?.toString() ?? map['note']?.toString() ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
-      type: map['type']?.toString().toLowerCase() ??
+      type:
+          map['type']?.toString().toLowerCase() ??
           (map['isIncome'] == true ? 'income' : 'expense'),
-      transactionDate: DateTime.tryParse(
+      transactionDate:
+          DateTime.tryParse(
             map['transaction_date']?.toString() ??
                 map['date']?.toString() ??
                 '',
           ) ??
           DateTime.now(),
       note: map['note']?.toString(),
-      createdAt: DateTime.tryParse(
-            map['created_at']?.toString() ?? '',
-          ) ??
+      createdAt:
+          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
           DateTime.now(),
     );
   }
@@ -73,6 +78,7 @@ class TransactionModel {
       'user_id': userId,
       'wallet_id': walletId,
       'category_id': categoryId,
+      'custom_category': customCategoryName,
       'title': title,
       'amount': amount,
       'type': type,
@@ -88,6 +94,7 @@ class TransactionModel {
       'title': title,
       'amount': amount,
       'category': category,
+      'customCategory': customCategoryName,
       'date': date.toIso8601String(),
       'isIncome': isIncome,
     };
@@ -99,9 +106,8 @@ class TransactionModel {
       title: json['title']?.toString() ?? '',
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       category: json['category']?.toString(),
-      date: DateTime.tryParse(
-        json['date']?.toString() ?? '',
-      ),
+      customCategory: json['customCategory']?.toString() ?? '',
+      date: DateTime.tryParse(json['date']?.toString() ?? ''),
       isIncome: json['isIncome'] == true,
     );
   }
@@ -111,6 +117,7 @@ class TransactionModel {
     String? userId,
     String? walletId,
     String? categoryId,
+    String? customCategory,
     String? title,
     double? amount,
     String? type,
@@ -123,6 +130,7 @@ class TransactionModel {
       userId: userId ?? this.userId,
       walletId: walletId ?? this.walletId,
       categoryId: categoryId ?? this.categoryId,
+      customCategory: customCategory ?? this.customCategory,
       title: title ?? this.title,
       amount: amount ?? this.amount,
       type: type ?? this.type,

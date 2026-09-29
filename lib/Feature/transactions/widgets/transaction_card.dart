@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
@@ -35,19 +34,14 @@ class TransactionCard extends StatelessWidget {
           'Are you sure you want to delete this transaction?',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
 
-              final controller =
-                  Get.find<TransactionsController>();
+              final controller = Get.find<TransactionsController>();
 
-              final success =
-                  await controller.deleteTransaction(
+              final success = await controller.deleteTransaction(
                 transaction.id,
               );
 
@@ -59,10 +53,7 @@ class TransactionCard extends StatelessWidget {
                 );
               }
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -70,15 +61,17 @@ class TransactionCard extends StatelessWidget {
   }
 
   String _getCategoryName() {
+    if (transaction.customCategoryName.trim().isNotEmpty) {
+      return transaction.customCategoryName;
+    }
+
     if (!Get.isRegistered<CategoriesController>()) {
       return transaction.categoryId;
     }
 
-    final categoriesController =
-        Get.find<CategoriesController>();
+    final categoriesController = Get.find<CategoriesController>();
 
-    final category =
-        categoriesController.categoryList.firstWhereOrNull(
+    final category = categoriesController.categoryList.firstWhereOrNull(
       (category) => category.id == transaction.categoryId,
     );
 
@@ -90,10 +83,7 @@ class TransactionCard extends StatelessWidget {
     return GestureDetector(
       onTap: _editTransaction,
       child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 6,
-        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
@@ -113,9 +103,7 @@ class TransactionCard extends StatelessWidget {
                       transaction.isIncome
                           ? Icons.arrow_downward
                           : Icons.arrow_upward,
-                      color: transaction.isIncome
-                          ? Colors.green
-                          : Colors.red,
+                      color: transaction.isIncome ? Colors.green : Colors.red,
                     ),
                   ),
 
@@ -123,8 +111,7 @@ class TransactionCard extends StatelessWidget {
 
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           transaction.title,
@@ -154,9 +141,7 @@ class TransactionCard extends StatelessWidget {
                 Text(
                   '${transaction.isIncome ? '+' : '-'}${Formatters.formatCurrency(transaction.amount)}',
                   style: TextStyle(
-                    color: transaction.isIncome
-                        ? Colors.green
-                        : Colors.red,
+                    color: transaction.isIncome ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
@@ -168,8 +153,7 @@ class TransactionCard extends StatelessWidget {
                   icon: Icon(
                     Icons.more_vert,
                     size: 20,
-                    color:
-                        Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   padding: EdgeInsets.zero,
                   onSelected: (value) {
@@ -184,10 +168,7 @@ class TransactionCard extends StatelessWidget {
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            size: 20,
-                          ),
+                          Icon(Icons.edit_outlined, size: 20),
                           SizedBox(width: 10),
                           Text('Edit'),
                         ],
@@ -203,12 +184,7 @@ class TransactionCard extends StatelessWidget {
                             color: Colors.red,
                           ),
                           SizedBox(width: 10),
-                          Text(
-                            'Delete',
-                            style: TextStyle(
-                              color: Colors.red,
-                            ),
-                          ),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),
@@ -222,4 +198,3 @@ class TransactionCard extends StatelessWidget {
     );
   }
 }
-

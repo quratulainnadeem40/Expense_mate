@@ -50,13 +50,12 @@ class TransactionsController extends GetxController {
           id: item['id'].toString(),
           userId: item['user_id'].toString(),
           walletId: item['wallet_id'].toString(),
-          categoryId: item['category_id'].toString(),
+          categoryId: item['category_id']?.toString() ?? '',
+          customCategory: item['custom_category']?.toString() ?? '',
           title: item['title']?.toString() ?? '',
           amount: (item['amount'] as num).toDouble(),
           type: item['type'].toString(),
-          transactionDate: DateTime.parse(
-            item['transaction_date'].toString(),
-          ),
+          transactionDate: DateTime.parse(item['transaction_date'].toString()),
           note: item['note']?.toString(),
         );
       }).toList();
@@ -93,12 +92,16 @@ class TransactionsController extends GetxController {
           .insert({
             'user_id': user.id,
             'wallet_id': transaction.walletId,
-            'category_id': transaction.categoryId,
+            'category_id': transaction.categoryId.isEmpty
+                ? null
+                : transaction.categoryId,
+            'custom_category': transaction.customCategoryName.trim().isEmpty
+                ? null
+              : transaction.customCategoryName.trim(),
             'title': transaction.title,
             'amount': transaction.amount,
             'type': transaction.type,
-            'transaction_date':
-                transaction.transactionDate.toIso8601String(),
+            'transaction_date': transaction.transactionDate.toIso8601String(),
             'note': transaction.note,
           })
           .select()
@@ -108,12 +111,14 @@ class TransactionsController extends GetxController {
         id: response['id'].toString(),
         userId: response['user_id'].toString(),
         walletId: response['wallet_id'].toString(),
-        categoryId: response['category_id'].toString(),
+        categoryId: response['category_id']?.toString() ?? '',
+        customCategory: response['custom_category']?.toString() ?? '',
         title: response['title']?.toString() ?? '',
         amount: (response['amount'] as num).toDouble(),
         type: response['type'].toString(),
-        transactionDate:
-            DateTime.parse(response['transaction_date'].toString()),
+        transactionDate: DateTime.parse(
+          response['transaction_date'].toString(),
+        ),
         note: response['note']?.toString(),
       );
 
@@ -152,12 +157,16 @@ class TransactionsController extends GetxController {
           .from('transactions')
           .update({
             'wallet_id': transaction.walletId,
-            'category_id': transaction.categoryId,
+            'category_id': transaction.categoryId.isEmpty
+                ? null
+                : transaction.categoryId,
+            'custom_category': transaction.customCategoryName.trim().isEmpty
+                ? null
+              : transaction.customCategoryName.trim(),
             'title': transaction.title,
             'amount': transaction.amount,
             'type': transaction.type,
-            'transaction_date':
-                transaction.transactionDate.toIso8601String(),
+            'transaction_date': transaction.transactionDate.toIso8601String(),
             'note': transaction.note,
           })
           .eq('id', transaction.id)
@@ -169,12 +178,14 @@ class TransactionsController extends GetxController {
         id: response['id'].toString(),
         userId: response['user_id'].toString(),
         walletId: response['wallet_id'].toString(),
-        categoryId: response['category_id'].toString(),
+        categoryId: response['category_id']?.toString() ?? '',
+        customCategory: response['custom_category']?.toString() ?? '',
         title: response['title']?.toString() ?? '',
         amount: (response['amount'] as num).toDouble(),
         type: response['type'].toString(),
-        transactionDate:
-            DateTime.parse(response['transaction_date'].toString()),
+        transactionDate: DateTime.parse(
+          response['transaction_date'].toString(),
+        ),
         note: response['note']?.toString(),
       );
 
@@ -264,19 +275,15 @@ class TransactionsController extends GetxController {
   // ERROR
   // ============================================================
 
- void _showError(String message) {
-  if (Get.context == null) {
-    return;
-  }
+  void _showError(String message) {
+    if (Get.context == null) {
+      return;
+    }
 
-  try {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } catch (_) {
-    // The widget tree may already be disposed.
+    try {
+      Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+    } catch (_) {
+      // The widget tree may already be disposed.
+    }
   }
-}
 }

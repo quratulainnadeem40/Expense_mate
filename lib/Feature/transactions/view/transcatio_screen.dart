@@ -32,20 +32,28 @@ class _TransactionsViewState extends State<TransactionsView>
     with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
   final RxString searchQuery = ''.obs;
-  final RxBool isSearching = false.obs;
+  late final RxBool isSearchFocused = false.obs;
   final TextEditingController _searchController = TextEditingController();
+  late final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _searchFocusNode.addListener(_handleSearchFocusChange);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _searchFocusNode.removeListener(_handleSearchFocusChange);
+    _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _handleSearchFocusChange() {
+    isSearchFocused.value = _searchFocusNode.hasFocus;
   }
 
   @override
@@ -62,8 +70,7 @@ class _TransactionsViewState extends State<TransactionsView>
       final nameFromMetaData =
           user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null &&
-          nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
@@ -76,7 +83,11 @@ class _TransactionsViewState extends State<TransactionsView>
     return 'User';
   }
 
-  String _getCategoryName(String categoryId) {
+  String _getCategoryName(String categoryId, {String customCategory = ''}) {
+    if (customCategory.trim().isNotEmpty) {
+      return customCategory;
+    }
+
     if (!Get.isRegistered<CategoriesController>()) {
       return categoryId;
     }
@@ -103,7 +114,7 @@ class _TransactionsViewState extends State<TransactionsView>
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
     return "${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}";
@@ -113,7 +124,7 @@ class _TransactionsViewState extends State<TransactionsView>
   /// normally nothing on the navigator to pop. Go back to the Home tab
   /// instead, and only pop when this screen really was pushed.
   void _handleBack() {
-    if (isSearching.value) {
+    if (searchQuery.value.isNotEmpty) {
       _closeSearch();
       return;
     }
@@ -129,16 +140,12 @@ class _TransactionsViewState extends State<TransactionsView>
   }
 
   void _closeSearch() {
-    isSearching.value = false;
     searchQuery.value = '';
     _searchController.clear();
     FocusScope.of(context).unfocus();
   }
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     Get.back();
 
     Future.delayed(const Duration(milliseconds: 150), () {
@@ -155,7 +162,7 @@ class _TransactionsViewState extends State<TransactionsView>
 
     return WillPopScope(
       onWillPop: () async {
-        if (isSearching.value) {
+        if (searchQuery.value.isNotEmpty) {
           _closeSearch();
           return false;
         }
@@ -201,8 +208,7 @@ class _TransactionsViewState extends State<TransactionsView>
                   size: 28,
                   color: isDarkMode ? Colors.white : Colors.black87,
                 ),
-                onPressed: () =>
-                    Scaffold.of(scaffoldContext).openEndDrawer(),
+                onPressed: () => Scaffold.of(scaffoldContext).openEndDrawer(),
               ),
             ),
           ],
@@ -219,20 +225,19 @@ class _TransactionsViewState extends State<TransactionsView>
 
                   double totalIncome = list
                       .where((tx) => tx.isIncome == true)
-                      .fold(
-                        0.0,
-                        (sum, tx) => sum + tx.amount,
-                      );
+                      .fold(0.0, (sum, tx) => sum + tx.amount);
 
                   double totalExpense = list
                       .where((tx) => tx.isIncome == false)
-                      .fold(
-                        0.0,
-                        (sum, tx) => sum + tx.amount,
-                      );
+                      .fold(0.0, (sum, tx) => sum + tx.amount);
 
-                  final safeIncome = totalIncome.isNaN || totalIncome.isInfinite ? 0.0 : totalIncome;
-                  final safeExpense = totalExpense.isNaN || totalExpense.isInfinite ? 0.0 : totalExpense;
+                  final safeIncome = totalIncome.isNaN || totalIncome.isInfinite
+                      ? 0.0
+                      : totalIncome;
+                  final safeExpense =
+                      totalExpense.isNaN || totalExpense.isInfinite
+                      ? 0.0
+                      : totalExpense;
 
                   return Container(
                     margin: const EdgeInsets.symmetric(
@@ -328,84 +333,70 @@ class _TransactionsViewState extends State<TransactionsView>
                       horizontal: 16,
                       vertical: 4,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (isSearching.value)
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              autofocus: true,
-                              textInputAction: TextInputAction.search,
-                              onChanged: (value) => searchQuery.value = value,
-                              style: TextStyle(
-                                fontSize: 16,
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      textInputAction: TextInputAction.search,
+                      onChanged: (value) => searchQuery.value = value,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDarkMode ? Colors.white : Colors.black87,
+                      ),
+                      cursorColor: const Color(0xFF4CAF50),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        filled: true,
+                        fillColor: isDarkMode
+                            ? const Color(0xFF121212)
+                            : Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
+                        prefixIcon: isSearchFocused.value
+                            ? null
+                            : Icon(
+                                Icons.search_rounded,
                                 color: isDarkMode
-                                    ? Colors.white
-                                    : Colors.black87,
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
                               ),
-                              cursorColor: const Color(0xFF4CAF50),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                filled: true,
-                                fillColor: isDarkMode
-                                    ? const Color(0xFF121212)
-                                    : Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search_rounded,
-                                  color: isDarkMode
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade600,
-                                ),
-                                suffixIcon: IconButton(
-                                  tooltip: 'Close search',
-                                  onPressed: _closeSearch,
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                                hintText: 'Search title or category...',
-                                hintStyle: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey.shade500,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                    color: isDarkMode
-                                        ? Colors.grey.shade700
-                                        : const Color(0xFFE2E6E9),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                    color: isDarkMode
-                                        ? Colors.grey.shade700
-                                        : const Color(0xFFE2E6E9),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF4CAF50),
-                                    width: 1.5,
-                                  ),
-                                ),
+                        suffixIcon:
+                            searchQuery.value.isEmpty && !isSearchFocused.value
+                            ? null
+                            : IconButton(
+                                tooltip: 'Cancel search',
+                                onPressed: _closeSearch,
+                                icon: const Icon(Icons.close_rounded),
                               ),
-                            ),
+                        hintText: 'Search title or category...',
+                        hintStyle: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey.shade500,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: isDarkMode
+                                ? Colors.grey.shade700
+                                : const Color(0xFFE2E6E9),
                           ),
-                        if (!isSearching.value)
-                          IconButton(
-                            tooltip: 'Search transactions',
-                            icon: Icon(
-                              Icons.search_rounded,
-                              color: isDarkMode ? Colors.white : Colors.black87,
-                            ),
-                            onPressed: () => isSearching.value = true,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: isDarkMode
+                                ? Colors.grey.shade700
+                                : const Color(0xFFE2E6E9),
                           ),
-                      ],
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF4CAF50),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -415,12 +406,15 @@ class _TransactionsViewState extends State<TransactionsView>
                   child: Obx(() {
                     final query = searchQuery.value.toLowerCase();
 
-                    final list =
-                        transactionsController.transactions.where((tx) {
+                    final list = transactionsController.transactions.where((
+                      tx,
+                    ) {
                       if (query.isEmpty) return true;
 
-                      final categoryName =
-                          _getCategoryName(tx.categoryId).toLowerCase();
+                      final categoryName = _getCategoryName(
+                        tx.categoryId,
+                        customCategory: tx.customCategoryName,
+                      ).toLowerCase();
 
                       final title = tx.title.toLowerCase();
 
@@ -466,13 +460,15 @@ class _TransactionsViewState extends State<TransactionsView>
 
                         final bool isIncome = transaction.isIncome;
 
-                        final String categoryName =
-                            _getCategoryName(transaction.categoryId);
+                        final String categoryName = _getCategoryName(
+                          transaction.categoryId,
+                          customCategory: transaction.customCategoryName,
+                        );
 
                         final String displayTitle =
                             transaction.title.trim().isEmpty
-                                ? categoryName
-                                : transaction.title;
+                            ? categoryName
+                            : transaction.title;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -500,11 +496,11 @@ class _TransactionsViewState extends State<TransactionsView>
                               radius: 22,
                               backgroundColor: isIncome
                                   ? (isDarkMode
-                                      ? const Color(0xFF1E382B)
-                                      : const Color(0xFFEBF9EE))
+                                        ? const Color(0xFF1E382B)
+                                        : const Color(0xFFEBF9EE))
                                   : (isDarkMode
-                                      ? const Color(0xFF3B1E1E)
-                                      : const Color(0xFFFDEEEE)),
+                                        ? const Color(0xFF3B1E1E)
+                                        : const Color(0xFFFDEEEE)),
                               child: Icon(
                                 isIncome
                                     ? Icons.arrow_downward_rounded
@@ -570,15 +566,13 @@ class _TransactionsViewState extends State<TransactionsView>
                 children: [
                   GestureDetector(
                     onTap: () => isDrawerOpen.value = false,
-                    child: Container(
-                      color: Colors.black.withOpacity(0.5),
-                    ),
+                    child: Container(color: Colors.black.withOpacity(0.5)),
                   ),
 
                   Align(
                     alignment: Alignment.centerRight,
                     child: Container(
-                        width: MediaQuery.of(context).size.width < 316
+                      width: MediaQuery.of(context).size.width < 316
                           ? MediaQuery.of(context).size.width - 12
                           : 304,
                       height: MediaQuery.of(context).size.height * 0.76,
@@ -604,107 +598,109 @@ class _TransactionsViewState extends State<TransactionsView>
                         borderRadius: BorderRadius.circular(28),
                         child: Column(
                           children: [
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 6,
-                                    right: 6,
-                                  ),
-                                  child: IconButton(
-                                    onPressed: () =>
-                                        isDrawerOpen.value = false,
-                                    icon: Icon(
-                                      Icons.close,
-                                      size: 28,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 6,
+                                  right: 6,
+                                ),
+                                child: IconButton(
+                                  onPressed: () => isDrawerOpen.value = false,
+                                  icon: Icon(
+                                    Icons.close,
+                                    size: 28,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black87,
                                   ),
                                 ),
                               ),
-                              UserAccountsDrawerHeader(
-                                margin: EdgeInsets.zero,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isDarkMode
-                                        ? const [
-                                            Color(0xFF2E7D32),
-                                            Color(0xFF1B5E20),
-                                          ]
-                                        : const [
-                                            Color(0xFF4CAF50),
-                                            Color(0xFF388E3C),
-                                          ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                            ),
+                            UserAccountsDrawerHeader(
+                              margin: EdgeInsets.zero,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isDarkMode
+                                      ? const [
+                                          Color(0xFF2E7D32),
+                                          Color(0xFF1B5E20),
+                                        ]
+                                      : const [
+                                          Color(0xFF4CAF50),
+                                          Color(0xFF388E3C),
+                                        ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                                currentAccountPictureSize:
-                                    const Size.square(64),
-                                currentAccountPicture: Obx(() {
-                                  final imageUrl = settingsController
-                                      .profilePictureUrl.value;
-                                  final name =
-                                      settingsController.profileName.value;
-                                  final firstLetter = name.isNotEmpty
-                                      ? name[0].toUpperCase()
-                                      : 'U';
+                              ),
+                              currentAccountPictureSize: const Size.square(64),
+                              currentAccountPicture: Obx(() {
+                                final imageUrl =
+                                    settingsController.profilePictureUrl.value;
+                                final name =
+                                    settingsController.profileName.value;
+                                final firstLetter = name.isNotEmpty
+                                    ? name[0].toUpperCase()
+                                    : 'U';
 
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.15,
-                                          ),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.15,
                                         ),
-                                      ],
-                                    ),
-                                    child: CircleAvatar(
-                                      backgroundColor: Colors.white,
-                                      backgroundImage: imageUrl.isNotEmpty
-                                          ? NetworkImage(imageUrl)
-                                          : null,
-                                      child: imageUrl.isEmpty
-                                          ? Text(
-                                              firstLetter,
-                                              style: const TextStyle(
-                                                fontSize: 26,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF2E7D32),
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                  );
-                                }),
-                                accountName: Text(
-                                  _userName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Colors.white,
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                accountEmail: Text(
-                                  Supabase.instance.client.auth.currentUser
-                                          ?.email ??
-                                      '',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.white.withOpacity(0.9),
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.white,
+                                    backgroundImage: imageUrl.isNotEmpty
+                                        ? NetworkImage(imageUrl)
+                                        : null,
+                                    child: imageUrl.isEmpty
+                                        ? Text(
+                                            firstLetter,
+                                            style: const TextStyle(
+                                              fontSize: 26,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF2E7D32),
+                                            ),
+                                          )
+                                        : null,
                                   ),
+                                );
+                              }),
+                              accountName: Text(
+                                _userName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.white,
                                 ),
                               ),
+                              accountEmail: Text(
+                                Supabase
+                                        .instance
+                                        .client
+                                        .auth
+                                        .currentUser
+                                        ?.email ??
+                                    '',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ),
 
                             Expanded(
                               child: ListView(
@@ -716,8 +712,7 @@ class _TransactionsViewState extends State<TransactionsView>
                                 children: [
                                   _buildDrawerOption(
                                     context: context,
-                                    icon:
-                                        Icons.account_balance_wallet_rounded,
+                                    icon: Icons.account_balance_wallet_rounded,
                                     iconColor: const Color(0xFF2B82FB),
                                     title: 'Wallets',
                                     subtitle:
@@ -736,7 +731,7 @@ class _TransactionsViewState extends State<TransactionsView>
                                     iconColor: const Color(0xFFFF9800),
                                     title: 'Budgets',
                                     subtitle:
-                                      'Set and track monthly spending limits',
+                                        'Set and track monthly spending limits',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const BudgetView(),
                                       binding: BudgetBinding(),
@@ -751,7 +746,7 @@ class _TransactionsViewState extends State<TransactionsView>
                                     iconColor: const Color(0xFFE91E63),
                                     title: 'Goals',
                                     subtitle:
-                                      'Track your financial targets and savings',
+                                        'Track your financial targets and savings',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const GoalsView(),
                                       binding: GoalsBinding(),
@@ -762,12 +757,11 @@ class _TransactionsViewState extends State<TransactionsView>
 
                                   _buildDrawerOption(
                                     context: context,
-                                    icon:
-                                        Icons.notifications_active_rounded,
+                                    icon: Icons.notifications_active_rounded,
                                     iconColor: const Color(0xFF9C27B0),
                                     title: 'Bills & Reminders',
                                     subtitle:
-                                      'Manage upcoming bills and reminders',
+                                        'Manage upcoming bills and reminders',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const BillsRemindersView(),
                                       binding: BillsRemindersBinding(),
@@ -795,8 +789,7 @@ class _TransactionsViewState extends State<TransactionsView>
                                     icon: Icons.person_rounded,
                                     iconColor: const Color(0xFF00BCD4),
                                     title: 'Profile',
-                                    subtitle:
-                                        'Manage your profile and acc...',
+                                    subtitle: 'Manage your profile and acc...',
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const SettingsView(),
                                       binding: SettingsBinding(),
@@ -818,6 +811,7 @@ class _TransactionsViewState extends State<TransactionsView>
       ),
     );
   }
+
   Widget _buildNavigationDrawer(
     BuildContext context,
     bool isDarkMode,
@@ -825,11 +819,7 @@ class _TransactionsViewState extends State<TransactionsView>
   ) {
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.only(
-          top: 12,
-          bottom: 16,
-          right: 12,
-        ),
+        margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: Drawer(
@@ -861,25 +851,19 @@ class _TransactionsViewState extends State<TransactionsView>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDarkMode
-                          ? const [
-                              Color(0xFF2E7D32),
-                              Color(0xFF1B5E20),
-                            ]
-                          : const [
-                              Color(0xFF4CAF50),
-                              Color(0xFF388E3C),
-                            ],
+                          ? const [Color(0xFF2E7D32), Color(0xFF1B5E20)]
+                          : const [Color(0xFF4CAF50), Color(0xFF388E3C)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                   ),
                   currentAccountPictureSize: const Size.square(64),
                   currentAccountPicture: Obx(() {
-                    final imageUrl =
-                        settingsController.profilePictureUrl.value;
+                    final imageUrl = settingsController.profilePictureUrl.value;
                     final name = settingsController.profileName.value;
-                    final firstLetter =
-                        name.isNotEmpty ? name[0].toUpperCase() : 'U';
+                    final firstLetter = name.isNotEmpty
+                        ? name[0].toUpperCase()
+                        : 'U';
 
                     return Container(
                       decoration: BoxDecoration(
@@ -989,9 +973,8 @@ class _TransactionsViewState extends State<TransactionsView>
                         iconColor: const Color(0xFF4CAF50),
                         title: 'Digital Committee',
                         subtitle: 'Manage your committee and member payments',
-                        onTap: () => _closeDrawerAndNavigate(
-                          () => CommitteeView(),
-                        ),
+                        onTap: () =>
+                            _closeDrawerAndNavigate(() => CommitteeView()),
                       ),
                       const SizedBox(height: 12),
                       _buildDrawerOption(
@@ -1025,20 +1008,15 @@ class _TransactionsViewState extends State<TransactionsView>
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    final isDarkMode =
-        theme.brightness == Brightness.dark;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? const Color(0xFF2A2A2A)
-            : Colors.white,
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              isDarkMode ? 0.2 : 0.04,
-            ),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1050,10 +1028,7 @@ class _TransactionsViewState extends State<TransactionsView>
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -1063,19 +1038,14 @@ class _TransactionsViewState extends State<TransactionsView>
                     color: iconColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
 
                 const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
@@ -1118,4 +1088,3 @@ class _TransactionsViewState extends State<TransactionsView>
     );
   }
 }
-
