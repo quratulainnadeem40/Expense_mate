@@ -425,6 +425,12 @@ class CategoriesController extends GetxController {
     return categoryCounts[categoryId] ?? 0;
   }
 
+  double getCategoryTotal(
+    String categoryId,
+  ) {
+    return categoryTotals[categoryId] ?? 0;
+  }
+
   // ==========================================================
   // ADD CATEGORY
   // ==========================================================
