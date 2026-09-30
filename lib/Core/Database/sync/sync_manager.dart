@@ -8,10 +8,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_database.dart';
 import '../database_provider.dart';
+
+import '../repositories/budget_local_repository.dart';
+import '../repositories/budget_remote_repository.dart';
 import '../repositories/category_local_repository.dart';
 import '../repositories/sync_queue_repository.dart';
 import '../repositories/transaction_local_repository.dart';
 import '../repositories/wallet_local_repository.dart';
+
 import '../remote/category_remote_repository.dart';
 import '../remote/transaction_remote_repository.dart';
 import '../remote/wallet_remote_repository.dart';
@@ -22,11 +26,13 @@ class SyncManager extends GetxController {
   late final TransactionLocalRepository transactionLocal;
   late final WalletLocalRepository walletLocal;
   late final CategoryLocalRepository categoryLocal;
+  late final BudgetLocalRepository budgetLocal;
   late final SyncQueueRepository syncQueue;
 
   late final TransactionRemoteRepository transactionRemote;
   late final WalletRemoteRepository walletRemote;
   late final CategoryRemoteRepository categoryRemote;
+  late final BudgetRemoteRepository budgetRemote;
 
   bool _isSyncing = false;
 
@@ -58,31 +64,19 @@ class SyncManager extends GetxController {
 
   SyncManager({
     SupabaseClient? supabaseClient,
-  }) : supabase =
-            supabaseClient ?? Supabase.instance.client {
-    final database =
-        DatabaseProvider.instance.database;
+  }) : supabase = supabaseClient ?? Supabase.instance.client {
+    final database = DatabaseProvider.instance.database;
 
-    transactionLocal =
-        TransactionLocalRepository(database);
+    transactionLocal = TransactionLocalRepository(database);
+    walletLocal = WalletLocalRepository(database);
+    categoryLocal = CategoryLocalRepository(database);
+    budgetLocal = BudgetLocalRepository(database);
+    syncQueue = SyncQueueRepository(database);
 
-    walletLocal =
-        WalletLocalRepository(database);
-
-    categoryLocal =
-        CategoryLocalRepository(database);
-
-    syncQueue =
-        SyncQueueRepository(database);
-
-    transactionRemote =
-        TransactionRemoteRepository(supabase);
-
-    walletRemote =
-        WalletRemoteRepository(supabase);
-
-    categoryRemote =
-        CategoryRemoteRepository(supabase);
+    transactionRemote = TransactionRemoteRepository(supabase);
+    walletRemote = WalletRemoteRepository(supabase);
+    categoryRemote = CategoryRemoteRepository(supabase);
+    budgetRemote = BudgetRemoteRepository(supabase);
   }
 
   // ==========================================================
@@ -126,31 +120,19 @@ class SyncManager extends GetxController {
 
         await _refreshPendingCount(user.id);
 
-        // Only retry when there is actually something
-        // waiting to be synchronized.
         if (pendingCount.value == 0) {
           return;
         }
 
         try {
-          debugPrint(
-            '================================',
-          );
-          debugPrint(
-            'AUTOMATIC SYNC RETRY',
-          );
-          debugPrint(
-            'Pending: ${pendingCount.value}',
-          );
-          debugPrint(
-            '================================',
-          );
+          debugPrint('================================');
+          debugPrint('AUTOMATIC SYNC RETRY');
+          debugPrint('Pending: ${pendingCount.value}');
+          debugPrint('================================');
 
           await sync();
         } catch (e) {
-          debugPrint(
-            'Automatic sync retry failed: $e',
-          );
+          debugPrint('Automatic sync retry failed: $e');
         }
       },
     );
@@ -178,18 +160,10 @@ class SyncManager extends GetxController {
     syncStatus.value = 'Syncing...';
     lastError.value = '';
 
-    debugPrint(
-      '================================',
-    );
-    debugPrint(
-      'SYNC STARTED',
-    );
-    debugPrint(
-      'User: ${user.id}',
-    );
-    debugPrint(
-      '================================',
-    );
+    debugPrint('================================');
+    debugPrint('SYNC STARTED');
+    debugPrint('User: ${user.id}');
+    debugPrint('================================');
 
     try {
       await _refreshPendingCount(user.id);
@@ -199,22 +173,19 @@ class SyncManager extends GetxController {
       );
 
       // ------------------------------------------------------
-      // STEP 1
-      // Upload local pending changes first.
+      // STEP 1: Upload local pending changes.
       // ------------------------------------------------------
 
       await _syncPendingOperations(user.id);
 
       // ------------------------------------------------------
-      // STEP 2
-      // Download cloud changes.
+      // STEP 2: Download cloud changes.
       // ------------------------------------------------------
 
       await _syncCloudToLocal(user.id);
 
       // ------------------------------------------------------
-      // STEP 3
-      // Check remaining pending operations.
+      // STEP 3: Check remaining pending operations.
       // ------------------------------------------------------
 
       await _refreshPendingCount(user.id);
@@ -224,15 +195,12 @@ class SyncManager extends GetxController {
 
         _lastSuccessfulSync = DateTime.now();
 
-        debugPrint(
-          'SYNC SUCCESSFUL',
-        );
+        debugPrint('SYNC SUCCESSFUL');
       } else {
         syncStatus.value = 'Pending';
 
         debugPrint(
-          'SYNC STILL PENDING: '
-          '${pendingCount.value}',
+          'SYNC STILL PENDING: ${pendingCount.value}',
         );
       }
     } catch (e, stackTrace) {
@@ -242,24 +210,12 @@ class SyncManager extends GetxController {
 
       lastError.value = e.toString();
 
-      debugPrint(
-        '================================',
-      );
-      debugPrint(
-        'SYNC FAILED',
-      );
-      debugPrint(
-        'ERROR: $e',
-      );
-      debugPrint(
-        'STACK TRACE: $stackTrace',
-      );
-      debugPrint(
-        'PENDING: ${pendingCount.value}',
-      );
-      debugPrint(
-        '================================',
-      );
+      debugPrint('================================');
+      debugPrint('SYNC FAILED');
+      debugPrint('ERROR: $e');
+      debugPrint('STACK TRACE: $stackTrace');
+      debugPrint('PENDING: ${pendingCount.value}');
+      debugPrint('================================');
 
       rethrow;
     } finally {
@@ -276,12 +232,9 @@ class SyncManager extends GetxController {
   ) async {
     try {
       final operations =
-          await syncQueue.getPendingOperations(
-        userId,
-      );
+          await syncQueue.getPendingOperations(userId);
 
-      pendingCount.value =
-          operations.length;
+      pendingCount.value = operations.length;
     } catch (e) {
       debugPrint(
         'Could not refresh pending count: $e',
@@ -297,39 +250,23 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final pendingOperations =
-        await syncQueue.getPendingOperations(
-      userId,
-    );
+        await syncQueue.getPendingOperations(userId);
 
-    pendingCount.value =
-        pendingOperations.length;
+    pendingCount.value = pendingOperations.length;
 
     debugPrint(
       'Processing ${pendingOperations.length} '
       'pending operation(s)',
     );
 
-    for (final queueItem
-        in pendingOperations) {
+    for (final queueItem in pendingOperations) {
       try {
-        debugPrint(
-          '--------------------------------',
-        );
-        debugPrint(
-          'SYNC QUEUE ITEM',
-        );
-        debugPrint(
-          'ID: ${queueItem.id}',
-        );
-        debugPrint(
-          'Entity: ${queueItem.entityTable}',
-        );
-        debugPrint(
-          'Record: ${queueItem.recordId}',
-        );
-        debugPrint(
-          'Operation: ${queueItem.operation}',
-        );
+        debugPrint('--------------------------------');
+        debugPrint('SYNC QUEUE ITEM');
+        debugPrint('ID: ${queueItem.id}');
+        debugPrint('Entity: ${queueItem.entityTable}');
+        debugPrint('Record: ${queueItem.recordId}');
+        debugPrint('Operation: ${queueItem.operation}');
 
         await _processQueueItem(queueItem);
 
@@ -337,15 +274,11 @@ class SyncManager extends GetxController {
           pendingCount.value--;
         }
 
-        debugPrint(
-          'QUEUE ITEM SYNCED',
-        );
+        debugPrint('QUEUE ITEM SYNCED');
       } catch (e, stackTrace) {
-        final nextRetryCount =
-            queueItem.retryCount + 1;
+        final nextRetryCount = queueItem.retryCount + 1;
 
-        final errorMessage =
-            e.toString();
+        final errorMessage = e.toString();
 
         await syncQueue.updateRetryInfo(
           id: queueItem.id,
@@ -353,43 +286,18 @@ class SyncManager extends GetxController {
           lastError: errorMessage,
         );
 
-        // IMPORTANT:
-        // Keep the actual error visible so we can
-        // diagnose Supabase/RLS/payload problems.
         lastError.value = errorMessage;
-
         syncStatus.value = 'Sync failed';
 
-        debugPrint(
-          '--------------------------------',
-        );
-        debugPrint(
-          'QUEUE ITEM FAILED',
-        );
-        debugPrint(
-          'Entity: ${queueItem.entityTable}',
-        );
-        debugPrint(
-          'Record: ${queueItem.recordId}',
-        );
-        debugPrint(
-          'Operation: ${queueItem.operation}',
-        );
-        debugPrint(
-          'Retry count: $nextRetryCount',
-        );
-        debugPrint(
-          'ERROR: $errorMessage',
-        );
-        debugPrint(
-          'STACK TRACE: $stackTrace',
-        );
-        debugPrint(
-          '--------------------------------',
-        );
-
-        // Do NOT remove the queue item.
-        // It must remain pending for the next retry.
+        debugPrint('--------------------------------');
+        debugPrint('QUEUE ITEM FAILED');
+        debugPrint('Entity: ${queueItem.entityTable}');
+        debugPrint('Record: ${queueItem.recordId}');
+        debugPrint('Operation: ${queueItem.operation}');
+        debugPrint('Retry count: $nextRetryCount');
+        debugPrint('ERROR: $errorMessage');
+        debugPrint('STACK TRACE: $stackTrace');
+        debugPrint('--------------------------------');
       }
     }
 
@@ -403,12 +311,9 @@ class SyncManager extends GetxController {
   Future<void> _processQueueItem(
     SyncQueueData queueItem,
   ) async {
-    final payload =
-        _decodePayload(queueItem.payload);
+    final payload = _decodePayload(queueItem.payload);
 
-    debugPrint(
-      'Payload: $payload',
-    );
+    debugPrint('Payload: $payload');
 
     switch (queueItem.entityTable) {
       case 'transactions':
@@ -432,10 +337,16 @@ class SyncManager extends GetxController {
         );
         break;
 
+      case 'budgets':
+        await _syncBudget(
+          queueItem: queueItem,
+          payload: payload,
+        );
+        break;
+
       default:
         throw Exception(
-          'Unknown sync entity: '
-          '${queueItem.entityTable}',
+          'Unknown sync entity: ${queueItem.entityTable}',
         );
     }
   }
@@ -448,54 +359,35 @@ class SyncManager extends GetxController {
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
-    switch (
-        queueItem.operation.toLowerCase()) {
+    switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        debugPrint(
-          'Uploading transaction to Supabase...',
-        );
+        await transactionRemote.insertTransaction(payload);
 
-        await transactionRemote
-            .insertTransaction(payload);
-
-        await syncQueue.remove(
-          queueItem.id,
-        );
-
-        debugPrint(
-          'Transaction uploaded successfully.',
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'update':
-        await transactionRemote
-            .updateTransaction(
+        await transactionRemote.updateTransaction(
           queueItem.recordId,
           payload,
         );
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'delete':
-        await transactionRemote
-            .deleteTransaction(
+        await transactionRemote.deleteTransaction(
           queueItem.recordId,
         );
 
-        await transactionLocal
-            .permanentlyDeleteTransaction(
+        await transactionLocal.permanentlyDeleteTransaction(
           queueItem.recordId,
         );
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -515,16 +407,12 @@ class SyncManager extends GetxController {
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
-    switch (
-        queueItem.operation.toLowerCase()) {
+    switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await walletRemote
-            .insertWallet(payload);
+        await walletRemote.insertWallet(payload);
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -534,9 +422,7 @@ class SyncManager extends GetxController {
           payload,
         );
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -545,14 +431,11 @@ class SyncManager extends GetxController {
           queueItem.recordId,
         );
 
-        await walletLocal
-            .permanentlyDeleteWallet(
+        await walletLocal.permanentlyDeleteWallet(
           queueItem.recordId,
         );
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -572,16 +455,12 @@ class SyncManager extends GetxController {
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
-    switch (
-        queueItem.operation.toLowerCase()) {
+    switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await categoryRemote
-            .insertCategory(payload);
+        await categoryRemote.insertCategory(payload);
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -591,9 +470,7 @@ class SyncManager extends GetxController {
           payload,
         );
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -602,14 +479,11 @@ class SyncManager extends GetxController {
           queueItem.recordId,
         );
 
-        await categoryLocal
-            .permanentlyDeleteCategory(
+        await categoryLocal.permanentlyDeleteCategory(
           queueItem.recordId,
         );
 
-        await syncQueue.remove(
-          queueItem.id,
-        );
+        await syncQueue.remove(queueItem.id);
 
         break;
 
@@ -622,23 +496,91 @@ class SyncManager extends GetxController {
   }
 
   // ==========================================================
+  // BUDGET SYNC
+  // ==========================================================
+
+  Future<void> _syncBudget({
+    required SyncQueueData queueItem,
+    required Map<String, dynamic> payload,
+  }) async {
+    switch (queueItem.operation.toLowerCase()) {
+      case 'insert':
+      case 'create':
+        debugPrint(
+          'Uploading budget to Supabase...',
+        );
+
+        await budgetRemote.insertBudget(payload);
+
+        await syncQueue.remove(queueItem.id);
+
+        debugPrint(
+          'Budget uploaded successfully.',
+        );
+
+        break;
+
+      case 'update':
+        debugPrint(
+          'Updating budget in Supabase...',
+        );
+
+        await budgetRemote.updateBudget(
+          queueItem.recordId,
+          payload,
+        );
+
+        await syncQueue.remove(queueItem.id);
+
+        debugPrint(
+          'Budget updated successfully.',
+        );
+
+        break;
+
+      case 'delete':
+        debugPrint(
+          'Deleting budget from Supabase...',
+        );
+
+        await budgetRemote.deleteBudget(
+          queueItem.recordId,
+        );
+
+       await budgetLocal.permanentDeleteBudget(
+  queueItem.recordId,
+);
+
+        await syncQueue.remove(queueItem.id);
+
+        debugPrint(
+          'Budget deleted successfully.',
+        );
+
+        break;
+
+      default:
+        throw Exception(
+          'Unknown budget operation: '
+          '${queueItem.operation}',
+        );
+    }
+  }
+
+  // ==========================================================
   // CLOUD → LOCAL
   // ==========================================================
 
   Future<void> _syncCloudToLocal(
     String userId,
   ) async {
-    await _syncTransactionsFromCloud(
-      userId,
-    );
+    await _syncTransactionsFromCloud(userId);
 
-    await _syncWalletsFromCloud(
-      userId,
-    );
+    await _syncWalletsFromCloud(userId);
 
-    await _syncCategoriesFromCloud(
-      userId,
-    );
+    await _syncCategoriesFromCloud(userId);
+
+    await _syncBudgetsFromCloud(userId);
   }
 
   // ==========================================================
@@ -649,21 +591,17 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final transactions =
-        await transactionRemote
-            .getTransactions(userId);
+        await transactionRemote.getTransactions(userId);
 
-    for (final transaction
-        in transactions) {
-      final id =
-          transaction['id']?.toString();
+    for (final transaction in transactions) {
+      final id = transaction['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
       final pending =
-          await syncQueue
-              .getByEntityAndRecord(
+          await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'transactions',
         recordId: id,
@@ -674,26 +612,19 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await transactionLocal
-              .getTransactionById(id);
+          await transactionLocal.getTransactionById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
       final transactionDate =
-          _parseDate(
-        transaction['transaction_date'],
-      );
+          _parseDate(transaction['transaction_date']);
 
       final createdAt =
-          _parseDate(
-        transaction['created_at'],
-      );
+          _parseDate(transaction['created_at']);
 
-      final companion =
-          LocalTransactionsCompanion(
+      final companion = LocalTransactionsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         walletId: _nullableValue(
@@ -703,43 +634,26 @@ class SyncManager extends GetxController {
           transaction['category_id'],
         ),
         title: drift.Value(
-          transaction['title']
-                  ?.toString() ??
-              '',
+          transaction['title']?.toString() ?? '',
         ),
         amount: drift.Value(
-          (transaction['amount'] as num?)
-                  ?.toDouble() ??
-              0.0,
+          (transaction['amount'] as num?)?.toDouble() ?? 0.0,
         ),
         type: drift.Value(
-          transaction['type']
-                  ?.toString() ??
-              'expense',
+          transaction['type']?.toString() ?? 'expense',
         ),
-        transactionDate:
-            drift.Value(transactionDate),
-        note: _nullableValue(
-          transaction['note'],
-        ),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        transactionDate: drift.Value(transactionDate),
+        note: _nullableValue(transaction['note']),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await transactionLocal
-            .insertTransaction(
-          companion,
-        );
+        await transactionLocal.insertTransaction(companion);
       } else {
-        await transactionLocal
-            .updateTransaction(
+        await transactionLocal.updateTransaction(
           id,
           companion,
         );
@@ -755,20 +669,17 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final wallets =
-        await walletRemote
-            .getWallets(userId);
+        await walletRemote.getWallets(userId);
 
     for (final wallet in wallets) {
-      final id =
-          wallet['id']?.toString();
+      final id = wallet['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
       final pending =
-          await syncQueue
-              .getByEntityAndRecord(
+          await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'wallets',
         recordId: id,
@@ -779,59 +690,40 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await walletLocal
-              .getWalletById(id);
+          await walletLocal.getWalletById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
       final createdAt =
-          _parseDate(
-        wallet['created_at'],
-      );
+          _parseDate(wallet['created_at']);
 
-      final companion =
-          LocalWalletsCompanion(
+      final companion = LocalWalletsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         name: drift.Value(
-          wallet['name']?.toString() ??
-              '',
+          wallet['name']?.toString() ?? '',
         ),
         balance: drift.Value(
-          (wallet['balance'] as num?)
-                  ?.toDouble() ??
-              0.0,
+          (wallet['balance'] as num?)?.toDouble() ?? 0.0,
         ),
         currency: drift.Value(
-          wallet['currency']
-                  ?.toString() ??
-              'PKR',
+          wallet['currency']?.toString() ?? 'PKR',
         ),
         type: drift.Value(
-          wallet['type']?.toString() ??
-              'Cash',
+          wallet['type']?.toString() ?? 'Cash',
         ),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await walletLocal
-            .insertWallet(
-          companion,
-        );
+        await walletLocal.insertWallet(companion);
       } else {
-        await walletLocal
-            .updateWallet(
+        await walletLocal.updateWallet(
           id,
           companion,
         );
@@ -847,21 +739,17 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final categories =
-        await categoryRemote
-            .getCategories(userId);
+        await categoryRemote.getCategories(userId);
 
-    for (final category
-        in categories) {
-      final id =
-          category['id']?.toString();
+    for (final category in categories) {
+      final id = category['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
       final pending =
-          await syncQueue
-              .getByEntityAndRecord(
+          await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'categories',
         recordId: id,
@@ -872,57 +760,120 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await categoryLocal
-              .getCategoryById(id);
+          await categoryLocal.getCategoryById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
       final createdAt =
-          _parseDate(
-        category['created_at'],
-      );
+          _parseDate(category['created_at']);
 
-      final companion =
-          LocalCategoriesCompanion(
+      final companion = LocalCategoriesCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         name: drift.Value(
-          category['name']
-                  ?.toString() ??
-              '',
+          category['name']?.toString() ?? '',
         ),
         type: drift.Value(
-          category['type']
-                  ?.toString() ??
-              'expense',
+          category['type']?.toString() ?? 'expense',
         ),
-        icon: _nullableValue(
-          category['icon'],
-        ),
-        color: _nullableValue(
-          category['color'],
-        ),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        icon: _nullableValue(category['icon']),
+        color: _nullableValue(category['color']),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await categoryLocal
-            .insertCategory(
+        await categoryLocal.insertCategory(companion);
+      } else {
+        await categoryLocal.updateCategory(
+          id,
           companion,
         );
+      }
+    }
+  }
+
+  // ==========================================================
+  // BUDGETS CLOUD → LOCAL
+  // ==========================================================
+
+  Future<void> _syncBudgetsFromCloud(
+    String userId,
+  ) async {
+    final budgets =
+        await budgetRemote.getBudgets(userId);
+
+    for (final budget in budgets) {
+      final id = budget['id']?.toString();
+
+      if (id == null || id.isEmpty) {
+        continue;
+      }
+
+      final pending =
+          await syncQueue.getByEntityAndRecord(
+        userId: userId,
+        entityTable: 'budgets',
+        recordId: id,
+      );
+
+      if (pending != null) {
+        continue;
+      }
+
+      final existing =
+          await budgetLocal.getBudgetById(id);
+
+      if (existing != null && existing.isDeleted) {
+        continue;
+      }
+
+      final startDate =
+          _parseDate(budget['start_date']);
+
+      final endDate =
+          _parseDate(budget['end_date']);
+
+      final createdAt =
+          _parseDate(budget['created_at']);
+
+      final updatedAt =
+          _parseDate(budget['updated_at']);
+
+      final version =
+          (budget['version'] as num?)?.toInt() ?? 1;
+
+      final companion = LocalBudgetsCompanion(
+        id: drift.Value(id),
+        userId: drift.Value(userId),
+        categoryId: _nullableValue(
+          budget['category_id'],
+        ),
+        name: drift.Value(
+          budget['name']?.toString() ?? '',
+        ),
+        amount: drift.Value(
+          (budget['amount'] as num?)?.toDouble() ?? 0.0,
+        ),
+        spent: drift.Value(
+          (budget['spent'] as num?)?.toDouble() ?? 0.0,
+        ),
+        startDate: drift.Value(startDate),
+        endDate: drift.Value(endDate),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(updatedAt),
+        version: drift.Value(version),
+        isDeleted: const drift.Value(false),
+      );
+
+      if (existing == null) {
+        await budgetLocal.insertBudget(companion);
       } else {
-        await categoryLocal
-            .updateCategory(
+        await budgetLocal.updateBudget(
           id,
           companion,
         );
@@ -937,8 +888,7 @@ class SyncManager extends GetxController {
   Map<String, dynamic> _decodePayload(
     String payload,
   ) {
-    final decoded =
-        jsonDecode(payload);
+    final decoded = jsonDecode(payload);
 
     if (decoded is! Map) {
       throw const FormatException(
@@ -946,18 +896,14 @@ class SyncManager extends GetxController {
       );
     }
 
-    return Map<String, dynamic>.from(
-      decoded,
-    );
+    return Map<String, dynamic>.from(decoded);
   }
 
   // ==========================================================
   // DATE
   // ==========================================================
 
-  DateTime _parseDate(
-    dynamic value,
-  ) {
+  DateTime _parseDate(dynamic value) {
     if (value == null) {
       return DateTime.now();
     }
@@ -979,8 +925,7 @@ class SyncManager extends GetxController {
       return const drift.Value(null);
     }
 
-    final stringValue =
-        value.toString();
+    final stringValue = value.toString();
 
     if (stringValue.isEmpty) {
       return const drift.Value(null);

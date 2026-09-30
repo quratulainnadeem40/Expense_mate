@@ -1,11 +1,22 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../../../Core/constants/app_keys.dart';
-import '../../Categories/controller/categories_controller.dart';
-import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
-import '../../transactions/controller/transcation_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Core/database/repository_provider.dart';
+import 'package:expense_mate/Core/database/repositories/budget_local_repository.dart';
+import 'package:expense_mate/Core/database/repositories/budget_sync_repository.dart';
+
 import 'package:expense_mate/Core/service/notification_service.dart';
+
+import '../../Categories/controller/categories_controller.dart';
+import '../../Categories/model/categories_model.dart';
+import '../../transactions/controller/transcation_controller.dart';
 import '../../wallets/controller/wallets_controller.dart';
 import '../model/budget_model.dart';
 
@@ -13,124 +24,162 @@ class BudgetController extends GetxController {
   late CategoriesController categoriesController;
   late TransactionsController transactionsController;
 
-  var customLimits = <String, double>{}.obs; 
+  late final BudgetLocalRepository budgetLocal;
+  late final BudgetSyncRepository budgetSync;
+
+  var customLimits = <String, double>{}.obs;
   var budgetList = <BudgetModel>[].obs;
-  
+
   var customTotalBudget = Rxn<double>();
 
   // ================================================================
   // BUDGET CYCLE
   // ================================================================
-  // Step 23 - defaults for a user who never opens the settings.
-  // The 1st with automatic reset behaves like an ordinary calendar
-  // month, which is what most people expect without being told.
-  //
-  // Anyone who already chose a day keeps it: loadPersistedState()
-  // overwrites these as soon as a stored value is found.
+
   static const int defaultMonthStartDay = 1;
   static const bool defaultAutomaticReset = true;
 
   var monthStartDay = defaultMonthStartDay.obs;
   var isAutomaticReset = defaultAutomaticReset.obs;
 
-  /// True until the user saves the cycle for the first time. Step 22
-  /// uses this to decide whether to offer the setup screen.
   var isCycleConfigured = false.obs;
   var lastResetDate = Rxn<DateTime>();
 
-  /// Step 18 - optional reminder before the automatic reset.
   var resetReminderOn = true.obs;
   var reminderDaysBefore = 1.obs;
 
-  /// Finished cycles, newest first.
   var cycleHistory = <BudgetCycleHistory>[].obs;
 
-  /// The automatic reset must not run before the transactions have
-  /// loaded, otherwise it would act on figures that are still zero.
   bool _autoResetChecked = false;
 
-  /// Start of the cycle the user is currently in. Every spent figure is
-  /// measured from this moment.
+  bool _databaseBudgetsLoaded = false;
+
+  // ================================================================
+  // DATABASE
+  // ================================================================
+
+  String? get _currentUserId =>
+      Supabase.instance.client.auth.currentUser?.id;
+
+  // ================================================================
+  // CYCLE DATES
+  // ================================================================
+
   DateTime get cycleStartDate {
     final saved = lastResetDate.value;
-    if (saved != null) return saved;
+
+    if (saved != null) {
+      return saved;
+    }
 
     final now = DateTime.now();
-    final dayThisMonth = _clampDay(now.year, now.month, monthStartDay.value);
-    final thisMonthStart = DateTime(now.year, now.month, dayThisMonth);
 
-    if (!now.isBefore(thisMonthStart)) return thisMonthStart;
+    final dayThisMonth =
+        _clampDay(now.year, now.month, monthStartDay.value);
 
-    final prev = DateTime(now.year, now.month - 1, 1);
+    final thisMonthStart =
+        DateTime(now.year, now.month, dayThisMonth);
+
+    if (!now.isBefore(thisMonthStart)) {
+      return thisMonthStart;
+    }
+
+    final prev =
+        DateTime(now.year, now.month - 1, 1);
+
     return DateTime(
       prev.year,
       prev.month,
-      _clampDay(prev.year, prev.month, monthStartDay.value),
+      _clampDay(
+        prev.year,
+        prev.month,
+        monthStartDay.value,
+      ),
     );
   }
 
-  /// The day the next reset is due.
-  ///
-  /// It is always the next occurrence of the chosen day, not "one month
-  /// after whatever date the last reset happened on". So a manual reset
-  /// on the 10th with a start day of 25 still points at the 25th of that
-  /// same month, not the 25th of the following one.
   DateTime get nextResetDate {
     final start = cycleStartDate;
 
-    // lastResetDate carries a time of day, so compare dates only.
-    final startDate = DateTime(start.year, start.month, start.day);
+    final startDate =
+        DateTime(start.year, start.month, start.day);
 
     final thisMonth = DateTime(
       start.year,
       start.month,
-      _clampDay(start.year, start.month, monthStartDay.value),
+      _clampDay(
+        start.year,
+        start.month,
+        monthStartDay.value,
+      ),
     );
 
-    if (thisMonth.isAfter(startDate)) return thisMonth;
+    if (thisMonth.isAfter(startDate)) {
+      return thisMonth;
+    }
 
-    final next = DateTime(start.year, start.month + 1, 1);
+    final next =
+        DateTime(start.year, start.month + 1, 1);
+
     return DateTime(
       next.year,
       next.month,
-      _clampDay(next.year, next.month, monthStartDay.value),
+      _clampDay(
+        next.year,
+        next.month,
+        monthStartDay.value,
+      ),
     );
   }
 
-  /// Last day of the cycle: the day before the next reset.
-  ///
-  /// With a start day of 25 this gives 25 Aug - 24 Sep, 25 Sep - 24 Oct,
-  /// and so on, rather than plain calendar months.
   DateTime get cycleEndDate =>
-      nextResetDate.subtract(const Duration(days: 1));
+      nextResetDate.subtract(
+        const Duration(days: 1),
+      );
 
-  /// The cycle's first day with the time stripped off.
-  ///
-  /// cycleStartDate keeps the exact moment of the reset because the spend
-  /// filter needs it, but anything shown on screen should use this.
   DateTime get cycleStartDay {
     final start = cycleStartDate;
-    return DateTime(start.year, start.month, start.day);
+
+    return DateTime(
+      start.year,
+      start.month,
+      start.day,
+    );
   }
 
-  /// How many days the current cycle covers.
   int get cycleLengthInDays =>
-      cycleEndDate.difference(cycleStartDay).inDays + 1;
+      cycleEndDate
+          .difference(cycleStartDay)
+          .inDays +
+      1;
 
-  /// How many days are left before the reset. 0 on the last day.
   int get daysLeftInCycle {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final left = cycleEndDate.difference(today).inDays;
+
+    final today =
+        DateTime(now.year, now.month, now.day);
+
+    final left =
+        cycleEndDate.difference(today).inDays;
+
     return left < 0 ? 0 : left;
   }
 
   static const List<String> _shortMonths = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
-  /// Ready to display, e.g. "25 Sep - 24 Oct".
   String get cycleLabel {
     final start = cycleStartDay;
     final end = cycleEndDate;
@@ -139,111 +188,160 @@ class BudgetController extends GetxController {
         ' - ${end.day} ${_shortMonths[end.month - 1]}';
   }
 
-  bool get isResetDue => !DateTime.now().isBefore(nextResetDate);
+  bool get isResetDue =>
+      !DateTime.now().isBefore(nextResetDate);
 
-  /// February has no 31st, so a chosen day is pulled back to the last
-  /// day the month actually has.
-  static int _clampDay(int year, int month, int day) {
-    final lastDay = DateTime(year, month + 1, 0).day;
+  static int _clampDay(
+    int year,
+    int month,
+    int day,
+  ) {
+    final lastDay =
+        DateTime(year, month + 1, 0).day;
+
     return day > lastDay ? lastDay : day;
   }
 
-  /// What the next reset would be if the start day were [candidateDay].
-  ///
-  /// Used by the confirmation dialog so the user can see the effect of
-  /// the change before committing to it.
+  // ================================================================
+  // CYCLE PREVIEWS
+  // ================================================================
+
   DateTime previewNextReset(int candidateDay) {
     final start = cycleStartDate;
-    final startDate = DateTime(start.year, start.month, start.day);
+
+    final startDate =
+        DateTime(start.year, start.month, start.day);
 
     final thisMonth = DateTime(
       start.year,
       start.month,
-      _clampDay(start.year, start.month, candidateDay),
+      _clampDay(
+        start.year,
+        start.month,
+        candidateDay,
+      ),
     );
 
-    if (thisMonth.isAfter(startDate)) return thisMonth;
+    if (thisMonth.isAfter(startDate)) {
+      return thisMonth;
+    }
 
-    final next = DateTime(start.year, start.month + 1, 1);
+    final next =
+        DateTime(start.year, start.month + 1, 1);
+
     return DateTime(
       next.year,
       next.month,
-      _clampDay(next.year, next.month, candidateDay),
+      _clampDay(
+        next.year,
+        next.month,
+        candidateDay,
+      ),
     );
   }
 
-  /// The current cycle as it would end up with [candidateDay],
-  /// e.g. "25 Sep - 9 Oct".
   String previewCycleLabel(int candidateDay) {
     final start = cycleStartDay;
+
     final end = previewNextReset(candidateDay)
-        .subtract(const Duration(days: 1));
+        .subtract(
+          const Duration(days: 1),
+        );
 
     return '${start.day} ${_shortMonths[start.month - 1]}'
         ' - ${end.day} ${_shortMonths[end.month - 1]}';
   }
 
-  /// The cycle that begins after the change, e.g. "10 Oct - 9 Nov".
   String previewNextCycleLabel(int candidateDay) {
-    final start = previewNextReset(candidateDay);
+    final start =
+        previewNextReset(candidateDay);
 
-    final afterMonth = DateTime(start.year, start.month + 1, 1);
+    final afterMonth =
+        DateTime(start.year, start.month + 1, 1);
+
     final end = DateTime(
       afterMonth.year,
       afterMonth.month,
-      _clampDay(afterMonth.year, afterMonth.month, candidateDay),
-    ).subtract(const Duration(days: 1));
+      _clampDay(
+        afterMonth.year,
+        afterMonth.month,
+        candidateDay,
+      ),
+    ).subtract(
+      const Duration(days: 1),
+    );
 
     return '${start.day} ${_shortMonths[start.month - 1]}'
         ' - ${end.day} ${_shortMonths[end.month - 1]}';
   }
 
-  /// Records that the user has been through the cycle setup, so the
-  /// first-time screen is not offered again.
+  // ================================================================
+  // CYCLE SETTINGS
+  // ================================================================
+
   void markCycleConfigured() {
     isCycleConfigured.value = true;
+
     savePersistedState();
+
     syncResetReminder();
+
+    _syncCurrentBudgetsToDatabase();
   }
 
   void setMonthStartDay(int day) {
     monthStartDay.value = day;
+
     isCycleConfigured.value = true;
+
     savePersistedState();
+
     calculateBudgets();
+
     checkAutoReset();
+
     syncResetReminder();
+
+    _syncCurrentBudgetsToDatabase();
   }
 
   void setAutomaticReset(bool value) {
     isAutomaticReset.value = value;
+
     isCycleConfigured.value = true;
+
     savePersistedState();
+
     checkAutoReset();
+
     syncResetReminder();
   }
 
   void setResetReminderOn(bool value) {
     resetReminderOn.value = value;
+
     savePersistedState();
+
     syncResetReminder();
   }
 
   void setReminderDaysBefore(int days) {
     reminderDaysBefore.value = days;
+
     savePersistedState();
+
     syncResetReminder();
   }
 
-  /// Books the reminder, or clears it when it should not fire.
-  ///
-  /// Called after anything that moves the reset date, so there is never
-  /// a leftover notification pointing at an old date.
+  // ================================================================
+  // RESET REMINDER
+  // ================================================================
+
   Future<void> syncResetReminder() async {
     final service = NotificationService();
 
-    // Manual mode never resets on its own, so a reminder would be a lie.
-    if (!resetReminderOn.value || !isAutomaticReset.value) {
+    if (!resetReminderOn.value ||
+        !isAutomaticReset.value) {
       await service.cancelBudgetResetReminder();
       return;
     }
@@ -256,141 +354,607 @@ class BudgetController extends GetxController {
     );
   }
 
-  /// Fires by itself once the next reset date has arrived, but only
-  /// while the user has chosen Automatic.
+  // ================================================================
+  // AUTO RESET
+  // ================================================================
+
   Future<void> checkAutoReset() async {
     if (!isAutomaticReset.value) return;
+
     if (!isResetDue) return;
 
     await performReset(auto: true);
   }
 
-  /// Starts a fresh budget month.
-  ///
-  /// Nothing is deleted. The cycle start simply moves to now, so every
-  /// spent figure and progress bar drops to zero and stays there.
-  /// Limits, categories and transactions are untouched; wallet balances
-  /// are cleared but the wallets themselves are kept.
-  Future<void> performReset({bool auto = false}) async {
+  Future<void> performReset({
+    bool auto = false,
+  }) async {
     _archiveCurrentCycle(auto: auto);
 
-    lastResetDate.value = DateTime.now();
+    lastResetDate.value =
+        DateTime.now();
+
     savePersistedState();
+
     calculateBudgets();
 
-    final walletsController = Get.isRegistered<WalletsController>()
-        ? Get.find<WalletsController>()
-        : null;
+    final walletsController =
+        Get.isRegistered<WalletsController>()
+            ? Get.find<WalletsController>()
+            : null;
 
-    if (walletsController != null && walletsController.wallets.isNotEmpty) {
+    if (walletsController != null &&
+        walletsController.wallets.isNotEmpty) {
       await walletsController.resetAllBalances();
     }
 
-    // The reset date has just moved, so the reminder must move with it.
-    // Without this, the old notification would still be pointing at the
-    // date that has already passed.
     await syncResetReminder();
+
+    // Create the new cycle's budget rows locally
+    // and place them into the sync queue.
+    await _syncCurrentBudgetsToDatabase();
 
     if (!auto) return;
 
-    Get.snackbar(
-      'New budget month',
-      'Your budget has been reset for this cycle.',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-    );
+    // Existing behavior preserved.
+    // No Get.snackbar here because it can cause the
+    // GetX Web animation crash you previously encountered.
   }
+
+  // ================================================================
+  // HIVE
+  // ================================================================
 
   Box get _budgetBox {
     if (!Hive.isBoxOpen(AppKeys.budgetBox)) {
       Hive.openBox(AppKeys.budgetBox);
     }
+
     return Hive.box(AppKeys.budgetBox);
   }
 
-  static String _normalizeName(String value) => value.trim().toLowerCase();
+  // ================================================================
+  // CATEGORY LIMIT
+  // ================================================================
 
-  double _resolvedCategoryLimit(CategoryModel category) {
-    final byId = customLimits[category.id];
-    if (byId != null) return byId;
+  static String _normalizeName(String value) =>
+      value.trim().toLowerCase();
 
-    final byName = customLimits[category.name];
-    if (byName != null) return byName;
+  double _resolvedCategoryLimit(
+    CategoryModel category,
+  ) {
+    final byId =
+        customLimits[category.id];
+
+    if (byId != null) {
+      return byId;
+    }
+
+    final byName =
+        customLimits[category.name];
+
+    if (byName != null) {
+      return byName;
+    }
 
     return 0.0;
   }
 
-  double getCategoryLimit(CategoryModel category) => _resolvedCategoryLimit(category);
+  double getCategoryLimit(
+    CategoryModel category,
+  ) {
+    return _resolvedCategoryLimit(category);
+  }
+
+  // ================================================================
+  // INIT
+  // ================================================================
 
   @override
   void onInit() {
     super.onInit();
 
-    categoriesController = Get.isRegistered<CategoriesController>()
-        ? Get.find<CategoriesController>()
-        : Get.put(CategoriesController());
+    budgetLocal =
+        RepositoryProvider.instance.budgets;
 
-    transactionsController = Get.isRegistered<TransactionsController>()
-        ? Get.find<TransactionsController>()
-        : Get.put(TransactionsController());
+    budgetSync =
+        RepositoryProvider.instance.budgetSync;
 
-    ever(transactionsController.transactions, (_) {
-      calculateBudgets();
+    categoriesController =
+        Get.isRegistered<CategoriesController>()
+            ? Get.find<CategoriesController>()
+            : Get.put(CategoriesController());
 
-      // First real load of the transactions: now the figures are true,
-      // so it is safe to roll the cycle over.
-      if (!_autoResetChecked) {
-        _autoResetChecked = true;
-        checkAutoReset();
-        syncResetReminder();
-      }
-    });
-    ever(categoriesController.categoryList, (_) => calculateBudgets());
-    ever(customLimits, (_) {
-      calculateBudgets();
-      savePersistedState();
-    });
-    ever(customTotalBudget, (_) {
-      calculateBudgets();
-      savePersistedState();
-    });
+    transactionsController =
+        Get.isRegistered<TransactionsController>()
+            ? Get.find<TransactionsController>()
+            : Get.put(TransactionsController());
+
+    ever(
+      transactionsController.transactions,
+      (_) {
+        calculateBudgets();
+
+        if (!_autoResetChecked) {
+          _autoResetChecked = true;
+
+          checkAutoReset();
+
+          syncResetReminder();
+        }
+      },
+    );
+
+    ever(
+      categoriesController.categoryList,
+      (_) {
+        calculateBudgets();
+      },
+    );
+
+    ever(
+      customLimits,
+      (_) {
+        calculateBudgets();
+
+        savePersistedState();
+      },
+    );
+
+    ever(
+      customTotalBudget,
+      (_) {
+        calculateBudgets();
+
+        savePersistedState();
+      },
+    );
 
     loadPersistedState();
+
     calculateBudgets();
 
     if (transactionsController.transactions.isNotEmpty) {
       _autoResetChecked = true;
+
       checkAutoReset();
+    }
+
+    // Load the local Drift budget records.
+    unawaited(
+      _initializeDatabaseBudgets(),
+    );
+  }
+
+  // ================================================================
+  // DATABASE INITIALIZATION
+  // ================================================================
+
+  Future<void> _initializeDatabaseBudgets() async {
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      return;
+    }
+
+    try {
+      // First load the local database.
+      await _loadBudgetsFromLocalDatabase(
+        userId,
+      );
+
+      _databaseBudgetsLoaded = true;
+
+      calculateBudgets();
+
+      // Then trigger the existing SyncManager.
+      //
+      // SyncManager uploads pending local records and
+      // downloads cloud records.
+      if (Get.isRegistered<SyncManager>()) {
+        final syncManager =
+            Get.find<SyncManager>();
+
+        try {
+          await syncManager.sync();
+        } catch (e) {
+          debugPrint(
+            'Budget initial sync failed: $e',
+          );
+        }
+
+        // SyncManager may have received new cloud
+        // budget rows, so load Drift again.
+        await _loadBudgetsFromLocalDatabase(
+          userId,
+        );
+
+        calculateBudgets();
+      }
+    } catch (e, stackTrace) {
+      debugPrint(
+        'Budget database initialization failed: $e',
+      );
+
+      debugPrint(
+        '$stackTrace',
+      );
     }
   }
 
-  void savePersistedState() {
-    _budgetBox.put(AppKeys.monthlyBudgetKey, customTotalBudget.value);
+  // ================================================================
+  // LOAD DRIFT → CONTROLLER
+  // ================================================================
 
-    final serializableLimits = <String, double>{};
-    for (final entry in customLimits.entries) {
-      serializableLimits[entry.key] = entry.value;
+  Future<void> _loadBudgetsFromLocalDatabase(
+    String userId,
+  ) async {
+    final budgets =
+        await budgetLocal.getBudgets(userId);
+
+    final currentStart =
+        _dateOnly(cycleStartDate);
+
+    final currentEnd =
+        _dateOnly(cycleEndDate);
+
+    for (final budget in budgets) {
+      final budgetStart =
+          _dateOnly(budget.startDate);
+
+      final budgetEnd =
+          _dateOnly(budget.endDate);
+
+      // Only load the current cycle into the
+      // active BudgetController values.
+      if (!_sameDate(
+            budgetStart,
+            currentStart,
+          ) ||
+          !_sameDate(
+            budgetEnd,
+            currentEnd,
+          )) {
+        continue;
+      }
+
+      // Total budget has no category.
+      if (budget.categoryId == null) {
+        customTotalBudget.value =
+            budget.amount;
+
+        continue;
+      }
+
+      final categoryId =
+          budget.categoryId!;
+
+      customLimits[categoryId] =
+          budget.amount;
+
+      // Keep the category-name key too because
+      // the existing controller supports both.
+      final category =
+          categoriesController.categoryList
+              .firstWhereOrNull(
+        (category) =>
+            category.id == categoryId,
+      );
+
+      if (category != null) {
+        customLimits[category.name] =
+            budget.amount;
+      }
+    }
+  }
+
+  // ================================================================
+  // SYNC CURRENT BUDGETS
+  // ================================================================
+
+  Future<void> _syncCurrentBudgetsToDatabase() async {
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      return;
     }
 
-    _budgetBox.put(AppKeys.categoryBudgetKey, serializableLimits);
+    try {
+      // ------------------------------------------------------------
+      // TOTAL BUDGET
+      // ------------------------------------------------------------
 
-    _budgetBox.put(AppKeys.budgetMonthStartDayKey, monthStartDay.value);
-    _budgetBox.put(AppKeys.budgetResetModeKey, isAutomaticReset.value);
+      if (customTotalBudget.value != null) {
+        await _saveTotalBudgetToDatabase(
+          userId: userId,
+          amount: customTotalBudget.value!,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // CATEGORY BUDGETS
+      // ------------------------------------------------------------
+
+      for (final category
+          in categoriesController.categoryList) {
+        final amount =
+            _resolvedCategoryLimit(category);
+
+        // No need to create zero-value database
+        // records for categories that have never
+        // received a budget.
+        if (amount <= 0) {
+          continue;
+        }
+
+        await _saveCategoryBudgetToDatabase(
+          userId: userId,
+          category: category,
+          amount: amount,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // ASK SYNCMANAGER TO PROCESS QUEUE
+      // ------------------------------------------------------------
+
+      if (Get.isRegistered<SyncManager>()) {
+        final syncManager =
+            Get.find<SyncManager>();
+
+        try {
+          await syncManager.sync();
+        } catch (e) {
+          debugPrint(
+            'Budget sync failed: $e',
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint(
+        'Could not save budgets to database: $e',
+      );
+
+      debugPrint(
+        '$stackTrace',
+      );
+    }
+  }
+
+  // ================================================================
+  // SAVE CATEGORY BUDGET
+  // ================================================================
+
+  Future<void> _saveCategoryBudgetToDatabase({
+    required String userId,
+    required CategoryModel category,
+    required double amount,
+  }) async {
+    final budgets =
+        await budgetLocal.getBudgets(userId);
+
+    final currentStart =
+        _dateOnly(cycleStartDate);
+
+    final currentEnd =
+        _dateOnly(cycleEndDate);
+
+    final existing =
+        budgets.firstWhereOrNull(
+      (budget) {
+        return budget.categoryId ==
+                category.id &&
+            _sameDate(
+              _dateOnly(budget.startDate),
+              currentStart,
+            ) &&
+            _sameDate(
+              _dateOnly(budget.endDate),
+              currentEnd,
+            );
+      },
+    );
+
+    if (existing == null) {
+      await budgetSync.createBudget(
+        id: _generateUuid(),
+        userId: userId,
+        categoryId: category.id,
+        name: category.name,
+        amount: amount,
+        spent: 0.0,
+        startDate: cycleStartDate,
+        endDate: cycleEndDate,
+      );
+
+      return;
+    }
+
+    await budgetSync.updateBudget(
+      id: existing.id,
+      userId: userId,
+      categoryId: category.id,
+      name: category.name,
+      amount: amount,
+      spent: existing.spent,
+      startDate: cycleStartDate,
+      endDate: cycleEndDate,
+      createdAt: existing.createdAt,
+      version: existing.version,
+    );
+  }
+
+  // ================================================================
+  // SAVE TOTAL BUDGET
+  // ================================================================
+
+  Future<void> _saveTotalBudgetToDatabase({
+    required String userId,
+    required double amount,
+  }) async {
+    final budgets =
+        await budgetLocal.getBudgets(userId);
+
+    final currentStart =
+        _dateOnly(cycleStartDate);
+
+    final currentEnd =
+        _dateOnly(cycleEndDate);
+
+    final existing =
+        budgets.firstWhereOrNull(
+      (budget) {
+        return budget.categoryId == null &&
+            _sameDate(
+              _dateOnly(budget.startDate),
+              currentStart,
+            ) &&
+            _sameDate(
+              _dateOnly(budget.endDate),
+              currentEnd,
+            );
+      },
+    );
+
+    if (existing == null) {
+      await budgetSync.createBudget(
+        id: _generateUuid(),
+        userId: userId,
+        categoryId: null,
+        name: 'Total Budget',
+        amount: amount,
+        spent: 0.0,
+        startDate: cycleStartDate,
+        endDate: cycleEndDate,
+      );
+
+      return;
+    }
+
+    await budgetSync.updateBudget(
+      id: existing.id,
+      userId: userId,
+      categoryId: null,
+      name: existing.name,
+      amount: amount,
+      spent: existing.spent,
+      startDate: cycleStartDate,
+      endDate: cycleEndDate,
+      createdAt: existing.createdAt,
+      version: existing.version,
+    );
+  }
+
+  // ================================================================
+  // DATE HELPERS
+  // ================================================================
+
+  DateTime _dateOnly(DateTime value) {
+    return DateTime(
+      value.year,
+      value.month,
+      value.day,
+    );
+  }
+
+  bool _sameDate(
+    DateTime first,
+    DateTime second,
+  ) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+
+  // ================================================================
+  // UUID
+  // ================================================================
+
+  String _generateUuid() {
+    final random = Random.secure();
+
+    final bytes = List<int>.generate(
+      16,
+      (_) => random.nextInt(256),
+    );
+
+    // UUID version 4.
+    bytes[6] =
+        (bytes[6] & 0x0f) | 0x40;
+
+    // UUID variant RFC 4122.
+    bytes[8] =
+        (bytes[8] & 0x3f) | 0x80;
+
+    final hex = bytes
+        .map(
+          (byte) => byte
+              .toRadixString(16)
+              .padLeft(2, '0'),
+        )
+        .join();
+
+    return '${hex.substring(0, 8)}-'
+        '${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-'
+        '${hex.substring(16, 20)}-'
+        '${hex.substring(20, 32)}';
+  }
+
+  // ================================================================
+  // HIVE PERSISTENCE
+  // ================================================================
+
+  void savePersistedState() {
+    _budgetBox.put(
+      AppKeys.monthlyBudgetKey,
+      customTotalBudget.value,
+    );
+
+    final serializableLimits =
+        <String, double>{};
+
+    for (final entry
+        in customLimits.entries) {
+      serializableLimits[entry.key] =
+          entry.value;
+    }
+
+    _budgetBox.put(
+      AppKeys.categoryBudgetKey,
+      serializableLimits,
+    );
+
+    _budgetBox.put(
+      AppKeys.budgetMonthStartDayKey,
+      monthStartDay.value,
+    );
+
+    _budgetBox.put(
+      AppKeys.budgetResetModeKey,
+      isAutomaticReset.value,
+    );
+
     _budgetBox.put(
       AppKeys.budgetLastResetKey,
       lastResetDate.value?.toIso8601String(),
     );
 
-    // Written for reference and for the reset reminder to read. The app
-    // never trusts this copy for its own logic - nextResetDate is always
-    // recalculated, so a stale value can never send the cycle wrong.
     _budgetBox.put(
       AppKeys.budgetNextResetKey,
       nextResetDate.toIso8601String(),
     );
 
-    _budgetBox.put(AppKeys.budgetReminderOnKey, resetReminderOn.value);
-    _budgetBox.put(AppKeys.budgetReminderDaysKey, reminderDaysBefore.value);
+    _budgetBox.put(
+      AppKeys.budgetReminderOnKey,
+      resetReminderOn.value,
+    );
+
+    _budgetBox.put(
+      AppKeys.budgetReminderDaysKey,
+      reminderDaysBefore.value,
+    );
+
     _budgetBox.put(
       AppKeys.budgetCycleConfiguredKey,
       isCycleConfigured.value,
@@ -398,64 +962,117 @@ class BudgetController extends GetxController {
   }
 
   void loadPersistedState() {
-    final storedBudget = _budgetBox.get(AppKeys.monthlyBudgetKey) as double?;
+    final storedBudget =
+        _budgetBox.get(
+      AppKeys.monthlyBudgetKey,
+    ) as double?;
+
     if (storedBudget != null) {
-      customTotalBudget.value = storedBudget;
+      customTotalBudget.value =
+          storedBudget;
     }
 
-    final storedLimits = _budgetBox.get(AppKeys.categoryBudgetKey);
+    final storedLimits =
+        _budgetBox.get(
+      AppKeys.categoryBudgetKey,
+    );
+
     if (storedLimits is Map) {
       customLimits.clear();
-      for (final entry in storedLimits.entries) {
-        final key = entry.key.toString();
-        final value = entry.value is num ? (entry.value as num).toDouble() : 0.0;
+
+      for (final entry
+          in storedLimits.entries) {
+        final key =
+            entry.key.toString();
+
+        final value =
+            entry.value is num
+                ? (entry.value as num).toDouble()
+                : 0.0;
+
         customLimits[key] = value;
       }
     }
 
-    final storedDay = _budgetBox.get(AppKeys.budgetMonthStartDayKey);
-    if (storedDay is int && storedDay >= 1 && storedDay <= 31) {
-      monthStartDay.value = storedDay;
+    final storedDay =
+        _budgetBox.get(
+      AppKeys.budgetMonthStartDayKey,
+    );
+
+    if (storedDay is int &&
+        storedDay >= 1 &&
+        storedDay <= 31) {
+      monthStartDay.value =
+          storedDay;
     }
 
-    // Its own key, because savePersistedState() also runs when a category
-    // limit changes - that must not count as configuring the cycle.
     isCycleConfigured.value =
-        _budgetBox.get(AppKeys.budgetCycleConfiguredKey) == true;
+        _budgetBox.get(
+              AppKeys.budgetCycleConfiguredKey,
+            ) ==
+            true;
 
-    final storedMode = _budgetBox.get(AppKeys.budgetResetModeKey);
+    final storedMode =
+        _budgetBox.get(
+      AppKeys.budgetResetModeKey,
+    );
+
     if (storedMode is bool) {
-      isAutomaticReset.value = storedMode;
+      isAutomaticReset.value =
+          storedMode;
     }
 
-    final storedReset = _budgetBox.get(AppKeys.budgetLastResetKey);
+    final storedReset =
+        _budgetBox.get(
+      AppKeys.budgetLastResetKey,
+    );
+
     if (storedReset is String) {
-      lastResetDate.value = DateTime.tryParse(storedReset);
+      lastResetDate.value =
+          DateTime.tryParse(
+        storedReset,
+      );
     }
 
-    // budgetNextResetKey is deliberately not read back. It is a record,
-    // not a source of truth.
+    final storedReminderOn =
+        _budgetBox.get(
+      AppKeys.budgetReminderOnKey,
+    );
 
-    final storedReminderOn = _budgetBox.get(AppKeys.budgetReminderOnKey);
     if (storedReminderOn is bool) {
-      resetReminderOn.value = storedReminderOn;
+      resetReminderOn.value =
+          storedReminderOn;
     }
 
-    final storedReminderDays = _budgetBox.get(AppKeys.budgetReminderDaysKey);
+    final storedReminderDays =
+        _budgetBox.get(
+      AppKeys.budgetReminderDaysKey,
+    );
+
     if (storedReminderDays is int &&
         storedReminderDays >= 1 &&
         storedReminderDays <= 3) {
-      reminderDaysBefore.value = storedReminderDays;
+      reminderDaysBefore.value =
+          storedReminderDays;
     }
 
-    final storedHistory = _budgetBox.get(AppKeys.budgetHistoryKey);
+    final storedHistory =
+        _budgetBox.get(
+      AppKeys.budgetHistoryKey,
+    );
+
     if (storedHistory is List) {
       try {
         cycleHistory.assignAll(
           storedHistory
-              .map((e) => BudgetCycleHistory.fromMap(
-                    Map<String, dynamic>.from(e as Map),
-                  ))
+              .map(
+                (e) =>
+                    BudgetCycleHistory.fromMap(
+                  Map<String, dynamic>.from(
+                    e as Map,
+                  ),
+                ),
+              )
               .toList(),
         );
       } catch (_) {
@@ -464,33 +1081,49 @@ class BudgetController extends GetxController {
     }
   }
 
+  // ================================================================
+  // HISTORY
+  // ================================================================
+
   void _saveHistory() {
     _budgetBox.put(
       AppKeys.budgetHistoryKey,
-      cycleHistory.map((c) => c.toMap()).toList(),
+      cycleHistory
+          .map((c) => c.toMap())
+          .toList(),
     );
   }
 
   void deleteHistoryEntry(String id) {
-    cycleHistory.removeWhere((c) => c.id == id);
+    cycleHistory.removeWhere(
+      (c) => c.id == id,
+    );
+
     _saveHistory();
   }
 
   void clearHistory() {
     cycleHistory.clear();
+
     _saveHistory();
   }
 
-  /// Saves the cycle that is ending, so the history screen can show what
-  /// the limit was, what was spent, and what was left over.
-  void _archiveCurrentCycle({required bool auto}) {
+  void _archiveCurrentCycle({
+    required bool auto,
+  }) {
     final spent = totalSpent;
     final limit = totalAllocated;
 
-    if (spent <= 0 && limit <= 0) return;
+    if (spent <= 0 && limit <= 0) {
+      return;
+    }
 
     final entries = budgetList
-        .where((b) => b.spentAmount > 0 || b.allocatedAmount > 0)
+        .where(
+          (b) =>
+              b.spentAmount > 0 ||
+              b.allocatedAmount > 0,
+        )
         .map(
           (b) => CategoryCycleEntry(
             name: b.categoryName,
@@ -499,14 +1132,19 @@ class BudgetController extends GetxController {
           ),
         )
         .toList()
-      ..sort((a, b) => b.spent.compareTo(a.spent));
+      ..sort(
+        (a, b) =>
+            b.spent.compareTo(a.spent),
+      );
 
-    final end = DateTime.now();
+    final end =
+        DateTime.now();
 
     cycleHistory.insert(
       0,
       BudgetCycleHistory(
-        id: end.millisecondsSinceEpoch.toString(),
+        id: end.millisecondsSinceEpoch
+            .toString(),
         startDate: cycleStartDate,
         endDate: end,
         totalLimit: limit,
@@ -516,44 +1154,71 @@ class BudgetController extends GetxController {
       ),
     );
 
-    // Two years of cycles is plenty.
     if (cycleHistory.length > 24) {
-      cycleHistory.removeRange(24, cycleHistory.length);
+      cycleHistory.removeRange(
+        24,
+        cycleHistory.length,
+      );
     }
 
     _saveHistory();
   }
 
+  // ================================================================
+  // CALCULATIONS
+  // ================================================================
+
   void calculateBudgets() {
-    final categories = categoriesController.categoryList;
-    final transactionsList = transactionsController.transactions;
+    final categories =
+        categoriesController.categoryList;
 
-    // Categories are empty for a moment while they reload. Rebuilding
-    // from an empty list would blank the whole screen, so keep what is
-    // already there until real categories arrive.
-    if (categories.isEmpty && budgetList.isNotEmpty) return;
+    final transactionsList =
+        transactionsController.transactions;
 
-    // Only the transactions inside the current cycle. Without this the
-    // spent totals were the whole history, which is why a reset used to
-    // come straight back.
-    final cycleStart = cycleStartDate;
+    if (categories.isEmpty &&
+        budgetList.isNotEmpty) {
+      return;
+    }
 
-    final List<BudgetModel> tempList = categories.map((cat) {
-      double spent = transactionsList
-          .where((t) {
-            if (t.transactionDate.isBefore(cycleStart)) return false;
+    final cycleStart =
+        cycleStartDate;
 
-            final matchesCategoryId = t.categoryId.isNotEmpty &&
-                t.categoryId == cat.id;
-            final matchesLegacyName =
-                t.categoryId.isEmpty &&
-                _normalizeName(t.category) == _normalizeName(cat.name);
+    final List<BudgetModel> tempList =
+        categories.map((cat) {
+      final spent = transactionsList
+          .where(
+            (t) {
+              if (t.transactionDate
+                  .isBefore(cycleStart)) {
+                return false;
+              }
 
-            return !t.isIncome && (matchesCategoryId || matchesLegacyName);
-          })
-          .fold(0.0, (sum, t) => sum + t.amount);
+              final matchesCategoryId =
+                  t.categoryId.isNotEmpty &&
+                      t.categoryId == cat.id;
 
-      final limit = getCategoryLimit(cat);
+              final matchesLegacyName =
+                  t.categoryId.isEmpty &&
+                      _normalizeName(
+                            t.category,
+                          ) ==
+                          _normalizeName(
+                            cat.name,
+                          );
+
+              return !t.isIncome &&
+                  (matchesCategoryId ||
+                      matchesLegacyName);
+            },
+          )
+          .fold(
+            0.0,
+            (sum, t) =>
+                sum + t.amount,
+          );
+
+      final limit =
+          getCategoryLimit(cat);
 
       return BudgetModel(
         id: cat.id,
@@ -563,109 +1228,244 @@ class BudgetController extends GetxController {
       );
     }).toList();
 
-    budgetList.assignAll(tempList);
+    budgetList.assignAll(
+      tempList,
+    );
   }
 
-  double get totalAllocated => customTotalBudget.value ??
-      categoriesController.categoryList.fold(0.0, (sum, category) => sum + _resolvedCategoryLimit(category));
+  double get totalAllocated =>
+      customTotalBudget.value ??
+      categoriesController.categoryList
+          .fold(
+        0.0,
+        (sum, category) =>
+            sum +
+            _resolvedCategoryLimit(
+              category,
+            ),
+      );
 
-  double get totalSpent => budgetList.fold(0.0, (sum, item) => sum + item.spentAmount).clamp(0.0, double.infinity);
+  double get totalSpent =>
+      budgetList
+          .fold(
+            0.0,
+            (sum, item) =>
+                sum + item.spentAmount,
+          )
+          .clamp(
+            0.0,
+            double.infinity,
+          );
 
   // ================================================================
-  // STEP 27 - overspending
+  // OVERSpending
   // ================================================================
 
-  /// True once the cycle's spending has passed the budget.
   bool get isOverBudget =>
-      totalAllocated > 0 && totalSpent > totalAllocated;
+      totalAllocated > 0 &&
+      totalSpent > totalAllocated;
 
-  /// How far past the budget the user is. Zero when still within it.
   double get overspentAmount {
-    final over = totalSpent - totalAllocated;
+    final over =
+        totalSpent - totalAllocated;
+
     return over > 0 ? over : 0;
   }
 
-  /// 0.0 to 1.0 for the bar. Stays full once the budget is passed.
   double get spendProgress {
-    if (totalAllocated <= 0) return 0;
-    return (totalSpent / totalAllocated).clamp(0.0, 1.0);
+    if (totalAllocated <= 0) {
+      return 0;
+    }
+
+    return (
+      totalSpent / totalAllocated
+    ).clamp(
+      0.0,
+      1.0,
+    );
   }
 
-  /// Kept for older call sites.
   void resetMonthlySpent() {
     performReset();
   }
 
   double get currentCategoryAllocationTotal {
-    return categoriesController.categoryList.fold(0.0, (sum, category) {
-      return sum + _resolvedCategoryLimit(category);
-    });
+    return categoriesController
+        .categoryList
+        .fold(
+      0.0,
+      (sum, category) =>
+          sum +
+          _resolvedCategoryLimit(
+            category,
+          ),
+    );
   }
 
   double projectedAllocationAfterUpdate(
     String categoryName,
     double newLimit,
   ) {
-    final normalizedName = categoryName.trim().toLowerCase();
-    final existingCategory = categoriesController.categoryList.firstWhereOrNull(
-      (category) => category.name.trim().toLowerCase() == normalizedName,
+    final normalizedName =
+        categoryName
+            .trim()
+            .toLowerCase();
+
+    final existingCategory =
+        categoriesController.categoryList
+            .firstWhereOrNull(
+      (category) =>
+          category.name
+                  .trim()
+                  .toLowerCase() ==
+              normalizedName,
     );
 
-    final previousLimit = existingCategory != null
-        ? _resolvedCategoryLimit(existingCategory)
-        : 0.0;
+    final previousLimit =
+        existingCategory != null
+            ? _resolvedCategoryLimit(
+                existingCategory,
+              )
+            : 0.0;
 
-    return currentCategoryAllocationTotal - previousLimit + newLimit;
+    return currentCategoryAllocationTotal -
+        previousLimit +
+        newLimit;
   }
 
-  bool willExceedMonthlyBudget(String categoryName, double newLimit) {
-    final monthlyLimit = customTotalBudget.value;
-    if (monthlyLimit == null) return false;
+  bool willExceedMonthlyBudget(
+    String categoryName,
+    double newLimit,
+  ) {
+    final monthlyLimit =
+        customTotalBudget.value;
 
-    return projectedAllocationAfterUpdate(categoryName, newLimit) > monthlyLimit;
+    if (monthlyLimit == null) {
+      return false;
+    }
+
+    return projectedAllocationAfterUpdate(
+          categoryName,
+          newLimit,
+        ) >
+        monthlyLimit;
   }
 
-  void setCategoryLimit(String categoryName, double newLimit) {
-    final matchedCategory = categoriesController.categoryList.firstWhereOrNull(
-      (category) => _normalizeName(category.name) == _normalizeName(categoryName),
+  // ================================================================
+  // SET CATEGORY LIMIT
+  // ================================================================
+
+  void setCategoryLimit(
+    String categoryName,
+    double newLimit,
+  ) {
+    final matchedCategory =
+        categoriesController.categoryList
+            .firstWhereOrNull(
+      (category) =>
+          _normalizeName(
+            category.name,
+          ) ==
+          _normalizeName(
+            categoryName,
+          ),
     );
 
     if (matchedCategory != null) {
-      customLimits[matchedCategory.id] = newLimit;
+      customLimits[
+          matchedCategory.id] =
+          newLimit;
     }
-    customLimits[categoryName] = newLimit;
+
+    customLimits[categoryName] =
+        newLimit;
+
     calculateBudgets();
-  }
 
-  void setTotalBudget(double newTotalLimit) {
-    customTotalBudget.value = newTotalLimit;
     savePersistedState();
+
+    // Local-first:
+    // save to Drift + queue Supabase sync.
+    unawaited(
+      _syncCurrentBudgetsToDatabase(),
+    );
   }
 
-  void addNewBudget(String categoryName, double amount) {
-    final normalizedName = _normalizeName(categoryName);
-    final existingCategory = categoriesController.categoryList.firstWhereOrNull(
-      (element) => _normalizeName(element.name) == normalizedName,
+  // ================================================================
+  // SET TOTAL BUDGET
+  // ================================================================
+
+  void setTotalBudget(
+    double newTotalLimit,
+  ) {
+    customTotalBudget.value =
+        newTotalLimit;
+
+    savePersistedState();
+
+    unawaited(
+      _syncCurrentBudgetsToDatabase(),
+    );
+  }
+
+  // ================================================================
+  // ADD NEW BUDGET
+  // ================================================================
+
+  void addNewBudget(
+    String categoryName,
+    double amount,
+  ) {
+    final normalizedName =
+        _normalizeName(categoryName);
+
+    final existingCategory =
+        categoriesController.categoryList
+            .firstWhereOrNull(
+      (element) =>
+          _normalizeName(
+            element.name,
+          ) ==
+          normalizedName,
     );
 
     if (existingCategory != null) {
-      customLimits[existingCategory.id] = amount;
-      customLimits[existingCategory.name] = amount;
+      customLimits[
+          existingCategory.id] =
+          amount;
+
+      customLimits[
+          existingCategory.name] =
+          amount;
     } else {
-      final newCategory = CategoryModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      final newCategory =
+          CategoryModel(
+        id: _generateUuid(),
         name: categoryName,
         icon: 'attach_money',
         colorValue: 0xFF2B82FB,
         isDefault: false,
       );
 
-      categoriesController.categoryList.add(newCategory);
-      customLimits[newCategory.id] = amount;
-      customLimits[newCategory.name] = amount;
+      categoriesController
+          .categoryList
+          .add(newCategory);
+
+      customLimits[
+          newCategory.id] =
+          amount;
+
+      customLimits[
+          newCategory.name] =
+          amount;
     }
 
     savePersistedState();
+
     calculateBudgets();
+
+    unawaited(
+      _syncCurrentBudgetsToDatabase(),
+    );
   }
 }

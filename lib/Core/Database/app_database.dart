@@ -110,6 +110,55 @@ class LocalCategories extends Table {
 }
 
 /// ------------------------------------------------------------
+/// BUDGETS
+/// ------------------------------------------------------------
+///
+/// Local representation of the Supabase `budgets` table.
+///
+/// `spent` is stored locally because Supabase also has a spent
+/// column. The BudgetController can continue calculating spent
+/// from transactions for the UI.
+///
+/// startDate/endDate allow us to preserve the budget period.
+///
+/// categoryId is nullable because a total budget does not
+/// necessarily have to belong to one category.
+///
+
+class LocalBudgets extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get userId => text()();
+
+  TextColumn get categoryId => text().nullable()();
+
+  TextColumn get name => text()();
+
+  RealColumn get amount =>
+      real().withDefault(const Constant(0.0))();
+
+  RealColumn get spent =>
+      real().withDefault(const Constant(0.0))();
+
+  DateTimeColumn get startDate => dateTime()();
+
+  DateTimeColumn get endDate => dateTime()();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  IntColumn get version =>
+      integer().withDefault(const Constant(1))();
+
+  BoolColumn get isDeleted =>
+      boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// ------------------------------------------------------------
 /// SYNC QUEUE
 /// ------------------------------------------------------------
 
@@ -120,11 +169,11 @@ class SyncQueue extends Table {
 
   TextColumn get entityTable => text()();
 
-TextColumn get recordId => text()();
+  TextColumn get recordId => text()();
 
-TextColumn get operation => text()();
+  TextColumn get operation => text()();
 
-TextColumn get payload => text()();
+  TextColumn get payload => text()();
 
   IntColumn get retryCount =>
       integer().withDefault(const Constant(0))();
@@ -135,10 +184,14 @@ TextColumn get payload => text()();
 
   DateTimeColumn get updatedAt => dateTime()();
 
- @override
-List<Set<Column>> get uniqueKeys => [
-  {entityTable, recordId},
-];
+  /// ----------------------------------------------------------
+  /// ACCOUNT-AWARE UNIQUE KEY
+  /// ----------------------------------------------------------
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {userId, entityTable, recordId},
+      ];
 }
 
 /// ------------------------------------------------------------
@@ -150,14 +203,118 @@ List<Set<Column>> get uniqueKeys => [
     LocalTransactions,
     LocalWallets,
     LocalCategories,
+    LocalBudgets,
     SyncQueue,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// ----------------------------------------------------------
+  /// Schema version
+  ///
+  /// Version 1:
+  /// Original database
+  ///
+  /// Version 2:
+  /// SyncQueue unique key:
+  /// userId + entityTable + recordId
+  ///
+  /// Version 3:
+  /// Added LocalBudgets
+  /// ----------------------------------------------------------
+
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+
+      onUpgrade: (Migrator m, int from, int to) async {
+        /// -----------------------------------------------
+        /// VERSION 1 → VERSION 2
+        /// -----------------------------------------------
+        if (from < 2) {
+          await _migrateSyncQueueToVersion2(m);
+        }
+
+        /// -----------------------------------------------
+        /// VERSION 2 → VERSION 3
+        /// -----------------------------------------------
+       if (from < 3) {
+  await m.createTable(localBudgets);
+}
+      },
+    );
+  }
+
+  /// ----------------------------------------------------------
+  /// MIGRATION: VERSION 1 → VERSION 2
+  /// ----------------------------------------------------------
+
+  Future<void> _migrateSyncQueueToVersion2(
+    Migrator m,
+  ) async {
+    await customStatement(
+      'ALTER TABLE sync_queue '
+      'RENAME TO sync_queue_old',
+    );
+
+    await customStatement('''
+      CREATE TABLE sync_queue (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        entity_table TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        retry_count INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE (
+          user_id,
+          entity_table,
+          record_id
+        )
+      )
+    ''');
+
+    await customStatement('''
+      INSERT INTO sync_queue (
+        id,
+        user_id,
+        entity_table,
+        record_id,
+        operation,
+        payload,
+        retry_count,
+        last_error,
+        created_at,
+        updated_at
+      )
+      SELECT
+        id,
+        user_id,
+        entity_table,
+        record_id,
+        operation,
+        payload,
+        retry_count,
+        last_error,
+        created_at,
+        updated_at
+      FROM sync_queue_old
+    ''');
+
+    await customStatement(
+      'DROP TABLE sync_queue_old',
+    );
+  }
 }
 
 /// ------------------------------------------------------------
