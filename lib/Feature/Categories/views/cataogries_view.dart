@@ -27,8 +27,7 @@ class CategoriesView extends StatefulWidget {
 }
 
 class _CategoriesViewState extends State<CategoriesView> {
-  final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final Set<String> selectedCategoryIds = <String>{};
 
@@ -57,10 +56,7 @@ class _CategoriesViewState extends State<CategoriesView> {
     }
   }
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     _scaffoldKey.currentState?.closeEndDrawer();
 
     Future.delayed(const Duration(milliseconds: 150), () {
@@ -100,14 +96,14 @@ class _CategoriesViewState extends State<CategoriesView> {
     });
   }
 
-  Future<void> _showDeleteConfirmationDialog(
-    List<String> idsToDelete,
-  ) async {
+  Future<void> _showDeleteConfirmationDialog(List<String> idsToDelete) async {
     final selectedCategories = controller.categoryList
         .where((category) => idsToDelete.contains(category.id))
         .toList();
 
-    final categoryNames = selectedCategories.map((category) => category.name).toList();
+    final categoryNames = selectedCategories
+        .map((category) => category.name)
+        .toList();
     final linkedCount = selectedCategories.fold<int>(
       0,
       (sum, category) => sum + controller.getCategoryCount(category.id),
@@ -121,11 +117,11 @@ class _CategoriesViewState extends State<CategoriesView> {
         content: Text(
           categoryNames.length == 1
               ? hasLinkedData
-                  ? 'This will permanently delete "${categoryNames.first}" and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
-                  : 'This will permanently delete "${categoryNames.first}".\n\nDo you want to continue?'
+                    ? 'This will permanently delete "${categoryNames.first}" and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
+                    : 'This will permanently delete "${categoryNames.first}".\n\nDo you want to continue?'
               : hasLinkedData
-                  ? 'This will permanently delete ${categoryNames.length} categories and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
-                  : 'This will permanently delete ${categoryNames.length} categories.\n\nDo you want to continue?',
+              ? 'This will permanently delete ${categoryNames.length} categories and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
+              : 'This will permanently delete ${categoryNames.length} categories.\n\nDo you want to continue?',
         ),
         actions: [
           TextButton(
@@ -175,11 +171,9 @@ class _CategoriesViewState extends State<CategoriesView> {
 
     if (user != null) {
       final nameFromMetaData =
-          user.userMetadata?['full_name'] ??
-          user.userMetadata?['name'];
+          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null &&
-          nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
@@ -187,8 +181,7 @@ class _CategoriesViewState extends State<CategoriesView> {
         final emailPrefix = user.email!.split('@').first;
 
         if (emailPrefix.isNotEmpty) {
-          return emailPrefix[0].toUpperCase() +
-              emailPrefix.substring(1);
+          return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
         }
       }
     }
@@ -200,10 +193,7 @@ class _CategoriesViewState extends State<CategoriesView> {
   // ============================================================
 
   Future<void> _openAddCategoryDialog() async {
-    await Get.dialog(
-      const AddCategoryDialog(),
-      barrierDismissible: false,
-    );
+    await Get.dialog(const AddCategoryDialog(), barrierDismissible: false);
 
     await controller.fetchCategories();
   }
@@ -212,10 +202,7 @@ class _CategoriesViewState extends State<CategoriesView> {
   // CATEGORY COLORS
   // ============================================================
 
-  Color _getCategoryColor(
-    String name,
-    int defaultColorValue,
-  ) {
+  Color _getCategoryColor(String name, int defaultColorValue) {
     switch (name.toLowerCase().trim()) {
       case 'food':
       case 'food & dining':
@@ -314,8 +301,7 @@ class _CategoriesViewState extends State<CategoriesView> {
         return const Color(0xFF78909C);
     }
 
-    if (defaultColorValue != 0 &&
-        defaultColorValue != 0xFF757575) {
+    if (defaultColorValue != 0 && defaultColorValue != 0xFF757575) {
       return Color(defaultColorValue);
     }
 
@@ -330,8 +316,7 @@ class _CategoriesViewState extends State<CategoriesView> {
       const Color(0xFF8D6E63),
     ];
 
-    final int hash =
-        name.codeUnits.fold(0, (prev, curr) => prev + curr);
+    final int hash = name.codeUnits.fold(0, (prev, curr) => prev + curr);
 
     return customColors[hash % customColors.length];
   }
@@ -452,11 +437,11 @@ class _CategoriesViewState extends State<CategoriesView> {
   // BUILD
   // ============================================================
 
- @override
-Widget build(BuildContext context) {
-  final bool isDark = Theme.of(context).brightness == Brightness.dark;
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-  final settingsController = Get.find<SettingsController>();
+    final settingsController = Get.find<SettingsController>();
 
     return PopScope(
       canPop: true,
@@ -471,16 +456,11 @@ Widget build(BuildContext context) {
             ? const Color(0xFF121212)
             : const Color(0xFFF7F9F8),
 
-        endDrawer: _buildNavigationDrawer(
-          context,
-          isDark,
-          settingsController,
-        ),
+        endDrawer: _buildNavigationDrawer(context, isDark, settingsController),
 
         // ========================================================
         // APP BAR
         // ========================================================
-
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -489,9 +469,7 @@ Widget build(BuildContext context) {
 
           leading: isSelectionMode
               ? IconButton(
-                  icon: const Icon(
-                    Icons.close_rounded,
-                  ),
+                  icon: const Icon(Icons.close_rounded),
                   onPressed: _exitSelectionMode,
                 )
               : null,
@@ -506,10 +484,7 @@ Widget build(BuildContext context) {
                     : 'Categories',
                 style: AppTextStyles.headingMedium(
                   isDark,
-                ).copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
+                ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
               ),
 
               const SizedBox(height: 2),
@@ -518,9 +493,7 @@ Widget build(BuildContext context) {
                 'Manage your expense categories',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark
-                      ? Colors.grey[400]
-                      : Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
@@ -533,9 +506,7 @@ Widget build(BuildContext context) {
                 onPressed: selectedCategoryIds.isEmpty
                     ? null
                     : _deleteSelectedCategories,
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                ),
+                icon: const Icon(Icons.delete_outline_rounded),
               )
             else
               Row(
@@ -553,9 +524,7 @@ Widget build(BuildContext context) {
                     tooltip: 'Open navigation menu',
                     icon: Icon(
                       Icons.menu_rounded,
-                      color: isDark
-                          ? Colors.white
-                          : const Color(0xFF2E7D32),
+                      color: isDark ? Colors.white : const Color(0xFF2E7D32),
                       size: 28,
                     ),
                     onPressed: () {
@@ -570,7 +539,6 @@ Widget build(BuildContext context) {
         // ========================================================
         // BODY
         // ========================================================
-
         body: Stack(
           children: [
             GestureDetector(
@@ -582,53 +550,40 @@ Widget build(BuildContext context) {
 
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (controller.categoryList.isEmpty) {
                   return const Center(
                     child: Text(
                       'No categories found',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   );
                 }
 
-                final categories =
-                    controller.categoryList.toList();
+                final categories = controller.categoryList.toList();
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(
-                    top: 12,
-                    bottom: 100,
-                  ),
+                  padding: const EdgeInsets.only(top: 12, bottom: 100),
 
                   itemCount: categories.length,
 
                   itemBuilder: (context, index) {
                     final category = categories[index];
 
-                    final Color baseColor =
-                        _getCategoryColor(
+                    final Color baseColor = _getCategoryColor(
                       category.name,
                       category.colorValue,
                     );
 
-                    final int transactionCount =
-                        controller.getCategoryCount(
+                    final int transactionCount = controller.getCategoryCount(
                       category.id,
                     );
 
-                    final bool isDefaultCategory =
-                        category.isDefault;
+                    final bool isDefaultCategory = category.isDefault;
 
-                    final bool isSelected =
-                        selectedCategoryIds.contains(
+                    final bool isSelected = selectedCategoryIds.contains(
                       category.id,
                     );
 
@@ -639,17 +594,13 @@ Widget build(BuildContext context) {
                       ),
 
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF1E1E1E)
-                            : Colors.white,
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
 
-                        borderRadius:
-                            BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16),
 
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
-                                .withOpacity(0.02),
+                            color: Colors.black.withOpacity(0.02),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -658,26 +609,20 @@ Widget build(BuildContext context) {
 
                       child: Material(
                         color: Colors.transparent,
-                        borderRadius:
-                            BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16),
 
                         child: InkWell(
-                          borderRadius:
-                              BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16),
 
                           onTap: () {
                             _closeDrawerInstantly();
 
                             if (isSelectionMode) {
-                              _toggleCategorySelection(
-                                category.id,
-                              );
+                              _toggleCategorySelection(category.id);
                             } else {
                               Get.to(
-                                () =>
-                                    CategoryTransactionsScreen(
-                                  categoryName:
-                                      category.name,
+                                () => CategoryTransactionsScreen(
+                                  categoryName: category.name,
                                 ),
                               );
                             }
@@ -686,20 +631,15 @@ Widget build(BuildContext context) {
                           onLongPress: () {
                             if (!isDefaultCategory) {
                               if (isSelectionMode) {
-                                _toggleCategorySelection(
-                                  category.id,
-                                );
+                                _toggleCategorySelection(category.id);
                               } else {
-                                _enterSelectionMode(
-                                  category.id,
-                                );
+                                _enterSelectionMode(category.id);
                               }
                             }
                           },
 
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 12,
                             ),
@@ -711,15 +651,12 @@ Widget build(BuildContext context) {
                                   height: 48,
 
                                   decoration: BoxDecoration(
-                                    color: baseColor
-                                        .withOpacity(0.18),
+                                    color: baseColor.withOpacity(0.18),
                                     shape: BoxShape.circle,
                                   ),
 
                                   child: Icon(
-                                    _getIconData(
-                                      category.icon,
-                                    ),
+                                    _getIconData(category.icon),
                                     color: baseColor,
                                     size: 24,
                                   ),
@@ -735,36 +672,26 @@ Widget build(BuildContext context) {
                                     children: [
                                       Text(
                                         category.name,
-                                        style:
-                                            AppTextStyles.bodyLarge(
-                                          isDark,
-                                        ).copyWith(
-                                          fontWeight:
-                                              FontWeight.w600,
-                                          fontSize: 16,
-                                        ),
+                                        style: AppTextStyles.bodyLarge(isDark)
+                                            .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
                                       ),
 
                                       const SizedBox(height: 4),
 
                                       Container(
-                                        padding:
-                                            const EdgeInsets
-                                                .symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                           horizontal: 8,
                                           vertical: 2,
                                         ),
 
-                                        decoration:
-                                            BoxDecoration(
+                                        decoration: BoxDecoration(
                                           color: isDark
                                               ? Colors.grey[800]
-                                              : const Color(
-                                                  0xFFF0F2F5,
-                                                ),
-                                          borderRadius:
-                                              BorderRadius
-                                                  .circular(
+                                              : const Color(0xFFF0F2F5),
+                                          borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
@@ -786,21 +713,16 @@ Widget build(BuildContext context) {
                                 if (isSelectionMode)
                                   Icon(
                                     isSelected
-                                        ? Icons
-                                            .check_circle_rounded
-                                        : Icons
-                                            .circle_outlined,
+                                        ? Icons.check_circle_rounded
+                                        : Icons.circle_outlined,
                                     color: isSelected
-                                        ? const Color(
-                                            0xFF2EA44F,
-                                          )
+                                        ? const Color(0xFF2EA44F)
                                         : Colors.grey[400],
                                     size: 24,
                                   )
                                 else
                                   Icon(
-                                    Icons
-                                        .chevron_right_rounded,
+                                    Icons.chevron_right_rounded,
                                     color: Colors.grey[400],
                                     size: 22,
                                   ),
@@ -818,7 +740,6 @@ Widget build(BuildContext context) {
             // ======================================================
             // DRAWER
             // ======================================================
-
             Obx(() {
               if (!isDrawerOpen.value) {
                 return const SizedBox.shrink();
@@ -831,9 +752,7 @@ Widget build(BuildContext context) {
                       onTap: () {
                         isDrawerOpen.value = false;
                       },
-                      child: Container(
-                        color: Colors.black.withOpacity(0.5),
-                      ),
+                      child: Container(color: Colors.black.withOpacity(0.5)),
                     ),
 
                     Align(
@@ -854,23 +773,19 @@ Widget build(BuildContext context) {
                                 ? const Color(0xFF1E1E1E)
                                 : const Color(0xFFF9FAFB),
 
-                            borderRadius:
-                                BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(28),
 
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black
-                                    .withOpacity(0.3),
+                                color: Colors.black.withOpacity(0.3),
                                 blurRadius: 20,
-                                offset:
-                                    const Offset(0, 10),
+                                offset: const Offset(0, 10),
                               ),
                             ],
                           ),
 
                           child: ClipRRect(
-                            borderRadius:
-                                BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(28),
 
                             child: Column(
                               children: [
@@ -902,26 +817,16 @@ Widget build(BuildContext context) {
                                     gradient: LinearGradient(
                                       colors: isDark
                                           ? [
-                                              const Color(
-                                                0xFF2E7D32,
-                                              ),
-                                              const Color(
-                                                0xFF1B5E20,
-                                              ),
+                                              const Color(0xFF2E7D32),
+                                              const Color(0xFF1B5E20),
                                             ]
                                           : [
-                                              const Color(
-                                                0xFF4CAF50,
-                                              ),
-                                              const Color(
-                                                0xFF388E3C,
-                                              ),
+                                              const Color(0xFF4CAF50),
+                                              const Color(0xFF388E3C),
                                             ],
 
-                                      begin:
-                                          Alignment.topLeft,
-                                      end:
-                                          Alignment.bottomRight,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
                                   ),
 
@@ -930,56 +835,58 @@ Widget build(BuildContext context) {
                                   ),
 
                                   currentAccountPicture: Obx(() {
-  final imageUrl = settingsController.profilePictureUrl.value;
-  final name = settingsController.profileName.value;
+                                    final imageUrl = settingsController
+                                        .profilePictureUrl
+                                        .value;
+                                    final name =
+                                        settingsController.profileName.value;
 
-  final firstLetter = name.isNotEmpty
-      ? name[0].toUpperCase()
-      : 'U';
+                                    final firstLetter = name.isNotEmpty
+                                        ? name[0].toUpperCase()
+                                        : 'U';
 
-  return Container(
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(
-        color: Colors.white,
-        width: 2,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.15),
-          blurRadius: 8,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: CircleAvatar(
-      backgroundColor: Colors.white,
-      backgroundImage: imageUrl.isNotEmpty
-          ? NetworkImage(imageUrl)
-          : null,
-      child: imageUrl.isEmpty
-          ? Text(
-              firstLetter,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E7D32),
-              ),
-            )
-          : null,
-    ),
-  );
-}),
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.15,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: CircleAvatar(
+                                        backgroundColor: Colors.white,
+                                        backgroundImage: imageUrl.isNotEmpty
+                                            ? NetworkImage(imageUrl)
+                                            : null,
+                                        child: imageUrl.isEmpty
+                                            ? Text(
+                                                firstLetter,
+                                                style: const TextStyle(
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF2E7D32),
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    );
+                                  }),
 
                                   accountName: Text(
                                     _userName,
-                                    style:
-                                        const TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color:
-                                          Colors.white,
+                                      color: Colors.white,
                                     ),
                                   ),
 
@@ -994,156 +901,112 @@ Widget build(BuildContext context) {
 
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white
-                                          .withOpacity(0.9),
+                                      color: Colors.white.withOpacity(0.9),
                                     ),
                                   ),
                                 ),
 
                                 Expanded(
                                   child: ListView(
-                                    padding:
-                                        const EdgeInsets
-                                            .symmetric(
+                                    padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
                                       vertical: 16,
                                     ),
 
-                                    physics:
-                                        const BouncingScrollPhysics(),
+                                    physics: const BouncingScrollPhysics(),
 
                                     children: [
                                       _buildDrawerOption(
                                         context: context,
                                         icon: Icons
                                             .account_balance_wallet_rounded,
-                                        iconColor:
-                                            const Color(
-                                          0xFF2B82FB,
-                                        ),
+                                        iconColor: const Color(0xFF2B82FB),
+                                        emoji: '💳',
                                         title: 'Wallets',
                                         subtitle:
                                             'Manage your cash, bank and other wallets',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const WalletsView(),
-                                          binding:
-                                              WalletsBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const WalletsView(),
+                                          binding: WalletsBinding(),
                                         ),
                                       ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                      const SizedBox(height: 12),
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon: Icons
-                                            .pie_chart_rounded,
-                                        iconColor:
-                                            const Color(
-                                          0xFFFF9800,
-                                        ),
+                                        icon: Icons.pie_chart_rounded,
+                                        iconColor: const Color(0xFFFF9800),
+                                        emoji: '📊',
                                         title: 'Budgets',
                                         subtitle:
                                             'Set and track monthly spending limits',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const BudgetView(),
-                                          binding:
-                                              BudgetBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const BudgetView(),
+                                          binding: BudgetBinding(),
                                         ),
                                       ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                      const SizedBox(height: 12),
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon: Icons
-                                            .stars_rounded,
-                                        iconColor:
-                                            const Color(
-                                          0xFFE91E63,
-                                        ),
+                                        icon: Icons.stars_rounded,
+                                        iconColor: const Color(0xFFE91E63),
+                                        emoji: '🎯',
                                         title: 'Goals',
                                         subtitle:
                                             'Track your financial targets and savings',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const GoalsView(),
-                                          binding:
-                                              GoalsBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const GoalsView(),
+                                          binding: GoalsBinding(),
                                         ),
                                       ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                      const SizedBox(height: 12),
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon: Icons
-                                            .notifications_active_rounded,
-                                        iconColor:
-                                            const Color(
-                                          0xFF9C27B0,
-                                        ),
-                                        title:
-                                            'Bills & Reminders',
+                                        icon:
+                                            Icons.notifications_active_rounded,
+                                        iconColor: const Color(0xFF9C27B0),
+                                        title: 'Bills & Reminders',
                                         subtitle:
                                             'Manage upcoming bills and reminders',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const BillsRemindersView(),
-                                          binding:
-                                              BillsRemindersBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const BillsRemindersView(),
+                                          binding: BillsRemindersBinding(),
                                         ),
                                       ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                      const SizedBox(height: 12),
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon: Icons.account_balance_rounded,
-                                        iconColor: const Color(0xFF4CAF50),
+                                        icon: Icons.groups_rounded,
+                                        iconColor: const Color(0xFF00695C),
+                                        emoji: '🤝',
                                         title: 'Digital Committee',
                                         subtitle:
                                             'Manage your committee and member payments',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
+                                        onTap: () => _closeDrawerAndNavigate(
                                           () => CommitteeView(),
                                         ),
                                       ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                      const SizedBox(height: 12),
 
                                       _buildDrawerOption(
                                         context: context,
-                                        icon: Icons
-                                            .person_rounded,
-                                        iconColor:
-                                            const Color(
-                                          0xFF00BCD4,
-                                        ),
+                                        icon: Icons.person_rounded,
+                                        iconColor: const Color(0xFF00BCD4),
+                                        emoji: '🧑',
                                         title: 'Profile',
                                         subtitle:
                                             'Manage your profile and account settings',
-                                        onTap: () =>
-                                            _closeDrawerAndNavigate(
-                                          () =>
-                                              const SettingsView(),
-                                          binding:
-                                              SettingsBinding(),
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const SettingsView(),
+                                          binding: SettingsBinding(),
                                         ),
                                       ),
                                     ],
@@ -1163,7 +1026,6 @@ Widget build(BuildContext context) {
             // ======================================================
             // ADD BUTTON
             // ======================================================
-
             Obx(() {
               if (isDrawerOpen.value) {
                 return const SizedBox.shrink();
@@ -1176,11 +1038,7 @@ Widget build(BuildContext context) {
                 child: ElevatedButton.icon(
                   onPressed: _openAddCategoryDialog,
 
-                  icon: const Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  icon: const Icon(Icons.add, color: Colors.white, size: 20),
 
                   label: const Text(
                     'Add',
@@ -1192,21 +1050,17 @@ Widget build(BuildContext context) {
                   ),
 
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF2E7D32),
+                    backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
                     elevation: 5,
 
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 12,
                     ),
 
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -1229,11 +1083,7 @@ Widget build(BuildContext context) {
   ) {
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.only(
-          top: 12,
-          bottom: 16,
-          right: 12,
-        ),
+        margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: Drawer(
@@ -1262,25 +1112,19 @@ Widget build(BuildContext context) {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
-                          ? [
-                              const Color(0xFF2E7D32),
-                              const Color(0xFF1B5E20),
-                            ]
-                          : [
-                              const Color(0xFF4CAF50),
-                              const Color(0xFF388E3C),
-                            ],
+                          ? [const Color(0xFF2E7D32), const Color(0xFF1B5E20)]
+                          : [const Color(0xFF4CAF50), const Color(0xFF388E3C)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                   ),
                   currentAccountPictureSize: const Size.square(64),
                   currentAccountPicture: Obx(() {
-                    final imageUrl =
-                        settingsController.profilePictureUrl.value;
+                    final imageUrl = settingsController.profilePictureUrl.value;
                     final name = settingsController.profileName.value;
-                    final firstLetter =
-                        name.isNotEmpty ? name[0].toUpperCase() : 'U';
+                    final firstLetter = name.isNotEmpty
+                        ? name[0].toUpperCase()
+                        : 'U';
 
                     return Container(
                       decoration: BoxDecoration(
@@ -1339,7 +1183,8 @@ Widget build(BuildContext context) {
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.account_balance_wallet_rounded,
-                        iconColor: const Color(0xFF2B82FB),
+                        iconColor: const Color(0xFF3A5BA0),
+                        emoji: '💳',
                         title: 'Wallets',
                         subtitle: 'Manage your cash, bank and other wallets',
                         onTap: () => _closeDrawerAndNavigate(
@@ -1350,8 +1195,9 @@ Widget build(BuildContext context) {
                       const SizedBox(height: 12),
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons.pie_chart_rounded,
-                        iconColor: const Color(0xFFFF9800),
+                        icon: Icons.donut_small_rounded,
+                        iconColor: const Color(0xFF2E7D32),
+                        emoji: '📊',
                         title: 'Budgets',
                         subtitle: 'Set and track monthly spending limits',
                         onTap: () => _closeDrawerAndNavigate(
@@ -1362,8 +1208,9 @@ Widget build(BuildContext context) {
                       const SizedBox(height: 12),
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons.stars_rounded,
-                        iconColor: const Color(0xFFE91E63),
+                        icon: Icons.flag_rounded,
+                        iconColor: const Color(0xFFB26A00),
+                        emoji: '🎯',
                         title: 'Goals',
                         subtitle: 'Track your financial targets and savings',
                         onTap: () => _closeDrawerAndNavigate(
@@ -1374,8 +1221,9 @@ Widget build(BuildContext context) {
                       const SizedBox(height: 12),
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons.notifications_active_rounded,
-                        iconColor: const Color(0xFF9C27B0),
+                        icon: Icons.receipt_long_rounded,
+                        iconColor: const Color(0xFF7A4EAB),
+                        emoji: '🧾',
                         title: 'Bills & Reminders',
                         subtitle: 'Manage upcoming bills and reminders',
                         onTap: () => _closeDrawerAndNavigate(
@@ -1386,19 +1234,20 @@ Widget build(BuildContext context) {
                       const SizedBox(height: 12),
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons.account_balance_rounded,
-                        iconColor: const Color(0xFF4CAF50),
+                        icon: Icons.groups_rounded,
+                        iconColor: const Color(0xFF00695C),
+                        emoji: '🤝',
                         title: 'Digital Committee',
                         subtitle: 'Manage your committee and member payments',
-                        onTap: () => _closeDrawerAndNavigate(
-                          () => CommitteeView(),
-                        ),
+                        onTap: () =>
+                            _closeDrawerAndNavigate(() => CommitteeView()),
                       ),
                       const SizedBox(height: 12),
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.person_rounded,
-                        iconColor: const Color(0xFF00BCD4),
+                        iconColor: const Color(0xFF455A64),
+                        emoji: '🧑',
                         title: 'Profile',
                         subtitle: 'Manage your profile and account settings',
                         onTap: () => _closeDrawerAndNavigate(
@@ -1420,6 +1269,9 @@ Widget build(BuildContext context) {
   Widget _buildDrawerOption({
     required BuildContext context,
     required IconData icon,
+    // Emoji keeps the drawer in step with the Categories screen, where
+    // the same style is already used.
+    String? emoji,
     required Color iconColor,
     required String title,
     required String subtitle,
@@ -1427,22 +1279,17 @@ Widget build(BuildContext context) {
   }) {
     final theme = Theme.of(context);
 
-    final bool isDarkMode =
-        theme.brightness == Brightness.dark;
+    final bool isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? const Color(0xFF2A2A2A)
-            : Colors.white,
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
 
         borderRadius: BorderRadius.circular(16),
 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              isDarkMode ? 0.2 : 0.04,
-            ),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1454,15 +1301,10 @@ Widget build(BuildContext context) {
 
         child: InkWell(
           onTap: onTap,
-          borderRadius:
-              BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16),
 
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
 
             child: Row(
               children: [
@@ -1471,25 +1313,21 @@ Widget build(BuildContext context) {
                   height: 44,
 
                   decoration: BoxDecoration(
-                    color:
-                        iconColor.withOpacity(0.12),
-                    borderRadius:
-                        BorderRadius.circular(12),
+                    color: iconColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
 
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
+                  alignment: Alignment.center,
+                  child: emoji == null
+                      ? Icon(icon, color: iconColor, size: 24)
+                      : Text(emoji, style: const TextStyle(fontSize: 23)),
                 ),
 
                 const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
                     children: [
                       Text(
@@ -1497,13 +1335,10 @@ Widget build(BuildContext context) {
 
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight:
-                              FontWeight.w700,
+                          fontWeight: FontWeight.w700,
                           color: isDarkMode
                               ? Colors.white
-                              : const Color(
-                                  0xFF212121,
-                                ),
+                              : const Color(0xFF212121),
                         ),
                       ),
 
@@ -1513,8 +1348,7 @@ Widget build(BuildContext context) {
                         subtitle,
 
                         maxLines: 2,
-                        overflow:
-                            TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
 
                         style: TextStyle(
                           fontSize: 12,
