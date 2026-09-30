@@ -9,8 +9,55 @@ import '../controller/settings_controller.dart';
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
+  static const String _addCurrencyOption = '__add_currency__';
+
   SettingsController get controller =>
       Get.find<SettingsController>();
+
+  Future<void> _showAddCurrencyDialog() async {
+    final currencyController = TextEditingController();
+    final currency = await Get.dialog<String>(
+      AlertDialog(
+        title: const Text('Add Currency'),
+        content: TextField(
+          controller: currencyController,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          maxLength: 10,
+          decoration: const InputDecoration(
+            labelText: 'Currency code or symbol',
+            hintText: 'e.g. AED',
+          ),
+          onSubmitted: (value) {
+            final code = value.trim();
+            if (code.isNotEmpty) {
+              Get.back(result: code);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final code = currencyController.text.trim();
+              if (code.isNotEmpty) {
+                Get.back(result: code);
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    currencyController.dispose();
+
+    if (currency != null && currency.trim().isNotEmpty) {
+      await controller.addCustomCurrency(currency);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,26 +166,45 @@ class SettingsView extends StatelessWidget {
                     child: DropdownButton<String>(
                       value: controller.selectedCurrency.value,
                       borderRadius: BorderRadius.circular(14),
-                      items: const [
-                        DropdownMenuItem(
+                      items: [
+                        const DropdownMenuItem(
                           value: 'PKR',
                           child: Text('PKR'),
                         ),
-                        DropdownMenuItem(
+                        const DropdownMenuItem(
                           value: 'USD',
                           child: Text('USD'),
                         ),
-                        DropdownMenuItem(
+                        const DropdownMenuItem(
                           value: 'EUR',
                           child: Text('EUR'),
                         ),
-                        DropdownMenuItem(
+                        const DropdownMenuItem(
                           value: 'GBP',
                           child: Text('GBP'),
                         ),
+                        ...controller.customCurrencies.map(
+                          (currency) => DropdownMenuItem(
+                            value: currency,
+                            child: Text(currency),
+                          ),
+                        ),
+                        const DropdownMenuItem(
+                          value: _addCurrencyOption,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_rounded, size: 18),
+                              SizedBox(width: 6),
+                              Text('Add'),
+                            ],
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
-                        if (value != null) {
+                        if (value == _addCurrencyOption) {
+                          _showAddCurrencyDialog();
+                        } else if (value != null) {
                           controller.changeCurrency(value);
                         }
                       },

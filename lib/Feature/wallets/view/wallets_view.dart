@@ -195,16 +195,36 @@ class _WalletsViewState extends State<WalletsView> {
               // ==================================================
 
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'My Wallets',
                     style: AppTextStyles.headingMedium(isDark),
                   ),
 
+                  const Spacer(),
+
                   Text(
                     '${controller.wallets.length} wallet(s)',
                     style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      tooltip: 'Add wallet',
+                      onPressed: () {
+                        Get.to(() => const AddWalletView());
+                      },
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 24),
+                    ),
                   ),
                 ],
               ),
@@ -264,32 +284,6 @@ class _WalletsViewState extends State<WalletsView> {
         );
       }),
 
-      // ==========================================================
-      // ADD WALLET FAB
-      // ==========================================================
-
-      floatingActionButton: FloatingActionButton(
-  heroTag: 'walletAddFab',
-  onPressed: () {
-    Get.to(
-      () => const AddWalletView(),
-    );
-  },
-  backgroundColor: const Color(0xFF2E7D32),
-  foregroundColor: Colors.white,
-  elevation: 6,
-  shape: const CircleBorder(),
-  child: const Icon(
-    Icons.add,
-    size: 30,
-  ),
-),
-
-floatingActionButtonLocation:
-    FloatingActionButtonLocation.centerFloat,
-
-      // Bottom center
-      
     );
   }
 }

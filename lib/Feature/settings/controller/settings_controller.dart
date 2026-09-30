@@ -20,6 +20,7 @@ class SettingsController extends GetxController {
 
   final isDarkMode = false.obs;
   final selectedCurrency = 'PKR'.obs;
+  final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
 
   // ============================================================
@@ -807,6 +808,16 @@ Future<void> updateProfile({
       defaultValue: 'PKR',
     ) as String;
 
+    final savedCurrencies = settingsBox.get(
+      'custom_currencies',
+      defaultValue: <String>[],
+    ) as List;
+    customCurrencies.assignAll(
+      savedCurrencies
+          .map((currency) => currency.toString())
+          .where((currency) => currency.trim().isNotEmpty),
+    );
+
     notificationsEnabled.value = settingsBox.get(
       'notifications_enabled',
       defaultValue: true,
@@ -843,6 +854,22 @@ Future<void> updateProfile({
     );
   }
 
+  Future<void> addCustomCurrency(String currency) async {
+    final code = currency.trim().toUpperCase();
+    if (code.isEmpty) return;
+
+    final existingCurrency = customCurrencies.firstWhereOrNull(
+      (item) => item.toLowerCase() == code.toLowerCase(),
+    );
+    if (existingCurrency == null &&
+        !['PKR', 'USD', 'EUR', 'GBP'].contains(code)) {
+      customCurrencies.add(code);
+      await settingsBox.put('custom_currencies', customCurrencies.toList());
+    }
+
+    await changeCurrency(existingCurrency ?? code);
+  }
+
   // ============================================================
   // NOTIFICATIONS
   // ============================================================
@@ -875,6 +902,7 @@ Future<void> updateProfile({
 
     isDarkMode.value = false;
     selectedCurrency.value = 'PKR';
+    customCurrencies.clear();
     notificationsEnabled.value = true;
 
     try {
