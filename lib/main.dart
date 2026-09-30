@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,6 +35,7 @@ void main() async {
   SyncManager(),
   permanent: true,
 );
+ 
 
   // 4. Notification Service
   final notificationService = NotificationService();

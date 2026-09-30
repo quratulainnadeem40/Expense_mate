@@ -286,4 +286,26 @@ class SyncQueueRepository {
       decoded as Map,
     );
   }
+    // ---------------------------------------------------------------------------
+  // REMOVE SPECIFIC FAILED QUEUE ITEM
+  // ---------------------------------------------------------------------------
+  //
+  // Used to permanently remove one stale sync operation.
+  // This does NOT affect any other pending operations.
+  //
+
+  Future<int> removeByEntityAndRecord({
+    required String userId,
+    required String entityTable,
+    required String recordId,
+  }) async {
+    return (database.delete(database.syncQueue)
+          ..where(
+            (tbl) =>
+                tbl.userId.equals(userId) &
+                tbl.entityTable.equals(entityTable) &
+                tbl.recordId.equals(recordId),
+          ))
+        .go();
+  }
 }

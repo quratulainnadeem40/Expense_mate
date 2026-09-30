@@ -132,7 +132,9 @@ class SyncManager extends GetxController {
 
           await sync();
         } catch (e) {
-          debugPrint('Automatic sync retry failed: $e');
+          debugPrint(
+            'Automatic sync retry failed: $e',
+          );
         }
       },
     );
@@ -276,7 +278,8 @@ class SyncManager extends GetxController {
 
         debugPrint('QUEUE ITEM SYNCED');
       } catch (e, stackTrace) {
-        final nextRetryCount = queueItem.retryCount + 1;
+        final nextRetryCount =
+            queueItem.retryCount + 1;
 
         final errorMessage = e.toString();
 
@@ -291,12 +294,24 @@ class SyncManager extends GetxController {
 
         debugPrint('--------------------------------');
         debugPrint('QUEUE ITEM FAILED');
-        debugPrint('Entity: ${queueItem.entityTable}');
-        debugPrint('Record: ${queueItem.recordId}');
-        debugPrint('Operation: ${queueItem.operation}');
-        debugPrint('Retry count: $nextRetryCount');
-        debugPrint('ERROR: $errorMessage');
-        debugPrint('STACK TRACE: $stackTrace');
+        debugPrint(
+          'Entity: ${queueItem.entityTable}',
+        );
+        debugPrint(
+          'Record: ${queueItem.recordId}',
+        );
+        debugPrint(
+          'Operation: ${queueItem.operation}',
+        );
+        debugPrint(
+          'Retry count: $nextRetryCount',
+        );
+        debugPrint(
+          'ERROR: $errorMessage',
+        );
+        debugPrint(
+          'STACK TRACE: $stackTrace',
+        );
         debugPrint('--------------------------------');
       }
     }
@@ -311,7 +326,8 @@ class SyncManager extends GetxController {
   Future<void> _processQueueItem(
     SyncQueueData queueItem,
   ) async {
-    final payload = _decodePayload(queueItem.payload);
+    final payload =
+        _decodePayload(queueItem.payload);
 
     debugPrint('Payload: $payload');
 
@@ -340,13 +356,14 @@ class SyncManager extends GetxController {
       case 'budgets':
         await _syncBudget(
           queueItem: queueItem,
-          payload: payload,
+          payload: _cleanBudgetPayload(payload),
         );
         break;
 
       default:
         throw Exception(
-          'Unknown sync entity: ${queueItem.entityTable}',
+          'Unknown sync entity: '
+          '${queueItem.entityTable}',
         );
     }
   }
@@ -362,7 +379,9 @@ class SyncManager extends GetxController {
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await transactionRemote.insertTransaction(payload);
+        await transactionRemote.insertTransaction(
+          payload,
+        );
 
         await syncQueue.remove(queueItem.id);
 
@@ -383,7 +402,8 @@ class SyncManager extends GetxController {
           queueItem.recordId,
         );
 
-        await transactionLocal.permanentlyDeleteTransaction(
+        await transactionLocal
+            .permanentlyDeleteTransaction(
           queueItem.recordId,
         );
 
@@ -410,7 +430,9 @@ class SyncManager extends GetxController {
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await walletRemote.insertWallet(payload);
+        await walletRemote.insertWallet(
+          payload,
+        );
 
         await syncQueue.remove(queueItem.id);
 
@@ -458,7 +480,9 @@ class SyncManager extends GetxController {
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await categoryRemote.insertCategory(payload);
+        await categoryRemote.insertCategory(
+          payload,
+        );
 
         await syncQueue.remove(queueItem.id);
 
@@ -479,7 +503,8 @@ class SyncManager extends GetxController {
           queueItem.recordId,
         );
 
-        await categoryLocal.permanentlyDeleteCategory(
+        await categoryLocal
+            .permanentlyDeleteCategory(
           queueItem.recordId,
         );
 
@@ -496,6 +521,147 @@ class SyncManager extends GetxController {
   }
 
   // ==========================================================
+  // ENSURE BUDGET CATEGORY EXISTS
+  // ==========================================================
+
+  Future<void> _ensureBudgetCategoryExists(
+    Map<String, dynamic> payload,
+  ) async {
+    final categoryId =
+        payload['category_id']?.toString();
+
+    // Total budget does not have a category.
+    if (categoryId == null ||
+        categoryId.isEmpty) {
+      return;
+    }
+
+    final userId =
+        payload['user_id']?.toString();
+
+    if (userId == null || userId.isEmpty) {
+      throw Exception(
+        'Budget user_id is missing.',
+      );
+    }
+
+    debugPrint(
+      'Checking budget category: $categoryId',
+    );
+
+    // --------------------------------------------------------
+    // 1. Check Supabase first.
+    // --------------------------------------------------------
+
+    final remoteCategory = await supabase
+        .from('categories')
+        .select('id')
+        .eq('id', categoryId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (remoteCategory != null) {
+      debugPrint(
+        'Budget category already exists in Supabase.',
+      );
+
+      return;
+    }
+
+    debugPrint(
+      'Budget category does not exist in Supabase.',
+    );
+
+    // --------------------------------------------------------
+    // 2. Check pending category queue.
+    // --------------------------------------------------------
+
+    final pendingCategory =
+        await syncQueue.getByEntityAndRecord(
+      userId: userId,
+      entityTable: 'categories',
+      recordId: categoryId,
+    );
+
+    if (pendingCategory != null) {
+      debugPrint(
+        'Found pending category operation. '
+        'Syncing category before budget...',
+      );
+
+      await _processQueueItem(
+        pendingCategory,
+      );
+
+      // Verify again after category sync.
+      final categoryAfterSync =
+          await supabase
+              .from('categories')
+              .select('id')
+              .eq('id', categoryId)
+              .eq('user_id', userId)
+              .maybeSingle();
+
+      if (categoryAfterSync != null) {
+        debugPrint(
+          'Category successfully synced '
+          'before budget.',
+        );
+
+        return;
+      }
+    }
+
+    // --------------------------------------------------------
+    // 3. Check local Drift.
+    // --------------------------------------------------------
+
+    final localCategory =
+        await categoryLocal.getCategoryById(
+      categoryId,
+    );
+
+    if (localCategory != null &&
+        !localCategory.isDeleted) {
+      debugPrint(
+        'Found category locally. '
+        'Uploading it before budget...',
+      );
+
+      final categoryPayload = {
+        'id': localCategory.id,
+        'user_id': localCategory.userId,
+        'name': localCategory.name,
+        'type': localCategory.type,
+        'icon': localCategory.icon,
+        'color': localCategory.color,
+        'created_at':
+            localCategory.createdAt.toIso8601String(),
+      };
+
+      await categoryRemote.insertCategory(
+        categoryPayload,
+      );
+
+      debugPrint(
+        'Local category uploaded successfully.',
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------------
+    // 4. Category cannot be found.
+    // --------------------------------------------------------
+
+    throw Exception(
+      'Cannot sync budget because category '
+      '$categoryId does not exist in local '
+      'or Supabase data.',
+    );
+  }
+
+  // ==========================================================
   // BUDGET SYNC
   // ==========================================================
 
@@ -503,6 +669,12 @@ class SyncManager extends GetxController {
     required SyncQueueData queueItem,
     required Map<String, dynamic> payload,
   }) async {
+    // A budget with category_id must never be uploaded
+    // before that category exists in Supabase.
+    await _ensureBudgetCategoryExists(
+      payload,
+    );
+
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
@@ -510,7 +682,9 @@ class SyncManager extends GetxController {
           'Uploading budget to Supabase...',
         );
 
-        await budgetRemote.insertBudget(payload);
+        await budgetRemote.insertBudget(
+          _cleanBudgetPayload(payload),
+        );
 
         await syncQueue.remove(queueItem.id);
 
@@ -527,7 +701,7 @@ class SyncManager extends GetxController {
 
         await budgetRemote.updateBudget(
           queueItem.recordId,
-          payload,
+          _cleanBudgetPayload(payload),
         );
 
         await syncQueue.remove(queueItem.id);
@@ -547,9 +721,9 @@ class SyncManager extends GetxController {
           queueItem.recordId,
         );
 
-       await budgetLocal.permanentDeleteBudget(
-  queueItem.recordId,
-);
+        await budgetLocal.permanentDeleteBudget(
+          queueItem.recordId,
+        );
 
         await syncQueue.remove(queueItem.id);
 
@@ -565,6 +739,40 @@ class SyncManager extends GetxController {
           '${queueItem.operation}',
         );
     }
+  }
+
+  // ==========================================================
+  // BUDGET PAYLOAD CLEANER
+  // ==========================================================
+
+  /// Supabase public.budgets currently contains:
+  ///
+  /// id
+  /// user_id
+  /// category_id
+  /// name
+  /// amount
+  /// spent
+  /// start_date
+  /// end_date
+  /// created_at
+  ///
+  /// Local-only sync fields such as updated_at and version
+  /// must NEVER be sent to Supabase.
+  Map<String, dynamic> _cleanBudgetPayload(
+    Map<String, dynamic> payload,
+  ) {
+    return {
+      'id': payload['id'],
+      'user_id': payload['user_id'],
+      'category_id': payload['category_id'],
+      'name': payload['name'],
+      'amount': payload['amount'],
+      'spent': payload['spent'],
+      'start_date': payload['start_date'],
+      'end_date': payload['end_date'],
+      'created_at': payload['created_at'],
+    };
   }
 
   // ==========================================================
@@ -591,10 +799,13 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final transactions =
-        await transactionRemote.getTransactions(userId);
+        await transactionRemote.getTransactions(
+      userId,
+    );
 
     for (final transaction in transactions) {
-      final id = transaction['id']?.toString();
+      final id =
+          transaction['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
@@ -612,19 +823,26 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await transactionLocal.getTransactionById(id);
+          await transactionLocal
+              .getTransactionById(id);
 
-      if (existing != null && existing.isDeleted) {
+      if (existing != null &&
+          existing.isDeleted) {
         continue;
       }
 
       final transactionDate =
-          _parseDate(transaction['transaction_date']);
+          _parseDate(
+        transaction['transaction_date'],
+      );
 
       final createdAt =
-          _parseDate(transaction['created_at']);
+          _parseDate(
+        transaction['created_at'],
+      );
 
-      final companion = LocalTransactionsCompanion(
+      final companion =
+          LocalTransactionsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         walletId: _nullableValue(
@@ -634,26 +852,41 @@ class SyncManager extends GetxController {
           transaction['category_id'],
         ),
         title: drift.Value(
-          transaction['title']?.toString() ?? '',
+          transaction['title']?.toString() ??
+              '',
         ),
         amount: drift.Value(
-          (transaction['amount'] as num?)?.toDouble() ?? 0.0,
+          (transaction['amount'] as num?)
+                  ?.toDouble() ??
+              0.0,
         ),
         type: drift.Value(
-          transaction['type']?.toString() ?? 'expense',
+          transaction['type']?.toString() ??
+              'expense',
         ),
-        transactionDate: drift.Value(transactionDate),
-        note: _nullableValue(transaction['note']),
-        createdAt: drift.Value(createdAt),
-        updatedAt: drift.Value(DateTime.now()),
-        version: const drift.Value(1),
-        isDeleted: const drift.Value(false),
+        transactionDate:
+            drift.Value(transactionDate),
+        note: _nullableValue(
+          transaction['note'],
+        ),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await transactionLocal.insertTransaction(companion);
+        await transactionLocal
+            .insertTransaction(
+          companion,
+        );
       } else {
-        await transactionLocal.updateTransaction(
+        await transactionLocal
+            .updateTransaction(
           id,
           companion,
         );
@@ -669,10 +902,13 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final wallets =
-        await walletRemote.getWallets(userId);
+        await walletRemote.getWallets(
+      userId,
+    );
 
     for (final wallet in wallets) {
-      final id = wallet['id']?.toString();
+      final id =
+          wallet['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
@@ -690,38 +926,55 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await walletLocal.getWalletById(id);
+          await walletLocal.getWalletById(
+        id,
+      );
 
-      if (existing != null && existing.isDeleted) {
+      if (existing != null &&
+          existing.isDeleted) {
         continue;
       }
 
       final createdAt =
-          _parseDate(wallet['created_at']);
+          _parseDate(
+        wallet['created_at'],
+      );
 
-      final companion = LocalWalletsCompanion(
+      final companion =
+          LocalWalletsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         name: drift.Value(
-          wallet['name']?.toString() ?? '',
+          wallet['name']?.toString() ??
+              '',
         ),
         balance: drift.Value(
-          (wallet['balance'] as num?)?.toDouble() ?? 0.0,
+          (wallet['balance'] as num?)
+                  ?.toDouble() ??
+              0.0,
         ),
         currency: drift.Value(
-          wallet['currency']?.toString() ?? 'PKR',
+          wallet['currency']?.toString() ??
+              'PKR',
         ),
         type: drift.Value(
-          wallet['type']?.toString() ?? 'Cash',
+          wallet['type']?.toString() ??
+              'Cash',
         ),
-        createdAt: drift.Value(createdAt),
-        updatedAt: drift.Value(DateTime.now()),
-        version: const drift.Value(1),
-        isDeleted: const drift.Value(false),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await walletLocal.insertWallet(companion);
+        await walletLocal.insertWallet(
+          companion,
+        );
       } else {
         await walletLocal.updateWallet(
           id,
@@ -739,10 +992,13 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final categories =
-        await categoryRemote.getCategories(userId);
+        await categoryRemote.getCategories(
+      userId,
+    );
 
     for (final category in categories) {
-      final id = category['id']?.toString();
+      final id =
+          category['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
@@ -760,34 +1016,52 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await categoryLocal.getCategoryById(id);
+          await categoryLocal.getCategoryById(
+        id,
+      );
 
-      if (existing != null && existing.isDeleted) {
+      if (existing != null &&
+          existing.isDeleted) {
         continue;
       }
 
       final createdAt =
-          _parseDate(category['created_at']);
+          _parseDate(
+        category['created_at'],
+      );
 
-      final companion = LocalCategoriesCompanion(
+      final companion =
+          LocalCategoriesCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         name: drift.Value(
-          category['name']?.toString() ?? '',
+          category['name']?.toString() ??
+              '',
         ),
         type: drift.Value(
-          category['type']?.toString() ?? 'expense',
+          category['type']?.toString() ??
+              'expense',
         ),
-        icon: _nullableValue(category['icon']),
-        color: _nullableValue(category['color']),
-        createdAt: drift.Value(createdAt),
-        updatedAt: drift.Value(DateTime.now()),
-        version: const drift.Value(1),
-        isDeleted: const drift.Value(false),
+        icon: _nullableValue(
+          category['icon'],
+        ),
+        color: _nullableValue(
+          category['color'],
+        ),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await categoryLocal.insertCategory(companion);
+        await categoryLocal.insertCategory(
+          companion,
+        );
       } else {
         await categoryLocal.updateCategory(
           id,
@@ -805,10 +1079,13 @@ class SyncManager extends GetxController {
     String userId,
   ) async {
     final budgets =
-        await budgetRemote.getBudgets(userId);
+        await budgetRemote.getBudgets(
+      userId,
+    );
 
     for (final budget in budgets) {
-      final id = budget['id']?.toString();
+      final id =
+          budget['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
@@ -826,52 +1103,72 @@ class SyncManager extends GetxController {
       }
 
       final existing =
-          await budgetLocal.getBudgetById(id);
+          await budgetLocal.getBudgetById(
+        id,
+      );
 
-      if (existing != null && existing.isDeleted) {
+      if (existing != null &&
+          existing.isDeleted) {
         continue;
       }
 
       final startDate =
-          _parseDate(budget['start_date']);
+          _parseDate(
+        budget['start_date'],
+      );
 
       final endDate =
-          _parseDate(budget['end_date']);
+          _parseDate(
+        budget['end_date'],
+      );
 
       final createdAt =
-          _parseDate(budget['created_at']);
+          _parseDate(
+        budget['created_at'],
+      );
 
-      final updatedAt =
-          _parseDate(budget['updated_at']);
-
-      final version =
-          (budget['version'] as num?)?.toInt() ?? 1;
-
-      final companion = LocalBudgetsCompanion(
+      // Supabase budgets does NOT have
+      // updated_at/version.
+      // These values are local-only.
+      final companion =
+          LocalBudgetsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
         categoryId: _nullableValue(
           budget['category_id'],
         ),
         name: drift.Value(
-          budget['name']?.toString() ?? '',
+          budget['name']?.toString() ??
+              '',
         ),
         amount: drift.Value(
-          (budget['amount'] as num?)?.toDouble() ?? 0.0,
+          (budget['amount'] as num?)
+                  ?.toDouble() ??
+              0.0,
         ),
         spent: drift.Value(
-          (budget['spent'] as num?)?.toDouble() ?? 0.0,
+          (budget['spent'] as num?)
+                  ?.toDouble() ??
+              0.0,
         ),
-        startDate: drift.Value(startDate),
-        endDate: drift.Value(endDate),
-        createdAt: drift.Value(createdAt),
-        updatedAt: drift.Value(updatedAt),
-        version: drift.Value(version),
-        isDeleted: const drift.Value(false),
+        startDate:
+            drift.Value(startDate),
+        endDate:
+            drift.Value(endDate),
+        createdAt:
+            drift.Value(createdAt),
+        updatedAt:
+            drift.Value(DateTime.now()),
+        version:
+            const drift.Value(1),
+        isDeleted:
+            const drift.Value(false),
       );
 
       if (existing == null) {
-        await budgetLocal.insertBudget(companion);
+        await budgetLocal.insertBudget(
+          companion,
+        );
       } else {
         await budgetLocal.updateBudget(
           id,
@@ -925,7 +1222,8 @@ class SyncManager extends GetxController {
       return const drift.Value(null);
     }
 
-    final stringValue = value.toString();
+    final stringValue =
+        value.toString();
 
     if (stringValue.isEmpty) {
       return const drift.Value(null);

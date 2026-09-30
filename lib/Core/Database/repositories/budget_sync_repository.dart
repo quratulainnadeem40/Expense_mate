@@ -45,8 +45,11 @@ class BudgetSyncRepository {
       isDeleted: const Value(false),
     );
 
+    // Save locally first.
     await localRepository.insertBudget(budget);
 
+    // Queue ONLY columns that actually exist
+    // in Supabase public.budgets.
     await syncQueue.enqueue(
       userId: userId,
       entityTable: 'budgets',
@@ -62,8 +65,6 @@ class BudgetSyncRepository {
         'start_date': startDate.toIso8601String(),
         'end_date': endDate.toIso8601String(),
         'created_at': created.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-        'version': 1,
       },
     );
   }
@@ -100,8 +101,10 @@ class BudgetSyncRepository {
       isDeleted: const Value(false),
     );
 
+    // Update local database.
     await localRepository.updateBudget(id, budget);
 
+    // Queue ONLY actual Supabase columns.
     await syncQueue.enqueue(
       userId: userId,
       entityTable: 'budgets',
@@ -117,8 +120,6 @@ class BudgetSyncRepository {
         'start_date': startDate.toIso8601String(),
         'end_date': endDate.toIso8601String(),
         'created_at': created.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-        'version': version + 1,
       },
     );
   }
