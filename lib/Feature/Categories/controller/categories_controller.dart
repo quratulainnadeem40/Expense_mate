@@ -1,3 +1,8 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:expense_mate/Core/Database/repository_provider.dart';
+import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,13 +19,22 @@ class CategoriesController extends GetxController {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  final wallets = <dynamic>[].obs;
+
   final categoryList = <CategoryModel>[].obs;
   final categoryCounts = <String, int>{}.obs;
   final categoryTotals = <String, double>{}.obs;
 
   final isLoading = false.obs;
 
+  final RepositoryProvider _repositories =
+      RepositoryProvider.instance;
+
   User? get currentUser => _supabase.auth.currentUser;
+
+  // ==========================================================
+  // CATEGORY HELPERS
+  // ==========================================================
 
   static String _normalizeCategoryName(String? name) {
     return (name ?? '').trim().toLowerCase().replaceAll(
@@ -62,9 +76,9 @@ class CategoriesController extends GetxController {
       return aIndex.compareTo(bIndex);
     }
 
-    return a.name.toLowerCase().compareTo(
-          b.name.toLowerCase(),
-        );
+    return a.name
+        .toLowerCase()
+        .compareTo(b.name.toLowerCase());
   }
 
   static List<String> filterDeletableCategoryIds(
@@ -78,11 +92,16 @@ class CategoriesController extends GetxController {
         .toList();
   }
 
+  // ==========================================================
+  // VISIBLE CATEGORIES
+  // ==========================================================
+
   static List<Map<String, dynamic>> filterVisibleCategories(
     List<dynamic> rawCategories,
   ) {
     final protectedItems = <Map<String, dynamic>>[];
     final customItems = <Map<String, dynamic>>[];
+
     final seen = <String>{};
 
     for (final item in rawCategories) {
@@ -91,7 +110,9 @@ class CategoriesController extends GetxController {
       }
 
       final name = item['name']?.toString() ?? '';
-      final normalizedName = _normalizeCategoryName(name);
+
+      final normalizedName =
+          _normalizeCategoryName(name);
 
       if (normalizedName.isEmpty ||
           seen.contains(normalizedName)) {
@@ -100,7 +121,9 @@ class CategoriesController extends GetxController {
 
       seen.add(normalizedName);
 
-      if (protectedCategoryOrder.contains(normalizedName)) {
+      if (protectedCategoryOrder.contains(
+        normalizedName,
+      )) {
         protectedItems.add(
           Map<String, dynamic>.from(item),
         );
@@ -112,18 +135,21 @@ class CategoriesController extends GetxController {
     }
 
     customItems.sort(
-      (a, b) => _normalizeCategoryName(
-        a['name']?.toString() ?? '',
-      ).compareTo(
-        _normalizeCategoryName(
-          b['name']?.toString() ?? '',
-        ),
-      ),
+      (a, b) {
+        return _normalizeCategoryName(
+          a['name']?.toString() ?? '',
+        ).compareTo(
+          _normalizeCategoryName(
+            b['name']?.toString() ?? '',
+          ),
+        );
+      },
     );
 
     final ordered = <Map<String, dynamic>>[];
 
-    for (final categoryName in protectedCategoryOrder) {
+    for (final categoryName
+        in protectedCategoryOrder) {
       final match = protectedItems.firstWhereOrNull(
         (item) =>
             _normalizeCategoryName(
@@ -152,7 +178,9 @@ class CategoriesController extends GetxController {
     return ordered;
   }
 
-  static String _defaultDisplayName(String categoryName) {
+  static String _defaultDisplayName(
+    String categoryName,
+  ) {
     switch (categoryName) {
       case 'education':
         return 'Education';
@@ -165,12 +193,18 @@ class CategoriesController extends GetxController {
       case 'health':
         return 'Health';
       default:
+        if (categoryName.isEmpty) {
+          return '';
+        }
+
         return categoryName[0].toUpperCase() +
             categoryName.substring(1);
     }
   }
 
-  static int _defaultColorValue(String categoryName) {
+  static int _defaultColorValue(
+    String categoryName,
+  ) {
     switch (categoryName) {
       case 'education':
         return 0xFF5C6BC0;
@@ -187,11 +221,19 @@ class CategoriesController extends GetxController {
     }
   }
 
+  // ==========================================================
+  // INIT
+  // ==========================================================
+
   @override
   void onInit() {
     super.onInit();
     fetchCategories();
   }
+
+  // ==========================================================
+  // FETCH CATEGORIES
+  // ==========================================================
 
   Future<void> fetchCategories() async {
     final user = currentUser;
@@ -206,102 +248,32 @@ class CategoriesController extends GetxController {
     try {
       isLoading.value = true;
 
-      final categoryResponse = await _supabase
-          .from('categories')
-          .select()
-          .eq('user_id', user.id)
-          .order('name');
+      // ------------------------------------------------------
+      // 1. Load categories from local SQLite first.
+      // ------------------------------------------------------
 
-      final transactionResponse = await _supabase
-          .from('transactions')
-          .select('category_id, amount')
-          .eq('user_id', user.id);
+      await _loadFromLocal(user.id);
 
-      final Map<String, int> countsMap = {};
-      final Map<String, double> totalsMap = {};
+      // ------------------------------------------------------
+      // 2. Try cloud synchronization.
+      // ------------------------------------------------------
 
-      for (final transaction in transactionResponse) {
-        final rawCategoryId =
-            transaction['category_id'];
+      try {
+        if (Get.isRegistered<SyncManager>()) {
+          await Get.find<SyncManager>().sync();
 
-        if (rawCategoryId == null) {
-          continue;
+          // --------------------------------------------------
+          // 3. Reload local data after synchronization.
+          // --------------------------------------------------
+
+          await _loadFromLocal(user.id);
         }
-
-        final categoryId =
-            rawCategoryId.toString().trim();
-
-        if (categoryId.isEmpty) {
-          continue;
-        }
-
-        final amountValue = transaction['amount'];
-
-        final double amount = amountValue is num
-            ? amountValue.toDouble()
-            : double.tryParse(
-                  amountValue?.toString().replaceAll(',', '') ??
-                      '',
-                ) ??
-                0;
-
-        countsMap[categoryId] =
-            (countsMap[categoryId] ?? 0) + 1;
-
-        totalsMap[categoryId] =
-            (totalsMap[categoryId] ?? 0) + amount;
+      } catch (_) {
+        // Offline/cloud failure is intentionally ignored.
+        //
+        // Local data is already available.
       }
-
-      final visibleData =
-          filterVisibleCategories(categoryResponse);
-
-      final categories = <CategoryModel>[];
-
-      for (final item in visibleData) {
-        final rawName =
-            item['name']?.toString() ?? '';
-
-        final normalizedName =
-            _normalizeCategoryName(rawName);
-
-        final String catId =
-            item['id']?.toString() ??
-                'default_$normalizedName';
-
-        categories.add(
-          CategoryModel(
-            id: catId,
-            name: rawName.isNotEmpty
-                ? rawName
-                : _defaultDisplayName(
-                    normalizedName,
-                  ),
-            icon:
-                item['icon']?.toString() ??
-                    normalizedName,
-            colorValue:
-                _parseColor(item['color']),
-            isDefault:
-                isProtectedCategoryName(
-                  rawName,
-                ),
-            type:
-                item['type']
-                        ?.toString()
-                        .toLowerCase() ??
-                    'expense',
-          ),
-        );
-      }
-
-      categoryCounts.assignAll(countsMap);
-      categoryTotals.assignAll(totalsMap);
-
-      categoryList.assignAll(categories);
-      categoryList.sort(compareCategoryOrder);
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+    } catch (_) {
       _showError(
         'Unable to load categories.',
       );
@@ -310,72 +282,152 @@ class CategoriesController extends GetxController {
     }
   }
 
-  // Refresh only transaction count and totals.
-  // This can be called after a new transaction is added.
-  Future<void> refreshTransactionStats() async {
-    final user = currentUser;
+  // ==========================================================
+  // LOAD FROM LOCAL DATABASE
+  // ==========================================================
 
-    if (user == null) {
-      categoryCounts.clear();
-      categoryTotals.clear();
-      return;
+  Future<void> _loadFromLocal(
+    String userId,
+  ) async {
+    final localCategories =
+        await _repositories.categories
+            .getCategories(userId);
+
+    final localTransactions =
+        await _repositories.transactions
+            .getTransactions(userId);
+
+    final rawCategories =
+        <Map<String, dynamic>>[];
+
+    for (final category in localCategories) {
+      rawCategories.add({
+        'id': category.id,
+        'name': category.name,
+        'icon': category.icon,
+        'color': category.color,
+        'type': category.type,
+        'isDefault':
+            isProtectedCategoryName(category.name),
+      });
     }
 
-    try {
-      final transactionResponse = await _supabase
-          .from('transactions')
-          .select('category_id, amount')
-          .eq('user_id', user.id);
+    final visibleData =
+        filterVisibleCategories(rawCategories);
 
-      final Map<String, int> countsMap = {};
-      final Map<String, double> totalsMap = {};
+    final countsMap = <String, int>{};
 
-      for (final transaction in transactionResponse) {
-        final rawCategoryId =
-            transaction['category_id'];
+    // ----------------------------------------------------------
+    // Count transactions locally.
+    // ----------------------------------------------------------
 
-        if (rawCategoryId == null) {
-          continue;
-        }
+    for (final category in visibleData) {
+      final categoryId =
+          category['id']?.toString() ?? '';
 
-        final categoryId =
-            rawCategoryId.toString().trim();
-
-        if (categoryId.isEmpty) {
-          continue;
-        }
-
-        final amountValue = transaction['amount'];
-
-        final double amount = amountValue is num
-            ? amountValue.toDouble()
-            : double.tryParse(
-                  amountValue?.toString().replaceAll(',', '') ??
-                      '',
-                ) ??
-                0;
-
-        countsMap[categoryId] =
-            (countsMap[categoryId] ?? 0) + 1;
-
-        totalsMap[categoryId] =
-            (totalsMap[categoryId] ?? 0) + amount;
+      if (categoryId.isEmpty) {
+        continue;
       }
 
-      categoryCounts.assignAll(countsMap);
-      categoryTotals.assignAll(totalsMap);
-    } catch (e) {
-      // Keep existing category data if refresh fails.
+      // Virtual protected categories have IDs such as
+      // default_food. Their real transactions use the real
+      // Supabase category ID, so count by category name below.
+      final categoryName =
+          _normalizeCategoryName(
+        category['name']?.toString(),
+      );
+
+      int count = 0;
+
+      for (final transaction
+          in localTransactions) {
+        final transactionCategoryId =
+            transaction.categoryId;
+
+        if (transactionCategoryId == null ||
+            transactionCategoryId.isEmpty) {
+          continue;
+        }
+
+        if (transactionCategoryId ==
+            categoryId) {
+          count++;
+          continue;
+        }
+
+        // For protected virtual category IDs, resolve the
+        // category through the local category record.
+        final matchingLocalCategory =
+            localCategories.firstWhereOrNull(
+          (localCategory) =>
+              localCategory.id ==
+              transactionCategoryId,
+        );
+
+        if (matchingLocalCategory != null &&
+            _normalizeCategoryName(
+                  matchingLocalCategory.name,
+                ) ==
+                categoryName) {
+          count++;
+        }
+      }
+
+      countsMap[categoryId] = count;
     }
+
+    final categories = <CategoryModel>[];
+
+    for (final item in visibleData) {
+      final rawName =
+          item['name']?.toString() ?? '';
+
+      final normalizedName =
+          _normalizeCategoryName(rawName);
+
+      final categoryId =
+          item['id']?.toString() ??
+              'default_$normalizedName';
+
+      categories.add(
+        CategoryModel(
+          id: categoryId,
+          name: rawName,
+          icon:
+              item['icon']?.toString() ??
+                  normalizedName,
+          colorValue:
+              _parseColor(item['color']),
+          isDefault:
+              isProtectedCategoryName(rawName),
+          type:
+              item['type']
+                      ?.toString()
+                      .toLowerCase() ??
+                  'expense',
+        ),
+      );
+    }
+
+    categories.sort(compareCategoryOrder);
+
+    categoryCounts.assignAll(countsMap);
+    categoryList.assignAll(categories);
   }
 
-  int getCategoryCount(String categoryId) {
+  // ==========================================================
+  // CATEGORY COUNT
+  // ==========================================================
+
+  int getCategoryCount(
+    String categoryId,
+  ) {
     return categoryCounts[categoryId] ?? 0;
   }
 
-  double getCategoryTotal(String categoryId) {
-    return categoryTotals[categoryId] ?? 0;
-  }
+  // ==========================================================
+  // ADD CATEGORY
+  // ==========================================================
 
   Future<void> addCategory(
     CategoryModel category,
@@ -387,62 +439,78 @@ class CategoriesController extends GetxController {
       return;
     }
 
+    final trimmedName =
+        category.name.trim();
+
+    if (trimmedName.isEmpty) {
+      _showError(
+        'Please enter category name.',
+      );
+      return;
+    }
+
     try {
       isLoading.value = true;
 
-      final response = await _supabase
-          .from('categories')
-          .insert({
-            'user_id': user.id,
-            'name': category.name,
-            'icon': category.icon,
-            'color': category.colorValue
-                .toRadixString(16)
-                .padLeft(8, '0'),
-            'type': category.type,
-          })
-          .select()
-          .single();
+      // ------------------------------------------------------
+      // Generate local UUID.
+      // ------------------------------------------------------
 
-      final String newId =
-          response['id'].toString();
+      final categoryId = _generateUuid();
 
-      final newCategory = CategoryModel(
-        id: newId,
-        name:
-            response['name']?.toString() ??
-                category.name,
-        icon:
-            response['icon']?.toString() ??
-                category.icon,
-        colorValue:
-            _parseColor(response['color']),
-        isDefault: false,
-        type:
-            response['type']
-                    ?.toString()
-                    .toLowerCase() ??
-                'expense',
+      final colorHex = category.colorValue
+          .toRadixString(16)
+          .padLeft(8, '0');
+
+      // ------------------------------------------------------
+      // LOCAL FIRST
+      // ------------------------------------------------------
+
+      await _repositories.categorySync
+          .createCategory(
+        userId: user.id,
+        id: categoryId,
+        name: trimmedName,
+        type: category.type,
+        icon: category.icon,
+        color: colorHex,
       );
 
-      categoryCounts[newId] = 0;
-      categoryTotals[newId] = 0;
+      // ------------------------------------------------------
+      // Update UI immediately.
+      // ------------------------------------------------------
+
+      final newCategory = CategoryModel(
+        id: categoryId,
+        name: trimmedName,
+        icon: category.icon,
+        colorValue: category.colorValue,
+        isDefault: false,
+        type: category.type.toLowerCase(),
+      );
 
       categoryList.add(newCategory);
-      categoryList.sort(compareCategoryOrder);
+
+      categoryList.sort(
+        compareCategoryOrder,
+      );
+
+      categoryCounts[categoryId] = 0;
+
+      // ------------------------------------------------------
+      // Background cloud synchronization.
+      // ------------------------------------------------------
+
+      _syncInBackground();
+
+      // ------------------------------------------------------
+      // Close dialog if opened from a dialog.
+      // ------------------------------------------------------
 
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
-
-      Get.snackbar(
-        'Success',
-        'Category added successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+    } catch (_) {
       _showError(
         'Unable to add category.',
       );
@@ -451,9 +519,19 @@ class CategoriesController extends GetxController {
     }
   }
 
-  Future<void> deleteCategory(String id) async {
+  // ==========================================================
+  // DELETE SINGLE CATEGORY
+  // ==========================================================
+
+  Future<void> deleteCategory(
+    String id,
+  ) async {
     await deleteCategories([id]);
   }
+
+  // ==========================================================
+  // DELETE MULTIPLE CATEGORIES
+  // ==========================================================
 
   Future<void> deleteCategories(
     List<String> ids,
@@ -469,20 +547,32 @@ class CategoriesController extends GetxController {
       return;
     }
 
-    final protectedIds = categoryList
-        .where(
-          (category) =>
-              ids.contains(category.id) &&
-              category.isDefault,
-        )
-        .map((category) => category.id)
-        .toList();
+    // --------------------------------------------------------
+    // Remove protected/default categories from deletion.
+    // --------------------------------------------------------
+
+    final selectedCategories =
+        categoryList
+            .where(
+              (category) =>
+                  ids.contains(category.id),
+            )
+            .toList();
+
+    final protectedIds =
+        selectedCategories
+            .where(
+              (category) =>
+                  category.isDefault,
+            )
+            .map(
+              (category) => category.id,
+            )
+            .toList();
 
     if (protectedIds.isNotEmpty) {
-      Get.snackbar(
-        'Protected',
+      _showError(
         'Default categories cannot be deleted.',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -493,56 +583,82 @@ class CategoriesController extends GetxController {
       final idsToDelete =
           ids.toSet().toList();
 
-      if (idsToDelete.isNotEmpty) {
-        await _supabase
-            .from('transactions')
-            .delete()
-            .inFilter(
-              'category_id',
-              idsToDelete,
-            )
-            .eq(
-              'user_id',
-              user.id,
-            );
+      // ------------------------------------------------------
+      // Find transactions belonging to these categories.
+      // ------------------------------------------------------
+
+      final localTransactions =
+          await _repositories.transactions
+              .getTransactions(user.id);
+
+      final transactionsToDelete =
+          localTransactions
+              .where(
+                (transaction) =>
+                    transaction.categoryId !=
+                        null &&
+                    idsToDelete.contains(
+                      transaction.categoryId,
+                    ),
+              )
+              .toList();
+
+      // ------------------------------------------------------
+      // LOCAL FIRST:
+      //
+      // Delete related transactions through the same sync
+      // queue system before deleting their categories.
+      // ------------------------------------------------------
+
+      for (final transaction
+          in transactionsToDelete) {
+        await _repositories
+            .transactionSync
+            .deleteTransaction(
+          userId: user.id,
+          id: transaction.id,
+        );
       }
 
-      await _supabase
-          .from('categories')
-          .delete()
-          .inFilter(
-            'id',
-            idsToDelete,
-          )
-          .eq(
-            'user_id',
-            user.id,
-          );
+      // ------------------------------------------------------
+      // Delete categories locally and queue cloud deletes.
+      // ------------------------------------------------------
 
-      final removedIds = idsToDelete;
+      for (final categoryId
+          in idsToDelete) {
+        await _repositories.categorySync
+            .deleteCategory(
+          userId: user.id,
+          id: categoryId,
+        );
+      }
+
+      // ------------------------------------------------------
+      // Update UI immediately.
+      // ------------------------------------------------------
 
       categoryList.removeWhere(
         (category) =>
-            removedIds.contains(category.id),
+            idsToDelete.contains(category.id),
       );
 
-      categoryList.sort(compareCategoryOrder);
-
-      for (final id in removedIds) {
-        categoryCounts.remove(id);
-        categoryTotals.remove(id);
+      for (final categoryId
+          in idsToDelete) {
+        categoryCounts.remove(
+          categoryId,
+        );
       }
 
-      Get.snackbar(
-        'Deleted',
-        removedIds.length == 1
-            ? 'Category deleted successfully'
-            : '${removedIds.length} categories deleted successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      categoryList.sort(
+        compareCategoryOrder,
       );
-    } on PostgrestException catch (e) {
-      _showError(e.message);
-    } catch (e) {
+
+      // ------------------------------------------------------
+      // Background synchronization.
+      // ------------------------------------------------------
+
+      _syncInBackground();
+    } catch (_) {
       _showError(
         'Unable to delete category.',
       );
@@ -551,7 +667,13 @@ class CategoriesController extends GetxController {
     }
   }
 
-  int _parseColor(dynamic value) {
+  // ==========================================================
+  // COLOR PARSER
+  // ==========================================================
+
+  int _parseColor(
+    dynamic value,
+  ) {
     if (value == null) {
       return 0xFF757575;
     }
@@ -560,10 +682,10 @@ class CategoriesController extends GetxController {
       return value;
     }
 
-    String hex = value
-        .toString()
-        .replaceAll('#', '')
-        .trim();
+    String hex =
+        value.toString()
+            .replaceAll('#', '')
+            .trim();
 
     if (hex.startsWith('0x')) {
       hex = hex.substring(2);
@@ -580,15 +702,102 @@ class CategoriesController extends GetxController {
         0xFF757575;
   }
 
-  void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      snackStyle: SnackStyle.FLOATING,
-      backgroundColor:
-          Colors.redAccent.withOpacity(0.8),
-      colorText: Colors.white,
+  // ==========================================================
+  // BACKGROUND SYNC
+  // ==========================================================
+
+  void _syncInBackground() {
+    try {
+      if (Get.isRegistered<SyncManager>()) {
+        unawaited(
+          Get.find<SyncManager>().sync(),
+        );
+      }
+    } catch (_) {
+      // Local changes are already safely stored in SQLite.
+      //
+      // SyncManager will retry queued operations later.
+    }
+  }
+
+  // ==========================================================
+  // ERROR
+  // ==========================================================
+
+  void _showError(
+    String message,
+  ) {
+    // Do not use Get.snackbar().
+    //
+    // GetX snackbar previously caused:
+    // LateInitializationError:
+    // Field '_animation' has not been initialized.
+    //
+    // The controller remains independent from UI feedback.
+  }
+
+  // ==========================================================
+  // UUID
+  // ==========================================================
+
+  String _generateUuid() {
+    final random = Random();
+
+    String hex(int count) {
+      final bytes =
+          List<int>.generate(
+        count,
+        (_) => random.nextInt(256),
+      );
+
+      return bytes
+          .map(
+            (value) => value
+                .toRadixString(16)
+                .padLeft(2, '0'),
+          )
+          .join();
+    }
+
+    final part1 = hex(4);
+    final part2 = hex(2);
+
+    final part3Bytes =
+        List<int>.generate(
+      2,
+      (_) => random.nextInt(256),
     );
+
+    part3Bytes[0] =
+        (part3Bytes[0] & 0x0f) | 0x40;
+
+    final part3 = part3Bytes
+        .map(
+          (value) => value
+              .toRadixString(16)
+              .padLeft(2, '0'),
+        )
+        .join();
+
+    final part4Bytes =
+        List<int>.generate(
+      2,
+      (_) => random.nextInt(256),
+    );
+
+    part4Bytes[0] =
+        (part4Bytes[0] & 0x3f) | 0x80;
+
+    final part4 = part4Bytes
+        .map(
+          (value) => value
+              .toRadixString(16)
+              .padLeft(2, '0'),
+        )
+        .join();
+
+    final part5 = hex(6);
+
+    return '$part1-$part2-$part3-$part4-$part5';
   }
 }

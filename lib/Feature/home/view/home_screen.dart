@@ -19,10 +19,12 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:expense_mate/Feature/home/controller/home_controller.dart';
+import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  // Scaffold Key to force-close drawer directly
   static final GlobalKey<ScaffoldState> _scaffoldKey =
       GlobalKey<ScaffoldState>();
 
@@ -86,7 +88,11 @@ class HomeScreen extends StatelessWidget {
     return category?.name ?? categoryId;
   }
 
-  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
+  // Guaranteed Drawer Close Helper Method
+  void _closeDrawerAndNavigate(
+    Widget Function() page, {
+    Bindings? binding,
+  }) {
     if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
       _scaffoldKey.currentState?.closeEndDrawer();
     }
@@ -111,7 +117,15 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-
+appBar: AppBar(
+  title: const Text('Expense Mate'),
+  actions: const [
+    Padding(
+      padding: EdgeInsets.only(right: 16),
+      child: SyncStatusIndicator(),
+    ),
+  ],
+),
       // =========================
       // DRAWER
       // =========================
@@ -128,7 +142,7 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 children: [
                   // =========================
-                  // X BUTTON
+                  // X BUTTON - TOP RIGHT
                   // =========================
                   Align(
                     alignment: Alignment.topRight,
@@ -308,12 +322,14 @@ class HomeScreen extends StatelessWidget {
                         // =========================
                         _buildDrawerOption(
                           context: context,
-                          icon: Icons.account_balance_rounded,
+                          icon: Icons.groups_rounded,
                           iconColor: const Color(0xFF4CAF50),
                           title: 'Digital Committee',
-                          subtitle: 'Manage your committee and member payments',
-                          onTap: () =>
-                              _closeDrawerAndNavigate(() => CommitteeView()),
+                          subtitle:
+                              'Manage your committee and member payments',
+                          onTap: () => _closeDrawerAndNavigate(
+                            () => const CommitteeView(),
+                          ),
                         ),
 
                         const SizedBox(height: 12),

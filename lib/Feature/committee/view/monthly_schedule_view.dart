@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../Core/constants/app_keys.dart';
+import 'package:flutter/material.dart';
+
 import '../widgets/schedule_card.dart';
 
 class MonthlyScheduleView extends StatefulWidget {
@@ -9,7 +8,6 @@ class MonthlyScheduleView extends StatefulWidget {
   final int totalMembers;
   final int durationMonths;
   final DateTime startDate;
-  final String durationUnit;
 
   const MonthlyScheduleView({
     super.key,
@@ -17,7 +15,6 @@ class MonthlyScheduleView extends StatefulWidget {
     required this.totalMembers,
     required this.durationMonths,
     required this.startDate,
-    this.durationUnit = 'Months',
   });
 
   @override
@@ -27,198 +24,46 @@ class MonthlyScheduleView extends StatefulWidget {
 
 class _MonthlyScheduleViewState
     extends State<MonthlyScheduleView> {
-  List<String> members = [];
+  final List<String> members = [
+    'Fatima',
+    'Maryam',
+    'Sheeza',
+    'Zara',
+  ];
 
-  late List<String> receivingOrder;
-  List<Map<String, String>> schedule = [];
-
-  double actualContribution = 0;
-  int actualDuration = 0;
-  String actualDurationUnit = 'Months';
-  DateTime? actualStartDate;
+  late List<Map<String, String>> schedule;
 
   @override
   void initState() {
     super.initState();
-
-    receivingOrder = [];
-    _loadActualCommitteeData();
-  }
-
-  void _loadActualCommitteeData() {
-    final Box committeeBox =
-        Hive.box(AppKeys.committeeBox);
-
-    final dynamic storedData =
-        committeeBox.get('currentCommittee');
-
-    if (storedData is Map) {
-      final Map<dynamic, dynamic> committee =
-          Map<dynamic, dynamic>.from(storedData);
-
-      actualContribution =
-          _parseAmount(committee['contribution']);
-
-      actualDuration =
-          int.tryParse(
-                committee['duration']?.toString() ?? '',
-              ) ??
-              widget.durationMonths;
-
-      actualDurationUnit =
-          committee['durationUnit']?.toString() ??
-              widget.durationUnit;
-
-      actualStartDate =
-          _parseDate(committee['startDate']) ??
-              widget.startDate;
-
-      final dynamic membersData =
-          committee['membersList'];
-
-      if (membersData is List) {
-        members = membersData
-            .whereType<Map>()
-            .map(
-              (member) =>
-                  member['name']?.toString().trim() ?? '',
-            )
-            .where((name) => name.isNotEmpty)
-            .toList();
-      }
-
-      final dynamic savedOrder =
-          committee['receivingOrder'];
-
-      if (savedOrder is List) {
-        receivingOrder = savedOrder
-            .map((item) => item.toString().trim())
-            .where((name) => name.isNotEmpty)
-            .toList();
-      }
-
-      // Keep only members that still exist in actual members.
-      receivingOrder = receivingOrder
-          .where(
-            (name) => members.contains(name),
-          )
-          .toList();
-
-      // Add any actual member which is not yet
-      // present in the receiving order.
-      for (final String member in members) {
-        if (!receivingOrder.contains(member)) {
-          receivingOrder.add(member);
-        }
-      }
-    } else {
-      // No stored committee.
-      actualContribution =
-          widget.monthlyContribution;
-
-      actualDuration = widget.durationMonths;
-      actualDurationUnit = widget.durationUnit;
-      actualStartDate = widget.startDate;
-    }
-
-    if (actualStartDate == null) {
-      actualStartDate = widget.startDate;
-    }
-
-    if (actualDuration <= 0) {
-      actualDuration = widget.durationMonths;
-    }
-
-    if (actualDurationUnit.isEmpty) {
-      actualDurationUnit = 'Months';
-    }
-
-    if (receivingOrder.isEmpty && members.isNotEmpty) {
-      receivingOrder = List<String>.from(members);
-    }
-
     schedule = _createSchedule();
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  double _parseAmount(dynamic value) {
-    if (value == null) {
-      return 0;
-    }
-
-    final String cleaned =
-        value
-            .toString()
-            .replaceAll('PKR', '')
-            .replaceAll(',', '')
-            .trim();
-
-    return double.tryParse(cleaned) ?? 0;
-  }
-
-  DateTime? _parseDate(dynamic value) {
-    if (value is DateTime) {
-      return value;
-    }
-
-    if (value is String) {
-      return DateTime.tryParse(value);
-    }
-
-    return null;
-  }
-
-  int _getScheduleCount() {
-    if (actualDuration <= 0) {
-      return 0;
-    }
-
-    switch (actualDurationUnit.toLowerCase()) {
-      case 'days':
-        return actualDuration;
-
-      case 'weeks':
-        return actualDuration;
-
-      case 'months':
-      default:
-        return actualDuration;
-    }
   }
 
   List<Map<String, String>> _createSchedule() {
     final List<Map<String, String>> result = [];
 
-    if (members.isEmpty ||
-        receivingOrder.isEmpty ||
-        actualStartDate == null ||
-        actualDuration <= 0) {
-      return result;
-    }
+    final int numberOfMonths = widget.durationMonths;
 
-    final int scheduleCount = _getScheduleCount();
+    for (int i = 0; i < numberOfMonths; i++) {
+      final DateTime monthDate = DateTime(
+        widget.startDate.year,
+        widget.startDate.month + i,
+        widget.startDate.day,
+      );
 
-    for (int i = 0; i < scheduleCount; i++) {
-      final DateTime periodDate =
-          _getPeriodDate(i);
+      final String monthName = _monthName(monthDate.month);
 
       final String memberName =
-          receivingOrder[i % receivingOrder.length];
+          members[i % members.length];
 
       final String amount =
-          'PKR ${_formatAmount(actualContribution)}';
-
-      final String periodName =
-          _getPeriodName(periodDate, i);
+          'PKR ${widget.monthlyContribution.toStringAsFixed(0)}';
 
       final String dueDate =
-          _formatDate(periodDate);
+          '${monthDate.day} $monthName ${monthDate.year}';
 
       result.add({
-        'month': periodName,
+        'month': '$monthName ${monthDate.year}',
         'memberName': memberName,
         'amount': amount,
         'dueDate': dueDate,
@@ -227,74 +72,6 @@ class _MonthlyScheduleViewState
     }
 
     return result;
-  }
-
-  DateTime _getPeriodDate(int index) {
-    final DateTime start =
-        actualStartDate ?? widget.startDate;
-
-    switch (actualDurationUnit.toLowerCase()) {
-      case 'days':
-        return start.add(
-          Duration(days: index),
-        );
-
-      case 'weeks':
-        return start.add(
-          Duration(days: index * 7),
-        );
-
-      case 'months':
-      default:
-        return _addMonths(start, index);
-    }
-  }
-
-  String _getPeriodName(
-    DateTime date,
-    int index,
-  ) {
-    switch (actualDurationUnit.toLowerCase()) {
-      case 'days':
-        return 'Day ${index + 1} • ${_formatDate(date)}';
-
-      case 'weeks':
-        return 'Week ${index + 1} • ${_formatDate(date)}';
-
-      case 'months':
-      default:
-        return '${_monthName(date.month)} ${date.year}';
-    }
-  }
-
-  DateTime _addMonths(
-    DateTime date,
-    int months,
-  ) {
-    final DateTime firstDayOfTargetMonth =
-        DateTime(
-      date.year,
-      date.month + months,
-      1,
-    );
-
-    final int lastDayOfTargetMonth =
-        DateTime(
-          firstDayOfTargetMonth.year,
-          firstDayOfTargetMonth.month + 1,
-          0,
-        ).day;
-
-    final int day =
-        date.day > lastDayOfTargetMonth
-            ? lastDayOfTargetMonth
-            : date.day;
-
-    return DateTime(
-      firstDayOfTargetMonth.year,
-      firstDayOfTargetMonth.month,
-      day,
-    );
   }
 
   String _monthName(int month) {
@@ -316,72 +93,14 @@ class _MonthlyScheduleViewState
     return months[month - 1];
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day} ${_monthName(date.month)} ${date.year}';
-  }
-
-  String _formatAmount(double amount) {
-    final String value =
-        amount.toStringAsFixed(0);
-
-    final StringBuffer result =
-        StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 &&
-          (value.length - i) % 3 == 0) {
-        result.write(',');
-      }
-
-      result.write(value[i]);
-    }
-
-    return result.toString();
-  }
-
-  Future<void> _saveReceivingOrder() async {
-    final Box committeeBox =
-        Hive.box(AppKeys.committeeBox);
-
-    final dynamic storedData =
-        committeeBox.get('currentCommittee');
-
-    if (storedData is! Map) {
-      return;
-    }
-
-    final Map<String, dynamic> committee =
-        Map<String, dynamic>.from(
-      storedData,
-    );
-
-    committee['receivingOrder'] =
-        List<String>.from(receivingOrder);
-
-    await committeeBox.put(
-      'currentCommittee',
-      committee,
-    );
-  }
-
-  Future<void> _changeReceivingMember(
-    int index,
-  ) async {
-    if (members.isEmpty) {
-      _showMessage(
-        'No members available. Please add members first.',
-      );
-      return;
-    }
-
+  void _changeReceivingMember(int index) {
     final String currentMember =
-        schedule[index]['memberName'] ??
-            members.first;
+        schedule[index]['memberName'] ?? members.first;
 
     final TextEditingController nameController =
         TextEditingController();
 
-    await showModalBottomSheet(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
@@ -390,32 +109,22 @@ class _MonthlyScheduleViewState
                 Brightness.dark;
 
         final Color backgroundColor =
-            isDark
-                ? const Color(0xFF0A0A0A)
-                : Colors.white;
+            isDark ? const Color(0xFF0A0A0A) : Colors.white;
 
         final Color primaryTextColor =
-            isDark
-                ? Colors.white
-                : Colors.black87;
+            isDark ? Colors.white : Colors.black87;
 
         final Color secondaryTextColor =
-            isDark
-                ? Colors.white60
-                : Colors.black54;
+            isDark ? Colors.white60 : Colors.black54;
 
         return StatefulBuilder(
-          builder: (
-            context,
-            setSheetState,
-          ) {
+          builder: (context, setSheetState) {
             return Container(
               color: backgroundColor,
               padding: const EdgeInsets.all(20),
               child: SafeArea(
                 child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
@@ -423,22 +132,21 @@ class _MonthlyScheduleViewState
                       'Select Receiving Member',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight:
-                            FontWeight.bold,
-                        color:
-                            primaryTextColor,
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
                       ),
                     ),
+
                     const SizedBox(height: 6),
+
                     Text(
-                      schedule[index]['month'] ??
-                          'Period',
+                      schedule[index]['month'] ?? 'Month',
                       style: TextStyle(
                         fontSize: 13,
-                        color:
-                            secondaryTextColor,
+                        color: secondaryTextColor,
                       ),
                     ),
+
                     const SizedBox(height: 16),
 
                     ...List.generate(
@@ -448,90 +156,65 @@ class _MonthlyScheduleViewState
                             members[memberIndex];
 
                         final bool isSelected =
-                            member ==
-                                currentMember;
+                            member == currentMember;
 
                         return ListTile(
-                          contentPadding:
-                              EdgeInsets.zero,
+                          contentPadding: EdgeInsets.zero,
+
                           leading: Row(
-                            mainAxisSize:
-                                MainAxisSize.min,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               SizedBox(
                                 width: 24,
                                 child: Text(
                                   '${memberIndex + 1}.',
-                                  style:
-                                      TextStyle(
-                                    color:
-                                        primaryTextColor,
+                                  style: TextStyle(
+                                    color: primaryTextColor,
                                     fontWeight:
-                                        FontWeight
-                                            .w600,
+                                        FontWeight.w600,
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 6,
-                              ),
+                              const SizedBox(width: 6),
                               Icon(
-                                Icons
-                                    .person_rounded,
-                                color:
-                                    primaryTextColor,
+                                Icons.person_rounded,
+                                color: primaryTextColor,
                               ),
                             ],
                           ),
+
                           title: Text(
                             member,
-                            softWrap: true,
-                            overflow:
-                                TextOverflow
-                                    .visible,
                             style: TextStyle(
-                              color:
-                                  primaryTextColor,
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight
-                                          .w600
-                                      : FontWeight
-                                          .normal,
+                              color: primaryTextColor,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
-                          trailing:
-                              isSelected
-                                  ? Icon(
-                                      Icons
-                                          .check_circle_rounded,
-                                      color:
-                                          primaryTextColor,
-                                    )
-                                  : null,
-                          onTap: () async {
+
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check_circle_rounded,
+                                  color: primaryTextColor,
+                                )
+                              : null,
+
+                          onTap: () {
                             setState(() {
-                              schedule[index]
-                                      ['memberName'] =
+                              schedule[index]['memberName'] =
                                   member;
                             });
 
-                            await _saveScheduleMember(
-                              index,
-                              member,
-                            );
+                            Navigator.pop(sheetContext);
 
-                            if (!sheetContext
-                                .mounted) {
-                              return;
-                            }
-
-                            Navigator.pop(
-                              sheetContext,
-                            );
-
-                            _showMessage(
-                              '${schedule[index]['month']} receiving member changed to $member.',
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${schedule[index]['month']} receiving member changed to $member.',
+                                ),
+                              ),
                             );
                           },
                         );
@@ -541,70 +224,61 @@ class _MonthlyScheduleViewState
                     const Divider(),
 
                     ListTile(
-                      contentPadding:
-                          EdgeInsets.zero,
+                      contentPadding: EdgeInsets.zero,
+
                       leading: Container(
                         width: 30,
                         height: 30,
-                        alignment:
-                            Alignment.center,
-                        decoration:
-                            BoxDecoration(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
                           border: Border.all(
-                            color:
-                                secondaryTextColor,
+                            color: secondaryTextColor,
                           ),
                           borderRadius:
-                              BorderRadius.circular(
-                            8,
-                          ),
+                              BorderRadius.circular(8),
                         ),
                         child: Text(
                           '+',
                           style: TextStyle(
                             fontSize: 20,
-                            color:
-                                primaryTextColor,
+                            color: primaryTextColor,
                           ),
                         ),
                       ),
+
                       title: Text(
                         'Add a Name',
                         style: TextStyle(
-                          color:
-                              primaryTextColor,
-                          fontWeight:
-                              FontWeight.w600,
+                          color: primaryTextColor,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+
                       subtitle: Text(
                         'Enter another receiving member',
                         style: TextStyle(
-                          color:
-                              secondaryTextColor,
+                          color: secondaryTextColor,
                           fontSize: 12,
                         ),
                       ),
+
                       onTap: () async {
                         nameController.clear();
 
                         final String? newName =
                             await showDialog<String>(
                           context: sheetContext,
-                          builder:
-                              (dialogContext) {
+                          builder: (dialogContext) {
                             return AlertDialog(
                               title: const Text(
                                 'Add a Name',
                               ),
-                              content:
-                                  TextField(
+                              content: TextField(
                                 controller:
                                     nameController,
                                 autofocus: true,
                                 textCapitalization:
-                                    TextCapitalization
-                                        .words,
+                                    TextCapitalization.words,
                                 decoration:
                                     const InputDecoration(
                                   hintText:
@@ -618,29 +292,24 @@ class _MonthlyScheduleViewState
                                       dialogContext,
                                     );
                                   },
-                                  child:
-                                      const Text(
+                                  child: const Text(
                                     'Cancel',
                                   ),
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    final String
-                                        name =
-                                        nameController
-                                            .text
+                                    final String name =
+                                        nameController.text
                                             .trim();
 
-                                    if (name
-                                        .isNotEmpty) {
+                                    if (name.isNotEmpty) {
                                       Navigator.pop(
                                         dialogContext,
                                         name,
                                       );
                                     }
                                   },
-                                  child:
-                                      const Text(
+                                  child: const Text(
                                     'Add',
                                   ),
                                 ),
@@ -652,46 +321,23 @@ class _MonthlyScheduleViewState
                         if (newName != null &&
                             newName.isNotEmpty) {
                           setState(() {
-                            if (!members
-                                .contains(
-                              newName,
-                            )) {
-                              members.add(
-                                newName,
-                              );
+                            if (!members.contains(newName)) {
+                              members.add(newName);
                             }
 
-                            if (!receivingOrder
-                                .contains(
-                              newName,
-                            )) {
-                              receivingOrder.add(
-                                newName,
-                              );
-                            }
-
-                            schedule[index]
-                                    ['memberName'] =
+                            schedule[index]['memberName'] =
                                 newName;
                           });
 
-                          await _saveReceivingOrder();
-                          await _saveScheduleMember(
-                            index,
-                            newName,
-                          );
+                          Navigator.pop(sheetContext);
 
-                          if (!sheetContext
-                              .mounted) {
-                            return;
-                          }
-
-                          Navigator.pop(
-                            sheetContext,
-                          );
-
-                          _showMessage(
-                            '${schedule[index]['month']} receiving member changed to $newName.',
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${schedule[index]['month']} receiving member changed to $newName.',
+                              ),
+                            ),
                           );
                         }
                       },
@@ -703,361 +349,30 @@ class _MonthlyScheduleViewState
           },
         );
       },
-    );
-
-    nameController.dispose();
-  }
-
-  Future<void> _saveScheduleMember(
-    int index,
-    String memberName,
-  ) async {
-    final Box committeeBox =
-        Hive.box(AppKeys.committeeBox);
-
-    final dynamic storedData =
-        committeeBox.get('currentCommittee');
-
-    if (storedData is! Map) {
-      return;
-    }
-
-    final Map<String, dynamic> committee =
-        Map<String, dynamic>.from(
-      storedData,
-    );
-
-    List<Map<String, dynamic>>
-        savedSchedule = [];
-
-    final dynamic existingSchedule =
-        committee['receivingSchedule'];
-
-    if (existingSchedule is List) {
-      savedSchedule = existingSchedule
-          .whereType<Map>()
-          .map(
-            (item) =>
-                Map<String, dynamic>.from(
-              item,
-            ),
-          )
-          .toList();
-    }
-
-    while (savedSchedule.length <= index) {
-      savedSchedule.add(
-        <String, dynamic>{},
-      );
-    }
-
-    savedSchedule[index] =
-        Map<String, dynamic>.from(
-      schedule[index],
-    );
-
-    await committeeBox.put(
-      'currentCommittee',
-      {
-        ...committee,
-        'receivingSchedule':
-            savedSchedule,
-        'receivingOrder':
-            List<String>.from(
-          receivingOrder,
-        ),
-      },
-    );
-  }
-
-  void _editReceivingOrder() {
-    List<String> editedOrder =
-        List<String>.from(receivingOrder);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        final bool isDark =
-            Theme.of(sheetContext).brightness ==
-                Brightness.dark;
-
-        final Color backgroundColor =
-            isDark
-                ? const Color(0xFF0A0A0A)
-                : Colors.white;
-
-        final Color primaryTextColor =
-            isDark
-                ? Colors.white
-                : Colors.black87;
-
-        final Color secondaryTextColor =
-            isDark
-                ? Colors.white60
-                : Colors.black54;
-
-        return StatefulBuilder(
-          builder: (
-            context,
-            setSheetState,
-          ) {
-            return Container(
-              color: backgroundColor,
-              padding: const EdgeInsets.all(20),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min,
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.edit_rounded,
-                          color:
-                              primaryTextColor,
-                        ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Edit Receiving Order',
-                            softWrap: true,
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color:
-                                  primaryTextColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Drag members to change the receiving sequence.',
-                      softWrap: true,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color:
-                            secondaryTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    if (editedOrder.isEmpty)
-                      Padding(
-                        padding:
-                            const EdgeInsets.all(
-                          20,
-                        ),
-                        child: Text(
-                          'No members available.',
-                          style: TextStyle(
-                            color:
-                                secondaryTextColor,
-                          ),
-                        ),
-                      )
-                    else
-                      ConstrainedBox(
-                        constraints:
-                            const BoxConstraints(
-                          maxHeight: 400,
-                        ),
-                        child:
-                            ReorderableListView
-                                .builder(
-                          shrinkWrap: true,
-                          itemCount:
-                              editedOrder.length,
-                          buildDefaultDragHandles:
-                              false,
-                          itemBuilder:
-                              (
-                            context,
-                            index,
-                          ) {
-                            final String
-                                member =
-                                editedOrder[
-                                    index];
-
-                            return ListTile(
-                              key: ValueKey(
-                                member,
-                              ),
-                              contentPadding:
-                                  EdgeInsets.zero,
-                              leading: SizedBox(
-                                width: 32,
-                                child: Text(
-                                  '${index + 1}.',
-                                  style:
-                                      TextStyle(
-                                    color:
-                                        primaryTextColor,
-                                    fontWeight:
-                                        FontWeight
-                                            .bold,
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                member,
-                                softWrap: true,
-                                overflow:
-                                    TextOverflow
-                                        .visible,
-                                style: TextStyle(
-                                  color:
-                                      primaryTextColor,
-                                  fontWeight:
-                                      FontWeight
-                                          .w600,
-                                ),
-                              ),
-                              trailing:
-                                  ReorderableDragStartListener(
-                                index: index,
-                                child: Icon(
-                                  Icons
-                                      .drag_handle_rounded,
-                                  color:
-                                      secondaryTextColor,
-                                ),
-                              ),
-                            );
-                          },
-                          onReorder:
-                              (
-                            oldIndex,
-                            newIndex,
-                          ) {
-                            setSheetState(() {
-                              if (newIndex >
-                                  oldIndex) {
-                                newIndex -= 1;
-                              }
-
-                              final String
-                                  movedMember =
-                                  editedOrder
-                                      .removeAt(
-                                oldIndex,
-                              );
-
-                              editedOrder.insert(
-                                newIndex,
-                                movedMember,
-                              );
-                            });
-                          },
-                        ),
-                      ),
-
-                    const SizedBox(height: 12),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child:
-                          ElevatedButton.icon(
-                        onPressed:
-                            editedOrder.isEmpty
-                                ? null
-                                : () async {
-                                    setState(() {
-                                      receivingOrder =
-                                          List<
-                                              String>.from(
-                                        editedOrder,
-                                      );
-
-                                      schedule =
-                                          _createSchedule();
-                                    });
-
-                                    await _saveReceivingOrder();
-
-                                    if (!sheetContext
-                                        .mounted) {
-                                      return;
-                                    }
-
-                                    Navigator.pop(
-                                      sheetContext,
-                                    );
-
-                                    _showMessage(
-                                      'Receiving order updated successfully.',
-                                    );
-                                  },
-                        icon: const Icon(
-                          Icons.check_rounded,
-                        ),
-                        label: const Text(
-                          'Save Receiving Order',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
+    ).whenComplete(() {
+      nameController.dispose();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
+        Theme.of(context).brightness == Brightness.dark;
 
     final Color backgroundColor =
-        isDark
-            ? Colors.black
-            : const Color(0xFFF5F5F5);
+        isDark ? Colors.black : const Color(0xFFF5F5F5);
 
     final Color cardColor =
-        isDark
-            ? const Color(0xFF0A0A0A)
-            : Colors.white;
+        isDark ? const Color(0xFF0A0A0A) : Colors.white;
 
     final Color primaryTextColor =
-        isDark
-            ? Colors.white
-            : Colors.black87;
+        isDark ? Colors.white : Colors.black87;
 
     final Color secondaryTextColor =
-        isDark
-            ? Colors.white60
-            : Colors.black54;
+        isDark ? Colors.white60 : Colors.black54;
 
     final Color borderColor =
-        isDark
-            ? Colors.white10
-            : Colors.black12;
+        isDark ? Colors.white10 : Colors.black12;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -1070,11 +385,8 @@ class _MonthlyScheduleViewState
         ),
         centerTitle: true,
         backgroundColor:
-            isDark
-                ? Colors.black
-                : Colors.white,
-        foregroundColor:
-            primaryTextColor,
+            isDark ? Colors.black : Colors.white,
+        foregroundColor: primaryTextColor,
         elevation: 0,
       ),
       body: SafeArea(
@@ -1086,10 +398,8 @@ class _MonthlyScheduleViewState
             children: [
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.all(18),
-                decoration:
-                    BoxDecoration(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius:
                       BorderRadius.circular(18),
@@ -1104,25 +414,18 @@ class _MonthlyScheduleViewState
                     Row(
                       children: [
                         Icon(
-                          Icons
-                              .calendar_month_rounded,
+                          Icons.calendar_month_rounded,
                           size: 28,
-                          color:
-                              primaryTextColor,
+                          color: primaryTextColor,
                         ),
-                        const SizedBox(
-                          width: 10,
-                        ),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Receiving Order',
-                            softWrap: true,
                             style: TextStyle(
                               fontSize: 19,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color:
-                                  primaryTextColor,
+                              fontWeight: FontWeight.bold,
+                              color: primaryTextColor,
                             ),
                           ),
                         ),
@@ -1130,33 +433,11 @@ class _MonthlyScheduleViewState
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Each period, one member receives the committee amount according to the receiving order.',
-                      softWrap: true,
-                      overflow:
-                          TextOverflow.visible,
+                      'Each month, one member receives the committee amount according to the receiving order.',
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.5,
-                        color:
-                            secondaryTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child:
-                          OutlinedButton.icon(
-                        onPressed:
-                            receivingOrder
-                                    .isEmpty
-                                ? null
-                                : _editReceivingOrder,
-                        icon: const Icon(
-                          Icons.edit_rounded,
-                        ),
-                        label: const Text(
-                          'Edit Receiving Order',
-                        ),
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -1169,10 +450,8 @@ class _MonthlyScheduleViewState
                 'Monthly Schedule',
                 style: TextStyle(
                   fontSize: 19,
-                  fontWeight:
-                      FontWeight.bold,
-                  color:
-                      primaryTextColor,
+                  fontWeight: FontWeight.bold,
+                  color: primaryTextColor,
                 ),
               ),
 
@@ -1185,34 +464,27 @@ class _MonthlyScheduleViewState
                       primaryTextColor,
                   secondaryTextColor:
                       secondaryTextColor,
-                  borderColor:
-                      borderColor,
+                  borderColor: borderColor,
                 )
               else
                 ...List.generate(
                   schedule.length,
                   (index) {
-                    final Map<String, String>
-                        item =
-                        schedule[index];
+                    final item = schedule[index];
 
                     return GestureDetector(
                       onTap: () {
-                        _changeReceivingMember(
-                          index,
-                        );
+                        _changeReceivingMember(index);
                       },
                       child: ScheduleCard(
                         title:
-                            '${index + 1}. ${item['month'] ?? 'Period'}',
+                            '${index + 1}. ${item['month'] ?? 'Month'}',
                         dueDate:
                             '${item['memberName'] ?? 'Member'} • ${item['dueDate'] ?? 'Date'}',
                         amount:
-                            item['amount'] ??
-                                'PKR 0',
+                            item['amount'] ?? 'PKR 0',
                         status:
-                            item['status'] ??
-                                'Upcoming',
+                            item['status'] ?? 'Upcoming',
                       ),
                     );
                   },
@@ -1221,14 +493,11 @@ class _MonthlyScheduleViewState
               const SizedBox(height: 8),
 
               Text(
-                'Tap a period to change its receiving member.',
-                textAlign:
-                    TextAlign.center,
-                softWrap: true,
+                'Tap a month to change its receiving member.',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color:
-                      secondaryTextColor,
+                  color: secondaryTextColor,
                 ),
               ),
             ],
@@ -1246,16 +515,13 @@ class _MonthlyScheduleViewState
   }) {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 35,
       ),
-      decoration:
-          BoxDecoration(
+      decoration: BoxDecoration(
         color: cardColor,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: borderColor,
         ),
@@ -1263,38 +529,26 @@ class _MonthlyScheduleViewState
       child: Column(
         children: [
           Icon(
-            Icons
-                .calendar_month_outlined,
+            Icons.calendar_month_outlined,
             size: 55,
-            color:
-                secondaryTextColor,
+            color: secondaryTextColor,
           ),
           const SizedBox(height: 12),
           Text(
             'No Schedule Available',
-            softWrap: true,
-            textAlign:
-                TextAlign.center,
             style: TextStyle(
               fontSize: 17,
-              fontWeight:
-                  FontWeight.bold,
-              color:
-                  primaryTextColor,
+              fontWeight: FontWeight.bold,
+              color: primaryTextColor,
             ),
           ),
           const SizedBox(height: 7),
           Text(
-            members.isEmpty
-                ? 'Please add members to create the receiving schedule.'
-                : 'Committee receiving schedule will appear here.',
-            textAlign:
-                TextAlign.center,
-            softWrap: true,
+            'Monthly receiving schedule will appear here.',
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color:
-                  secondaryTextColor,
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -1302,3 +556,4 @@ class _MonthlyScheduleViewState
     );
   }
 }
+

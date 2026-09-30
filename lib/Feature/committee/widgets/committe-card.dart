@@ -1,165 +1,173 @@
 import 'package:flutter/material.dart';
 
-class MemberCard extends StatelessWidget {
-  final Map<String, String> member;
+class CommitteeCard extends StatelessWidget {
+  final String committeeName;
+  final String monthlyAmount;
+  final String members;
+  final String status;
 
-  const MemberCard({
+  const CommitteeCard({
     super.key,
-    required this.member,
+    this.committeeName = 'Digital Committee',
+    this.monthlyAmount = 'PKR 0',
+    this.members = '0 Members',
+    this.status = 'Active',
   });
-
-  String _getValue(String key) {
-    return member[key]?.trim().isNotEmpty == true
-        ? member[key]!
-        : 'Not available';
-  }
 
   @override
   Widget build(BuildContext context) {
-    final String name = _getValue('name');
-    final String fatherName = _getValue('fatherName');
-    final String phone = _getValue('phone');
-    final String contribution = _getValue('contribution');
-    final String paymentStatus = member['paymentStatus'] ?? 'Pending';
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      elevation: 2,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Member Name
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.person,
-                  size: 24,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    softWrap: true,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Father Name
-            _buildInfoRow(
-              icon: Icons.person_outline,
-              label: 'Father Name',
-              value: fatherName,
-            ),
-
-            const SizedBox(height: 12),
-
-            // Phone Number
-            _buildInfoRow(
-              icon: Icons.phone_outlined,
-              label: 'Phone Number',
-              value: phone,
-            ),
-
-            const SizedBox(height: 12),
-
-            // Monthly Contribution
-            _buildInfoRow(
-              icon: Icons.account_balance_wallet_outlined,
-              label: 'Monthly Contribution',
-              value: contribution.startsWith('PKR')
-                  ? contribution
-                  : 'PKR $contribution',
-            ),
-
-            const SizedBox(height: 14),
-
-            // Payment Status
-            Row(
-              children: [
-                const Icon(
-                  Icons.payment_outlined,
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'Payment Status',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(),
-                  ),
-                  child: Text(
-                    paymentStatus,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF0A0A0A)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white10
+              : Colors.black12,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.white10
+                      : Colors.black12,
+                ),
+                child: const Icon(
+                  Icons.groups_rounded,
+                  size: 26,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Text(
+                  committeeName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius:
+                      BorderRadius.circular(20),
+                  color: status == 'Active'
+                      ? Colors.green.withOpacity(0.12)
+                      : Colors.orange.withOpacity(0.12),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: status == 'Active'
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Row(
+            children: [
+              Expanded(
+                child: _infoItem(
+                  icon: Icons.payments_rounded,
+                  title: 'Monthly',
+                  value: monthlyAmount,
+                  isDark: isDark,
+                ),
+              ),
+
+              Expanded(
+                child: _infoItem(
+                  icon: Icons.people_alt_rounded,
+                  title: 'Members',
+                  value: members,
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoRow({
+  Widget _infoItem({
     required IconData icon,
-    required String label,
+    required String title,
     required String value,
+    required bool isDark,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
           size: 20,
+          color: isDark
+              ? Colors.white70
+              : Colors.black54,
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+
+        const SizedBox(width: 8),
+
+        Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark
+                    ? Colors.white54
+                    : Colors.black45,
               ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                ),
-                softWrap: true,
+            ),
+
+            const SizedBox(height: 2),
+
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? Colors.white
+                    : Colors.black87,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );

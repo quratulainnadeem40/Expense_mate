@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../Core/constants/app_keys.dart';
 import '../widgets/payment_card.dart';
 
 class PaymentTrackingView extends StatefulWidget {
@@ -14,187 +12,76 @@ class PaymentTrackingView extends StatefulWidget {
 
 class _PaymentTrackingViewState
     extends State<PaymentTrackingView> {
-  List<Map<String, String>> payments = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPayments();
-  }
-
-  // Load actual members/payment records from Hive.
-  void _loadPayments() {
-    final Box committeeBox =
-        Hive.box(AppKeys.committeeBox);
-
-    final dynamic savedData =
-        committeeBox.get('currentCommittee');
-
-    if (savedData is! Map) {
-      return;
-    }
-
-    final Map<String, dynamic> committee =
-        Map<String, dynamic>.from(savedData);
-
-    final dynamic savedPayments =
-        committee['paymentRecords'];
-
-    if (savedPayments is List) {
-      final loadedPayments =
-          <Map<String, String>>[];
-
-      for (final payment in savedPayments) {
-        if (payment is Map) {
-          loadedPayments.add({
-            'memberName':
-                payment['memberName']?.toString() ?? '',
-            'amount':
-                payment['amount']?.toString() ??
-                    'PKR 0',
-            'paymentDate':
-                payment['paymentDate']?.toString() ??
-                    '',
-            'status':
-                payment['status']?.toString() ??
-                    'Pending',
-            'note':
-                payment['note']?.toString() ?? '',
-          });
-        }
-      }
-
-      setState(() {
-        payments = loadedPayments;
-      });
-
-      return;
-    }
-
-    // If no payment records exist yet, create actual
-    // payment records from the saved members.
-    final dynamic savedMembers =
-        committee['membersList'];
-
-    if (savedMembers is List) {
-      final newPayments =
-          <Map<String, String>>[];
-
-      for (final member in savedMembers) {
-        if (member is Map) {
-          final String memberName =
-              member['name']?.toString() ?? '';
-
-          final String contribution =
-              member['contribution']?.toString() ??
-                  'PKR 0';
-
-          if (memberName.isEmpty) {
-            continue;
-          }
-
-          newPayments.add({
-            'memberName': memberName,
-            'amount': contribution,
-            'paymentDate': '',
-            'status':
-                member['paymentStatus']?.toString() ??
-                    'Pending',
-            'note':
-                'Monthly contribution payment.',
-          });
-        }
-      }
-
-      setState(() {
-        payments = newPayments;
-      });
-
-      _savePayments();
-    }
-  }
-
-  // Save actual payment records in Hive.
-  Future<void> _savePayments() async {
-    final Box committeeBox =
-        Hive.box(AppKeys.committeeBox);
-
-    final dynamic savedData =
-        committeeBox.get('currentCommittee');
-
-    if (savedData is! Map) {
-      return;
-    }
-
-    final Map<String, dynamic> committee =
-        Map<String, dynamic>.from(savedData);
-
-    committee['paymentRecords'] = payments;
-
-    await committeeBox.put(
-      'currentCommittee',
-      committee,
-    );
-  }
+  final List<Map<String, String>> payments = [
+    {
+      'memberName': 'Ali',
+      'amount': 'PKR 5,000',
+      'paymentDate': '01 September 2026',
+      'status': 'Received',
+      'note': 'Monthly contribution received.',
+    },
+    {
+      'memberName': 'Sara',
+      'amount': 'PKR 5,000',
+      'paymentDate': '05 September 2026',
+      'status': 'Pending',
+      'note': 'Payment is still pending.',
+    },
+    {
+      'memberName': 'Ahmed',
+      'amount': 'PKR 5,000',
+      'paymentDate': '01 September 2026',
+      'status': 'Overdue',
+      'note': 'Payment due date has passed.',
+    },
+  ];
 
   int get receivedCount {
     return payments.where((payment) {
       final status =
-          (payment['status'] ?? '')
-              .toLowerCase();
+          (payment['status'] ?? '').toLowerCase();
 
-      return status == 'received' ||
-          status == 'paid';
+      return status == 'received' || status == 'paid';
     }).length;
   }
 
   int get pendingCount {
     return payments.where((payment) {
-      return (payment['status'] ?? '')
-              .toLowerCase() ==
+      return (payment['status'] ?? '').toLowerCase() ==
           'pending';
     }).length;
   }
 
   int get overdueCount {
     return payments.where((payment) {
-      return (payment['status'] ?? '')
-              .toLowerCase() ==
+      return (payment['status'] ?? '').toLowerCase() ==
           'overdue';
     }).length;
   }
 
   void _changeStatus(int index) {
     final currentStatus =
-        payments[index]['status'] ??
-            'Pending';
+        payments[index]['status'] ?? 'Pending';
 
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) {
         final bool isDark =
-            Theme.of(sheetContext)
-                    .brightness ==
+            Theme.of(sheetContext).brightness ==
                 Brightness.dark;
 
         final Color backgroundColor =
-            isDark
-                ? const Color(0xFF0A0A0A)
-                : Colors.white;
+            isDark ? const Color(0xFF0A0A0A) : Colors.white;
 
         final Color textColor =
-            isDark
-                ? Colors.white
-                : Colors.black87;
+            isDark ? Colors.white : Colors.black87;
 
         return Container(
           color: backgroundColor,
-          padding:
-              const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: SafeArea(
             child: Column(
-              mainAxisSize:
-                  MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
@@ -202,51 +89,38 @@ class _PaymentTrackingViewState
                   'Change Payment Status',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   'Current status: $currentStatus',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark
-                        ? Colors.white60
-                        : Colors.black54,
+                    color:
+                        isDark ? Colors.white60 : Colors.black54,
                   ),
                 ),
-
-                const SizedBox(
-                  height: 18,
-                ),
-
+                const SizedBox(height: 18),
                 _statusOption(
                   context: sheetContext,
                   title: 'Received',
-                  icon: Icons
-                      .check_circle_outline_rounded,
+                  icon: Icons.check_circle_outline_rounded,
                   color: Colors.green,
                   index: index,
                 ),
-
                 _statusOption(
                   context: sheetContext,
                   title: 'Pending',
-                  icon: Icons
-                      .pending_outlined,
+                  icon: Icons.pending_outlined,
                   color: Colors.orange,
                   index: index,
                 ),
-
                 _statusOption(
                   context: sheetContext,
                   title: 'Overdue',
-                  icon: Icons
-                      .warning_amber_rounded,
+                  icon: Icons.warning_amber_rounded,
                   color: Colors.red,
                   index: index,
                 ),
@@ -266,45 +140,20 @@ class _PaymentTrackingViewState
     required int index,
   }) {
     return ListTile(
-      contentPadding:
-          EdgeInsets.zero,
+      contentPadding: EdgeInsets.zero,
       leading: Icon(
         icon,
         color: color,
       ),
       title: Text(title),
-      onTap: () async {
+      onTap: () {
         setState(() {
-          payments[index]['status'] =
-              title;
-
-          if (title == 'Received') {
-            payments[index]['note'] =
-                'Monthly contribution received.';
-          } else if (title == 'Pending') {
-            payments[index]['note'] =
-                'Payment is still pending.';
-          } else {
-            payments[index]['note'] =
-                'Payment is overdue.';
-          }
+          payments[index]['status'] = title;
         });
-
-        await _savePayments();
-
-        await _updateMemberPaymentStatus(
-          index,
-          title,
-        );
-
-        if (!mounted) {
-          return;
-        }
 
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(this.context)
-            .showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(
             content: Text(
               'Payment marked as $title.',
@@ -315,120 +164,41 @@ class _PaymentTrackingViewState
     );
   }
 
-  // Keep Member Management status synchronized
-  // with Payment Tracking status.
-  Future<void> _updateMemberPaymentStatus(
-    int paymentIndex,
-    String status,
-  ) async {
-    final Box committeeBox =
-        Hive.box(AppKeys.committeeBox);
-
-    final dynamic savedData =
-        committeeBox.get('currentCommittee');
-
-    if (savedData is! Map) {
-      return;
-    }
-
-    final Map<String, dynamic> committee =
-        Map<String, dynamic>.from(savedData);
-
-    final dynamic savedMembers =
-        committee['membersList'];
-
-    if (savedMembers is! List) {
-      return;
-    }
-
-    final String memberName =
-        payments[paymentIndex]
-                ['memberName'] ??
-            '';
-
-    final updatedMembers =
-        <Map<String, dynamic>>[];
-
-    for (final member in savedMembers) {
-      if (member is Map) {
-        final Map<String, dynamic>
-            memberMap =
-            Map<String, dynamic>.from(
-          member,
-        );
-
-        if (memberMap['name']
-                ?.toString() ==
-            memberName) {
-          memberMap['paymentStatus'] =
-              status;
-        }
-
-        updatedMembers.add(memberMap);
-      }
-    }
-
-    committee['membersList'] =
-        updatedMembers;
-
-    await committeeBox.put(
-      'currentCommittee',
-      committee,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
+        Theme.of(context).brightness == Brightness.dark;
 
     final Color backgroundColor =
-        isDark
-            ? Colors.black
-            : const Color(0xFFF5F5F5);
+        isDark ? Colors.black : const Color(0xFFF5F5F5);
 
     final Color cardColor =
-        isDark
-            ? const Color(0xFF0A0A0A)
-            : Colors.white;
+        isDark ? const Color(0xFF0A0A0A) : Colors.white;
 
     final Color primaryTextColor =
-        isDark
-            ? Colors.white
-            : Colors.black87;
+        isDark ? Colors.white : Colors.black87;
 
     final Color secondaryTextColor =
-        isDark
-            ? Colors.white60
-            : Colors.black54;
+        isDark ? Colors.white60 : Colors.black54;
 
     return Scaffold(
-      backgroundColor:
-          backgroundColor,
-
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text(
           'Payment Tracking',
           style: TextStyle(
-            fontWeight:
-                FontWeight.bold,
+            fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         backgroundColor:
-            isDark
-                ? Colors.black
-                : Colors.white,
-        foregroundColor:
-            primaryTextColor,
+            isDark ? Colors.black : Colors.white,
+        foregroundColor: primaryTextColor,
         elevation: 0,
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
@@ -436,30 +206,22 @@ class _PaymentTrackingViewState
               _buildSummary(
                 isDark: isDark,
                 cardColor: cardColor,
-                primaryTextColor:
-                    primaryTextColor,
-                secondaryTextColor:
-                    secondaryTextColor,
+                primaryTextColor: primaryTextColor,
+                secondaryTextColor: secondaryTextColor,
               ),
 
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
 
               Text(
                 'Payment Records',
                 style: TextStyle(
                   fontSize: 19,
-                  fontWeight:
-                      FontWeight.bold,
-                  color:
-                      primaryTextColor,
+                  fontWeight: FontWeight.bold,
+                  color: primaryTextColor,
                 ),
               ),
 
-              const SizedBox(
-                height: 12,
-              ),
+              const SizedBox(height: 12),
 
               if (payments.isEmpty)
                 _buildEmptyState(
@@ -470,64 +232,39 @@ class _PaymentTrackingViewState
                 ...List.generate(
                   payments.length,
                   (index) {
-                    final payment =
-                        payments[index];
+                    final payment = payments[index];
 
-                    return Padding(
-                      padding:
-                          const EdgeInsets.only(
-                        bottom: 12,
-                      ),
-                      child: InkWell(
-                        onTap: () =>
-                            _changeStatus(
-                          index,
-                        ),
-                        borderRadius:
-                            BorderRadius
-                                .circular(16),
-                        child:
-                            PaymentCard(
-                          memberName:
-                              payment[
-                                      'memberName'] ??
-                                  'Member Name',
-                          amount:
-                              payment[
-                                      'amount'] ??
-                                  'PKR 0',
-                          paymentDate:
-                              payment[
-                                      'paymentDate']
-                                  ?.isNotEmpty ==
-                                  true
-                              ? payment[
-                                  'paymentDate']!
-                              : 'Date not added',
-                          status:
-                              payment[
-                                      'status'] ??
-                                  'Pending',
-                          note:
-                              payment['note'],
-                        ),
+                    return InkWell(
+                      onTap: () => _changeStatus(index),
+                      borderRadius:
+                          BorderRadius.circular(16),
+                      child: PaymentCard(
+                        memberName:
+                            payment['memberName'] ??
+                                'Member Name',
+                        amount:
+                            payment['amount'] ??
+                                'PKR 0',
+                        paymentDate:
+                            payment['paymentDate'] ??
+                                'Date',
+                        status:
+                            payment['status'] ??
+                                'Pending',
+                        note: payment['note'],
                       ),
                     );
                   },
                 ),
 
-              const SizedBox(
-                height: 12,
-              ),
+              const SizedBox(height: 12),
 
               Text(
                 'Tap any payment record to change its status.',
-                textAlign:
-                    TextAlign.center,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color:
-                      secondaryTextColor,
+                  color: secondaryTextColor,
                 ),
               ),
             ],
@@ -545,17 +282,13 @@ class _PaymentTrackingViewState
   }) {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(18),
-      decoration:
-          BoxDecoration(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
         color: cardColor,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark
-              ? Colors.white10
-              : Colors.black12,
+          color:
+              isDark ? Colors.white10 : Colors.black12,
         ),
       ),
       child: Column(
@@ -566,66 +299,46 @@ class _PaymentTrackingViewState
             'Payment Summary',
             style: TextStyle(
               fontSize: 17,
-              fontWeight:
-                  FontWeight.bold,
-              color:
-                  primaryTextColor,
+              fontWeight: FontWeight.bold,
+              color: primaryTextColor,
             ),
           ),
-
-          const SizedBox(
-            height: 16,
-          ),
-
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: _summaryItem(
                   title: 'Received',
-                  value:
-                      '$receivedCount',
-                  icon: Icons
-                      .check_circle_outline_rounded,
-                  color:
-                      Colors.green,
+                  value: '$receivedCount',
+                  icon:
+                      Icons.check_circle_outline_rounded,
+                  color: Colors.green,
                   primaryTextColor:
                       primaryTextColor,
                   secondaryTextColor:
                       secondaryTextColor,
                 ),
               ),
-
-              const SizedBox(
-                width: 10,
-              ),
-
+              const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
                   title: 'Pending',
-                  value:
-                      '$pendingCount',
-                  icon: Icons
-                      .pending_outlined,
-                  color:
-                      Colors.orange,
+                  value: '$pendingCount',
+                  icon: Icons.pending_outlined,
+                  color: Colors.orange,
                   primaryTextColor:
                       primaryTextColor,
                   secondaryTextColor:
                       secondaryTextColor,
                 ),
               ),
-
-              const SizedBox(
-                width: 10,
-              ),
-
+              const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
                   title: 'Overdue',
-                  value:
-                      '$overdueCount',
-                  icon: Icons
-                      .warning_amber_rounded,
+                  value: '$overdueCount',
+                  icon:
+                      Icons.warning_amber_rounded,
                   color: Colors.red,
                   primaryTextColor:
                       primaryTextColor,
@@ -655,34 +368,22 @@ class _PaymentTrackingViewState
           color: color,
           size: 23,
         ),
-
-        const SizedBox(
-          height: 7,
-        ),
-
+        const SizedBox(height: 7),
         Text(
           value,
           style: TextStyle(
             fontSize: 18,
-            fontWeight:
-                FontWeight.bold,
-            color:
-                primaryTextColor,
+            fontWeight: FontWeight.bold,
+            color: primaryTextColor,
           ),
         ),
-
-        const SizedBox(
-          height: 3,
-        ),
-
+        const SizedBox(height: 3),
         Text(
           title,
-          textAlign:
-              TextAlign.center,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 11,
-            color:
-                secondaryTextColor,
+            color: secondaryTextColor,
           ),
         ),
       ],
@@ -694,8 +395,7 @@ class _PaymentTrackingViewState
   }) {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 35,
       ),
@@ -704,22 +404,15 @@ class _PaymentTrackingViewState
           Icon(
             Icons.payments_outlined,
             size: 55,
-            color:
-                secondaryTextColor,
+            color: secondaryTextColor,
           ),
-
-          const SizedBox(
-            height: 12,
-          ),
-
+          const SizedBox(height: 12),
           Text(
             'No Payment Records Yet',
             style: TextStyle(
               fontSize: 16,
-              fontWeight:
-                  FontWeight.bold,
-              color:
-                  secondaryTextColor,
+              fontWeight: FontWeight.bold,
+              color: secondaryTextColor,
             ),
           ),
         ],
