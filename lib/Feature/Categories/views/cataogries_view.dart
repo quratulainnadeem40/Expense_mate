@@ -1,14 +1,14 @@
 
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
-import 'package:expense_mate/Feature/Bills_Reminders/view/bills_reminders_view.dart';
-import 'package:expense_mate/Feature/Bills_Reminders/binding/bills_reminders_binding.dart';
+import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
+import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
-import 'package:expense_mate/Feature/Goals/binding/goals_binding.dart';
-import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
+import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
+import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
@@ -1359,3 +1359,4 @@ class _CategoriesViewState extends State<CategoriesView> {
     );
   }
 }
+

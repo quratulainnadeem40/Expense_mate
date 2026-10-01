@@ -8,9 +8,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:expense_mate/Core/constants/app_keys.dart';
-import 'package:expense_mate/Core/database/repository_provider.dart';
-import 'package:expense_mate/Core/database/repositories/budget_local_repository.dart';
-import 'package:expense_mate/Core/database/repositories/budget_sync_repository.dart';
+import 'package:expense_mate/Core/Database/repository_provider.dart';
+import 'package:expense_mate/Core/Database/repositories/budget_local_repository.dart';
+import 'package:expense_mate/Core/Database/repositories/budget_sync_repository.dart';
 
 import 'package:expense_mate/Core/service/notification_service.dart';
 
