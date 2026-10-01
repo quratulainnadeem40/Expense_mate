@@ -4,7 +4,7 @@ import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
-import 'package:expense_mate/Feature/Wallets/view/wallets_view.dart';
+import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

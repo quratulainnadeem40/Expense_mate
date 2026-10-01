@@ -1,985 +1,1191 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
-import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
-import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
-import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
-import 'package:expense_mate/Feature/committee/view/committee_view.dart';
-import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
-import 'package:expense_mate/Feature/goals/view/goals_view.dart';
-import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
-import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
-import 'package:expense_mate/Feature/settings/view/settings_view.dart';
-import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
-import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReportView extends StatelessWidget {
-  const ReportView({super.key});
+  ReportView({super.key});
 
-  static final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>();
+  final ReportController controller =
+      Get.isRegistered<ReportController>()
+          ? Get.find<ReportController>()
+          : Get.put(ReportController());
 
-  String get _userName {
-    final user = Supabase.instance.client.auth.currentUser;
+  String formatAmount(double amount) {
+    final bool isNegative = amount < 0;
+    final int rounded = amount.abs().round();
 
-    if (user != null) {
-      final nameFromMetaData =
-          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
+    final String value = rounded.toString();
+    final StringBuffer result = StringBuffer();
 
-      if (nameFromMetaData != null &&
-          nameFromMetaData.toString().isNotEmpty) {
-        return nameFromMetaData.toString();
-      }
+    for (int i = 0; i < value.length; i++) {
+      final int positionFromEnd = value.length - i;
 
-      if (user.email != null && user.email!.contains('@')) {
-        final emailPrefix = user.email!.split('@').first;
-        return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
+      result.write(value[i]);
+
+      if (positionFromEnd > 1 &&
+          positionFromEnd % 3 == 1) {
+        result.write(',');
       }
     }
 
-    return 'User';
+    return isNegative
+        ? '-${result.toString()}'
+        : result.toString();
   }
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
-    if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
-      _scaffoldKey.currentState?.closeEndDrawer();
+  String formatPercentage(double percentage) {
+    if (percentage == percentage.roundToDouble()) {
+      return '${percentage.toInt()}%';
     }
 
-    Future.delayed(const Duration(milliseconds: 150), () {
-      Get.to(page, binding: binding);
-    });
+    return '${percentage.toStringAsFixed(2)}%';
+  }
+
+  String getMonthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return months[month - 1];
+  }
+
+  Color getCategoryColor(
+    String categoryName,
+    CategoriesController categoriesController,
+  ) {
+    final category =
+        categoriesController.categoryList.firstWhereOrNull(
+      (item) =>
+          item.name.trim().toLowerCase() ==
+          categoryName.trim().toLowerCase(),
+    );
+
+    if (category != null) {
+      return Color(category.colorValue);
+    }
+
+    // Fallback colors for categories that are not
+    // available in CategoriesController.
+    const fallbackColors = [
+      Color(0xFF2EA44F),
+      Color(0xFF2196F3),
+      Color(0xFFFF9800),
+      Color(0xFF9C27B0),
+      Color(0xFFE53935),
+      Color(0xFF00ACC1),
+      Color(0xFF795548),
+      Color(0xFF607D8B),
+      Color(0xFFF06292),
+      Color(0xFF7E57C2),
+    ];
+
+    final int index =
+        categoryName.codeUnits.fold<int>(
+              0,
+              (previous, element) =>
+                  previous + element,
+            ) %
+            fallbackColors.length;
+
+    return fallbackColors[index];
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final settingsController = Get.find<SettingsController>();
+    final ThemeData theme = Theme.of(context);
 
-    final backgroundColor =
-        isDark ? const Color(0xff000000) : const Color(0xffF5F7FA);
+    final bool isDarkMode =
+        theme.brightness == Brightness.dark;
 
-    final cardColor =
-        isDark ? const Color(0xff0A0A0A) : Colors.white;
+    final Color backgroundColor =
+        theme.scaffoldBackgroundColor;
 
-    final textColor =
-        isDark ? Colors.white : Colors.black;
+    final Color cardColor =
+        theme.cardColor;
 
-    final secondaryTextColor =
-        isDark ? Colors.white70 : Colors.grey;
+    final Color textColor =
+        isDarkMode
+            ? Colors.white
+            : Colors.black87;
+
+    final Color mutedTextColor =
+        isDarkMode
+            ? Colors.white70
+            : Colors.black54;
+
+    final Color borderColor =
+        isDarkMode
+            ? Colors.white24
+            : Colors.black12;
+
+    final CategoriesController categoriesController =
+        Get.isRegistered<CategoriesController>()
+            ? Get.find<CategoriesController>()
+            : Get.put(CategoriesController());
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: backgroundColor,
-
-      endDrawer: SafeArea(
-        child: Container(
-          margin: const EdgeInsets.only(
-            top: 12,
-            bottom: 16,
-            right: 12,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: Drawer(
-              elevation: 4,
-              backgroundColor: isDark
-                  ? const Color(0xFF1E1E1E)
-                  : const Color(0xFFF9FAFB),
-              child: Column(
-                children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 6, right: 6),
-                      child: IconButton(
-                        onPressed: () {
-                          _scaffoldKey.currentState?.closeEndDrawer();
-                        },
-                        icon: Icon(
-                          Icons.close,
-                          size: 28,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ),
-                  UserAccountsDrawerHeader(
-                    margin: EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark
-                            ? [
-                                const Color(0xFF2E7D32),
-                                const Color(0xFF1B5E20),
-                              ]
-                            : [
-                                const Color(0xFF4CAF50),
-                                const Color(0xFF388E3C),
-                              ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    currentAccountPictureSize: const Size.square(64),
-                    currentAccountPicture: Obx(() {
-                      final imageUrl =
-                          settingsController.profilePictureUrl.value;
-                      final name = settingsController.profileName.value;
-                      final firstLetter =
-                          name.isNotEmpty ? name[0].toUpperCase() : 'U';
-
-                      return Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          backgroundImage: imageUrl.isNotEmpty
-                              ? NetworkImage(imageUrl)
-                              : null,
-                          child: imageUrl.isEmpty
-                              ? Text(
-                                  firstLetter,
-                                  style: const TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E7D32),
-                                  ),
-                                )
-                              : null,
-                        ),
-                      );
-                    }),
-                    accountName: Text(
-                      _userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                    accountEmail: Text(
-                      Supabase.instance.client.auth.currentUser?.email ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 16,
-                      ),
-                      children: [
-                        _buildDrawerOption(
-                          context: context,
-                          icon: Icons.account_balance_wallet_rounded,
-                          iconColor: const Color(0xFF2B82FB),
-                          title: 'Wallets',
-                          subtitle: 'Manage your cash, bank and other wallets',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => const WalletsView(),
-                            binding: WalletsBinding(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDrawerOption(
-                          context: context,
-                          icon: Icons.pie_chart_rounded,
-                          iconColor: const Color(0xFFFF9800),
-                          title: 'Budgets',
-                          subtitle: 'Set and track monthly spending limits',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => const BudgetView(),
-                            binding: BudgetBinding(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDrawerOption(
-                          context: context,
-                          icon: Icons.stars_rounded,
-                          iconColor: const Color(0xFFE91E63),
-                          title: 'Goals',
-                          subtitle: 'Track your financial targets and savings',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => const GoalsView(),
-                            binding: GoalsBinding(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDrawerOption(
-                          context: context,
-                          icon: Icons.notifications_active_rounded,
-                          iconColor: const Color(0xFF9C27B0),
-                          title: 'Bills & Reminders',
-                          subtitle: 'Manage upcoming bills and reminders',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => const BillsRemindersView(),
-                            binding: BillsRemindersBinding(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDrawerOption(
-                          context: context,
-                          icon: Icons.account_balance_rounded,
-                          iconColor: const Color(0xFF4CAF50),
-                          title: 'Digital Committee',
-                          subtitle: 'Manage your committee and member payments',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => CommitteeView(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDrawerOption(
-                          context: context,
-                          icon: Icons.person_rounded,
-                          iconColor: const Color(0xFF00BCD4),
-                          title: 'Profile',
-                          subtitle: 'Manage your profile and account settings',
-                          onTap: () => _closeDrawerAndNavigate(
-                            () => const SettingsView(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-
       appBar: AppBar(
-        title: Text(
-          'Reports & Analytics',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-        centerTitle: false,
-        backgroundColor: cardColor,
+        title: const Text('Reports'),
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         elevation: 0,
-        iconTheme: IconThemeData(
-          color: textColor,
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Open navigation menu',
-            icon: Icon(
-              Icons.menu_rounded,
-              size: 28,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-            onPressed: () {
-              _scaffoldKey.currentState?.openEndDrawer();
-            },
-          ),
-        ],
       ),
+      body: Obx(() {
+        final double income =
+            controller.totalIncome;
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        final double expense =
+            controller.totalExpense;
 
-            Row(
-              children: [
-                Expanded(
-                  child: _summaryCard(
-                    context: context,
-                    title: 'Total Income',
-                    amount: 'PKR 50,000',
-                    icon: Icons.arrow_downward,
-                    iconColor: Colors.green,
-                  ),
-                ),
+        final double balance =
+            controller.totalBalance;
 
-                const SizedBox(width: 12),
+        final Map<String, double> categoryData =
+            controller.expenseCategories;
 
-                Expanded(
-                  child: _summaryCard(
-                    context: context,
-                    title: 'Total Expense',
-                    amount: 'PKR 20,000',
-                    icon: Icons.arrow_upward,
-                    iconColor: Colors.red,
-                  ),
-                ),
-              ],
-            ),
+        final Map<int, double> monthlyData =
+            controller.monthlyExpenses;
 
-            const SizedBox(height: 20), 
+        return RefreshIndicator(
+          onRefresh: controller.refreshReports,
+          child: ListView(
+            physics:
+                const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              // ==================================================
+              // MONTH FILTER
+              // ==================================================
 
-            Text(
-              'Income vs Expense',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _chartContainer(
-              context: context,
-              child: SizedBox(
-                height: 280,
-                child: BarChart(
-                  BarChartData(
-                    maxY: 60000,
-
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
-
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: isDark
-                              ? Colors.white24
-                              : Colors.black12,
-                          strokeWidth: 1,
-                        );
-                      },
-                    ),
-
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 45,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              value.toInt().toString(),
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 11,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 35,
-                          interval: 1,
-                          getTitlesWidget: (value, meta) {
-                            String title = '';
-
-                            if (value == 0) {
-                              title = 'Income';
-                            } else if (value == 1) {
-                              title = 'Expense';
-                            }
-
-                            return SideTitleWidget(
-                              meta: meta,
-                              space: 8,
-                              child: Text(
-                                title,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                        ),
-                      ),
-
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                        ),
-                      ),
-                    ),
-
-                    alignment: BarChartAlignment.spaceAround,
-
-                    barGroups: [
-                      BarChartGroupData(
-                        x: 0,
-                        barRods: [
-                          BarChartRodData(
-                            toY: 50000,
-                            width: 45,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ],
-                      ),
-
-                      BarChartGroupData(
-                        x: 1,
-                        barRods: [
-                          BarChartRodData(
-                            toY: 20000,
-                            width: 45,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            Text(
-              'Expense Categories',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _chartContainer(
-              context: context,
-              child: Column(
-                children: [
-
-                  SizedBox(
-                    height: 250,
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 4,
-                        centerSpaceRadius: 45,
-
-                        sections: [
-                          PieChartSectionData(
-                            value: 25,
-                            title: 'Food',
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          PieChartSectionData(
-                            value: 15,
-                            title: 'Transport',
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          PieChartSectionData(
-                            value: 20,
-                            title: 'Shopping',
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-
-                          PieChartSectionData(
-                            value: 40,
-                            title: 'Bills',
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Wrap(
-                    spacing: 20,
-                    runSpacing: 10,
-                    children: const [
-                      _Legend(
-                        title: 'Food',
-                        color: Colors.blue,
-                      ),
-                      _Legend(
-                        title: 'Transport',
-                        color: Colors.orange,
-                      ),
-                      _Legend(
-                        title: 'Shopping',
-                        color: Colors.green,
-                      ),
-                      _Legend(
-                        title: 'Bills',
-                        color: Colors.red,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            Text(
-              'Monthly Expenses',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _chartContainer(
-              context: context,
-              child: SizedBox(
-                height: 280,
-                child: LineChart(
-                  LineChartData(
-                    minX: 0,
-                    maxX: 5,
-                    minY: 12000,
-                    maxY: 22000,
-
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
-
-                    gridData: FlGridData(
-                      show: true,
-                      drawHorizontalLine: true,
-                      drawVerticalLine: true,
-
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: isDark
-                              ? Colors.white24
-                              : Colors.black12,
-                          strokeWidth: 1,
-                        );
-                      },
-
-                      getDrawingVerticalLine: (value) {
-                        return FlLine(
-                          color: isDark
-                              ? Colors.white12
-                              : Colors.black12,
-                          strokeWidth: 1,
-                        );
-                      },
-                    ),
-
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 45,
-                          interval: 2000,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              value.toInt().toString(),
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 11,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 30,
-                          interval: 1,
-
-                          getTitlesWidget: (value, meta) {
-                            const months = [
-                              'Jan',
-                              'Feb',
-                              'Mar',
-                              'Apr',
-                              'May',
-                              'Jun',
-                            ];
-
-                            if (value >= 0 &&
-                                value < months.length) {
-                              return SideTitleWidget(
-                                meta: meta,
-                                space: 8,
-                                child: Text(
-                                  months[value.toInt()],
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: textColor,
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return const SizedBox.shrink();
-                          },
-                        ),
-                      ),
-
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                        ),
-                      ),
-
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                        ),
-                      ),
-                    ),
-
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: const [
-                          FlSpot(0, 15000),
-                          FlSpot(1, 18000),
-                          FlSpot(2, 12000),
-                          FlSpot(3, 22000),
-                          FlSpot(4, 17000),
-                          FlSpot(5, 20000),
-                        ],
-                        isCurved: false,
-                        barWidth: 4,  
-
-                        dotData: FlDotData(
-                          show: true,
-                          getDotPainter:
-                              (spot, percent, barData, index) {
-                            return FlDotCirclePainter(
-                              radius: 5,
-                              color: const Color(0xff11B5C9),
-                              strokeWidth: 2,
-                              strokeColor:
-                                  const Color(0xff11B5C9),
-                            );
-                          },
-                        ),
-
-                        belowBarData: BarAreaData(
-                          show: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(18),
-
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 10,
-                    color: Colors.black.withOpacity(0.06),
-                  ),
-                ],
-              ),
-
-              child: Column(
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Current Balance',
+                    'Months',
                     style: TextStyle(
-                      fontSize: 16,
-                      color: secondaryTextColor,
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  PopupMenuButton<int>(
+                    color: cardColor,
+                    onSelected:
+                        controller.setMonthFilter,
+                    itemBuilder: (context) {
+                      return List.generate(
+                        12,
+                        (index) {
+                          final int month =
+                              index + 1;
 
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    'PKR 30,000',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                          return PopupMenuItem<int>(
+                            value: month,
+                            child: Text(
+                              getMonthName(month),
+                              style: TextStyle(
+                                color: textColor,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 9,
+                      ),
+                      decoration:
+                          BoxDecoration(
+                        border: Border.all(
+                          color: borderColor,
+                        ),
+                        borderRadius:
+                            BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize:
+                            MainAxisSize.min,
+                        children: [
+                          Text(
+                            controller
+                                        .selectedMonth
+                                        .value ==
+                                    null
+                                ? 'Select Month'
+                                : getMonthName(
+                                    controller
+                                        .selectedMonth
+                                        .value!,
+                                  ),
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight:
+                                  FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: mutedTextColor,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 120),
-          ],
+
+              const SizedBox(height: 18),
+
+              // ==================================================
+              // SUMMARY CARDS
+              // ==================================================
+
+              Row(
+                children: [
+                  Expanded(
+                    child: _summaryCard(
+                      title: 'Total Income',
+                      amount: income,
+                      icon: Icons.arrow_downward,
+                      iconColor: Colors.green,
+                      cardColor: cardColor,
+                      textColor: textColor,
+                      mutedTextColor:
+                          mutedTextColor,
+                      borderColor: borderColor,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _summaryCard(
+                      title: 'Total Expense',
+                      amount: expense,
+                      icon: Icons.arrow_upward,
+                      iconColor: Colors.red,
+                      cardColor: cardColor,
+                      textColor: textColor,
+                      mutedTextColor:
+                          mutedTextColor,
+                      borderColor: borderColor,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              _balanceCard(
+                balance: balance,
+                cardColor: cardColor,
+                textColor: textColor,
+                mutedTextColor: mutedTextColor,
+                borderColor: borderColor,
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==================================================
+              // INCOME VS EXPENSE
+              // ==================================================
+
+              _sectionTitle(
+                'Income vs Expense',
+                textColor,
+              ),
+
+              const SizedBox(height: 10),
+
+              Container(
+                padding:
+                    const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius:
+                      BorderRadius.circular(16),
+                  border: Border.all(
+                    color: borderColor,
+                  ),
+                ),
+                child:
+                    income == 0 && expense == 0
+                        ? _emptyMessage(
+                            'No income or expense data available',
+                            mutedTextColor,
+                          )
+                        : SizedBox(
+                            height: 280,
+                            child: BarChart(
+                              BarChartData(
+                                alignment:
+                                    BarChartAlignment
+                                        .spaceAround,
+                                maxY:
+                                    _maxChartValue(
+                                  income,
+                                  expense,
+                                ),
+                                borderData:
+                                    FlBorderData(
+                                  show: false,
+                                ),
+                                gridData:
+                                    FlGridData(
+                                  show: true,
+                                  drawVerticalLine:
+                                      false,
+                                ),
+                                titlesData:
+                                    FlTitlesData(
+                                  topTitles:
+                                      const AxisTitles(
+                                    sideTitles:
+                                        SideTitles(
+                                      showTitles: false,
+                                    ),
+                                  ),
+                                  rightTitles:
+                                      const AxisTitles(
+                                    sideTitles:
+                                        SideTitles(
+                                      showTitles: false,
+                                    ),
+                                  ),
+                                  leftTitles:
+                                      AxisTitles(
+                                    sideTitles:
+                                        SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 55,
+                                      getTitlesWidget:
+                                          (value, meta) {
+                                        return Text(
+                                          formatAmount(
+                                            value,
+                                          ),
+                                          style:
+                                              TextStyle(
+                                            color:
+                                                mutedTextColor,
+                                            fontSize:
+                                                11,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  bottomTitles:
+                                      AxisTitles(
+                                    sideTitles:
+                                        SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget:
+                                          (value, meta) {
+                                        final String
+                                            title =
+                                            value.toInt() ==
+                                                    0
+                                                ? 'Income'
+                                                : 'Expense';
+
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets
+                                                  .only(
+                                            top: 8,
+                                          ),
+                                          child:
+                                              Text(
+                                            title,
+                                            style:
+                                                TextStyle(
+                                              color:
+                                                  textColor,
+                                              fontWeight:
+                                                  FontWeight
+                                                      .w500,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                barTouchData:
+                                    BarTouchData(
+                                  enabled: true,
+                                  touchTooltipData:
+                                      BarTouchTooltipData(
+                                    getTooltipItem:
+                                        (
+                                      group,
+                                      groupIndex,
+                                      rod,
+                                      rodIndex,
+                                    ) {
+                                      final String
+                                          label =
+                                          group.x ==
+                                                  0
+                                              ? 'Income'
+                                              : 'Expense';
+
+                                      return BarTooltipItem(
+                                        '$label\nPKR ${formatAmount(rod.toY)}',
+                                        const TextStyle(
+                                          color:
+                                              Colors.white,
+                                          fontWeight:
+                                              FontWeight.bold,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                barGroups: [
+                                  BarChartGroupData(
+                                    x: 0,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: income,
+                                        color:
+                                            Colors.green,
+                                        width: 42,
+                                        borderRadius:
+                                            BorderRadius
+                                                .circular(
+                                          6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  BarChartGroupData(
+                                    x: 1,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: expense,
+                                        color:
+                                            Colors.red,
+                                        width: 42,
+                                        borderRadius:
+                                            BorderRadius
+                                                .circular(
+                                          6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==================================================
+              // EXPENSE CATEGORIES
+              // ==================================================
+
+              _sectionTitle(
+                'Expense Categories',
+                textColor,
+              ),
+
+              const SizedBox(height: 10),
+
+              Container(
+                padding:
+                    const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius:
+                      BorderRadius.circular(16),
+                  border: Border.all(
+                    color: borderColor,
+                  ),
+                ),
+                child: categoryData.isEmpty
+                    ? _emptyMessage(
+                        'No expense categories yet.\nAdd an expense with a category to see the graph.',
+                        mutedTextColor,
+                      )
+                    : Column(
+                        children: [
+                          // ----------------------------------------
+                          // PIE / DOUGHNUT GRAPH
+                          // ----------------------------------------
+
+                          SizedBox(
+                            height: 300,
+                            child: PieChart(
+                              PieChartData(
+                                sectionsSpace: 3,
+                                centerSpaceRadius: 58,
+                                sections: categoryData
+                                    .entries
+                                    .map(
+                                  (entry) {
+                                    final double
+                                        percentage =
+                                        expense > 0
+                                            ? (entry.value /
+                                                    expense) *
+                                                100
+                                            : 0;
+
+                                    final Color
+                                        categoryColor =
+                                        getCategoryColor(
+                                      entry.key,
+                                      categoriesController,
+                                    );
+
+                                    return PieChartSectionData(
+                                      value:
+                                          entry.value,
+                                      color:
+                                          categoryColor,
+                                      radius: 92,
+                                      title:
+                                          formatPercentage(
+                                        percentage,
+                                      ),
+                                      titleStyle:
+                                          const TextStyle(
+                                        color:
+                                            Colors.white,
+                                        fontSize: 12,
+                                        fontWeight:
+                                            FontWeight.bold,
+                                      ),
+                                    );
+                                  },
+                                ).toList(),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          // ----------------------------------------
+                          // TOTAL EXPENSE
+                          // ----------------------------------------
+
+                          Container(
+                            width:
+                                double.infinity,
+                            padding:
+                                const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            decoration:
+                                BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(
+                                12,
+                              ),
+                              border:
+                                  Border.all(
+                                color:
+                                    borderColor,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment
+                                      .spaceBetween,
+                              children: [
+                                Text(
+                                  'Total Expense',
+                                  style:
+                                      TextStyle(
+                                    color:
+                                        mutedTextColor,
+                                    fontWeight:
+                                        FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  'PKR ${formatAmount(expense)}',
+                                  style:
+                                      TextStyle(
+                                    color:
+                                        textColor,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // ----------------------------------------
+                          // CATEGORY LEGEND / OUTPUT
+                          // ----------------------------------------
+
+                          ...categoryData.entries.map(
+                            (entry) {
+                              final double
+                                  percentage =
+                                  expense > 0
+                                      ? (entry.value /
+                                              expense) *
+                                          100
+                                      : 0;
+
+                              final Color
+                                  categoryColor =
+                                  getCategoryColor(
+                                entry.key,
+                                categoriesController,
+                              );
+
+                              return Container(
+                                margin:
+                                    const EdgeInsets
+                                        .only(
+                                  bottom: 10,
+                                ),
+                                padding:
+                                    const EdgeInsets
+                                        .symmetric(
+                                  horizontal: 12,
+                                  vertical: 11,
+                                ),
+                                decoration:
+                                    BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius
+                                          .circular(
+                                    10,
+                                  ),
+                                  border:
+                                      Border.all(
+                                    color:
+                                        borderColor,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Category color
+                                    Container(
+                                      width: 13,
+                                      height: 13,
+                                      decoration:
+                                          BoxDecoration(
+                                        color:
+                                            categoryColor,
+                                        shape:
+                                            BoxShape
+                                                .circle,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+
+                                    // Category name
+                                    Expanded(
+                                      child:
+                                          Text(
+                                        entry.key,
+                                        overflow:
+                                            TextOverflow
+                                                .ellipsis,
+                                        style:
+                                            TextStyle(
+                                          color:
+                                              textColor,
+                                          fontWeight:
+                                              FontWeight
+                                                  .w600,
+                                        ),
+                                      ),
+                                    ),
+
+                                    // Amount
+                                    Text(
+                                      'PKR ${formatAmount(entry.value)}',
+                                      style:
+                                          TextStyle(
+                                        color:
+                                            textColor,
+                                        fontWeight:
+                                            FontWeight
+                                                .w500,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+
+                                    // Percentage
+                                    SizedBox(
+                                      width: 55,
+                                      child:
+                                          Text(
+                                        formatPercentage(
+                                          percentage,
+                                        ),
+                                        textAlign:
+                                            TextAlign
+                                                .right,
+                                        style:
+                                            TextStyle(
+                                          color:
+                                              mutedTextColor,
+                                          fontWeight:
+                                              FontWeight
+                                                  .bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==================================================
+              // MONTHLY EXPENSES
+              // ==================================================
+
+              _sectionTitle(
+                'Monthly Expenses',
+                textColor,
+              ),
+
+              const SizedBox(height: 10),
+
+              Container(
+                padding:
+                    const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius:
+                      BorderRadius.circular(16),
+                  border: Border.all(
+                    color: borderColor,
+                  ),
+                ),
+                child: monthlyData.values
+                        .every(
+                      (value) => value == 0,
+                    )
+                    ? _emptyMessage(
+                        'No monthly expense data available',
+                        mutedTextColor,
+                      )
+                    : SizedBox(
+                        height: 300,
+                        child: LineChart(
+                          LineChartData(
+                            minX: 1,
+                            maxX: 12,
+                            minY: 0,
+                            maxY: _monthlyMax(
+                              monthlyData,
+                            ),
+                            gridData:
+                                FlGridData(
+                              show: true,
+                            ),
+                            borderData:
+                                FlBorderData(
+                              show: false,
+                            ),
+                            titlesData:
+                                FlTitlesData(
+                              topTitles:
+                                  const AxisTitles(
+                                sideTitles:
+                                    SideTitles(
+                                  showTitles: false,
+                                ),
+                              ),
+                              rightTitles:
+                                  const AxisTitles(
+                                sideTitles:
+                                    SideTitles(
+                                  showTitles: false,
+                                ),
+                              ),
+                              leftTitles:
+                                  AxisTitles(
+                                sideTitles:
+                                    SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 55,
+                                  getTitlesWidget:
+                                      (value, meta) {
+                                    return Text(
+                                      formatAmount(
+                                        value,
+                                      ),
+                                      style:
+                                          TextStyle(
+                                        color:
+                                            mutedTextColor,
+                                        fontSize:
+                                            10,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              bottomTitles:
+                                  AxisTitles(
+                                sideTitles:
+                                    SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  getTitlesWidget:
+                                      (value, meta) {
+                                    final int
+                                        month =
+                                        value.toInt();
+
+                                    if (month < 1 ||
+                                        month > 12) {
+                                      return const SizedBox
+                                          .shrink();
+                                    }
+
+                                    return Padding(
+                                      padding:
+                                          const EdgeInsets
+                                              .only(
+                                        top: 8,
+                                      ),
+                                      child: Text(
+                                        getMonthName(
+                                          month,
+                                        ).substring(
+                                          0,
+                                          3,
+                                        ),
+                                        style:
+                                            TextStyle(
+                                          color:
+                                              mutedTextColor,
+                                          fontSize:
+                                              10,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            lineTouchData:
+                                LineTouchData(
+                              enabled: true,
+                              touchTooltipData:
+                                  LineTouchTooltipData(
+                                getTooltipItems:
+                                    (spots) {
+                                  return spots.map(
+                                    (spot) {
+                                      return LineTooltipItem(
+                                        '${getMonthName(spot.x.toInt())}\nPKR ${formatAmount(spot.y)}',
+                                        const TextStyle(
+                                          color:
+                                              Colors.white,
+                                          fontWeight:
+                                              FontWeight
+                                                  .bold,
+                                        ),
+                                      );
+                                    },
+                                  ).toList();
+                                },
+                              ),
+                            ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: List.generate(
+                                  12,
+                                  (index) {
+                                    final int month =
+                                        index + 1;
+
+                                    return FlSpot(
+                                      month.toDouble(),
+                                      monthlyData[
+                                              month] ??
+                                          0,
+                                    );
+                                  },
+                                ),
+                                isCurved: true,
+                                barWidth: 3,
+                                dotData:
+                                    const FlDotData(
+                                  show: true,
+                                ),
+                                belowBarData:
+                                    BarAreaData(
+                                  show: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+
+              const SizedBox(height: 30),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  // ==========================================================
+  // SUMMARY CARD
+  // ==========================================================
+
+  Widget _summaryCard({
+    required String title,
+    required double amount,
+    required IconData icon,
+    required Color iconColor,
+    required Color cardColor,
+    required Color textColor,
+    required Color mutedTextColor,
+    required Color borderColor,
+  }) {
+    return Container(
+      padding:
+          const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: iconColor,
+                size: 20,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color:
+                        mutedTextColor,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'PKR ${formatAmount(amount)}',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 17,
+              fontWeight:
+                  FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDrawerOption({
-    required BuildContext context,
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  // ==========================================================
+  // BALANCE CARD
+  // ==========================================================
 
+  Widget _balanceCard({
+    required double balance,
+    required Color cardColor,
+    required Color textColor,
+    required Color mutedTextColor,
+    required Color borderColor,
+  }) {
     return Container(
+      padding:
+          const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: cardColor,
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor,
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
+      child: Row(
+        children: [
+          Icon(
+            balance >= 0
+                ? Icons
+                    .account_balance_wallet_outlined
+                : Icons
+                    .warning_amber_rounded,
+            color: balance >= 0
+                ? Colors.green
+                : Colors.red,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode
-                              ? Colors.white
-                              : const Color(0xFF212121),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDarkMode
-                              ? Colors.grey.shade400
-                              : const Color(0xFF757575),
-                        ),
-                      ),
-                    ],
+                Text(
+                  'Remaining Balance',
+                  style: TextStyle(
+                    color:
+                        mutedTextColor,
+                    fontSize: 13,
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: isDarkMode
-                      ? Colors.grey.shade500
-                      : Colors.grey.shade400,
+                const SizedBox(height: 4),
+                Text(
+                  'PKR ${formatAmount(balance.abs())}',
+                  style: TextStyle(
+                    color: balance >= 0
+                        ? textColor
+                        : Colors.red,
+                    fontSize: 20,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // SECTION TITLE
+  // ==========================================================
+
+  Widget _sectionTitle(
+    String title,
+    Color textColor,
+  ) {
+    return Text(
+      title,
+      style: TextStyle(
+        color: textColor,
+        fontSize: 18,
+        fontWeight:
+            FontWeight.bold,
+      ),
+    );
+  }
+
+  // ==========================================================
+  // EMPTY MESSAGE
+  // ==========================================================
+
+  Widget _emptyMessage(
+    String message,
+    Color mutedTextColor,
+  ) {
+    return SizedBox(
+      height: 120,
+      child: Center(
+        child: Text(
+          message,
+          textAlign:
+              TextAlign.center,
+          style: TextStyle(
+            color:
+                mutedTextColor,
+          ),
         ),
       ),
     );
   }
 
-  static Widget _summaryCard({
-    required BuildContext context,
-    required String title,
-    required String amount,
-    required IconData icon,
-    required Color iconColor,
-  }) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+  // ==========================================================
+  // BAR CHART MAX
+  // ==========================================================
 
-    final cardColor =
-        isDark ? const Color(0xff0A0A0A) : Colors.white;
+  double _maxChartValue(
+    double income,
+    double expense,
+  ) {
+    final double maximum =
+        income > expense
+            ? income
+            : expense;
 
-    final textColor =
-        isDark ? Colors.white : Colors.black;
+    if (maximum <= 0) {
+      return 100;
+    }
 
-    final secondaryTextColor =
-        isDark ? Colors.white70 : Colors.grey;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(18),
-
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 10,
-            color: Colors.black.withOpacity(0.06),
-          ),
-        ],
-      ),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            color: iconColor,
-            size: 28,
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            title,
-            style: TextStyle(
-              color: secondaryTextColor,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            amount,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-        ],
-      ),
-    );
+    return maximum * 1.25;
   }
 
-  static Widget _chartContainer({
-    required BuildContext context,
-    required Widget child,
-  }) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+  // ==========================================================
+  // MONTHLY CHART MAX
+  // ==========================================================
 
-    final cardColor =
-        isDark ? const Color(0xff0A0A0A) : Colors.white;
+  double _monthlyMax(
+    Map<int, double> data,
+  ) {
+    double maximum = 0;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+    for (final value
+        in data.values) {
+      if (value > maximum) {
+        maximum = value;
+      }
+    }
 
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(18),
+    if (maximum <= 0) {
+      return 100;
+    }
 
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 10,
-            color: Colors.black.withOpacity(0.06),
-          ),
-        ],
-      ),
-
-      child: child,
-    );
+    return maximum * 1.25;
   }
 }
-
-class _Legend extends StatelessWidget {
-  final String title;
-  final Color color;
-
-  const _Legend({
-    required this.title,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-           shape: BoxShape.circle,
-          ),
-        ),
-
-        const SizedBox(width: 6),
-
-        Text(
-          title,
-          style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
-          ),
-        ),
-      ],
-    );
-  }
-} 
