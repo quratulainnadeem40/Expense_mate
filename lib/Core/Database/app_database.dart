@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 
 part 'app_database.g.dart';
 
@@ -112,18 +108,6 @@ class LocalCategories extends Table {
 /// ------------------------------------------------------------
 /// BUDGETS
 /// ------------------------------------------------------------
-///
-/// Local representation of the Supabase `budgets` table.
-///
-/// `spent` is stored locally because Supabase also has a spent
-/// column. The BudgetController can continue calculating spent
-/// from transactions for the UI.
-///
-/// startDate/endDate allow us to preserve the budget period.
-///
-/// categoryId is nullable because a total budget does not
-/// necessarily have to belong to one category.
-///
 
 class LocalBudgets extends Table {
   TextColumn get id => text()();
@@ -184,10 +168,6 @@ class SyncQueue extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  /// ----------------------------------------------------------
-  /// ACCOUNT-AWARE UNIQUE KEY
-  /// ----------------------------------------------------------
-
   @override
   List<Set<Column>> get uniqueKeys => [
         {userId, entityTable, recordId},
@@ -238,6 +218,7 @@ class AppDatabase extends _$AppDatabase {
         /// -----------------------------------------------
         /// VERSION 1 → VERSION 2
         /// -----------------------------------------------
+
         if (from < 2) {
           await _migrateSyncQueueToVersion2(m);
         }
@@ -245,9 +226,10 @@ class AppDatabase extends _$AppDatabase {
         /// -----------------------------------------------
         /// VERSION 2 → VERSION 3
         /// -----------------------------------------------
-       if (from < 3) {
-  await m.createTable(localBudgets);
-}
+
+        if (from < 3) {
+          await m.createTable(localBudgets);
+        }
       },
     );
   }
@@ -321,18 +303,12 @@ class AppDatabase extends _$AppDatabase {
 /// DATABASE CONNECTION
 /// ------------------------------------------------------------
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final directory =
-        await getApplicationDocumentsDirectory();
-
-    final file = File(
-      p.join(
-        directory.path,
-        'expense_mate.sqlite',
-      ),
-    );
-
-    return NativeDatabase.createInBackground(file);
-  });
+DatabaseConnection _openConnection() {
+  return driftDatabase(
+    name: 'expense_mate',
+    web: DriftWebOptions(
+      sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+      driftWorker: Uri.parse('drift_worker.dart.js'),
+    ),
+  );
 }
