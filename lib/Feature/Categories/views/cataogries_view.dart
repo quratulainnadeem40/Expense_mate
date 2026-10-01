@@ -9,6 +9,11 @@ import 'package:expense_mate/Feature/Categories/views/category_transactions_scre
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 import 'package:expense_mate/Feature/Goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
+import 'package:expense_mate/Feature/committee/view/committee_view.dart';
+import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
+import 'package:expense_mate/Feature/settings/view/settings_view.dart';
+import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
