@@ -226,7 +226,6 @@ class AppDatabase extends _$AppDatabase {
         /// -----------------------------------------------
         /// VERSION 2 → VERSION 3
         /// -----------------------------------------------
-
         if (from < 3) {
           await m.createTable(localBudgets);
         }
@@ -302,6 +301,17 @@ class AppDatabase extends _$AppDatabase {
 /// ------------------------------------------------------------
 /// DATABASE CONNECTION
 /// ------------------------------------------------------------
+///
+/// Native:
+///   expense_mate.sqlite
+///
+/// Web:
+///   SQLite WASM + Drift Worker
+///
+/// Required web assets:
+///   web/sqlite3.wasm
+///   web/drift_worker.dart.js
+///
 
 DatabaseConnection _openConnection() {
   return driftDatabase(
