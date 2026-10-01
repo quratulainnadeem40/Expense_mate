@@ -435,96 +435,101 @@ class CategoriesController extends GetxController {
   // ADD CATEGORY
   // ==========================================================
 
-  Future<void> addCategory(
-    CategoryModel category,
-  ) async {
-    final user = currentUser;
+Future<void> addCategory(
+  CategoryModel category, {
+  bool closeDialog = true,
+}) async {
+  final user = currentUser;
 
-    if (user == null) {
-      _showError('Please login first.');
-      return;
-    }
-
-    final trimmedName =
-        category.name.trim();
-
-    if (trimmedName.isEmpty) {
-      _showError(
-        'Please enter category name.',
-      );
-      return;
-    }
-
-    try {
-      isLoading.value = true;
-
-      // ------------------------------------------------------
-      // Generate local UUID.
-      // ------------------------------------------------------
-
-      final categoryId = _generateUuid();
-
-      final colorHex = category.colorValue
-          .toRadixString(16)
-          .padLeft(8, '0');
-
-      // ------------------------------------------------------
-      // LOCAL FIRST
-      // ------------------------------------------------------
-
-      await _repositories.categorySync
-          .createCategory(
-        userId: user.id,
-        id: categoryId,
-        name: trimmedName,
-        type: category.type,
-        icon: category.icon,
-        color: colorHex,
-      );
-
-      // ------------------------------------------------------
-      // Update UI immediately.
-      // ------------------------------------------------------
-
-      final newCategory = CategoryModel(
-        id: categoryId,
-        name: trimmedName,
-        icon: category.icon,
-        colorValue: category.colorValue,
-        isDefault: false,
-        type: category.type.toLowerCase(),
-      );
-
-      categoryList.add(newCategory);
-
-      categoryList.sort(
-        compareCategoryOrder,
-      );
-
-      categoryCounts[categoryId] = 0;
-
-      // ------------------------------------------------------
-      // Background cloud synchronization.
-      // ------------------------------------------------------
-
-      _syncInBackground();
-
-      // ------------------------------------------------------
-      // Close dialog if opened from a dialog.
-      // ------------------------------------------------------
-
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-    } catch (_) {
-      _showError(
-        'Unable to add category.',
-      );
-    } finally {
-      isLoading.value = false;
-    }
+  if (user == null) {
+    _showError('Please login first.');
+    return;
   }
 
+  final trimmedName = category.name.trim();
+
+  if (trimmedName.isEmpty) {
+    _showError('Please enter category name.');
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+
+   // ------------------------------------------------------
+// Generate/use local UUID
+// ------------------------------------------------------
+
+final categoryId = category.id.trim().isNotEmpty
+    ? category.id.trim()
+    : _generateUuid();
+
+final colorHex = category.colorValue
+    .toRadixString(16)
+    .padLeft(8, '0');
+    // ------------------------------------------------------
+    // LOCAL FIRST
+    // ------------------------------------------------------
+
+    await _repositories.categorySync.createCategory(
+      userId: user.id,
+      id: categoryId,
+      name: trimmedName,
+      type: category.type,
+      icon: category.icon,
+      color: colorHex,
+    );
+
+    // ------------------------------------------------------
+    // Update UI immediately
+    // ------------------------------------------------------
+
+    final newCategory = CategoryModel(
+      id: categoryId,
+      name: trimmedName,
+      icon: category.icon,
+      colorValue: category.colorValue,
+      isDefault: false,
+      type: category.type.toLowerCase(),
+    );
+
+    if (!categoryList.any(
+      (item) => item.id == categoryId,
+    )) {
+      categoryList.add(newCategory);
+    }
+
+    categoryList.sort(compareCategoryOrder);
+
+    categoryCounts[categoryId] = 0;
+
+    // ------------------------------------------------------
+    // IMPORTANT
+    //
+    // Do NOT start SyncManager while the custom dialog
+    // is still transitioning back to AddTransactionDialog.
+    // ------------------------------------------------------
+
+    if (closeDialog && (Get.isDialogOpen ?? false)) {
+      Get.back();
+    }
+
+    // ------------------------------------------------------
+    // Start cloud sync AFTER the local/UI operation.
+    // ------------------------------------------------------
+
+    Future<void>.delayed(
+      const Duration(milliseconds: 300),
+      _syncInBackground,
+    );
+  } catch (e) {
+    _showError(
+      'Unable to add category.',
+    );
+  } finally {
+    isLoading.value = false;
+  }
+}
   // ==========================================================
   // DELETE SINGLE CATEGORY
   // ==========================================================

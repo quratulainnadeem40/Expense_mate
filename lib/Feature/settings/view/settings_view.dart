@@ -57,7 +57,170 @@ class SettingsView extends StatelessWidget {
     if (currency != null && currency.trim().isNotEmpty) {
       await controller.addCustomCurrency(currency);
     }
+
   }
+  Future<void> _showCurrencyListDialog(BuildContext context) async {
+  await Get.dialog(
+    AlertDialog(
+      title: const Text('Select Currency'),
+      content: SizedBox(
+        width: 400,
+        child: Obx(
+          () {
+            const defaultCurrencies = [
+              'PKR',
+              'USD',
+              'EUR',
+              'GBP',
+            ];
+
+            final customCurrencies =
+                controller.customCurrencies.toList();
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // DEFAULT CURRENCIES
+                ...defaultCurrencies.map(
+                  (currency) {
+                    final isSelected =
+                        controller.selectedCurrency.value ==
+                            currency;
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: isSelected
+                            ? AppColors.primary
+                            : null,
+                      ),
+                      title: Text(currency),
+                      subtitle: const Text('Default currency'),
+                      onTap: () async {
+                        await controller.changeCurrency(currency);
+                        Get.back();
+                      },
+                    );
+                  },
+                ),
+
+                // CUSTOM CURRENCIES
+                if (customCurrencies.isNotEmpty) ...[
+                  const Divider(height: 20),
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'My Currencies',
+                      style: AppTextStyles.bodyMedium(
+                        Theme.of(context).brightness ==
+                                Brightness.dark
+                            ? true
+                            : false,
+                      ).copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  ...customCurrencies.map(
+                    (currency) {
+                      final isSelected =
+                          controller.selectedCurrency.value ==
+                              currency;
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: isSelected
+                              ? AppColors.primary
+                              : null,
+                        ),
+                        title: Text(currency),
+                        subtitle: const Text('Custom currency'),
+                        onTap: () async {
+                          await controller.changeCurrency(currency);
+                          Get.back();
+                        },
+                        trailing: IconButton(
+                          tooltip: 'Delete currency',
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: AppColors.expenseRed,
+                          ),
+                          onPressed: () async {
+                            await _confirmDeleteCurrency(
+                              context,
+                              currency,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () {
+            Get.back();
+            _showAddCurrencyDialog();
+          },
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Add Currency'),
+        ),
+        TextButton(
+          onPressed: () => Get.back(),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
+Future<void> _confirmDeleteCurrency(
+  BuildContext context,
+  String currency,
+) async {
+  final confirmed = await Get.dialog<bool>(
+    AlertDialog(
+      title: const Text('Delete Currency?'),
+      content: Text(
+        'Are you sure you want to remove "$currency" from your custom currencies?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Get.back(result: true),
+          child: const Text(
+            'Delete',
+            style: TextStyle(
+              color: AppColors.expenseRed,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    await controller.deleteCustomCurrency(currency);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -141,78 +304,56 @@ class SettingsView extends StatelessWidget {
             const SizedBox(height: 10),
 
             _SettingsCard(
-              isDark: isDark,
-              children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  leading: _IconContainer(
-                    icon: Icons.currency_exchange_rounded,
-                    isDark: isDark,
-                  ),
-                  title: Text(
-                    'Default Currency',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Choose the currency used by the app',
-                    style: AppTextStyles.bodyMedium(isDark),
-                  ),
-                  trailing: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: controller.selectedCurrency.value,
-                      borderRadius: BorderRadius.circular(14),
-                      items: [
-                        const DropdownMenuItem(
-                          value: 'PKR',
-                          child: Text('PKR'),
-                        ),
-                        const DropdownMenuItem(
-                          value: 'USD',
-                          child: Text('USD'),
-                        ),
-                        const DropdownMenuItem(
-                          value: 'EUR',
-                          child: Text('EUR'),
-                        ),
-                        const DropdownMenuItem(
-                          value: 'GBP',
-                          child: Text('GBP'),
-                        ),
-                        ...controller.customCurrencies.map(
-                          (currency) => DropdownMenuItem(
-                            value: currency,
-                            child: Text(currency),
-                          ),
-                        ),
-                        const DropdownMenuItem(
-                          value: _addCurrencyOption,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add_rounded, size: 18),
-                              SizedBox(width: 6),
-                              Text('Add'),
-                            ],
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == _addCurrencyOption) {
-                          _showAddCurrencyDialog();
-                        } else if (value != null) {
-                          controller.changeCurrency(value);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-              ],
+  isDark: isDark,
+  children: [
+    ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 6,
+      ),
+      leading: _IconContainer(
+        icon: Icons.currency_exchange_rounded,
+        isDark: isDark,
+      ),
+      title: Text(
+        'Default Currency',
+        style: AppTextStyles.bodyLarge(isDark).copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Obx(
+        () => Text(
+          controller.selectedCurrency.value,
+          style: AppTextStyles.bodyMedium(isDark),
+        ),
+      ),
+      trailing: Obx(
+        () => Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 7,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(
+              alpha: 0.10,
             ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            controller.selectedCurrency.value,
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+      onTap: () {
+        _showCurrencyListDialog(context);
+      },
+    ),
+  ],
+),
 
             const SizedBox(height: 24),
 

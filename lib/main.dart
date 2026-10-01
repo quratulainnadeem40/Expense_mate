@@ -1,3 +1,4 @@
+
 import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,8 +21,8 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Local Database Initialization
-  await DatabaseService.instance.init();
+   // 1. Local Database Initialization
+  RepositoryProvider.instance.database;
 
   // 2. Existing Hive Storage Initialization
   await StorageService.init();

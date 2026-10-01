@@ -12,10 +12,16 @@ class DatabaseProvider {
     return _database!;
   }
 
+  Future<void> init() async {
+    if (_database != null) return;
+
+    _database = AppDatabase();
+  }
+
   Future<void> close() async {
-    if (_database != null) {
-      await _database!.close();
-      _database = null;
-    }
+    if (_database == null) return;
+
+    await _database!.close();
+    _database = null;
   }
 }
