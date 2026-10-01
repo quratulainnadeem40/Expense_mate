@@ -1,9 +1,19 @@
 
+import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/Bills_Reminders/view/bills_reminders_view.dart';
+import 'package:expense_mate/Feature/Bills_Reminders/binding/bills_reminders_binding.dart';
+import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
+import 'package:expense_mate/Feature/Goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/Goals/view/goals_view.dart';
+import 'package:expense_mate/Feature/committee/view/committee_view.dart';
+import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
+import 'package:expense_mate/Feature/settings/view/settings_view.dart';
+import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -18,8 +28,10 @@ class CategoriesView extends StatefulWidget {
 
 class _CategoriesViewState extends State<CategoriesView> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final CategoriesController controller = Get.find<CategoriesController>();
+  final RxBool isDrawerOpen = false.obs;
 
-  final Set<String> selectedCategories = {};
+  final Set<String> selectedCategoryIds = {};
   bool isSelectionMode = false;
 
   @override
@@ -39,6 +51,11 @@ class _CategoriesViewState extends State<CategoriesView> {
     });
   }
 
+  void _closeDrawerInstantly() {
+    isDrawerOpen.value = false;
+    _scaffoldKey.currentState?.closeEndDrawer();
+  }
+
   // ============================================================
   // SELECTION MODE
   // ============================================================
@@ -52,19 +69,19 @@ class _CategoriesViewState extends State<CategoriesView> {
 
   void _toggleCategorySelection(String categoryId) {
     setState(() {
-      if (selectedCategories.contains(categoryId)) {
-        selectedCategories.remove(categoryId);
+      if (selectedCategoryIds.contains(categoryId)) {
+        selectedCategoryIds.remove(categoryId);
       } else {
-        selectedCategories.add(categoryId);
+        selectedCategoryIds.add(categoryId);
       }
 
-      isSelectionMode = selectedCategories.isNotEmpty;
+      isSelectionMode = selectedCategoryIds.isNotEmpty;
     });
   }
 
-  void _clearSelection() {
+  void _exitSelectionMode() {
     setState(() {
-      selectedCategories.clear();
+      selectedCategoryIds.clear();
       isSelectionMode = false;
     });
   }
@@ -595,6 +612,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                             } else {
                               Get.to(
                                 () => CategoryTransactionsScreen(
+                                  categoryId: category.id,
                                   categoryName: category.name,
                                 ),
                               );
