@@ -46,7 +46,8 @@ class GoalsView extends GetView<GoalsController> {
       ),
       body: SafeArea(
         child: Obx(() {
-          if (controller.goals.isEmpty) return _EmptyState(onCreate: () => _openGoalSheet(context));
+          if (controller.goals.isEmpty)
+            return _EmptyState(onCreate: () => _openGoalSheet(context));
 
           final active = controller.activeGoals;
           final completed = controller.completedGoals;
@@ -124,227 +125,264 @@ class GoalsView extends GetView<GoalsController> {
           maxHeight: MediaQuery.of(sheetContext).size.height * 0.92,
         ),
         child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 10,
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SheetHandle(),
-              const SizedBox(height: 14),
-              Text(
-                goal == null ? 'New goal' : 'Edit goal',
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: theme.textTheme.bodyLarge?.color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'What are you saving for?',
-                style: TextStyle(fontSize: 13, color: theme.hintColor),
-              ),
-              const SizedBox(height: 18),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 10,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SheetHandle(),
+                const SizedBox(height: 6),
 
-              // ------------------------------------------ emoji picker
-              _Label(text: 'Pick an icon'),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 50,
-                child: Obx(() {
-                  // Read the observable HERE, inside the Obx builder.
-                  // Reading it only inside itemBuilder runs too late and
-                  // GetX throws "improper use of a GetX".
-                  final current = controller.selectedEmoji.value;
-
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: GoalsController.emojiChoices.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (_, i) {
-                      final emoji = GoalsController.emojiChoices[i];
-                      final selected = current == emoji;
-                      return GestureDetector(
-                        onTap: () => controller.selectedEmoji.value = emoji,
-                        child: Container(
-                          width: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? kGoalGreen.withOpacity(0.15)
-                                : (isDark
-                                    ? Colors.white10
-                                    : Colors.black.withOpacity(0.04)),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: selected
-                                  ? kGoalGreen
-                                  : Colors.transparent,
-                              width: 1.6,
-                            ),
-                          ),
-                          child: Text(emoji,
-                              style: const TextStyle(fontSize: 22)),
-                        ),
-                      );
-                    },
-                  );
-                }),
-              ),
-
-              const SizedBox(height: 18),
-
-              _Label(text: 'Goal name'),
-              const SizedBox(height: 8),
-              Obx(() {
-                // Reading nameHint touches selectedEmoji, so the hint
-                // refreshes as soon as a different icon is tapped.
-                final hint = controller.nameHint;
-
-                return _Field(
-                  controller: controller.titleController,
-                  hint: hint,
-                  textCapitalization: TextCapitalization.sentences,
-                );
-              }),
-
-              const SizedBox(height: 16),
-
-              _Label(text: 'Target amount'),
-              const SizedBox(height: 8),
-              _Field(
-                controller: controller.targetController,
-                hint: '0',
-                prefix: 'Rs. ',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              _Label(text: 'Target date'),
-              const SizedBox(height: 8),
-              Obx(() {
-                final date = controller.selectedDate.value;
-                return Column(
+                // Title on the left, close on the right.
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _DateChip(
-                          label: '3 months',
-                          onTap: () => controller.setDateInMonths(3),
-                        ),
-                        _DateChip(
-                          label: '6 months',
-                          onTap: () => controller.setDateInMonths(6),
-                        ),
-                        _DateChip(
-                          label: '1 year',
-                          onTap: () => controller.setDateInMonths(12),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: () => controller.pickDate(context),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white10
-                              : Colors.black.withOpacity(0.04),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: date == null
-                                ? Colors.transparent
-                                : kGoalGreen.withOpacity(0.4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            goal == null ? 'New goal' : 'Edit goal',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              size: 18,
-                              color: date == null ? theme.hintColor : kGoalGreen,
+                          const SizedBox(height: 4),
+                          Text(
+                            'What are you saving for?',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.hintColor,
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              date == null
-                                  ? 'Choose a date'
-                                  : '${date.day}/${date.month}/${date.year}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: date == null
-                                    ? FontWeight.normal
-                                    : FontWeight.w600,
-                                color: date == null
-                                    ? theme.hintColor
-                                    : theme.textTheme.bodyLarge?.color,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
+                    IconButton(
+                      tooltip: 'Close',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 24,
+                        color: theme.hintColor,
+                      ),
+                      onPressed: () => Navigator.pop(sheetContext),
+                    ),
                   ],
-                );
-              }),
-
-              const SizedBox(height: 16),
-
-              _Label(text: 'Already saved (optional)'),
-              const SizedBox(height: 8),
-              _Field(
-                controller: controller.savedController,
-                hint: '0',
-                prefix: 'Rs. ',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 14),
 
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: controller.saveGoal,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kGoalGreen,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                // ------------------------------------------ emoji picker
+                _Label(text: 'Pick an icon'),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 50,
+                  child: Obx(() {
+                    // Read the observable HERE, inside the Obx builder.
+                    // Reading it only inside itemBuilder runs too late and
+                    // GetX throws "improper use of a GetX".
+                    final current = controller.selectedEmoji.value;
+
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: GoalsController.emojiChoices.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final emoji = GoalsController.emojiChoices[i];
+                        final selected = current == emoji;
+                        return GestureDetector(
+                          onTap: () => controller.selectedEmoji.value = emoji,
+                          child: Container(
+                            width: 50,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? kGoalGreen.withOpacity(0.15)
+                                  : (isDark
+                                        ? Colors.white10
+                                        : Colors.black.withOpacity(0.04)),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: selected
+                                    ? kGoalGreen
+                                    : Colors.transparent,
+                                width: 1.6,
+                              ),
+                            ),
+                            child: Text(
+                              emoji,
+                              style: const TextStyle(fontSize: 22),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 18),
+
+                _Label(text: 'Goal name'),
+                const SizedBox(height: 8),
+                Obx(() {
+                  // Reading nameHint touches selectedEmoji, so the hint
+                  // refreshes as soon as a different icon is tapped.
+                  final hint = controller.nameHint;
+
+                  return _Field(
+                    controller: controller.titleController,
+                    hint: hint,
+                    textCapitalization: TextCapitalization.sentences,
+                  );
+                }),
+
+                const SizedBox(height: 16),
+
+                _Label(text: 'Target amount'),
+                const SizedBox(height: 8),
+                _Field(
+                  controller: controller.targetController,
+                  hint: '0',
+                  prefix: 'Rs. ',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                _Label(text: 'Target date'),
+                const SizedBox(height: 8),
+                Obx(() {
+                  final date = controller.selectedDate.value;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _DateChip(
+                            label: '3 months',
+                            onTap: () => controller.setDateInMonths(3),
+                          ),
+                          _DateChip(
+                            label: '6 months',
+                            onTap: () => controller.setDateInMonths(6),
+                          ),
+                          _DateChip(
+                            label: '1 year',
+                            onTap: () => controller.setDateInMonths(12),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => controller.pickDate(context),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: date == null
+                                  ? Colors.transparent
+                                  : kGoalGreen.withOpacity(0.4),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 18,
+                                color: date == null
+                                    ? theme.hintColor
+                                    : kGoalGreen,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                date == null
+                                    ? 'Choose a date'
+                                    : '${date.day}/${date.month}/${date.year}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: date == null
+                                      ? FontWeight.normal
+                                      : FontWeight.w600,
+                                  color: date == null
+                                      ? theme.hintColor
+                                      : theme.textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+
+                const SizedBox(height: 16),
+
+                _Label(text: 'Already saved (optional)'),
+                const SizedBox(height: 8),
+                _Field(
+                  controller: controller.savedController,
+                  hint: '0',
+                  prefix: 'Rs. ',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: controller.saveGoal,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGoalGreen,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      goal == null ? 'Create goal' : 'Save changes',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    goal == null ? 'Create goal' : 'Save changes',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -369,120 +407,154 @@ class GoalsView extends GetView<GoalsController> {
           maxHeight: MediaQuery.of(sheetContext).size.height * 0.92,
         ),
         child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 10,
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-        ),
-        child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const _SheetHandle(),
-            const SizedBox(height: 14),
-            Text(
-              isDeposit ? 'Add money' : 'Withdraw money',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-                color: theme.textTheme.bodyLarge?.color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isDeposit
-                  ? '${goal.emoji}  ${goal.title} — Rs. '
-                      '${formatMoney(goal.remaining)} still needed'
-                  : '${goal.emoji}  ${goal.title} — Rs. '
-                      '${formatMoney(goal.savedAmount)} available',
-              style: TextStyle(fontSize: 13, color: theme.hintColor),
-            ),
-            const SizedBox(height: 20),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 10,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SheetHandle(),
+                const SizedBox(height: 6),
 
-            _Field(
-              controller: controller.amountController,
-              hint: '0',
-              prefix: 'Rs. ',
-              autofocus: true,
-              fontSize: 22,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [500, 1000, 5000].map((amount) {
-                return GestureDetector(
-                    onTap: () {
-                      controller.amountController.text = amount.toString();
-                      controller.amountController.selection =
-                          TextSelection.fromPosition(
-                        TextPosition(
-                          offset: controller.amountController.text.length,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white10
-                            : Colors.black.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '+ $amount',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: theme.textTheme.bodyLarge?.color,
-                        ),
+                // Same close affordance as the new goal sheet.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            isDeposit ? 'Add money' : 'Withdraw money',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isDeposit
+                                ? '${goal.emoji}  ${goal.title} — Rs. '
+                                      '${formatMoney(goal.remaining)} still needed'
+                                : '${goal.emoji}  ${goal.title} — Rs. '
+                                      '${formatMoney(goal.savedAmount)} available',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.hintColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-              }).toList(),
-            ),
+                    IconButton(
+                      tooltip: 'Close',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 24,
+                        color: theme.hintColor,
+                      ),
+                      onPressed: () => Navigator.pop(sheetContext),
+                    ),
+                  ],
+                ),
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: () => isDeposit
-                    ? controller.deposit(goal.id)
-                    : controller.withdraw(goal.id),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      isDeposit ? kGoalGreen : const Color(0xFFE53935),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                _Field(
+                  controller: controller.amountController,
+                  hint: '0',
+                  prefix: 'Rs. ',
+                  autofocus: true,
+                  fontSize: 22,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
                 ),
-                child: Text(
-                  isDeposit ? 'Add to goal' : 'Withdraw',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+
+                const SizedBox(height: 14),
+
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [500, 1000, 5000].map((amount) {
+                    return GestureDetector(
+                      onTap: () {
+                        controller.amountController.text = amount.toString();
+                        controller.amountController.selection =
+                            TextSelection.fromPosition(
+                              TextPosition(
+                                offset: controller.amountController.text.length,
+                              ),
+                            );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '+ $amount',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => isDeposit
+                        ? controller.deposit(goal.id)
+                        : controller.withdraw(goal.id),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDeposit
+                          ? kGoalGreen
+                          : const Color(0xFFE53935),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      isDeposit ? 'Add to goal' : 'Withdraw',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-        ),
-      ),
       ),
     );
   }
@@ -496,9 +568,7 @@ class GoalsView extends GetView<GoalsController> {
     Get.dialog(
       AlertDialog(
         backgroundColor: theme.cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
           'Delete this goal?',
           style: TextStyle(
@@ -778,8 +848,10 @@ class _Field extends StatelessWidget {
         ),
         filled: true,
         fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -889,7 +961,11 @@ class _EmptyState extends StatelessWidget {
               'Saving for a phone, a trip, or an emergency fund? '
               'Create a goal and add money to it whenever you can.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, height: 1.6, color: theme.hintColor),
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: theme.hintColor,
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(

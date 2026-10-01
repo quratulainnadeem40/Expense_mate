@@ -17,8 +17,7 @@ class CategoriesView extends StatefulWidget {
 }
 
 class _CategoriesViewState extends State<CategoriesView> {
-  final CategoriesController controller =
-      Get.put(CategoriesController());
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final Set<String> selectedCategories = {};
   bool isSelectionMode = false;
@@ -32,10 +31,23 @@ class _CategoriesViewState extends State<CategoriesView> {
     });
   }
 
-  void _openAddCategoryDialog() {
-    Get.dialog(
-      const AddCategoryDialog(),
-    );
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
+    _scaffoldKey.currentState?.closeEndDrawer();
+
+    Future.delayed(const Duration(milliseconds: 150), () {
+      Get.to(page, binding: binding);
+    });
+  }
+
+  // ============================================================
+  // SELECTION MODE
+  // ============================================================
+
+  void _enterSelectionMode(String categoryId) {
+    setState(() {
+      isSelectionMode = true;
+      selectedCategoryIds.add(categoryId);
+    });
   }
 
   void _toggleCategorySelection(String categoryId) {
@@ -57,702 +69,1275 @@ class _CategoriesViewState extends State<CategoriesView> {
     });
   }
 
-  void _openCategoryTransactions(dynamic category) {
-    Get.to(
-      () => CategoryTransactionsScreen(
-        categoryId: category.id.toString(),
-        categoryName: category.name.toString(),
-      ),
+  Future<void> _showDeleteConfirmationDialog(List<String> idsToDelete) async {
+    final selectedCategories = controller.categoryList
+        .where((category) => idsToDelete.contains(category.id))
+        .toList();
+
+    final categoryNames = selectedCategories
+        .map((category) => category.name)
+        .toList();
+    final linkedCount = selectedCategories.fold<int>(
+      0,
+      (sum, category) => sum + controller.getCategoryCount(category.id),
     );
-  }
 
-  String _formatAmount(double amount) {
-    final value = amount.round().toString();
-    final buffer = StringBuffer();
+    final hasLinkedData = linkedCount > 0;
 
-    for (int i = 0; i < value.length; i++) {
-      final positionFromEnd = value.length - i;
-
-      buffer.write(value[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write(',');
-      }
-    }
-
-    return 'Rs. $buffer';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Categories'),
-        centerTitle: true,
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Delete category?'),
+        content: Text(
+          categoryNames.length == 1
+              ? hasLinkedData
+                    ? 'This will permanently delete "${categoryNames.first}" and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
+                    : 'This will permanently delete "${categoryNames.first}".\n\nDo you want to continue?'
+              : hasLinkedData
+              ? 'This will permanently delete ${categoryNames.length} categories and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
+              : 'This will permanently delete ${categoryNames.length} categories.\n\nDo you want to continue?',
+        ),
         actions: [
-          if (isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () async {
-                for (final id in selectedCategories.toList()) {
-                  await controller.deleteCategory(id);
-                }
-
-                _clearSelection();
-              },
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
             ),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
-
-      // ============================================================
-      // DRAWER
-      // ============================================================
-
-      endDrawer: Drawer(
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const UserAccountsDrawerHeader(
-                accountName: Text('Expense Mate'),
-                accountEmail: Text('Categories'),
-                currentAccountPicture: CircleAvatar(
-                  child: Icon(
-                    Icons.person,
-                    size: 32,
-                  ),
-                ),
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.account_balance_wallet),
-                title: const Text('Wallets'),
-                onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => const WalletsView(),
-                  );
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.account_balance),
-                title: const Text('Budgets'),
-                onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => const BudgetView(),
-                  );
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.flag),
-                title: const Text('Goals'),
-                onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => const GoalsView(),
-                  );
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.receipt_long),
-                title: const Text('Bills & Reminders'),
-                onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => const BillsRemindersView(),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      // ============================================================
-      // CATEGORIES LIST
-      // ============================================================
-
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-
-        if (controller.categoryList.isEmpty) {
-          return const Center(
-            child: Text(
-              'No categories found',
-              style: TextStyle(
-                fontSize: 16,
-              ),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            140,
-          ),
-          itemCount: controller.categoryList.length,
-          itemBuilder: (context, index) {
-            final category = controller.categoryList[index];
-
-            final bool isSelected =
-                selectedCategories.contains(category.id);
-
-            final int transactionCount =
-                controller.getCategoryCount(category.id);
-
-            final double totalAmount =
-                controller.getCategoryTotal(category.id);
-
-            return GestureDetector(
-              onLongPress: () {
-                _toggleCategorySelection(category.id);
-              },
-              onTap: () {
-                if (isSelectionMode) {
-                  _toggleCategorySelection(category.id);
-                  return;
-                }
-
-                _openCategoryTransactions(category);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(
-                  bottom: 12,
-                ),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.green.withOpacity(0.12)
-                      : Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? Colors.green
-                        : Colors.grey.withOpacity(0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Color(
-                          category.colorValue,
-                        ).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        _getCategoryIcon(
-                          category.icon,
-                        ),
-                        color: Color(
-                          category.colorValue,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 14),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            category.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          Text(
-                            '$transactionCount transactions',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-
-                          const SizedBox(height: 3),
-
-                          Text(
-                            'Total: ${_formatAmount(totalAmount)}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    if (isSelected)
-                      const Icon(
-                        Icons.check_circle,
-                        color: Colors.green,
-                      )
-                    else
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey,
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      }),
-
-      // ============================================================
-      // ADD CATEGORY BUTTON
-      // ============================================================
-
-      floatingActionButton: isSelectionMode
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(
-                bottom: 12,
-              ),
-              child: FloatingActionButton(
-                onPressed: _openAddCategoryDialog,
-                child: const Icon(
-                  Icons.add,
-                ),
-              ),
-            ),
     );
+
+    if (confirm != true) {
+      return;
+    }
+
+    await controller.deleteCategories(idsToDelete);
+
+    if (mounted) {
+      setState(() {
+        isSelectionMode = false;
+        selectedCategoryIds.clear();
+      });
+    }
+  }
+
+  Future<void> _deleteSelectedCategories() async {
+    if (selectedCategoryIds.isEmpty) {
+      return;
+    }
+
+    final idsToDelete = selectedCategoryIds.toList();
+    await _showDeleteConfirmationDialog(idsToDelete);
+  }
+
+  // ============================================================
+  // USER NAME
+  // ============================================================
+
+  String get _userName {
+    final user = Supabase.instance.client.auth.currentUser;
+
+    if (user != null) {
+      final nameFromMetaData =
+          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
+
+      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
+        return nameFromMetaData.toString();
+      }
+
+      if (user.email != null && user.email!.contains('@')) {
+        final emailPrefix = user.email!.split('@').first;
+
+        if (emailPrefix.isNotEmpty) {
+          return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
+        }
+      }
+    }
+    return 'User';
+  }
+
+  // ============================================================
+  // ADD CATEGORY
+  // ============================================================
+
+  Future<void> _openAddCategoryDialog() async {
+    await Get.dialog(const AddCategoryDialog(), barrierDismissible: false);
+
+    await controller.fetchCategories();
+  }
+
+  // ============================================================
+  // CATEGORY COLORS
+  // ============================================================
+
+  Color _getCategoryColor(String name, int defaultColorValue) {
+    switch (name.toLowerCase().trim()) {
+      case 'food':
+      case 'food & dining':
+      case 'restaurant':
+      case 'meal':
+        return const Color(0xFFFF7043);
+
+      case 'groceries':
+        return const Color(0xFF66BB6A);
+
+      case 'rent':
+      case 'housing':
+      case 'home':
+        return const Color(0xFF42A5F5);
+
+      case 'bills':
+      case 'utilities':
+        return const Color(0xFFFF9800);
+
+      case 'transport':
+      case 'transportation':
+        return const Color(0xFF42A5F5);
+
+      case 'fuel':
+        return const Color(0xFFE53935);
+
+      case 'shopping':
+        return const Color(0xFFAB47BC);
+
+      case 'clothing':
+        return const Color(0xFFEC407A);
+
+      case 'health':
+      case 'healthcare':
+      case 'medicine':
+        return const Color(0xFFE53935);
+
+      case 'education':
+      case 'school':
+        return const Color(0xFF5C6BC0);
+
+      case 'mobile':
+      case 'phone':
+      case 'mobile & internet':
+        return const Color(0xFF26A69A);
+
+      case 'internet':
+      case 'wifi':
+        return const Color(0xFF29B6F6);
+
+      case 'entertainment':
+      case 'movie':
+        return const Color(0xFF7E57C2);
+
+      case 'travel':
+      case 'flight':
+        return const Color(0xFF26A69A);
+
+      case 'beauty':
+      case 'personal care':
+        return const Color(0xFFEC407A);
+
+      case 'fitness':
+      case 'sports':
+        return const Color(0xFF66BB6A);
+
+      case 'pets':
+        return const Color(0xFF8D6E63);
+
+      case 'gifts':
+      case 'gift':
+      case 'gifts & donations':
+        return const Color(0xFFE91E63);
+
+      case 'subscriptions':
+        return const Color(0xFF7E57C2);
+
+      case 'home maintenance':
+      case 'maintenance':
+      case 'tools':
+        return const Color(0xFF78909C);
+
+      case 'salary':
+        return const Color(0xFFFFA726);
+
+      case 'investment':
+        return const Color(0xFFEF5350);
+
+      case 'freelance':
+        return const Color(0xFF26A69A);
+
+      case 'business':
+        return const Color(0xFF5C6BC0);
+
+      case 'other':
+        return const Color(0xFF78909C);
+    }
+
+    if (defaultColorValue != 0 && defaultColorValue != 0xFF757575) {
+      return Color(defaultColorValue);
+    }
+
+    final List<Color> customColors = [
+      const Color(0xFF26A69A),
+      const Color(0xFFAB47BC),
+      const Color(0xFFFFA726),
+      const Color(0xFF42A5F5),
+      const Color(0xFFEC407A),
+      const Color(0xFF66BB6A),
+      const Color(0xFFFF7043),
+      const Color(0xFF8D6E63),
+    ];
+
+    final int hash = name.codeUnits.fold(0, (prev, curr) => prev + curr);
+
+    return customColors[hash % customColors.length];
   }
 
   // ============================================================
   // CATEGORY ICONS
   // ============================================================
 
-  IconData _getCategoryIcon(String icon) {
-    switch (icon.toLowerCase()) {
+  IconData _getIconData(String iconName) {
+    switch (iconName.toLowerCase().trim()) {
       case 'food':
-        return Icons.restaurant;
+      case 'food & dining':
+      case 'restaurant':
+      case 'meal':
+        return Icons.restaurant_rounded;
 
-      case 'transport':
-        return Icons.directions_car;
+      case 'groceries':
+        return Icons.shopping_basket_rounded;
 
-      case 'shopping':
-        return Icons.shopping_bag;
+      case 'rent':
+      case 'housing':
+      case 'home':
+        return Icons.home_work_rounded;
 
       case 'bills':
-        return Icons.receipt_long;
+      case 'utilities':
+        return Icons.receipt_long_rounded;
 
-      case 'education':
-        return Icons.school;
+      case 'transport':
+      case 'transportation':
+      case 'directions_car':
+        return Icons.directions_car_rounded;
+
+      case 'fuel':
+        return Icons.local_gas_station_rounded;
+
+      case 'shopping':
+      case 'shopping_bag':
+        return Icons.shopping_bag_rounded;
+
+      case 'clothing':
+        return Icons.checkroom_rounded;
 
       case 'health':
-        return Icons.health_and_safety;
+      case 'healthcare':
+      case 'medicine':
+        return Icons.medical_services_rounded;
+
+      case 'education':
+      case 'school':
+        return Icons.school_rounded;
+
+      case 'mobile':
+      case 'phone':
+      case 'mobile & internet':
+        return Icons.phone_android_rounded;
+
+      case 'internet':
+      case 'wifi':
+        return Icons.wifi_rounded;
 
       case 'entertainment':
-        return Icons.movie;
-
-      case 'gift':
-        return Icons.card_giftcard;
+      case 'movie':
+        return Icons.movie_rounded;
 
       case 'travel':
-        return Icons.flight;
+      case 'flight':
+        return Icons.flight_rounded;
 
-      case 'home':
-        return Icons.home;
+      case 'beauty':
+      case 'personal care':
+        return Icons.face_retouching_natural_rounded;
 
+      case 'fitness':
+      case 'sports':
+        return Icons.fitness_center_rounded;
+
+      case 'pets':
+        return Icons.pets_rounded;
+
+      case 'gifts':
+      case 'gift':
+      case 'gifts & donations':
+        return Icons.card_giftcard_rounded;
+
+      case 'subscriptions':
+        return Icons.subscriptions_rounded;
+
+      case 'home maintenance':
+      case 'maintenance':
+      case 'tools':
+        return Icons.handyman_rounded;
+
+      // Existing categories
+      case 'work':
       case 'salary':
-        return Icons.payments;
+      case 'freelance':
+        return Icons.account_balance_wallet_rounded;
 
       case 'business':
-        return Icons.business_center;
+        return Icons.business_center_rounded;
+
+      case 'investment':
+        return Icons.trending_up_rounded;
+
+      case 'bookmark':
+        return Icons.bookmark_rounded;
+
+      case 'other':
+        return Icons.more_horiz_rounded;
 
       default:
-        return Icons.category;
+        return Icons.category_rounded;
     }
   }
-}
 
-// ============================================================
-// CATEGORY TRANSACTIONS SCREEN
-// ============================================================
-
-class CategoryTransactionsScreen extends StatefulWidget {
-  final String categoryId;
-  final String categoryName;
-
-  const CategoryTransactionsScreen({
-    super.key,
-    required this.categoryId,
-    required this.categoryName,
-  });
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
-  State<CategoryTransactionsScreen> createState() =>
-      _CategoryTransactionsScreenState();
-}
+  Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-class _CategoryTransactionsScreenState
-    extends State<CategoryTransactionsScreen> {
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+    final settingsController = Get.find<SettingsController>();
 
-  bool isLoading = true;
-
-  List<Map<String, dynamic>> transactions = [];
-
-  double totalAmount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadCategoryTransactions();
-  }
-
-  Future<void> _loadCategoryTransactions() async {
-    try {
-      final user = _supabase.auth.currentUser;
-
-      if (user == null) {
-        if (!mounted) return;
-
-        setState(() {
-          isLoading = false;
-        });
-
-        return;
-      }
-
-      final response = await _supabase
-          .from('transactions')
-          .select()
-          .eq('user_id', user.id)
-          .eq('category_id', widget.categoryId)
-          .order(
-            'transaction_date',
-            ascending: false,
-          );
-
-      final loadedTransactions =
-          List<Map<String, dynamic>>.from(response);
-
-      double total = 0;
-
-      for (final transaction in loadedTransactions) {
-        final amount = transaction['amount'];
-
-        if (amount is num) {
-          total += amount.toDouble();
-        } else {
-          total +=
-              double.tryParse(
-                    amount
-                            ?.toString()
-                            .replaceAll(',', '') ??
-                        '',
-                  ) ??
-                  0;
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          _closeDrawerInstantly();
         }
-      }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: isDark
+            ? const Color(0xFF121212)
+            : const Color(0xFFF7F9F8),
 
-      if (!mounted) return;
+        endDrawer: _buildNavigationDrawer(context, isDark, settingsController),
 
-      setState(() {
-        transactions = loadedTransactions;
-        totalAmount = total;
-        isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
+        // ========================================================
+        // APP BAR
+        // ========================================================
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+          automaticallyImplyLeading: false,
 
-      setState(() {
-        isLoading = false;
-      });
+          leading: isSelectionMode
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: _exitSelectionMode,
+                )
+              : null,
+          leadingWidth: isSelectionMode ? null : 0,
 
-      Get.snackbar(
-        'Error',
-        'Unable to load category transactions',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isSelectionMode
+                    ? '${selectedCategoryIds.length} selected'
+                    : 'Categories',
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
+              ),
 
-  // ============================================================
-  // AMOUNT FORMAT
-  // ============================================================
+              const SizedBox(height: 2),
 
-  String _formatAmount(double amount) {
-    final value = amount.round().toString();
+              Text(
+                'Manage your expense categories',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
 
-    final buffer = StringBuffer();
+          actions: [
+            if (isSelectionMode)
+              IconButton(
+                tooltip: 'Delete selected categories',
+                onPressed: selectedCategoryIds.isEmpty
+                    ? null
+                    : _deleteSelectedCategories,
+                icon: const Icon(Icons.delete_outline_rounded),
+              )
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        isSelectionMode = true;
+                      });
+                    },
+                    child: const Text('Select'),
+                  ),
+                  IconButton(
+                    tooltip: 'Open navigation menu',
+                    icon: Icon(
+                      Icons.menu_rounded,
+                      color: isDark ? Colors.white : const Color(0xFF2E7D32),
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      _scaffoldKey.currentState?.openEndDrawer();
+                    },
+                  ),
+                ],
+              ),
+          ],
+        ),
 
-    for (int i = 0; i < value.length; i++) {
-      final positionFromEnd = value.length - i;
+        // ========================================================
+        // BODY
+        // ========================================================
+        body: Stack(
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (isSelectionMode) {
+                  _exitSelectionMode();
+                }
+              },
 
-      buffer.write(value[i]);
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-      if (positionFromEnd > 1 &&
-          positionFromEnd % 3 == 1) {
-        buffer.write(',');
-      }
-    }
+                if (controller.categoryList.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No categories found',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  );
+                }
 
-    return 'Rs. $buffer';
+                final categories = controller.categoryList.toList();
+
+                return ListView.builder(
+                  padding: const EdgeInsets.only(top: 12, bottom: 100),
+
+                  itemCount: categories.length,
+
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+
+                    final Color baseColor = _getCategoryColor(
+                      category.name,
+                      category.colorValue,
+                    );
+
+                    final int transactionCount = controller.getCategoryCount(
+                      category.id,
+                    );
+
+                    final bool isDefaultCategory = category.isDefault;
+
+                    final bool isSelected = selectedCategoryIds.contains(
+                      category.id,
+                    );
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+
+                        borderRadius: BorderRadius.circular(16),
+
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+
+                          onTap: () {
+                            _closeDrawerInstantly();
+
+                            if (isSelectionMode) {
+                              _toggleCategorySelection(category.id);
+                            } else {
+                              Get.to(
+                                () => CategoryTransactionsScreen(
+                                  categoryName: category.name,
+                                ),
+                              );
+                            }
+                          },
+
+                          onLongPress: () {
+                            if (!isDefaultCategory) {
+                              if (isSelectionMode) {
+                                _toggleCategorySelection(category.id);
+                              } else {
+                                _enterSelectionMode(category.id);
+                              }
+                            }
+                          },
+
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+
+                                  decoration: BoxDecoration(
+                                    color: baseColor.withOpacity(0.18),
+                                    shape: BoxShape.circle,
+                                  ),
+
+                                  child: Icon(
+                                    _getIconData(category.icon),
+                                    color: baseColor,
+                                    size: 24,
+                                  ),
+                                ),
+
+                    const SizedBox(width: 14),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+
+                                    children: [
+                                      Text(
+                                        category.name,
+                                        style: AppTextStyles.bodyLarge(isDark)
+                                            .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? Colors.grey[800]
+                                              : const Color(0xFFF0F2F5),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+
+                                        child: Text(
+                                          '$transactionCount transactions',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isDark
+                                                ? Colors.grey[300]
+                                                : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                if (isSelectionMode)
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.circle_outlined,
+                                    color: isSelected
+                                        ? const Color(0xFF2EA44F)
+                                        : Colors.grey[400],
+                                    size: 24,
+                                  )
+                                else
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Colors.grey[400],
+                                    size: 22,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+
+            // ======================================================
+            // DRAWER
+            // ======================================================
+            Obx(() {
+              if (!isDrawerOpen.value) {
+                return const SizedBox.shrink();
+              }
+
+              return Positioned.fill(
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        isDrawerOpen.value = false;
+                      },
+                      child: Container(color: Colors.black.withOpacity(0.5)),
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+
+                      child: SafeArea(
+                        child: Container(
+                          width: DrawerTheme.of(context).width ?? 304,
+
+                          margin: const EdgeInsets.only(
+                            right: 12,
+                            top: 12,
+                            bottom: 16,
+                          ),
+
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : const Color(0xFFF9FAFB),
+
+                            borderRadius: BorderRadius.circular(28),
+
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+
+                            child: Column(
+                              children: [
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 6,
+                                      right: 6,
+                                    ),
+                                    child: IconButton(
+                                      onPressed: () {
+                                        isDrawerOpen.value = false;
+                                      },
+                                      icon: Icon(
+                                        Icons.close,
+                                        size: 28,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                UserAccountsDrawerHeader(
+                                  margin: EdgeInsets.zero,
+
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isDark
+                                          ? [
+                                              const Color(0xFF2E7D32),
+                                              const Color(0xFF1B5E20),
+                                            ]
+                                          : [
+                                              const Color(0xFF4CAF50),
+                                              const Color(0xFF388E3C),
+                                            ],
+
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+
+                                  currentAccountPictureSize: const Size.square(
+                                    64,
+                                  ),
+
+                                  currentAccountPicture: Obx(() {
+                                    final imageUrl = settingsController
+                                        .profilePictureUrl
+                                        .value;
+                                    final name =
+                                        settingsController.profileName.value;
+
+                                    final firstLetter = name.isNotEmpty
+                                        ? name[0].toUpperCase()
+                                        : 'U';
+
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.15,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: CircleAvatar(
+                                        backgroundColor: Colors.white,
+                                        backgroundImage: imageUrl.isNotEmpty
+                                            ? NetworkImage(imageUrl)
+                                            : null,
+                                        child: imageUrl.isEmpty
+                                            ? Text(
+                                                firstLetter,
+                                                style: const TextStyle(
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF2E7D32),
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    );
+                                  }),
+
+                                  accountName: Text(
+                                    _userName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+
+                                  accountEmail: Text(
+                                    Supabase
+                                            .instance
+                                            .client
+                                            .auth
+                                            .currentUser
+                                            ?.email ??
+                                        '',
+
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                ),
+
+                                Expanded(
+                                  child: ListView(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 16,
+                                    ),
+
+                                    physics: const BouncingScrollPhysics(),
+
+                                    children: [
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons
+                                            .account_balance_wallet_rounded,
+                                        iconColor: const Color(0xFF2B82FB),
+                                        emoji: '💳',
+                                        title: 'Wallets',
+                                        subtitle:
+                                            'Manage your cash, bank and other wallets',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const WalletsView(),
+                                          binding: WalletsBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons.pie_chart_rounded,
+                                        iconColor: const Color(0xFFFF9800),
+                                        emoji: '📊',
+                                        title: 'Budgets',
+                                        subtitle:
+                                            'Set and track monthly spending limits',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const BudgetView(),
+                                          binding: BudgetBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons.stars_rounded,
+                                        iconColor: const Color(0xFFE91E63),
+                                        emoji: '🎯',
+                                        title: 'Goals',
+                                        subtitle:
+                                            'Track your financial targets and savings',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const GoalsView(),
+                                          binding: GoalsBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon:
+                                            Icons.notifications_active_rounded,
+                                        iconColor: const Color(0xFF9C27B0),
+                                        title: 'Bills & Reminders',
+                                        subtitle:
+                                            'Manage upcoming bills and reminders',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const BillsRemindersView(),
+                                          binding: BillsRemindersBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons.groups_rounded,
+                                        iconColor: const Color(0xFF00695C),
+                                        emoji: '🤝',
+                                        title: 'Digital Committee',
+                                        subtitle:
+                                            'Manage your committee and member payments',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => CommitteeView(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
+                                        icon: Icons.person_rounded,
+                                        iconColor: const Color(0xFF00BCD4),
+                                        emoji: '🧑',
+                                        title: 'Profile',
+                                        subtitle:
+                                            'Manage your profile and account settings',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => const SettingsView(),
+                                          binding: SettingsBinding(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            // ======================================================
+            // ADD BUTTON
+            // ======================================================
+            Obx(() {
+              if (isDrawerOpen.value) {
+                return const SizedBox.shrink();
+              }
+
+              return Positioned(
+                right: 16,
+                bottom: 20,
+
+                child: ElevatedButton.icon(
+                  onPressed: _openAddCategoryDialog,
+
+                  icon: const Icon(Icons.add, color: Colors.white, size: 20),
+
+                  label: const Text(
+                    'Add',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E7D32),
+                    foregroundColor: Colors.white,
+                    elevation: 5,
+
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
+
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 
   // ============================================================
   // SCREEN
   // ============================================================
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.categoryName,
-        ),
-        centerTitle: true,
-      ),
-
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Column(
+  Widget _buildNavigationDrawer(
+    BuildContext context,
+    bool isDark,
+    SettingsController settingsController,
+  ) {
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Drawer(
+            elevation: 4,
+            backgroundColor: isDark
+                ? const Color(0xFF1E1E1E)
+                : const Color(0xFFF9FAFB),
+            child: Column(
               children: [
-                // ==================================================
-                // TOTAL CARD
-                // ==================================================
-
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.grey.withOpacity(0.2),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6, right: 6),
+                    child: IconButton(
+                      onPressed: _closeDrawerInstantly,
+                      icon: Icon(
+                        Icons.close,
+                        size: 28,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                     ),
                   ),
-                  child: Column(
+                ),
+                UserAccountsDrawerHeader(
+                  margin: EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [const Color(0xFF2E7D32), const Color(0xFF1B5E20)]
+                          : [const Color(0xFF4CAF50), const Color(0xFF388E3C)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  currentAccountPictureSize: const Size.square(64),
+                  currentAccountPicture: Obx(() {
+                    final imageUrl = settingsController.profilePictureUrl.value;
+                    final name = settingsController.profileName.value;
+                    final firstLetter = name.isNotEmpty
+                        ? name[0].toUpperCase()
+                        : 'U';
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        backgroundImage: imageUrl.isNotEmpty
+                            ? NetworkImage(imageUrl)
+                            : null,
+                        child: imageUrl.isEmpty
+                            ? Text(
+                                firstLetter,
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              )
+                            : null,
+                      ),
+                    );
+                  }),
+                  accountName: Text(
+                    _userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  accountEmail: Text(
+                    Supabase.instance.client.auth.currentUser?.email ?? '',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 16,
+                    ),
+                    physics: const BouncingScrollPhysics(),
                     children: [
-                      Text(
-                        'Total Amount',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFF3A5BA0),
+                        emoji: '💳',
+                        title: 'Wallets',
+                        subtitle: 'Manage your cash, bank and other wallets',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const WalletsView(),
+                          binding: WalletsBinding(),
                         ),
                       ),
-
-                      const SizedBox(height: 6),
-
-                      Text(
-                        _formatAmount(totalAmount),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.donut_small_rounded,
+                        iconColor: const Color(0xFF2E7D32),
+                        emoji: '📊',
+                        title: 'Budgets',
+                        subtitle: 'Set and track monthly spending limits',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const BudgetView(),
+                          binding: BudgetBinding(),
                         ),
                       ),
-
-                      const SizedBox(height: 6),
-
-                      Text(
-                        '${transactions.length} transactions',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.flag_rounded,
+                        iconColor: const Color(0xFFB26A00),
+                        emoji: '🎯',
+                        title: 'Goals',
+                        subtitle: 'Track your financial targets and savings',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const GoalsView(),
+                          binding: GoalsBinding(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.receipt_long_rounded,
+                        iconColor: const Color(0xFF7A4EAB),
+                        emoji: '🧾',
+                        title: 'Bills & Reminders',
+                        subtitle: 'Manage upcoming bills and reminders',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const BillsRemindersView(),
+                          binding: BillsRemindersBinding(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.groups_rounded,
+                        iconColor: const Color(0xFF00695C),
+                        emoji: '🤝',
+                        title: 'Digital Committee',
+                        subtitle: 'Manage your committee and member payments',
+                        onTap: () =>
+                            _closeDrawerAndNavigate(() => CommitteeView()),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.person_rounded,
+                        iconColor: const Color(0xFF455A64),
+                        emoji: '🧑',
+                        title: 'Profile',
+                        subtitle: 'Manage your profile and account settings',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const SettingsView(),
+                          binding: SettingsBinding(),
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                // ==================================================
-                // TRANSACTIONS
-                // ==================================================
-
-                Expanded(
-                  child: transactions.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No transactions in this category',
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                          ),
-                          itemCount: transactions.length,
-                          itemBuilder: (context, index) {
-                            final transaction =
-                                transactions[index];
-
-                            final title =
-                                transaction['title']
-                                        ?.toString() ??
-                                    'Transaction';
-
-                            final amountValue =
-                                transaction['amount'];
-
-                            final double amount =
-                                amountValue is num
-                                    ? amountValue.toDouble()
-                                    : double.tryParse(
-                                          amountValue
-                                                  ?.toString()
-                                                  .replaceAll(
-                                                    ',',
-                                                    '',
-                                                  ) ??
-                                              '',
-                                        ) ??
-                                        0;
-
-                            final type =
-                                transaction['type']
-                                        ?.toString()
-                                        .toLowerCase() ??
-                                    'expense';
-
-                            final date =
-                                transaction[
-                                    'transaction_date'];
-
-                            return Container(
-                              margin: const EdgeInsets.only(
-                                bottom: 10,
-                              ),
-                              padding: const EdgeInsets.all(
-                                15,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .cardColor,
-                                borderRadius:
-                                    BorderRadius.circular(
-                                  14,
-                                ),
-                                border: Border.all(
-                                  color: Colors.grey
-                                      .withOpacity(0.2),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    child: Icon(
-                                      type == 'income'
-                                          ? Icons
-                                              .arrow_downward
-                                          : Icons
-                                              .arrow_upward,
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 12),
-
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment
-                                              .start,
-                                      children: [
-                                        Text(
-                                          title,
-                                          style:
-                                              const TextStyle(
-                                            fontWeight:
-                                                FontWeight
-                                                    .w600,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-
-                                        const SizedBox(
-                                          height: 5,
-                                        ),
-
-                                        if (date != null)
-                                          Text(
-                                            _formatDate(
-                                              date.toString(),
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors
-                                                  .grey
-                                                  .shade600,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 8),
-
-                                  Text(
-                                    '${type == 'income' ? '+' : '-'} ${_formatAmount(amount)}',
-                                    style: TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
-                                      fontSize: 14,
-                                      color: type == 'income'
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                ),
               ],
             ),
+          ),
+        ),
+      ),
     );
   }
 
-  // ============================================================
-  // DATE FORMAT
-  // ============================================================
+  Widget _buildDrawerOption({
+    required BuildContext context,
+    required IconData icon,
+    // Emoji keeps the drawer in step with the Categories screen, where
+    // the same style is already used.
+    String? emoji,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
 
-  String _formatDate(String value) {
-    try {
-      final date = DateTime.parse(value);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
 
-      final day =
-          date.day.toString().padLeft(2, '0');
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
 
-      final month =
-          date.month.toString().padLeft(2, '0');
+        borderRadius: BorderRadius.circular(16),
 
-      final year =
-          date.year.toString();
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
 
-      return '$day/$month/$year';
-    } catch (_) {
-      return value;
-    }
+      child: Material(
+        color: Colors.transparent,
+
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+
+                  alignment: Alignment.center,
+                  child: emoji == null
+                      ? Icon(icon, color: iconColor, size: 24)
+                      : Text(emoji, style: const TextStyle(fontSize: 23)),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                    children: [
+                      Text(
+                        title,
+
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF212121),
+                        ),
+                      ),
+
+                      const SizedBox(height: 2),
+
+                      Text(
+                        subtitle,
+
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode
+                              ? Colors.grey[400]
+                              : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
-
-
-
