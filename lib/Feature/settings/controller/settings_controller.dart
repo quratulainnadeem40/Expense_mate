@@ -77,14 +77,11 @@ class SettingsController extends GetxController {
     // eventually cause Supabase 429 rate-limit errors.
     // ----------------------------------------------------------
 
-    _authSubscription =
-        _supabase.auth.onAuthStateChange.listen((authState) {
+    _authSubscription = _supabase.auth.onAuthStateChange.listen((authState) {
       final event = authState.event;
       final session = authState.session;
 
-      debugPrint(
-        'AUTH EVENT: $event | SESSION: ${session != null}',
-      );
+      debugPrint('AUTH EVENT: $event | SESSION: ${session != null}');
 
       // User logged in.
       if (event == AuthChangeEvent.signedIn) {
@@ -135,14 +132,11 @@ class SettingsController extends GetxController {
 
       final metadata = user.userMetadata ?? {};
 
-      final authName =
-          metadata['name']?.toString().trim() ?? '';
+      final authName = metadata['name']?.toString().trim() ?? '';
 
-      final authEmail =
-          user.email?.trim() ?? '';
+      final authEmail = user.email?.trim() ?? '';
 
-      final authAvatar =
-          metadata['avatar_url']?.toString().trim() ?? '';
+      final authAvatar = metadata['avatar_url']?.toString().trim() ?? '';
 
       // --------------------------------------------------------
       // PROFILE TABLE DATA
@@ -159,16 +153,12 @@ class SettingsController extends GetxController {
             .maybeSingle();
 
         if (profileResponse != null) {
-          databaseName =
-              profileResponse['name']?.toString().trim() ?? '';
+          databaseName = profileResponse['name']?.toString().trim() ?? '';
 
-          databaseEmail =
-              profileResponse['email']?.toString().trim() ?? '';
+          databaseEmail = profileResponse['email']?.toString().trim() ?? '';
         }
       } on PostgrestException catch (e) {
-        debugPrint(
-          'Profiles table error: ${e.message}',
-        );
+        debugPrint('Profiles table error: ${e.message}');
       }
 
       // --------------------------------------------------------
@@ -178,14 +168,14 @@ class SettingsController extends GetxController {
       final finalName = authName.isNotEmpty
           ? authName
           : databaseName.isNotEmpty
-              ? databaseName
-              : 'User';
+          ? databaseName
+          : 'User';
 
       final finalEmail = authEmail.isNotEmpty
           ? authEmail
           : databaseEmail.isNotEmpty
-              ? databaseEmail
-              : 'No Email';
+          ? databaseEmail
+          : 'No Email';
 
       // --------------------------------------------------------
       // UPDATE CONTROLLER
@@ -210,13 +200,9 @@ class SettingsController extends GetxController {
       debugPrint('Avatar URL: ${profilePictureUrl.value}');
       debugPrint('================================');
     } on AuthException catch (e) {
-      debugPrint(
-        'Auth profile error: ${e.message}',
-      );
+      debugPrint('Auth profile error: ${e.message}');
     } catch (e) {
-      debugPrint(
-        'Load profile error: $e',
-      );
+      debugPrint('Load profile error: $e');
     } finally {
       _isLoadingProfile = false;
     }
@@ -226,340 +212,296 @@ class SettingsController extends GetxController {
   // UPDATE PROFILE
   // ============================================================
 
- // ============================================================
-// UPDATE PROFILE
-// ============================================================
+  // ============================================================
+  // UPDATE PROFILE
+  // ============================================================
 
-// ============================================================
-// UPDATE PROFILE
-// ============================================================
+  // ============================================================
+  // UPDATE PROFILE
+  // ============================================================
 
-Future<void> updateProfile({
-  required String name,
-  String? email,
-  String? password,
-}) async {
-  final newName = name.trim();
-  final newEmail = email?.trim() ?? '';
-  final newPassword = password?.trim();
+  Future<void> updateProfile({
+    required String name,
+    String? email,
+    String? password,
+  }) async {
+    final newName = name.trim();
+    final newEmail = email?.trim() ?? '';
+    final newPassword = password?.trim();
 
-  // ----------------------------------------------------------
-  // VALIDATION
-  // ----------------------------------------------------------
+    // ----------------------------------------------------------
+    // VALIDATION
+    // ----------------------------------------------------------
 
-  if (newName.isEmpty) {
-    _showError('Please enter your name.');
-    return;
-  }
-
-  if (newPassword != null &&
-      newPassword.isNotEmpty &&
-      newPassword.length < 6) {
-    _showError('Password must be at least 6 characters.');
-    return;
-  }
-
-  try {
-    isUpdatingProfile.value = true;
-
-    // --------------------------------------------------------
-    // GET CURRENT AUTH USER
-    // --------------------------------------------------------
-
-    final session = _supabase.auth.currentSession;
-    final user = session?.user;
-
-    if (user == null) {
-      debugPrint('SESSION IS NULL');
-      debugPrint(
-        'CURRENT USER: ${_supabase.auth.currentUser}',
-      );
-
-      _showError('No logged-in account found.');
+    if (newName.isEmpty) {
+      _showError('Please enter your name.');
       return;
     }
 
-    debugPrint('================================');
-    debugPrint('PROFILE UPDATE START');
-    debugPrint('USER ID: ${user.id}');
-    debugPrint('CURRENT AUTH EMAIL: ${user.email}');
-    debugPrint('NEW EMAIL FROM TEXT FIELD: $newEmail');
-    debugPrint('================================');
+    if (newPassword != null &&
+        newPassword.isNotEmpty &&
+        newPassword.length < 6) {
+      _showError('Password must be at least 6 characters.');
+      return;
+    }
 
-    // --------------------------------------------------------
-    // CURRENT VALUES
-    // --------------------------------------------------------
+    try {
+      isUpdatingProfile.value = true;
 
-    final currentName =
-        user.userMetadata?['name']?.toString().trim() ?? '';
+      // --------------------------------------------------------
+      // GET CURRENT AUTH USER
+      // --------------------------------------------------------
 
-    final currentEmail =
-        user.email?.trim() ?? '';
+      final session = _supabase.auth.currentSession;
+      final user = session?.user;
 
-    final finalEmail =
-        newEmail.isEmpty ? currentEmail : newEmail;
+      if (user == null) {
+        debugPrint('SESSION IS NULL');
+        debugPrint('CURRENT USER: ${_supabase.auth.currentUser}');
 
-    final nameChanged =
-        newName != currentName;
+        _showError('No logged-in account found.');
+        return;
+      }
 
-    final emailChanged =
-        finalEmail != currentEmail;
+      debugPrint('================================');
+      debugPrint('PROFILE UPDATE START');
+      debugPrint('USER ID: ${user.id}');
+      debugPrint('CURRENT AUTH EMAIL: ${user.email}');
+      debugPrint('NEW EMAIL FROM TEXT FIELD: $newEmail');
+      debugPrint('================================');
 
-    final passwordChanged =
-        newPassword != null &&
-        newPassword.isNotEmpty;
+      // --------------------------------------------------------
+      // CURRENT VALUES
+      // --------------------------------------------------------
 
-    // --------------------------------------------------------
-    // NOTHING CHANGED
-    // --------------------------------------------------------
+      final currentName = user.userMetadata?['name']?.toString().trim() ?? '';
 
-    if (!nameChanged &&
-        !emailChanged &&
-        !passwordChanged) {
+      final currentEmail = user.email?.trim() ?? '';
+
+      final finalEmail = newEmail.isEmpty ? currentEmail : newEmail;
+
+      final nameChanged = newName != currentName;
+
+      final emailChanged = finalEmail != currentEmail;
+
+      final passwordChanged = newPassword != null && newPassword.isNotEmpty;
+
+      // --------------------------------------------------------
+      // NOTHING CHANGED
+      // --------------------------------------------------------
+
+      if (!nameChanged && !emailChanged && !passwordChanged) {
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
+        Get.snackbar(
+          'No Changes',
+          'There are no changes to save.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // 1. UPDATE EMAIL IN SUPABASE AUTH
+      // ========================================================
+
+      if (emailChanged) {
+        debugPrint('================================');
+        debugPrint('UPDATING AUTH EMAIL');
+        debugPrint('OLD EMAIL: $currentEmail');
+        debugPrint('NEW EMAIL: $finalEmail');
+        debugPrint('================================');
+
+        final authResponse = await _supabase.auth.updateUser(
+          UserAttributes(email: finalEmail),
+        );
+
+        // ------------------------------------------------------
+        // GET THE USER AFTER EMAIL UPDATE
+        // ------------------------------------------------------
+
+        final updatedUser = authResponse.user;
+
+        debugPrint('================================');
+        debugPrint('AFTER AUTH EMAIL UPDATE');
+        debugPrint('AUTH EMAIL: ${updatedUser?.email}');
+        debugPrint('USER ID: ${updatedUser?.id}');
+        debugPrint('================================');
+
+        // ------------------------------------------------------
+        // IMPORTANT:
+        // Only continue if Supabase Auth actually accepted
+        // the new email.
+        // ------------------------------------------------------
+
+        final authEmailAfterUpdate = updatedUser?.email?.trim() ?? '';
+
+        if (authEmailAfterUpdate != finalEmail) {
+          debugPrint('EMAIL CHANGE IS PENDING CONFIRMATION');
+
+          if (Get.isDialogOpen == true) {
+            Get.back();
+          }
+
+          Get.snackbar(
+            'Confirmation Required',
+            'A confirmation email has been sent to your new email address. '
+                'Please confirm it before the email change becomes active.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 6),
+          );
+
+          return;
+        }
+      }
+
+      // ========================================================
+      // 2. UPDATE PASSWORD IN SUPABASE AUTH
+      // ========================================================
+
+      if (passwordChanged) {
+        debugPrint('UPDATING AUTH PASSWORD');
+
+        await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+      }
+
+      // ========================================================
+      // 3. UPDATE NAME IN SUPABASE AUTH
+      // ========================================================
+
+      if (nameChanged) {
+        debugPrint('UPDATING AUTH NAME');
+
+        final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
+
+        metadata['name'] = newName;
+
+        await _supabase.auth.updateUser(UserAttributes(data: metadata));
+      }
+
+      // ========================================================
+      // 4. UPDATE PROFILES TABLE
+      // ========================================================
+
+      final profileData = <String, dynamic>{'name': newName};
+
+      if (emailChanged) {
+        profileData['email'] = finalEmail;
+      }
+
+      debugPrint('UPDATING PROFILES TABLE');
+      debugPrint('PROFILE DATA: $profileData');
+
+      await _supabase.from('profiles').update(profileData).eq('id', user.id);
+
+      // ========================================================
+      // 5. REFRESH AUTH SESSION
+      // ========================================================
+
+      try {
+        await _supabase.auth.refreshSession();
+      } catch (e) {
+        debugPrint('Session refresh warning: $e');
+      }
+
+      // ========================================================
+      // 6. GET FINAL AUTH USER
+      // ========================================================
+
+      final finalUser = _supabase.auth.currentUser;
+
+      final verifiedEmail = finalUser?.email?.trim() ?? '';
+
+      debugPrint('================================');
+      debugPrint('FINAL PROFILE UPDATE RESULT');
+      debugPrint('AUTH USER ID: ${finalUser?.id}');
+      debugPrint('FINAL AUTH EMAIL: $verifiedEmail');
+      debugPrint('FINAL PROFILE EMAIL: $finalEmail');
+      debugPrint('================================');
+
+      // ========================================================
+      // 7. UPDATE LOCAL UI
+      // ========================================================
+
+      profileName.value = newName;
+
+      if (emailChanged) {
+        profileEmail.value = verifiedEmail.isNotEmpty
+            ? verifiedEmail
+            : finalEmail;
+      } else {
+        profileEmail.value = currentEmail;
+      }
+
+      // ========================================================
+      // 8. CLOSE DIALOG
+      // ========================================================
+
       if (Get.isDialogOpen == true) {
         Get.back();
       }
 
-      Get.snackbar(
-        'No Changes',
-        'There are no changes to save.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      // ========================================================
+      // 9. SUCCESS MESSAGE
+      // ========================================================
 
-      return;
-    }
-
-    // ========================================================
-    // 1. UPDATE EMAIL IN SUPABASE AUTH
-    // ========================================================
-
-    if (emailChanged) {
+      if (nameChanged && emailChanged) {
+        Get.snackbar(
+          'Profile Updated',
+          'Name and email updated successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else if (nameChanged) {
+        Get.snackbar(
+          'Profile Updated',
+          'Name updated successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else if (emailChanged) {
+        Get.snackbar(
+          'Profile Updated',
+          'Email updated successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else if (passwordChanged) {
+        Get.snackbar(
+          'Profile Updated',
+          'Password updated successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } on AuthException catch (e) {
       debugPrint('================================');
-      debugPrint('UPDATING AUTH EMAIL');
-      debugPrint('OLD EMAIL: $currentEmail');
-      debugPrint('NEW EMAIL: $finalEmail');
-      debugPrint('================================');
-
-      final authResponse =
-          await _supabase.auth.updateUser(
-        UserAttributes(
-          email: finalEmail,
-        ),
-      );
-
-      // ------------------------------------------------------
-      // GET THE USER AFTER EMAIL UPDATE
-      // ------------------------------------------------------
-
-      final updatedUser = authResponse.user;
-
-      debugPrint('================================');
-      debugPrint('AFTER AUTH EMAIL UPDATE');
-      debugPrint(
-        'AUTH EMAIL: ${updatedUser?.email}',
-      );
-      debugPrint(
-        'USER ID: ${updatedUser?.id}',
-      );
+      debugPrint('PROFILE UPDATE AUTH ERROR');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Status: ${e.statusCode}');
+      debugPrint('Code: ${e.code}');
       debugPrint('================================');
 
-      // ------------------------------------------------------
-      // IMPORTANT:
-      // Only continue if Supabase Auth actually accepted
-      // the new email.
-      // ------------------------------------------------------
+      _showError('${e.message} (Code: ${e.code})');
+    } on PostgrestException catch (e) {
+      debugPrint('================================');
+      debugPrint('PROFILE TABLE UPDATE ERROR');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Code: ${e.code}');
+      debugPrint('================================');
 
-      final authEmailAfterUpdate =
-          updatedUser?.email?.trim() ?? '';
-
-      if (authEmailAfterUpdate != finalEmail) {
-  debugPrint('EMAIL CHANGE IS PENDING CONFIRMATION');
-
-  if (Get.isDialogOpen == true) {
-    Get.back();
-  }
-
-  Get.snackbar(
-    'Confirmation Required',
-    'A confirmation email has been sent to your new email address. '
-    'Please confirm it before the email change becomes active.',
-    snackPosition: SnackPosition.BOTTOM,
-    duration: const Duration(seconds: 6),
-  );
-
-  return;
-}
-    }
-
-    // ========================================================
-    // 2. UPDATE PASSWORD IN SUPABASE AUTH
-    // ========================================================
-
-    if (passwordChanged) {
-      debugPrint('UPDATING AUTH PASSWORD');
-
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          password: newPassword,
-        ),
-      );
-    }
-
-    // ========================================================
-    // 3. UPDATE NAME IN SUPABASE AUTH
-    // ========================================================
-
-    if (nameChanged) {
-      debugPrint('UPDATING AUTH NAME');
-
-      final metadata = Map<String, dynamic>.from(
-        user.userMetadata ?? {},
-      );
-
-      metadata['name'] = newName;
-
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          data: metadata,
-        ),
-      );
-    }
-
-    // ========================================================
-    // 4. UPDATE PROFILES TABLE
-    // ========================================================
-
-    final profileData = <String, dynamic>{
-      'name': newName,
-    };
-
-    if (emailChanged) {
-      profileData['email'] = finalEmail;
-    }
-
-    debugPrint('UPDATING PROFILES TABLE');
-    debugPrint('PROFILE DATA: $profileData');
-
-    await _supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', user.id);
-
-    // ========================================================
-    // 5. REFRESH AUTH SESSION
-    // ========================================================
-
-    try {
-      await _supabase.auth.refreshSession();
+      _showError('Profile database update failed.');
     } catch (e) {
-      debugPrint(
-        'Session refresh warning: $e',
-      );
+      debugPrint('================================');
+      debugPrint('PROFILE UPDATE ERROR');
+      debugPrint('Error: $e');
+      debugPrint('================================');
+
+      _showError('Unable to update profile. Please try again.');
+    } finally {
+      isUpdatingProfile.value = false;
     }
-
-    // ========================================================
-    // 6. GET FINAL AUTH USER
-    // ========================================================
-
-    final finalUser =
-        _supabase.auth.currentUser;
-
-    final verifiedEmail =
-        finalUser?.email?.trim() ?? '';
-
-    debugPrint('================================');
-    debugPrint('FINAL PROFILE UPDATE RESULT');
-    debugPrint('AUTH USER ID: ${finalUser?.id}');
-    debugPrint('FINAL AUTH EMAIL: $verifiedEmail');
-    debugPrint('FINAL PROFILE EMAIL: $finalEmail');
-    debugPrint('================================');
-
-    // ========================================================
-    // 7. UPDATE LOCAL UI
-    // ========================================================
-
-    profileName.value = newName;
-
-    if (emailChanged) {
-      profileEmail.value = verifiedEmail.isNotEmpty
-          ? verifiedEmail
-          : finalEmail;
-    } else {
-      profileEmail.value = currentEmail;
-    }
-
-    // ========================================================
-    // 8. CLOSE DIALOG
-    // ========================================================
-
-    if (Get.isDialogOpen == true) {
-      Get.back();
-    }
-
-    // ========================================================
-    // 9. SUCCESS MESSAGE
-    // ========================================================
-
-    if (nameChanged && emailChanged) {
-      Get.snackbar(
-        'Profile Updated',
-        'Name and email updated successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } else if (nameChanged) {
-      Get.snackbar(
-        'Profile Updated',
-        'Name updated successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } else if (emailChanged) {
-      Get.snackbar(
-        'Profile Updated',
-        'Email updated successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } else if (passwordChanged) {
-      Get.snackbar(
-        'Profile Updated',
-        'Password updated successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  } on AuthException catch (e) {
-    debugPrint('================================');
-    debugPrint('PROFILE UPDATE AUTH ERROR');
-    debugPrint('Message: ${e.message}');
-    debugPrint('Status: ${e.statusCode}');
-    debugPrint('Code: ${e.code}');
-    debugPrint('================================');
-
-    _showError(
-      '${e.message} (Code: ${e.code})',
-    );
-  } on PostgrestException catch (e) {
-    debugPrint('================================');
-    debugPrint('PROFILE TABLE UPDATE ERROR');
-    debugPrint('Message: ${e.message}');
-    debugPrint('Code: ${e.code}');
-    debugPrint('================================');
-
-    _showError(
-      'Profile database update failed.',
-    );
-  } catch (e) {
-    debugPrint('================================');
-    debugPrint('PROFILE UPDATE ERROR');
-    debugPrint('Error: $e');
-    debugPrint('================================');
-
-    _showError(
-      'Unable to update profile. Please try again.',
-    );
-  } finally {
-    isUpdatingProfile.value = false;
   }
-}
- // ============================================================
+  // ============================================================
   // UPDATE NAME ONLY
   // ============================================================
 
@@ -583,9 +525,7 @@ Future<void> updateProfile({
 
       if (user == null) {
         debugPrint('SESSION IS NULL');
-        debugPrint(
-          'CURRENT USER: ${_supabase.auth.currentUser}',
-        );
+        debugPrint('CURRENT USER: ${_supabase.auth.currentUser}');
 
         _showError('No logged-in account found.');
         return;
@@ -598,17 +538,11 @@ Future<void> updateProfile({
       // UPDATE USER METADATA
       // --------------------------------------------------------
 
-      final metadata = Map<String, dynamic>.from(
-        user.userMetadata ?? {},
-      );
+      final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
 
       metadata['name'] = trimmedName;
 
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          data: metadata,
-        ),
-      );
+      await _supabase.auth.updateUser(UserAttributes(data: metadata));
 
       // --------------------------------------------------------
       // UPDATE LOCAL UI
@@ -622,9 +556,7 @@ Future<void> updateProfile({
 
       await _supabase
           .from('profiles')
-          .update({
-            'name': trimmedName,
-          })
+          .update({'name': trimmedName})
           .eq('id', user.id);
 
       // --------------------------------------------------------
@@ -637,19 +569,13 @@ Future<void> updateProfile({
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
-      debugPrint(
-        'Update name auth error: ${e.message}',
-      );
+      debugPrint('Update name auth error: ${e.message}');
 
       _showError(e.message);
     } catch (e) {
-      debugPrint(
-        'Update name error: $e',
-      );
+      debugPrint('Update name error: $e');
 
-      _showError(
-        'Unable to update name.',
-      );
+      _showError('Unable to update name.');
     } finally {
       isUpdatingProfile.value = false;
     }
@@ -661,8 +587,7 @@ Future<void> updateProfile({
 
   Future<void> pickProfilePicture() async {
     try {
-      final XFile? pickedImage =
-          await _imagePicker.pickImage(
+      final XFile? pickedImage = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
       );
@@ -700,17 +625,11 @@ Future<void> updateProfile({
           .from('profile-pictures')
           .getPublicUrl(filePath);
 
-      final metadata = Map<String, dynamic>.from(
-        user.userMetadata ?? {},
-      );
+      final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
 
       metadata['avatar_url'] = imageUrl;
 
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          data: metadata,
-        ),
-      );
+      await _supabase.auth.updateUser(UserAttributes(data: metadata));
 
       profilePictureUrl.value = imageUrl;
 
@@ -720,25 +639,17 @@ Future<void> updateProfile({
         snackPosition: SnackPosition.BOTTOM,
       );
     } on StorageException catch (e) {
-      debugPrint(
-        'Storage error: ${e.message}',
-      );
+      debugPrint('Storage error: ${e.message}');
 
       _showError(e.message);
     } on AuthException catch (e) {
-      debugPrint(
-        'Auth error: ${e.message}',
-      );
+      debugPrint('Auth error: ${e.message}');
 
       _showError(e.message);
     } catch (e) {
-      debugPrint(
-        'Profile picture error: $e',
-      );
+      debugPrint('Profile picture error: $e');
 
-      _showError(
-        'Unable to update profile picture.',
-      );
+      _showError('Unable to update profile picture.');
     } finally {
       isUpdatingProfile.value = false;
     }
@@ -759,17 +670,11 @@ Future<void> updateProfile({
     try {
       isUpdatingProfile.value = true;
 
-      final metadata = Map<String, dynamic>.from(
-        user.userMetadata ?? {},
-      );
+      final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
 
       metadata.remove('avatar_url');
 
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          data: metadata,
-        ),
-      );
+      await _supabase.auth.updateUser(UserAttributes(data: metadata));
 
       profilePictureUrl.value = '';
 
@@ -781,13 +686,9 @@ Future<void> updateProfile({
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      debugPrint(
-        'Clear profile picture error: $e',
-      );
+      debugPrint('Clear profile picture error: $e');
 
-      _showError(
-        'Unable to clear profile picture.',
-      );
+      _showError('Unable to clear profile picture.');
     } finally {
       isUpdatingProfile.value = false;
     }
@@ -797,31 +698,14 @@ Future<void> updateProfile({
   // LOAD SETTINGS
   // ============================================================
 
-  void loadSettings() {
-    isDarkMode.value = settingsBox.get(
-      AppKeys.isDarkModeKey,
-      defaultValue: false,
-    ) as bool;
+  Future<void> loadSettings() async {
+    isDarkMode.value =
+        settingsBox.get(AppKeys.isDarkModeKey, defaultValue: false) as bool;
 
-    selectedCurrency.value = settingsBox.get(
-      'currency',
-      defaultValue: 'PKR',
-    ) as String;
+    await loadCurrencySettings();
 
-    final savedCurrencies = settingsBox.get(
-      'custom_currencies',
-      defaultValue: <String>[],
-    ) as List;
-    customCurrencies.assignAll(
-      savedCurrencies
-          .map((currency) => currency.toString())
-          .where((currency) => currency.trim().isNotEmpty),
-    );
-
-    notificationsEnabled.value = settingsBox.get(
-      'notifications_enabled',
-      defaultValue: true,
-    ) as bool;
+    notificationsEnabled.value =
+        settingsBox.get('notifications_enabled', defaultValue: true) as bool;
   }
 
   // ============================================================
@@ -831,43 +715,116 @@ Future<void> updateProfile({
   Future<void> toggleDarkMode(bool value) async {
     isDarkMode.value = value;
 
-    await settingsBox.put(
-      AppKeys.isDarkModeKey,
-      value,
-    );
+    await settingsBox.put(AppKeys.isDarkModeKey, value);
 
-    Get.changeThemeMode(
-      value ? ThemeMode.dark : ThemeMode.light,
-    );
+    Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
   }
 
   // ============================================================
   // CURRENCY
   // ============================================================
 
-  Future<void> changeCurrency(String currency) async {
-    selectedCurrency.value = currency;
+  static const List<String> defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
 
-    await settingsBox.put(
-      'currency',
-      currency,
+  Future<void> loadCurrencySettings() async {
+    final savedCurrency = settingsBox.get('currency', defaultValue: 'PKR');
+
+    final savedCurrencies = settingsBox.get(
+      'custom_currencies',
+      defaultValue: <String>[],
     );
+
+    final currencies = <String>[];
+
+    if (savedCurrencies is List) {
+      for (final item in savedCurrencies) {
+        final currency = item.toString().trim().toUpperCase();
+
+        if (currency.isEmpty) {
+          continue;
+        }
+
+        if (!currencies.contains(currency) &&
+            !defaultCurrencies.contains(currency)) {
+          currencies.add(currency);
+        }
+      }
+    }
+
+    customCurrencies.assignAll(currencies);
+
+    final currency = savedCurrency.toString().trim().toUpperCase();
+
+    if (currency.isEmpty) {
+      selectedCurrency.value = 'PKR';
+
+      await settingsBox.put('currency', 'PKR');
+    } else {
+      selectedCurrency.value = currency;
+    }
+
+    await settingsBox.put('custom_currencies', customCurrencies.toList());
+  }
+
+  Future<void> changeCurrency(String currency) async {
+    final code = currency.trim().toUpperCase();
+
+    if (code.isEmpty) return;
+
+    selectedCurrency.value = code;
+
+    await settingsBox.put('currency', code);
   }
 
   Future<void> addCustomCurrency(String currency) async {
     final code = currency.trim().toUpperCase();
-    if (code.isEmpty) return;
 
-    final existingCurrency = customCurrencies.firstWhereOrNull(
-      (item) => item.toLowerCase() == code.toLowerCase(),
+    if (code.isEmpty) {
+      return;
+    }
+
+    // Default currencies already exist.
+    if (defaultCurrencies.contains(code)) {
+      await changeCurrency(code);
+      return;
+    }
+
+    // Don't add duplicates.
+    final alreadyExists = customCurrencies.any(
+      (item) => item.toUpperCase() == code,
     );
-    if (existingCurrency == null &&
-        !['PKR', 'USD', 'EUR', 'GBP'].contains(code)) {
+
+    if (!alreadyExists) {
       customCurrencies.add(code);
+
       await settingsBox.put('custom_currencies', customCurrencies.toList());
     }
 
-    await changeCurrency(existingCurrency ?? code);
+    // Newly added currency becomes selected.
+    await changeCurrency(code);
+  }
+
+  Future<void> deleteCustomCurrency(String currency) async {
+    final code = currency.trim().toUpperCase();
+
+    if (code.isEmpty) {
+      return;
+    }
+
+    // Never allow default currencies to be deleted.
+    if (defaultCurrencies.contains(code)) {
+      return;
+    }
+
+    customCurrencies.removeWhere((item) => item.toUpperCase() == code);
+
+    await settingsBox.put('custom_currencies', customCurrencies.toList());
+
+    // If deleted currency was selected,
+    // return to PKR.
+    if (selectedCurrency.value.toUpperCase() == code) {
+      await changeCurrency('PKR');
+    }
   }
 
   // ============================================================
@@ -877,18 +834,13 @@ Future<void> updateProfile({
   Future<void> toggleNotifications(bool value) async {
     notificationsEnabled.value = value;
 
-    await settingsBox.put(
-      'notifications_enabled',
-      value,
-    );
+    await settingsBox.put('notifications_enabled', value);
 
     if (!value) {
       try {
         await notificationService.cancelAllNotifications();
       } catch (e) {
-        debugPrint(
-          'Notification cleanup error: $e',
-        );
+        debugPrint('Notification cleanup error: $e');
       }
     }
   }
@@ -908,9 +860,7 @@ Future<void> updateProfile({
     try {
       await notificationService.cancelAllNotifications();
     } catch (e) {
-      debugPrint(
-        'Notification cleanup error: $e',
-      );
+      debugPrint('Notification cleanup error: $e');
     }
 
     Get.changeThemeMode(ThemeMode.light);
@@ -934,9 +884,7 @@ Future<void> updateProfile({
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Unable to logout. Please try again.',
-      );
+      _showError('Unable to logout. Please try again.');
     }
   }
 
@@ -959,19 +907,13 @@ Future<void> updateProfile({
 
       isDeletingAccount.value = true;
 
-      final response =
-          await _supabase.functions.invoke(
-        'delete-account',
-      );
+      final response = await _supabase.functions.invoke('delete-account');
 
       if (response.status != 200) {
-        String errorMessage =
-            'Unable to delete account.';
+        String errorMessage = 'Unable to delete account.';
 
-        if (response.data is Map &&
-            response.data['error'] != null) {
-          errorMessage =
-              response.data['error'].toString();
+        if (response.data is Map && response.data['error'] != null) {
+          errorMessage = response.data['error'].toString();
         }
 
         throw Exception(errorMessage);
@@ -980,12 +922,9 @@ Future<void> updateProfile({
       await settingsBox.clear();
 
       try {
-        await notificationService
-            .cancelAllNotifications();
+        await notificationService.cancelAllNotifications();
       } catch (e) {
-        debugPrint(
-          'Notification cleanup error: $e',
-        );
+        debugPrint('Notification cleanup error: $e');
       }
 
       await _supabase.auth.signOut();
@@ -1000,13 +939,9 @@ Future<void> updateProfile({
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      debugPrint(
-        'Delete account exception: $e',
-      );
+      debugPrint('Delete account exception: $e');
 
-      _showError(
-        'Unable to delete account. Please try again.',
-      );
+      _showError('Unable to delete account. Please try again.');
     } finally {
       isDeletingAccount.value = false;
     }
@@ -1017,11 +952,7 @@ Future<void> updateProfile({
   // ============================================================
 
   void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
   }
 
   // ============================================================
