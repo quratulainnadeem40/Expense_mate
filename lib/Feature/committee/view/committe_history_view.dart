@@ -4,13 +4,50 @@ import 'package:flutter/material.dart';
 class CommitteeHistoryView extends StatelessWidget {
   const CommitteeHistoryView({super.key});
 
+  String _formatAmount(String amount) {
+    final String cleanAmount =
+        amount.replaceAll('PKR', '').replaceAll(',', '').trim();
+
+    final double? value = double.tryParse(cleanAmount);
+
+    if (value == null) {
+      return amount;
+    }
+
+    final String number;
+
+    if (value == value.roundToDouble()) {
+      number = value.toInt().toString();
+    } else {
+      number = value.toStringAsFixed(2);
+    }
+
+    final List<String> parts = number.split('.');
+    final String integerPart = parts[0];
+
+    final StringBuffer formatted = StringBuffer();
+
+    for (int i = 0; i < integerPart.length; i++) {
+      if (i > 0 && (integerPart.length - i) % 3 == 0) {
+        formatted.write(',');
+      }
+
+      formatted.write(integerPart[i]);
+    }
+
+    if (parts.length > 1) {
+      formatted.write('.');
+      formatted.write(parts[1]);
+    }
+
+    return 'PKR ${formatted.toString()}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark =
         Theme.of(context).brightness == Brightness.dark;
 
-    // Sample committee history data.
-    // Later this can be connected with the actual database.
     final List<Map<String, String>> receivingHistory = [
       {
         'month': 'January',
@@ -199,7 +236,7 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.payments_rounded,
             title: 'Monthly Contribution',
-            value: 'PKR 5,000',
+            value: _formatAmount('5000'),
           ),
 
           const SizedBox(height: 12),
@@ -208,7 +245,7 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.account_balance_wallet_rounded,
             title: 'Total Collected',
-            value: 'PKR 20,000',
+            value: _formatAmount('20000'),
           ),
 
           const SizedBox(height: 12),
@@ -217,7 +254,7 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.send_rounded,
             title: 'Total Paid Out',
-            value: 'PKR 20,000',
+            value: _formatAmount('20000'),
           ),
 
           const SizedBox(height: 12),
@@ -349,7 +386,7 @@ class CommitteeHistoryView extends StatelessWidget {
                 CrossAxisAlignment.end,
             children: [
               Text(
-                amount,
+                _formatAmount(amount),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -439,7 +476,7 @@ class CommitteeHistoryView extends StatelessWidget {
                 CrossAxisAlignment.end,
             children: [
               Text(
-                amount,
+                _formatAmount(amount),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -522,3 +559,5 @@ class CommitteeHistoryView extends StatelessWidget {
     );
   }
 }
+
+

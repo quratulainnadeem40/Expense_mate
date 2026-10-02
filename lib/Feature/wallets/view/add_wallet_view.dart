@@ -1,3 +1,4 @@
+
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,6 +18,7 @@ class _AddWalletViewState extends State<AddWalletView> {
 
   final nameController = TextEditingController();
   final balanceController = TextEditingController();
+  final customCurrencyController = TextEditingController();
 
   String selectedType = 'Cash';
   String selectedCurrency = 'PKR';
@@ -25,7 +27,56 @@ class _AddWalletViewState extends State<AddWalletView> {
   void dispose() {
     nameController.dispose();
     balanceController.dispose();
+    customCurrencyController.dispose();
     super.dispose();
+  }
+
+  Future<void> showCustomCurrencyDialog() async {
+    customCurrencyController.clear();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Add Custom Currency'),
+          content: TextField(
+            controller: customCurrencyController,
+            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Currency',
+              hintText: 'e.g. SAR, AED, CAD',
+              prefixIcon: Icon(Icons.currency_exchange_rounded),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final currency = customCurrencyController.text.trim();
+
+                if (currency.isNotEmpty) {
+                  Navigator.of(dialogContext).pop(currency);
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.trim().isNotEmpty) {
+      setState(() {
+        selectedCurrency = result.trim().toUpperCase();
+      });
+    }
   }
 
   Future<void> saveWallet() async {
@@ -44,12 +95,13 @@ class _AddWalletViewState extends State<AddWalletView> {
     final controller = Get.find<WalletsController>();
 
     await controller.addWallet(
-  name: nameController.text.trim(),
-  type: selectedType,
-  balance: balance,
-  currency: selectedCurrency,
-);
+      name: nameController.text.trim(),
+      type: selectedType,
+      balance: balance,
+      currency: selectedCurrency,
+    );
   }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -105,8 +157,6 @@ class _AddWalletViewState extends State<AddWalletView> {
                       selectedType = value;
                     });
 
-                    // Automatically use the selected wallet type
-                    // as the wallet name when the name field is empty.
                     if (nameController.text.trim().isEmpty) {
                       nameController.text = value;
                     }
@@ -153,30 +203,54 @@ class _AddWalletViewState extends State<AddWalletView> {
                     labelText: 'Currency',
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(
+                  items: [
+                    const DropdownMenuItem<String>(
                       value: 'PKR',
                       child: Text('PKR - Pakistani Rupee'),
                     ),
-                    DropdownMenuItem(
+                    const DropdownMenuItem<String>(
                       value: 'USD',
                       child: Text('USD - US Dollar'),
                     ),
-                    DropdownMenuItem(
+                    const DropdownMenuItem<String>(
                       value: 'EUR',
                       child: Text('EUR - Euro'),
                     ),
-                    DropdownMenuItem(
+                    const DropdownMenuItem<String>(
                       value: 'GBP',
                       child: Text('GBP - British Pound'),
                     ),
+                    DropdownMenuItem<String>(
+                      value: 'MORE',
+                      child: Row(
+                        children: const [
+                          Icon(Icons.add, size: 20),
+                          SizedBox(width: 8),
+                          Text('More'),
+                        ],
+                      ),
+                    ),
                   ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedCurrency = value;
-                      });
+                  onChanged: (value) async {
+                    if (value == null) {
+                      return;
                     }
+
+                    if (value == 'MORE') {
+                      await showCustomCurrencyDialog();
+                      return;
+                    }
+
+                    setState(() {
+                      selectedCurrency = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (selectedCurrency.trim().isEmpty) {
+                      return 'Please select currency';
+                    }
+
+                    return null;
                   },
                 ),
 
@@ -199,3 +273,4 @@ class _AddWalletViewState extends State<AddWalletView> {
     );
   }
 }
+

@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../widgets/member_card.dart';
 
@@ -16,7 +18,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     double total = 0;
 
     for (final member in members) {
-      total += double.tryParse(member['contribution'] ?? '0') ?? 0;
+      total += double.tryParse(
+            member['contribution']?.replaceAll(',', '') ?? '0',
+          ) ??
+          0;
     }
 
     return total;
@@ -29,8 +34,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
       final status = (member['paymentStatus'] ?? '').toLowerCase();
 
       if (status == 'paid' || status == 'received') {
-        collected +=
-            double.tryParse(member['contribution'] ?? '0') ?? 0;
+        collected += double.tryParse(
+              member['contribution']?.replaceAll(',', '') ?? '0',
+            ) ??
+            0;
       }
     }
 
@@ -52,10 +59,27 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
 
   String _formatAmount(double amount) {
     if (amount == amount.roundToDouble()) {
-      return amount.toInt().toString();
+      return _addThousandsSeparator(amount.toInt().toString());
     }
 
-    return amount.toStringAsFixed(2);
+    final String decimalValue = amount.toStringAsFixed(2);
+    final List<String> parts = decimalValue.split('.');
+
+    return '${_addThousandsSeparator(parts[0])}.${parts[1]}';
+  }
+
+  String _addThousandsSeparator(String value) {
+    final StringBuffer result = StringBuffer();
+
+    for (int i = 0; i < value.length; i++) {
+      if (i > 0 && (value.length - i) % 3 == 0) {
+        result.write(',');
+      }
+
+      result.write(value[i]);
+    }
+
+    return result.toString();
   }
 
   void _showMemberDialog({int? editIndex}) {
@@ -113,6 +137,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  inputFormatters: [
+                    ThousandsSeparatorInputFormatter(),
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Monthly Contribution',
                     hintText: 'Enter contribution',
@@ -285,7 +312,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
   Widget _buildSummarySection() {
     final double monthlyContribution = members.isNotEmpty
         ? double.tryParse(
-              members.first['contribution'] ?? '0',
+              members.first['contribution']?.replaceAll(',', '') ?? '0',
             ) ??
             0
         : 0;
@@ -615,6 +642,46 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         );
       },
     );
+  }
+}
+
+class ThousandsSeparatorInputFormatter
+    extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final String digitsOnly =
+        newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue();
+    }
+
+    final String formatted =
+        _formatWithCommas(digitsOnly);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(
+        offset: formatted.length,
+      ),
+    );
+  }
+
+  String _formatWithCommas(String value) {
+    final StringBuffer result = StringBuffer();
+
+    for (int i = 0; i < value.length; i++) {
+      if (i > 0 && (value.length - i) % 3 == 0) {
+        result.write(',');
+      }
+
+      result.write(value[i]);
+    }
+
+    return result.toString();
   }
 }
 

@@ -73,10 +73,13 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
   void saveCommittee() {
     final String name = nameController.text.trim();
+
     final String contributionText =
         contributionController.text.trim();
+
     final String membersText =
         membersController.text.trim();
+
     final String durationText =
         durationController.text.trim();
 
@@ -224,6 +227,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               ),
             ),
             const SizedBox(height: 20),
+
             _buildTextField(
               controller: nameController,
               label: 'Committee Name',
@@ -231,7 +235,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               icon: Icons.groups_rounded,
               isDark: isDark,
             ),
+
             const SizedBox(height: 16),
+
             _buildTextField(
               controller: contributionController,
               label: 'Monthly Contribution',
@@ -243,7 +249,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                 ThousandsSeparatorInputFormatter(),
               ],
             ),
+
             const SizedBox(height: 16),
+
             _buildTextField(
               controller: membersController,
               label: 'Number of Members',
@@ -252,7 +260,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               keyboardType: TextInputType.number,
               isDark: isDark,
             ),
+
             const SizedBox(height: 16),
+
             _buildTextField(
               controller: durationController,
               label: 'Duration',
@@ -261,7 +271,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               keyboardType: TextInputType.number,
               isDark: isDark,
             ),
+
             const SizedBox(height: 20),
+
             _buildDateField(
               title: 'Start Date',
               date: startDate,
@@ -271,7 +283,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               cardColor: cardColor,
               textColor: primaryTextColor,
             ),
+
             const SizedBox(height: 16),
+
             _buildDateField(
               title: 'Due Date',
               date: dueDate,
@@ -281,7 +295,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               cardColor: cardColor,
               textColor: primaryTextColor,
             ),
+
             const SizedBox(height: 30),
+
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -297,6 +313,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
           ],
         ),
@@ -437,3 +454,5 @@ class ThousandsSeparatorInputFormatter
     return result.toString();
   }
 }
+
+
