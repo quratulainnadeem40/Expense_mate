@@ -22,7 +22,7 @@ class AboutView extends StatelessWidget {
   static const String developerName = 'Innovexa Technologies';
   static const String supportEmail = 'innovexa.technologies01@gmail.com';
   static const String websiteUrl = 'innovexa-technologies.vercel.app';
-  static const String privacyPolicyUrl = '[YOUR PRIVACY POLICY URL]';
+  static const String privacyPolicyUrl = 'Read the privacy policy';
   static const String termsUrl = 'Read the terms and conditions';
   // Must match applicationId in android/app/build.gradle.
   static const String packageName = 'com.example.expense_mate';
@@ -288,7 +288,7 @@ class AboutView extends StatelessWidget {
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy policy',
                     subtitle: privacyPolicyUrl,
-                    onTap: () => _copy(privacyPolicyUrl, 'Link copied'),
+                    onTap: () => Get.toNamed(AppRoutes.privacy),
                   ),
                   _ActionTile(
                     isDark: isDark,

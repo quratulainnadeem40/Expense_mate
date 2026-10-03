@@ -31,6 +31,7 @@ import 'package:expense_mate/Feature/auth/binding/auth_binding.dart';
 import 'package:expense_mate/Feature/auth/view/login_view.dart';
 import 'package:expense_mate/Feature/auth/view/signup_view.dart';
 import 'package:expense_mate/Feature/auth/view/forgot_password_view.dart';
+import 'package:expense_mate/term_privacy/privacy.dart';
 import 'package:expense_mate/term_privacy/term.dart';
 
 import 'package:get/get.dart';
@@ -111,6 +112,8 @@ class AppPages {
     ),
 
     GetPage(name: AppRoutes.settings, page: () => const SettingsView()),
+
+    GetPage(name: AppRoutes.privacy, page: () => const PrivacyView()),
 
     GetPage(name: AppRoutes.terms, page: () => const TermsView()),
   ];

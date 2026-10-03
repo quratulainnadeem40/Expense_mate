@@ -27,6 +27,8 @@ static const String budget = '/budget';
 
   static const String settings = '/settings';
 
+  static const String privacy = '/privacy';
+
   static const String terms = '/terms';
 
   
