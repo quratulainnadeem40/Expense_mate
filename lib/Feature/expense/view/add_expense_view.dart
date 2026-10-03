@@ -258,6 +258,19 @@ class AddExpenseView extends GetView<ExpenseController> {
                             const SizedBox(height: 4),
                             TextField(
                               controller: controller.amountController,
+                              // Safety net for anyone whose field still
+                              // holds a leftover zero: tapping clears it
+                              // instead of making them backspace.
+                              onTap: () {
+                                final text =
+                                    controller.amountController.text.trim();
+
+                                if (text == '0' ||
+                                    text == '0.0' ||
+                                    text == '0.00') {
+                                  controller.amountController.clear();
+                                }
+                              },
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,

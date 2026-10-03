@@ -6,7 +6,10 @@ import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+
+import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/reports/view/report_view.dart';
+
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 
@@ -19,10 +22,39 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final HomeController controller = Get.put(HomeController());
+    final HomeController controller =
+        Get.isRegistered<HomeController>()
+            ? Get.find<HomeController>()
+            : Get.put(HomeController());
 
-    Get.put(CategoriesController());
-    Get.put(TransactionsController());
+    // ==========================================================
+    // REGISTER SHARED CONTROLLERS
+    // ==========================================================
+
+    final CategoriesController categoriesController =
+        Get.isRegistered<CategoriesController>()
+            ? Get.find<CategoriesController>()
+            : Get.put(CategoriesController());
+
+    final TransactionsController transactionsController =
+        Get.isRegistered<TransactionsController>()
+            ? Get.find<TransactionsController>()
+            : Get.put(TransactionsController());
+
+    // IMPORTANT:
+    // Reports is inside IndexedStack, so ReportBindings()
+    // is not automatically executed.
+    // Therefore ReportController must be registered here.
+    final ReportController reportController =
+        Get.isRegistered<ReportController>()
+            ? Get.find<ReportController>()
+            : Get.put(ReportController());
+
+    // Keep these references alive and use the same
+    // controllers for the whole MainScreen.
+    categoriesController;
+    transactionsController;
+    reportController;
 
     // Theme Colors
     const primaryGreen = Color(0xFF2EA44F);
@@ -30,15 +62,17 @@ class MainScreen extends StatelessWidget {
     final List<Widget> pages = [
       const HomeScreen(),
       TransactionsView(),
-       CategoriesView(),
-      const ReportView(),
+      CategoriesView(),
+      ReportView(),
     ];
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor:
+          Theme.of(context).colorScheme.surface,
 
       // ==========================================================
       // MAIN BODY
@@ -52,41 +86,41 @@ class MainScreen extends StatelessWidget {
       ),
 
       // ==========================================================
-      // FLOATING ACTION BUTTON (Center Notched)
+      // FLOATING ACTION BUTTON
       // ==========================================================
 
       floatingActionButton: Obx(() {
-  final isCategories =
-      controller.currentIndex.value == 2;
+        final isCategories =
+            controller.currentIndex.value == 2;
 
-  return SizedBox(
-    width: 54,
-    height: 54,
-    child: FloatingActionButton(
-      onPressed: () {
-        if (isCategories) {
-          Get.dialog(
-            const AddCategoryDialog(),
-            barrierDismissible: false,
-          );
-        } else {
-          Get.to(
-            () => const AddExpenseView(),
-            binding: ExpenseBinding(),
-          );
-        }
-      },
-      backgroundColor: primaryGreen,
-      elevation: 3,
-      shape: const CircleBorder(),
-      child: const Icon(
-        Icons.add,
-        color: Colors.white,
-        size: 28,
-      ),
-    ),
-  );
-}),
+        return SizedBox(
+          width: 54,
+          height: 54,
+          child: FloatingActionButton(
+            onPressed: () {
+              if (isCategories) {
+                Get.dialog(
+                  const AddCategoryDialog(),
+                  barrierDismissible: false,
+                );
+              } else {
+                Get.to(
+                  () => const AddExpenseView(),
+                  binding: ExpenseBinding(),
+                );
+              }
+            },
+            backgroundColor: primaryGreen,
+            elevation: 3,
+            shape: const CircleBorder(),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+        );
+      }),
 
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,
@@ -99,7 +133,9 @@ class MainScreen extends StatelessWidget {
         shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
         clipBehavior: Clip.antiAlias,
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark
+            ? const Color(0xFF1E1E1E)
+            : Colors.white,
         elevation: 12,
         padding: EdgeInsets.zero,
         child: SizedBox(
@@ -109,10 +145,12 @@ class MainScreen extends StatelessWidget {
               // =================================================
               // LEFT SIDE ITEMS
               // =================================================
+
               Expanded(
                 flex: 2,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildNavItem(
                       icon: Icons.home_rounded,
@@ -140,10 +178,12 @@ class MainScreen extends StatelessWidget {
               // =================================================
               // RIGHT SIDE ITEMS
               // =================================================
+
               Expanded(
                 flex: 2,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildNavItem(
                       icon: Icons.category_rounded,
@@ -172,7 +212,7 @@ class MainScreen extends StatelessWidget {
   }
 
   // ==============================================================
-  // BOTTOM NAVIGATION ITEM WIDGET (WITH HIGHLIGHT CARD)
+  // BOTTOM NAVIGATION ITEM WIDGET
   // ==============================================================
 
   Widget _buildNavItem({
@@ -183,11 +223,17 @@ class MainScreen extends StatelessWidget {
     required BuildContext context,
     required Color activeColor,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inactiveColor = isDark ? Colors.grey[500] : const Color(0xFF757575);
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final inactiveColor =
+        isDark
+            ? Colors.grey[500]
+            : const Color(0xFF757575);
 
     return Obx(() {
-      final isSelected = controller.currentIndex.value == index;
+      final isSelected =
+          controller.currentIndex.value == index;
 
       return InkWell(
         onTap: () {
@@ -197,10 +243,12 @@ class MainScreen extends StatelessWidget {
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(
+              padding:
+                  const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 4,
               ),
@@ -210,11 +258,14 @@ class MainScreen extends StatelessWidget {
                         ? activeColor.withOpacity(0.2)
                         : activeColor.withOpacity(0.12))
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius:
+                    BorderRadius.circular(16),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? activeColor : inactiveColor,
+                color: isSelected
+                    ? activeColor
+                    : inactiveColor,
                 size: 22,
               ),
             ),
@@ -223,8 +274,12 @@ class MainScreen extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
+                fontWeight: isSelected
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: isSelected
+                    ? activeColor
+                    : inactiveColor,
               ),
             ),
           ],

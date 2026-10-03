@@ -16,7 +16,10 @@ class ExpenseController extends GetxController {
   final isEditMode = false.obs;
   String? editingTransactionId;
 
-  final amountController = TextEditingController(text: '0.00');
+  // Starts empty on purpose. With '0.00' sitting in the field the user
+  // had to backspace three characters before typing anything; now the
+  // same text appears as a hint and vanishes on the first keystroke.
+  final amountController = TextEditingController();
   final noteController = TextEditingController();
 
   final selectedCategoryId = ''.obs;
@@ -77,7 +80,7 @@ class ExpenseController extends GetxController {
     isEditMode.value = true;
     editingTransactionId = transaction.id;
 
-    amountController.text = transaction.amount.toString();
+    amountController.text = _amountForEditing(transaction.amount);
     noteController.text = transaction.note ?? transaction.title;
 
     isExpense.value = transaction.type.toLowerCase() == 'expense';
@@ -192,6 +195,15 @@ class ExpenseController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// "5000.0" reads badly in an input box, so whole amounts lose the
+  /// decimal part and the rest keep two places.
+  String _amountForEditing(double amount) {
+    if (amount == amount.roundToDouble()) {
+      return amount.toStringAsFixed(0);
+    }
+    return amount.toStringAsFixed(2);
   }
 
   void resetForm() {

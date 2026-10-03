@@ -255,7 +255,8 @@ appBar: AppBar(
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.account_balance_wallet_rounded,
-                          iconColor: const Color(0xFF2B82FB),
+                          iconColor: const Color(0xFF3A5BA0),
+                          emoji: '💳',
                           title: 'Wallets',
                           subtitle: 'Manage your cash, bank and other wallets',
                           onTap: () => _closeDrawerAndNavigate(
@@ -271,8 +272,9 @@ appBar: AppBar(
                         // =========================
                         _buildDrawerOption(
                           context: context,
-                          icon: Icons.pie_chart_rounded,
-                          iconColor: const Color(0xFFFF9800),
+                          icon: Icons.donut_small_rounded,
+                          iconColor: const Color(0xFF2E7D32),
+                          emoji: '📊',
                           title: 'Budgets',
                           subtitle: 'Set and track monthly spending limits',
                           onTap: () => _closeDrawerAndNavigate(
@@ -288,8 +290,9 @@ appBar: AppBar(
                         // =========================
                         _buildDrawerOption(
                           context: context,
-                          icon: Icons.stars_rounded,
-                          iconColor: const Color(0xFFE91E63),
+                          icon: Icons.flag_rounded,
+                          iconColor: const Color(0xFFB26A00),
+                          emoji: '🎯',
                           title: 'Goals',
                           subtitle: 'Track your financial targets and savings',
                           onTap: () => _closeDrawerAndNavigate(
@@ -305,8 +308,9 @@ appBar: AppBar(
                         // =========================
                         _buildDrawerOption(
                           context: context,
-                          icon: Icons.notifications_active_rounded,
-                          iconColor: const Color(0xFF9C27B0),
+                          icon: Icons.receipt_long_rounded,
+                          iconColor: const Color(0xFF7A4EAB),
+                          emoji: '🧾',
                           title: 'Bills & Reminders',
                           subtitle: 'Manage upcoming bills and reminders',
                           onTap: () => _closeDrawerAndNavigate(
@@ -323,7 +327,8 @@ appBar: AppBar(
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.groups_rounded,
-                          iconColor: const Color(0xFF4CAF50),
+                          iconColor: const Color(0xFF00695C),
+                          emoji: '🤝',
                           title: 'Digital Committee',
                           subtitle:
                               'Manage your committee and member payments',
@@ -340,7 +345,8 @@ appBar: AppBar(
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.person_rounded,
-                          iconColor: const Color(0xFF00BCD4),
+                          iconColor: const Color(0xFF455A64),
+                          emoji: '🧑',
                           title: 'Profile',
                           subtitle: 'Manage your profile and account settings',
                           onTap: () => _closeDrawerAndNavigate(
@@ -620,6 +626,9 @@ appBar: AppBar(
   Widget _buildDrawerOption({
     required BuildContext context,
     required IconData icon,
+    // Emoji keeps the drawer in step with the Categories screen, where
+    // the same style is already used.
+    String? emoji,
     required Color iconColor,
     required String title,
     required String subtitle,
@@ -656,7 +665,10 @@ appBar: AppBar(
                     color: iconColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: iconColor, size: 24),
+                  alignment: Alignment.center,
+                  child: emoji == null
+                      ? Icon(icon, color: iconColor, size: 24)
+                      : Text(emoji, style: const TextStyle(fontSize: 23)),
                 ),
 
                 const SizedBox(width: 14),
