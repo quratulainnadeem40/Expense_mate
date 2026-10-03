@@ -275,6 +275,7 @@ class AboutView extends StatelessWidget {
                     title: 'Contact support',
                     subtitle: supportEmail,
                     onTap: () => _copy(supportEmail, 'Email address copied'),
+                    showCopy: true,
                   ),
                   _ActionTile(
                     isDark: isDark,
@@ -282,6 +283,7 @@ class AboutView extends StatelessWidget {
                     title: 'Website',
                     subtitle: websiteUrl,
                     onTap: () => _copy(websiteUrl, 'Link copied'),
+                    showCopy: true,
                   ),
                   _ActionTile(
                     isDark: isDark,
@@ -637,6 +639,7 @@ class _ActionTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.isLast = false,
+    this.showCopy = false,
   });
 
   final bool isDark;
@@ -645,6 +648,7 @@ class _ActionTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool isLast;
+  final bool showCopy;
 
   @override
   Widget build(BuildContext context) {
@@ -688,11 +692,12 @@ class _ActionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.copy_rounded,
-                size: 16,
-                color: AppColors.textSecondary(isDark),
-              ),
+              if (showCopy)
+                Icon(
+                  Icons.copy_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary(isDark),
+                ),
             ],
           ),
         ),
