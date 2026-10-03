@@ -89,10 +89,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Guaranteed Drawer Close Helper Method
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
       _scaffoldKey.currentState?.closeEndDrawer();
     }
@@ -117,15 +114,15 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-appBar: AppBar(
-  title: const Text('Expense Mate'),
-  actions: const [
-    Padding(
-      padding: EdgeInsets.only(right: 16),
-      child: SyncStatusIndicator(),
-    ),
-  ],
-),
+      appBar: AppBar(
+        title: const Text('Expense Mate'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: SyncStatusIndicator(),
+          ),
+        ],
+      ),
       // =========================
       // DRAWER
       // =========================
@@ -330,8 +327,7 @@ appBar: AppBar(
                           iconColor: const Color(0xFF00695C),
                           emoji: '🤝',
                           title: 'Digital Committee',
-                          subtitle:
-                              'Manage your committee and member payments',
+                          subtitle: 'Manage your committee and member payments',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const CommitteeView(),
                           ),
@@ -345,8 +341,7 @@ appBar: AppBar(
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.person_rounded,
-                          iconColor: const Color(0xFF455A64),
-                          emoji: '🧑',
+                          iconColor: const Color(0xFFF2C14E),
                           title: 'Profile',
                           subtitle: 'Manage your profile and account settings',
                           onTap: () => _closeDrawerAndNavigate(
