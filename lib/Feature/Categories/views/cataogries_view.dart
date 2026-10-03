@@ -1106,8 +1106,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       _buildDrawerOption(
                                         context: context,
                                         icon: Icons.person_rounded,
-                                        iconColor: const Color(0xFF00BCD4),
-                                        emoji: '🧑',
+                                        iconColor: const Color(0xFFF2C14E),
                                         title: 'Profile',
                                         subtitle:
                                             'Manage your profile and account settings',
@@ -1353,8 +1352,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.person_rounded,
-                        iconColor: const Color(0xFF455A64),
-                        emoji: '🧑',
+                        iconColor: const Color(0xFFF2C14E),
                         title: 'Profile',
                         subtitle: 'Manage your profile and account settings',
                         onTap: () => _closeDrawerAndNavigate(

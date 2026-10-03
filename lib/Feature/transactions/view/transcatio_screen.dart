@@ -792,8 +792,7 @@ class _TransactionsViewState extends State<TransactionsView>
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.person_rounded,
-                                    iconColor: const Color(0xFF455A64),
-                                    emoji: '🧑',
+                                    iconColor: const Color(0xFFF2C14E),
                                     title: 'Profile',
                                     subtitle: 'Manage your profile and acc...',
                                     onTap: () => _closeDrawerAndNavigate(
@@ -991,8 +990,7 @@ class _TransactionsViewState extends State<TransactionsView>
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.person_rounded,
-                        iconColor: const Color(0xFF455A64),
-                        emoji: '🧑',
+                        iconColor: const Color(0xFFF2C14E),
                         title: 'Profile',
                         subtitle: 'Manage your profile and account settings',
                         onTap: () => _closeDrawerAndNavigate(
