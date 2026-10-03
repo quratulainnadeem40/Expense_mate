@@ -263,6 +263,66 @@ class GoalsView extends GetView<GoalsController> {
                   ),
                 ),
 
+                const SizedBox(height: 10),
+
+                // Quick picks. Tapping sets the amount, and tapping a
+                // second one adds to it, so 50k + 10k reaches 60k without
+                // any typing.
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ...[5000, 10000, 25000, 50000, 100000].map((amount) {
+                      return GestureDetector(
+                        onTap: () => _bumpTargetAmount(amount),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '+ ${_shortAmount(amount)}',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    GestureDetector(
+                      onTap: () => controller.targetController.clear(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Clear',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 16),
 
                 _Label(text: 'Target date'),
@@ -385,6 +445,36 @@ class GoalsView extends GetView<GoalsController> {
         ),
       ),
     );
+  }
+
+  /// Adds [amount] to whatever is already typed in the target field.
+  ///
+  /// Adding rather than replacing means a few taps can build any figure,
+  /// instead of the chips only offering five fixed amounts.
+  void _bumpTargetAmount(int amount) {
+    final current =
+        double.tryParse(controller.targetController.text.trim()) ?? 0;
+
+    final next = (current + amount).round();
+
+    controller.targetController.text = next.toString();
+    controller.targetController.selection = TextSelection.fromPosition(
+      TextPosition(offset: controller.targetController.text.length),
+    );
+  }
+
+  /// 5000 -> 5k, 100000 -> 1 lakh.
+  String _shortAmount(int amount) {
+    if (amount >= 100000) {
+      final lakhs = amount / 100000;
+      return lakhs == lakhs.roundToDouble()
+          ? '${lakhs.toStringAsFixed(0)} lakh'
+          : '${lakhs.toStringAsFixed(1)} lakh';
+    }
+
+    if (amount >= 1000) return '${amount ~/ 1000}k';
+
+    return '$amount';
   }
 
   // =================================================================

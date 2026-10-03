@@ -246,39 +246,47 @@ class CategoriesController extends GetxController {
     }
 
     try {
-      isLoading.value = true;
+      // Spinner only when there is nothing on screen yet. On a revisit
+      // the old list stays and is replaced quietly.
+      if (categoryList.isEmpty) isLoading.value = true;
 
       // ------------------------------------------------------
-      // 1. Load categories from local SQLite first.
+      // 1. Local SQLite first. This is what the user sees.
       // ------------------------------------------------------
 
       await _loadFromLocal(user.id);
 
+      // Local data is ready, so stop blocking here. The cloud sync used
+      // to be awaited with the spinner still up, which is why the
+      // categories took so long to appear.
+      isLoading.value = false;
+
       // ------------------------------------------------------
-      // 2. Try cloud synchronization.
+      // 2. Cloud sync, off the loading path.
       // ------------------------------------------------------
 
-      try {
-        if (Get.isRegistered<SyncManager>()) {
-          await Get.find<SyncManager>().sync();
-
-          // --------------------------------------------------
-          // 3. Reload local data after synchronization.
-          // --------------------------------------------------
-
-          await _loadFromLocal(user.id);
-        }
-      } catch (_) {
-        // Offline/cloud failure is intentionally ignored.
-        //
-        // Local data is already available.
-      }
+      unawaited(_syncAndReload(user.id));
     } catch (_) {
+      isLoading.value = false;
       _showError(
         'Unable to load categories.',
       );
-    } finally {
-      isLoading.value = false;
+    }
+  }
+
+  /// Syncs with the cloud and then refreshes the list, without holding
+  /// up the screen.
+  ///
+  /// Separate from _syncInBackground() further down, which only pushes
+  /// queued changes and is used after add and delete.
+  Future<void> _syncAndReload(String userId) async {
+    try {
+      if (!Get.isRegistered<SyncManager>()) return;
+
+      await Get.find<SyncManager>().sync();
+      await _loadFromLocal(userId);
+    } catch (_) {
+      // Offline or cloud failure is fine; local data is already shown.
     }
   }
 
