@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:expense_mate/Core/theme/custom_colors.dart';
+import 'package:expense_mate/Core/routes/app_routes.dart';
 
 /// About screen for Expense Mate.
 ///
@@ -19,10 +20,10 @@ class AboutView extends StatelessWidget {
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
   static const String developerName = 'Innovexa Technologies';
-  static const String supportEmail = '[YOUR SUPPORT EMAIL]';
-  static const String websiteUrl = '[YOUR WEBSITE]';
+  static const String supportEmail = 'innovexa.technologies01@gmail.com';
+  static const String websiteUrl = 'innovexa-technologies.vercel.app';
   static const String privacyPolicyUrl = '[YOUR PRIVACY POLICY URL]';
-  static const String termsUrl = '[YOUR TERMS URL]';
+  static const String termsUrl = 'Read the terms and conditions';
   // Must match applicationId in android/app/build.gradle.
   static const String packageName = 'com.example.expense_mate';
   static const int copyrightYear = 2026;
@@ -294,7 +295,7 @@ class AboutView extends StatelessWidget {
                     icon: Icons.description_outlined,
                     title: 'Terms of service',
                     subtitle: termsUrl,
-                    onTap: () => _copy(termsUrl, 'Link copied'),
+                    onTap: () => Get.toNamed(AppRoutes.terms),
                     isLast: true,
                   ),
                 ],

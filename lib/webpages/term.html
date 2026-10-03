@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms &amp; Conditions | Expense Mate</title>
+<meta name="description" content="The terms that apply when you use Expense Mate.">
+<style>
+:root{
+  --green:#2EA44F; --green-d:#23863f; --tint:rgba(46,164,79,.10);
+  --bg:#F5F8F6; --card:#fff; --text:#15221A; --muted:#5B6B62; --border:#E1E8E3; --shadow:0 6px 24px rgba(16,40,24,.07);
+}
+:root[data-theme="dark"]{
+  --green:#3DBE60; --green-d:#2EA44F; --tint:rgba(61,190,96,.15);
+  --bg:#0D130F; --card:#151D18; --text:#E8F0EA; --muted:#93A399; --border:#243029; --shadow:0 6px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{min-width:320px;margin:0;background:var(--bg);color:var(--text);font:16px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;transition:background .25s,color .25s}
+a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}
+img,svg{max-width:100%}
+
+/* header */
+.bar{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--border)}
+.bar-in{max-width:1080px;margin:auto;padding:12px 20px;display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border-radius:11px;background:var(--green);display:grid;place-items:center;flex:none}
+.logo svg{width:22px;height:22px;fill:#fff}
+.brand{font-weight:700;font-size:17px;line-height:1.2}
+.brand small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.sp{flex:1}
+.btn{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;width:40px;height:40px;cursor:pointer;display:grid;place-items:center;font-size:18px}
+.btn:hover{border-color:var(--green)}
+
+/* hero */
+.hero{max-width:1080px;margin:0 auto;padding:44px 20px 18px}
+.pill{display:inline-block;background:var(--tint);color:var(--green);font-weight:600;font-size:12.5px;padding:5px 13px;border-radius:99px;letter-spacing:.3px}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:14px 0 8px}
+.lead{color:var(--muted);max-width:680px;margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:26px}
+.mini{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)}
+.mini i{font-style:normal;width:36px;height:36px;border-radius:10px;background:var(--tint);display:grid;place-items:center;flex:none;font-size:18px}
+.mini b{display:block;font-size:14.5px;line-height:1.3}
+.mini span{font-size:13px;color:var(--muted);line-height:1.45;display:block;margin-top:2px}
+
+/* layout */
+.wrap{max-width:1080px;margin:0 auto;padding:12px 20px 60px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:34px;align-items:start}
+nav.toc{position:sticky;top:90px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 8px;max-height:calc(100vh - 110px);overflow:auto}
+nav.toc h4{margin:2px 12px 8px;font-size:12px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+nav.toc a{display:block;color:var(--muted);font-size:14px;line-height:1.35;padding:7px 12px;border-radius:9px;border-left:3px solid transparent}
+nav.toc a:hover{background:var(--tint);text-decoration:none;color:var(--text)}
+nav.toc a.on{background:var(--tint);color:var(--green);font-weight:600;border-left-color:var(--green)}
+
+article{min-width:0;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:34px clamp(20px,4vw,44px);box-shadow:var(--shadow);overflow-wrap:anywhere}
+section{padding:6px 0 22px;border-bottom:1px solid var(--border);margin-bottom:22px}
+section:last-of-type{border:0;margin:0;padding-bottom:0}
+h2{font-size:21px;margin:0 0 10px;display:flex;gap:11px;align-items:center}
+h2 .n{width:30px;height:30px;border-radius:9px;background:var(--tint);color:var(--green);font-size:14px;display:grid;place-items:center;flex:none}
+h3{font-size:16px;margin:18px 0 4px}
+p{margin:8px 0}
+ul{margin:8px 0;padding-left:22px}li{margin:5px 0}
+li::marker{color:var(--green)}
+.note{background:var(--tint);border-left:4px solid var(--green);border-radius:10px;padding:12px 16px;margin:14px 0;font-size:15px}
+.contact{display:grid;gap:10px;margin-top:12px}
+.contact div{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 16px;overflow-wrap:anywhere}
+
+footer{text-align:center;color:var(--muted);font-size:13px;padding:0 20px 40px}
+#top{position:fixed;right:18px;bottom:18px;width:44px;height:44px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:20px;cursor:pointer;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s}
+#top.show{opacity:1;pointer-events:auto}
+
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:20px}
+  nav.toc{position:static;max-height:none}
+  nav.toc .links{display:flex;flex-wrap:wrap;gap:4px}
+  nav.toc a{border-left:0;padding:6px 11px;font-size:13px;border:1px solid var(--border)}
+}
+@media (max-width:600px){
+  .bar-in{padding:10px 16px}
+  .hero{padding:30px 16px 14px}
+  .wrap{padding:10px 16px 40px;gap:16px}
+  .cards{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:20px}
+  article{padding:24px 20px;border-radius:16px}
+  section{padding-bottom:18px;margin-bottom:18px}
+  h2{font-size:clamp(18px,5vw,21px);align-items:flex-start}
+  footer{padding:0 16px 32px}
+}
+@media (max-width:380px){
+  .bar-in{padding-right:12px;padding-left:12px}
+  .hero{padding-right:12px;padding-left:12px}
+  .wrap{padding-right:12px;padding-left:12px}
+  article{padding:20px 16px}
+  .contact div{padding:10px 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important}
+}
+@media print{
+  .bar,nav.toc,#top,.cards{display:none}
+  body{background:#fff;color:#000}
+  article{border:0;box-shadow:none;padding:0}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 7H5a1 1 0 0 1 0-2h14V3H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1Zm-3 8a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg></div>
+    <div class="brand"><span data-bind="appName">Expense Mate</span><small>Terms &amp; Conditions</small></div>
+    <div class="sp"></div>
+    <button class="btn" id="theme" aria-label="Toggle light or dark theme" title="Toggle theme"></button>
+  </div>
+</header>
+
+<section class="hero" style="border:0;margin:0">
+  <span class="pill">Last updated: <span data-bind="updated">4 October 2026</span></span>
+  <h1>Terms &amp; Conditions</h1>
+  <p class="lead">Please read these terms before using <span data-bind="appName">Expense Mate</span>. They explain the rules for using the app and what you can expect from us.</p>
+  <div class="cards">
+    <div class="mini"><i>📒</i><div><b>A record-keeping tool</b><span>The app tracks money. It does not hold or move it.</span></div></div>
+    <div class="mini"><i>🔐</i><div><b>Your account, your care</b><span>Keep your password private and your details correct.</span></div></div>
+    <div class="mini"><i>🤝</i><div><b>Fair use</b><span>Use the app lawfully and respect other people's information.</span></div></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents"><h4>Contents</h4><div class="links" id="links"></div></nav>
+
+  <article id="doc">
+    <section>
+      <h2>Acceptance of terms</h2>
+      <p>These Terms &amp; Conditions ("Terms") are an agreement between you and <span data-bind="developer">Innovexa Technologies</span> ("we", "us") for the use of <span data-bind="appName">Expense Mate</span> ("the app"). By creating an account or using the app you confirm that you have read and accepted these Terms and our <a data-bind-privacy href="privacy-policy.html">Privacy Policy</a>. If you do not agree, please do not use the app.</p>
+    </section>
+
+    <section>
+      <h2>Eligibility and your account</h2>
+      <ul>
+        <li>You must be at least 13 years old, and old enough to enter a binding agreement where you live, or have a parent or guardian's permission.</li>
+        <li>You must give accurate information when you sign up and keep it up to date.</li>
+        <li>You are responsible for your password and for everything done through your account. Tell us promptly if you think someone else has accessed it.</li>
+        <li>One person should use one account. Do not share your login with others.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What the app does</h2>
+      <p>The app helps you record income and expenses, manage wallets, budgets, goals, bills and reminders, run a digital committee, and view reports.</p>
+      <div class="note"><b>Important:</b> Expense Mate is a personal record-keeping tool. It is not a bank, payment service, wallet provider or lender, and it does not move real money. Wallet names such as cash, bank, JazzCash, Easypaisa or credit card are labels for your own records and are not linked to those companies.</div>
+    </section>
+
+    <section>
+      <h2>Not financial advice</h2>
+      <p>Reports, budgets, charts and goals are shown only from the figures you enter. They are for general information and are not financial, tax, legal or investment advice. You are responsible for your own financial decisions and for checking that your records match your real accounts.</p>
+    </section>
+
+    <section>
+      <h2>Your content</h2>
+      <p>You own the information you enter (transactions, notes, categories, committee details and so on). You give us permission to store, back up and process it only so that we can run the app for you, as explained in the Privacy Policy. You are responsible for the accuracy of what you enter and for having the right to enter it.</p>
+    </section>
+
+    <section>
+      <h2>Digital Committee</h2>
+      <p>The Digital Committee feature is a record book only. We are not a party to any committee arrangement and we do not collect, hold, guarantee or pay out any committee money. Any dispute about payments, turns or payouts is between the committee members. You must have the consent of members whose details you add, and you should not rely on the app as proof of payment without other evidence.</p>
+    </section>
+
+    <section>
+      <h2>Reminders and notifications</h2>
+      <p>Bill and goal reminders are a convenience. They depend on your phone settings, battery optimisation, internet connection and permissions, so we cannot guarantee that every reminder will arrive on time. Please do not rely on them as your only way to remember a payment.</p>
+    </section>
+
+    <section>
+      <h2>Acceptable use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>use the app for anything unlawful, fraudulent or harmful, including money laundering or hiding illegal income</li>
+        <li>try to access another person's account or data, or interfere with the app's security</li>
+        <li>copy, reverse engineer, resell or misuse the app or its code, except where the law allows</li>
+        <li>upload malicious code or overload our systems with automated requests</li>
+        <li>enter other people's personal information without a right to do so</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Availability and updates</h2>
+      <p>We work to keep the app running smoothly, but it is provided without a promise of uninterrupted or error-free service. We may update, change, add or remove features, or pause the service for maintenance. Some updates may be needed to keep using the app.</p>
+    </section>
+
+    <section>
+      <h2>Intellectual property</h2>
+      <p>The app, its name, logo, design and software belong to <span data-bind="developer">Innovexa Technologies</span> or its licensors and are protected by law. We give you a personal, limited, non-exclusive, non-transferable right to use the app for your own use. No other rights are granted.</p>
+    </section>
+
+    <section>
+      <h2>Suspension and termination</h2>
+      <p>You may stop using the app and ask us to delete your account at any time (see the Privacy Policy). We may suspend or close an account that breaks these Terms or puts the app or other users at risk. After closure your data is handled as described in the Privacy Policy.</p>
+    </section>
+
+    <section>
+      <h2>Disclaimer and limit of liability</h2>
+      <p>The app is provided "as is" and "as available". To the fullest extent allowed by law, we do not promise that it will be error-free, always available, or that calculations will meet your needs, and we are not responsible for losses caused by incorrect entries, lost devices, forgotten passwords, missed reminders, third-party services, or events outside our control.</p>
+      <p>To the extent the law allows, our total liability for any claim connected with the app is limited to the amount you paid us for it (which may be nothing), and we are not liable for indirect or consequential loss. Nothing in these Terms limits any right you have that cannot be limited by law.</p>
+    </section>
+
+    <section>
+      <h2>Governing law</h2>
+      <p>These Terms are governed by the laws of Pakistan. Any dispute will be handled by the competent courts of Pakistan, unless the law of your country gives you the right to bring a claim elsewhere. We encourage you to contact us first so we can try to sort it out.</p>
+    </section>
+
+    <section>
+      <h2>Changes to these terms</h2>
+      <p>We may update these Terms from time to time. When we do, we will change the "Last updated" date above. If you keep using the app after a change, you accept the updated Terms.</p>
+    </section>
+
+    <section>
+      <h2>Contact us</h2>
+      <p>Questions about these Terms? Get in touch:</p>
+      <div class="contact">
+        <div>✉️ <a data-bind-mail href="#"><span data-bind="email">innovexa.technologies01@gmail.com</span></a></div>
+        <div>🌐 <a data-bind-site href="#"><span data-bind="website">innovexa-technologies.vercel.app</span></a></div>
+        <div>🏢 <span data-bind="developer">Innovexa Technologies</span></div>
+      </div>
+    </section>
+  </article>
+</div>
+
+<footer>© <span id="yr">2026</span> <span data-bind="developer">Innovexa Technologies</span>. All rights reserved. &nbsp;|&nbsp; <a data-bind-privacy href="privacy-policy.html">Privacy Policy</a></footer>
+<button id="top" aria-label="Back to top">↑</button>
+
+<script>
+/* ---- EDIT THESE BEFORE PUBLISHING ---- */
+const CONFIG = {
+  appName: 'Expense Mate',
+  developer: 'Innovexa Technologies',
+  email: 'innovexa.technologies01@gmail.com',
+  website: 'innovexa-technologies.vercel.app',
+  updated: '4 October 2026',
+  privacyUrl: 'privacy-policy.html'
+};
+
+/* fill placeholders */
+document.querySelectorAll('[data-bind]').forEach(el => {
+  const v = CONFIG[el.dataset.bind]; if (v) el.textContent = v;
+});
+document.querySelectorAll('[data-bind-mail]').forEach(a => { a.href = 'mailto:' + CONFIG.email; });
+document.querySelectorAll('[data-bind-site]').forEach(a => {
+  a.href = /^https?:/.test(CONFIG.website) ? CONFIG.website : 'https://' + CONFIG.website;
+});
+document.querySelectorAll('[data-bind-privacy]').forEach(a => { a.href = CONFIG.privacyUrl; });
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* number sections + build contents list */
+const links = document.getElementById('links');
+const heads = [...document.querySelectorAll('#doc h2')];
+heads.forEach((h, i) => {
+  const id = 's' + (i + 1), title = h.textContent;
+  h.parentElement.id = id;
+  h.innerHTML = '<span class="n">' + (i + 1) + '</span>' + title;
+  const a = document.createElement('a');
+  a.href = '#' + id; a.textContent = (i + 1) + '. ' + title; links.appendChild(a);
+});
+
+/* highlight current section */
+const map = new Map([...links.children].map(a => [a.hash.slice(1), a]));
+const io = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) {
+    map.forEach(a => a.classList.remove('on')); map.get(e.target.id).classList.add('on');
+  }});
+}, { rootMargin: '-20% 0px -70% 0px' });
+heads.forEach(h => io.observe(h.parentElement));
+
+/* theme (follows phone/PC setting, remembers choice) */
+const root = document.documentElement, tbtn = document.getElementById('theme');
+let saved = null; try { saved = localStorage.getItem('em-theme'); } catch (e) {}
+const dark0 = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+function setTheme(d) {
+  root.dataset.theme = d ? 'dark' : 'light'; tbtn.textContent = d ? '☀️' : '🌙';
+  try { localStorage.setItem('em-theme', d ? 'dark' : 'light'); } catch (e) {}
+}
+setTheme(dark0);
+tbtn.onclick = () => setTheme(root.dataset.theme !== 'dark');
+
+/* back to top */
+const toTop = document.getElementById('top');
+addEventListener('scroll', () => toTop.classList.toggle('show', scrollY > 500), { passive: true });
+toTop.onclick = () => scrollTo({ top: 0, behavior: 'smooth' });
+</script>
+</body>
+</html>
