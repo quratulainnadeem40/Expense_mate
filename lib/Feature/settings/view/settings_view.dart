@@ -494,63 +494,6 @@ Future<void> _confirmDeleteCurrency(
             const SizedBox(height: 24),
 
             // =====================================================
-            // DATA
-            // =====================================================
-
-            _SectionHeader(
-              title: 'Data',
-              isDark: isDark,
-              icon: Icons.storage_outlined,
-            ),
-
-            const SizedBox(height: 10),
-
-            _SettingsCard(
-              isDark: isDark,
-              children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.expenseRed.withValues(
-                        alpha: 0.10,
-                      ),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Icon(
-                      Icons.restart_alt_rounded,
-                      color: AppColors.expenseRed,
-                    ),
-                  ),
-                  title: Text(
-                    'Reset Settings',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Restore settings to their defaults',
-                    style: AppTextStyles.bodyMedium(isDark),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 15,
-                  ),
-                  onTap: () {
-                    _showResetDialog(context);
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // =====================================================
             // ABOUT
             // =====================================================
 
@@ -1087,52 +1030,6 @@ Future<void> _confirmDeleteCurrency(
         ],
       ),
       barrierDismissible: false,
-    );
-  }
-
-  // =============================================================
-  // RESET SETTINGS
-  // =============================================================
-
-  void _showResetDialog(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Reset Settings?'),
-        content: const Text(
-          'This will restore your app settings to their default values. '
-          'Your wallets, bills and transactions will not be deleted.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-
-              await Future.delayed(
-                const Duration(milliseconds: 200),
-              );
-
-              await controller.resetSettings();
-
-              Get.snackbar(
-                'Settings Reset',
-                'Your settings have been restored to default.',
-                snackPosition:
-                    SnackPosition.BOTTOM,
-              );
-            },
-            child: const Text(
-              'Reset',
-              style: TextStyle(
-                color: AppColors.expenseRed,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
