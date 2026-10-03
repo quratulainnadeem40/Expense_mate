@@ -16,14 +16,11 @@ class ExpenseController extends GetxController {
   final isEditMode = false.obs;
   String? editingTransactionId;
 
-  // Starts empty on purpose. With '0.00' sitting in the field the user
-  // had to backspace three characters before typing anything; now the
-  // same text appears as a hint and vanishes on the first keystroke.
   final amountController = TextEditingController();
   final noteController = TextEditingController();
 
   final selectedCategoryId = ''.obs;
-  late final RxString customCategoryName = ''.obs;
+  final RxString customCategoryName = ''.obs;
   final selectedWalletId = ''.obs;
 
   final isLoading = false.obs;
@@ -83,7 +80,9 @@ class ExpenseController extends GetxController {
     amountController.text = _amountForEditing(transaction.amount);
     noteController.text = transaction.note ?? transaction.title;
 
-    isExpense.value = transaction.type.toLowerCase() == 'expense';
+    isExpense.value =
+        transaction.type.trim().toLowerCase() == 'expense';
+
     selectedCategoryId.value = transaction.categoryId;
     customCategoryName.value = transaction.customCategoryName;
     selectedWalletId.value = transaction.walletId;
@@ -106,7 +105,6 @@ class ExpenseController extends GetxController {
     }
 
     final cleanAmountText = amountText.replaceAll(',', '');
-
     final amount = double.tryParse(cleanAmountText);
 
     if (amount == null || amount <= 0) {
@@ -114,10 +112,14 @@ class ExpenseController extends GetxController {
       return;
     }
 
-    if (isExpense.value &&
-        selectedCategoryId.value.isEmpty &&
+    // Category is now required for BOTH Expense and Income.
+    if (selectedCategoryId.value.trim().isEmpty &&
         customCategoryName.value.trim().isEmpty) {
-      _showError('No category selected');
+      _showError(
+        isExpense.value
+            ? 'Please select an expense category.'
+            : 'Please select an income category.',
+      );
       return;
     }
 
@@ -132,15 +134,25 @@ class ExpenseController extends GetxController {
       final wasEditing = isEditMode.value;
       final transactionId = editingTransactionId;
 
+      // IMPORTANT:
+      // Category ID is now saved for both Expense and Income.
+      final String categoryId =
+          customCategoryName.value.trim().isEmpty
+              ? selectedCategoryId.value.trim()
+              : '';
+
+      final String customCategory =
+          customCategoryName.value.trim();
+
       final transaction = TransactionModel(
         id: transactionId ?? '',
         userId: user.id,
         walletId: selectedWalletId.value,
-        categoryId: isExpense.value && customCategoryName.value.isEmpty
-            ? selectedCategoryId.value
-            : '',
-        customCategory: isExpense.value ? customCategoryName.value.trim() : '',
-        title: note.isEmpty ? (isExpense.value ? 'Expense' : 'Income') : note,
+        categoryId: categoryId,
+        customCategory: customCategory,
+        title: note.isEmpty
+            ? (isExpense.value ? 'Expense' : 'Income')
+            : note,
         amount: amount,
         type: isExpense.value ? 'expense' : 'income',
         transactionDate: DateTime.now(),
@@ -151,7 +163,8 @@ class ExpenseController extends GetxController {
         Get.put(TransactionsController());
       }
 
-      final transactionsController = Get.find<TransactionsController>();
+      final transactionsController =
+          Get.find<TransactionsController>();
 
       bool success;
 
@@ -161,9 +174,15 @@ class ExpenseController extends GetxController {
           return;
         }
 
-        success = await transactionsController.updateTransaction(transaction);
+        success =
+            await transactionsController.updateTransaction(
+          transaction,
+        );
       } else {
-        success = await transactionsController.addTransaction(transaction);
+        success =
+            await transactionsController.addTransaction(
+          transaction,
+        );
       }
 
       if (!success) return;
@@ -183,7 +202,11 @@ class ExpenseController extends GetxController {
         snackPosition: SnackPosition.TOP,
         backgroundColor: const Color(0xFF2EA44F),
         colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white, size: 28),
+        icon: const Icon(
+          Icons.check_circle,
+          color: Colors.white,
+          size: 28,
+        ),
         margin: const EdgeInsets.all(15),
         borderRadius: 12,
         duration: const Duration(seconds: 3),
@@ -197,12 +220,11 @@ class ExpenseController extends GetxController {
     }
   }
 
-  /// "5000.0" reads badly in an input box, so whole amounts lose the
-  /// decimal part and the rest keep two places.
   String _amountForEditing(double amount) {
     if (amount == amount.roundToDouble()) {
       return amount.toStringAsFixed(0);
     }
+
     return amount.toStringAsFixed(2);
   }
 
@@ -227,7 +249,11 @@ class ExpenseController extends GetxController {
       snackPosition: SnackPosition.TOP,
       backgroundColor: const Color(0xFFE53935),
       colorText: Colors.white,
-      icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
+      icon: const Icon(
+        Icons.error_outline,
+        color: Colors.white,
+        size: 28,
+      ),
       margin: const EdgeInsets.all(15),
       borderRadius: 12,
       duration: const Duration(seconds: 3),

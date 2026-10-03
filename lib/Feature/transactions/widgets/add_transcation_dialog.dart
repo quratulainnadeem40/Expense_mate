@@ -2,21 +2,19 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
-
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-
-
-
 import 'package:expense_mate/Feature/Wallets/controller/wallets_controller.dart';
 
 class AddTransactionDialog extends StatefulWidget {
   const AddTransactionDialog({super.key});
 
   @override
-  State<AddTransactionDialog> createState() => _AddTransactionDialogState();
+  State<AddTransactionDialog> createState() =>
+      _AddTransactionDialogState();
 }
 
 class _AddTransactionDialogState extends State<AddTransactionDialog> {
@@ -50,6 +48,10 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   Future<void> _loadData() async {
     try {
       await _walletController.loadWallets();
+    } catch (_) {}
+
+    try {
+      await _categoryController.fetchCategories();
     } catch (_) {}
 
     if (!mounted) return;
@@ -86,11 +88,12 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
     if (name.isEmpty) return;
 
-    // Check duplicate category
-    final bool alreadyExists = _categoryController.categoryList.any(
+    final bool alreadyExists =
+        _categoryController.categoryList.any(
       (category) =>
-          category.name.trim().toLowerCase() == name.toLowerCase() &&
-          category.type == 'expense',
+          category.name.trim().toLowerCase() ==
+              name.toLowerCase() &&
+          category.type.trim().toLowerCase() == 'expense',
     );
 
     if (alreadyExists) {
@@ -103,14 +106,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
     final String categoryId = _generateUuid();
 
-  final CategoryModel newCategory = CategoryModel(
-  id: categoryId,
-  name: name,
-  icon: 'category',
-  colorValue: 0xFF2E7D32,
-  isDefault: false,
-  type: 'expense',
-);
+    final CategoryModel newCategory = CategoryModel(
+      id: categoryId,
+      name: name,
+      icon: 'category',
+      colorValue: 0xFF2E7D32,
+      isDefault: false,
+      type: 'expense',
+    );
 
     try {
       await _categoryController.addCategory(
@@ -135,6 +138,27 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   }
 
   // ------------------------------------------------------------
+  // SELECTED CATEGORY
+  // ------------------------------------------------------------
+
+  CategoryModel? _getSelectedCategory() {
+    final String? selectedId = _selectedCategoryId;
+
+    if (selectedId == null || selectedId.trim().isEmpty) {
+      return null;
+    }
+
+    for (final category
+        in _categoryController.categoryList) {
+      if (category.id.trim() == selectedId.trim()) {
+        return category;
+      }
+    }
+
+    return null;
+  }
+
+  // ------------------------------------------------------------
   // SAVE TRANSACTION
   // ------------------------------------------------------------
 
@@ -142,7 +166,10 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
     if (_isSaving) return;
 
     final String title = _titleController.text.trim();
-    final String amountText = _amountController.text.trim();
+
+    // Allow comma formatted amounts as well.
+    final String amountText =
+        _amountController.text.trim().replaceAll(',', '');
 
     if (title.isEmpty) {
       await _showMessage(
@@ -188,25 +215,69 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       return;
     }
 
+    // Get the actual selected category.
+    final CategoryModel? selectedCategory =
+        _getSelectedCategory();
+
+    if (selectedCategory == null) {
+      await _showMessage(
+        'Invalid category',
+        'Please select a valid category.',
+      );
+      return;
+    }
+
+    final String selectedType =
+        selectedCategory.type.trim().toLowerCase();
+
+    final String transactionType =
+        _isIncome ? 'income' : 'expense';
+
+    // Make sure Income uses an Income category
+    // and Expense uses an Expense category.
+    if (selectedType != transactionType) {
+      await _showMessage(
+        'Invalid category',
+        'Please select a valid category for this transaction type.',
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final TransactionModel transaction = TransactionModel(
+      final DateTime now = DateTime.now();
+
+      final TransactionModel transaction =
+          TransactionModel(
         id: _generateUuid(),
         userId: '',
-        walletId: _selectedWalletId!,
-        categoryId: _selectedCategoryId!,
+        walletId: _selectedWalletId!.trim(),
+
+        // IMPORTANT:
+        // Save the actual selected category ID.
+        categoryId: selectedCategory.id.trim(),
+
+        // Keep the category name with the transaction too.
+        customCategory: selectedCategory.name.trim(),
+
         title: title,
         amount: amount,
-        type: _isIncome ? 'income' : 'expense',
-        transactionDate: DateTime.now(),
+
+        // IMPORTANT:
+        // Income remains exactly "income".
+        type: transactionType,
+
+        transactionDate: now,
         note: title,
-        createdAt: DateTime.now(),
+        createdAt: now,
       );
 
-      await _transactionController.addTransaction(transaction);
+      await _transactionController.addTransaction(
+        transaction,
+      );
 
       if (!mounted) return;
 
@@ -272,7 +343,8 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
       title: Text(
@@ -301,6 +373,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
                         setState(() {
                           _isIncome = false;
+                          _selectedCategoryId = null;
                         });
                       },
                     ),
@@ -315,6 +388,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
                         setState(() {
                           _isIncome = true;
+                          _selectedCategoryId = null;
                         });
                       },
                     ),
@@ -346,7 +420,8 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
               TextField(
                 controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
+                keyboardType:
+                    const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
                 decoration: const InputDecoration(
@@ -364,17 +439,25 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
               Obx(
                 () {
-                  final categories = _categoryController.categoryList
-                      .where(
-                        (category) =>
-                            category.type ==
-                            (_isIncome ? 'income' : 'expense'),
-                      )
-                      .toList();
+                  final String requiredType =
+                      _isIncome ? 'income' : 'expense';
+
+                  final categories =
+                      _categoryController.categoryList
+                          .where(
+                            (category) =>
+                                category.type
+                                    .trim()
+                                    .toLowerCase() ==
+                                requiredType,
+                          )
+                          .toList();
 
                   return DropdownButtonFormField<String>(
                     value: categories.any(
-                      (category) => category.id == _selectedCategoryId,
+                      (category) =>
+                          category.id ==
+                          _selectedCategoryId,
                     )
                         ? _selectedCategoryId
                         : null,
@@ -382,17 +465,19 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                       labelText: 'Category',
                       border: OutlineInputBorder(),
                     ),
-                    hint: const Text('Select category'),
-                    items: [
-                      ...categories.map(
-                        (category) {
-                          return DropdownMenuItem<String>(
-                            value: category.id,
-                            child: Text(category.name),
-                          );
-                        },
-                      ),
-                    ],
+                    hint: Text(
+                      _isIncome
+                          ? 'Select income category'
+                          : 'Select expense category',
+                    ),
+                    items: categories.map(
+                      (category) {
+                        return DropdownMenuItem<String>(
+                          value: category.id,
+                          child: Text(category.name),
+                        );
+                      },
+                    ).toList(),
                     onChanged: (value) {
                       if (!mounted) return;
 
@@ -416,7 +501,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   child: OutlinedButton.icon(
                     onPressed: _openMoreCategoryDialog,
                     icon: const Icon(Icons.add),
-                    label: const Text('More... Add your own category'),
+                    label: const Text(
+                      'More... Add your own category',
+                    ),
                   ),
                 ),
 
@@ -428,11 +515,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
               Obx(
                 () {
-                final wallets = _walletController.wallets;
+                  final wallets =
+                      _walletController.wallets;
 
                   return DropdownButtonFormField<String>(
                     value: wallets.any(
-                      (wallet) => wallet.id == _selectedWalletId,
+                      (wallet) =>
+                          wallet.id ==
+                          _selectedWalletId,
                     )
                         ? _selectedWalletId
                         : null,
@@ -478,7 +568,8 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: _isSaving ? null : _saveTransaction,
+          onPressed:
+              _isSaving ? null : _saveTransaction,
           child: _isSaving
               ? const SizedBox(
                   height: 20,
@@ -531,9 +622,6 @@ class _CustomCategoryDialogState
       return;
     }
 
-    // IMPORTANT:
-    // Return the value to the parent dialog.
-    // We do NOT dispose the controller here.
     Navigator.of(context).pop(name);
   }
 
