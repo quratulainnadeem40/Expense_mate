@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
@@ -12,6 +13,7 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
+import 'package:expense_mate/Feature/transactions/widgets/add_transcation_dialog.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 
@@ -537,16 +539,93 @@ class _TransactionsViewState extends State<TransactionsView>
                                 ),
                               ),
                             ),
-                            trailing: Text(
-                              "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
-                              style: TextStyle(
-                                color: isIncome
-                                    ? const Color(0xFF4CAF50)
-                                    : const Color(0xFFEB5757),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
+                            trailing: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Text(
+      "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
+      style: AppTextStyles.bodyMedium(isDarkMode).copyWith(
+        color: isIncome
+            ? Colors.green
+            : Colors.red,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+
+    PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (value) async {
+        if (value == 'edit') {
+          await showDialog(
+            context: context,
+            builder: (_) {
+              return AddTransactionDialog(
+                transaction: transaction,
+              );
+            },
+          );
+        }
+
+        if (value == 'delete') {
+          final shouldDelete = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) {
+              return AlertDialog(
+                title: const Text('Delete Transaction'),
+                content: Text(
+                  'Are you sure you want to delete '
+                  '"${transaction.title}"?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(false);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(true);
+                    },
+                    child: const Text('Delete'),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (shouldDelete == true) {
+            await transactionsController.deleteTransaction(
+              transaction.id,
+            );
+          }
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit_outlined),
+              SizedBox(width: 10),
+              Text('Edit'),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline),
+              SizedBox(width: 10),
+              Text('Delete'),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ],
+),
                           ),
                         );
                       },

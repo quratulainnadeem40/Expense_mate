@@ -3,7 +3,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:uuid/uuid.dart';
 import '../controller/categories_controller.dart';
 
 class AddCategoryDialog extends StatefulWidget {
@@ -397,7 +397,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             }
 
             final newCategory = CategoryModel(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              id: const Uuid().v4(),
               name: categoryName,
               icon: selectedIcon,
               colorValue: 0xFF2E7D32,

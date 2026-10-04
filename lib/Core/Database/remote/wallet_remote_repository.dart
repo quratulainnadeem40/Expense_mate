@@ -47,12 +47,12 @@ class WalletRemoteRepository {
         .eq('id', walletId);
   }
 
-  Future<void> deleteWallet(
-    String walletId,
-  ) async {
-    await supabase
-        .from('wallets')
-        .delete()
-        .eq('id', walletId);
-  }
+ Future<void> deleteWallet(
+  String walletId,
+) async {
+  await supabase
+      .from('wallets')
+      .delete()
+      .eq('id', walletId);
+}
 }

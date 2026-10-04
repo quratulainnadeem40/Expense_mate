@@ -99,12 +99,12 @@ class CategoryLocalRepository {
   }
 
   Future<int> permanentlyDeleteCategory(
-    String categoryId,
-  ) {
-    return (database.delete(database.localCategories)
-          ..where(
-            (tbl) => tbl.id.equals(categoryId),
-          ))
-        .go();
-  }
+  String categoryId,
+) {
+  return (database.delete(database.localCategories)
+        ..where(
+          (tbl) => tbl.id.equals(categoryId),
+        ))
+      .go();
+}
 }

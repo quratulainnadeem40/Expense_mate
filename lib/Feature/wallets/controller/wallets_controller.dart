@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-
+import 'package:uuid/uuid.dart';
 import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
@@ -490,38 +490,7 @@ class WalletsController extends GetxController {
   // LOCAL UUID
   // ==========================================================
 
-  String _generateUuid() {
-    final random = Random();
-
-    String hex(int count) {
-      final bytes = List<int>.generate(count, (_) => random.nextInt(256));
-
-      return bytes
-          .map((value) => value.toRadixString(16).padLeft(2, '0'))
-          .join();
-    }
-
-    final part1 = hex(4);
-    final part2 = hex(2);
-
-    final part3Bytes = List<int>.generate(2, (_) => random.nextInt(256));
-
-    part3Bytes[0] = (part3Bytes[0] & 0x0f) | 0x40;
-
-    final part3 = part3Bytes
-        .map((value) => value.toRadixString(16).padLeft(2, '0'))
-        .join();
-
-    final part4Bytes = List<int>.generate(2, (_) => random.nextInt(256));
-
-    part4Bytes[0] = (part4Bytes[0] & 0x3f) | 0x80;
-
-    final part4 = part4Bytes
-        .map((value) => value.toRadixString(16).padLeft(2, '0'))
-        .join();
-
-    final part5 = hex(6);
-
-    return '$part1-$part2-$part3-$part4-$part5';
-  }
+ String _generateUuid() {
+  return const Uuid().v4();
+}
 }

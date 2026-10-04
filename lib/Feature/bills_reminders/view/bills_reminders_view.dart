@@ -52,33 +52,33 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // SUMMARY
               // ====================================================
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryCard(
-                      title: 'Upcoming',
-                      count: controller.upcomingCount,
-                      currency:
-                          settingsController.selectedCurrency.value,
-                      amount: controller.upcomingAmount,
-                      icon: Icons.event_note_rounded,
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _SummaryCard(
-                      title: 'Overdue',
-                      count: controller.overdueCount,
-                      currency:
-                          settingsController.selectedCurrency.value,
-                      amount: controller.overdueAmount,
-                      icon: Icons.warning_amber_rounded,
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
-              ),
+Column(
+  children: [
+    _SummaryCard(
+      title: 'Upcoming',
+      count: controller.upcomingCount,
+      currency:
+          settingsController.selectedCurrency.value,
+      amount: controller.upcomingAmount,
+      icon: Icons.event_note_rounded,
+      isDark: isDark,
+      fullWidth: true,
+    ),
+
+    const SizedBox(height: 12),
+
+    _SummaryCard(
+      title: 'Overdue',
+      count: controller.overdueCount,
+      currency:
+          settingsController.selectedCurrency.value,
+      amount: controller.overdueAmount,
+      icon: Icons.warning_amber_rounded,
+      isDark: isDark,
+      fullWidth: true,
+    ),
+  ],
+),
 
               const SizedBox(height: 12),
 
@@ -374,57 +374,85 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 18,
+      ),
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.surfaceDark
             : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // ======================================================
+          // ICON
+          // ======================================================
+
           CircleAvatar(
+            radius: 29,
             backgroundColor:
                 AppColors.primary.withValues(alpha: 0.10),
             child: Icon(
               icon,
               color: AppColors.primary,
+              size: 30,
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // ======================================================
+          // TITLE + AMOUNT
+          // ======================================================
+
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    style: AppTextStyles.bodyMedium(isDark),
-                  ),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyMedium(isDark),
                 ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '$currency ${amount.toStringAsFixed(2)}',
-                    maxLines: 1,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  '$currency ${amount.toStringAsFixed(2)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyLarge(isDark).copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          Text(
-            '$count',
-            style: AppTextStyles.headingMedium(isDark).copyWith(
-              fontWeight: FontWeight.bold,
+
+          // ======================================================
+          // SPACE BEFORE COUNT
+          // ======================================================
+
+          const SizedBox(width: 10),
+
+          // ======================================================
+          // COUNT
+          // ======================================================
+
+          SizedBox(
+            width: 32,
+            child: Text(
+              '$count',
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              style: AppTextStyles.headingMedium(isDark).copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
