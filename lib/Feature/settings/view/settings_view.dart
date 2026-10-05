@@ -67,6 +67,7 @@ class SettingsView extends StatelessWidget {
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
         contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         title: Row(
           children: [
             Container(
@@ -223,23 +224,32 @@ class SettingsView extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton.icon(
+          FilledButton.icon(
             onPressed: () {
               Get.back();
               _showAddCurrencyDialog();
             },
             icon: const Icon(Icons.add_rounded),
             label: const Text('Add Currency'),
-            style: TextButton.styleFrom(
+            style: FilledButton.styleFrom(
               foregroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              backgroundColor: AppColors.primary.withValues(
+                alpha: isDark ? 0.22 : 0.10,
+              ),
+              elevation: 0,
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          TextButton(
+          OutlinedButton(
             onPressed: () => Get.back(),
-            style: TextButton.styleFrom(
+            style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.textSecondary(isDark),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              side: BorderSide(color: AppColors.border(isDark)),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
             ),
             child: const Text('Close'),
           ),
@@ -1146,14 +1156,17 @@ class SettingsView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              OutlinedButton(
                 onPressed: () => Get.back(),
-                style: TextButton.styleFrom(
+                style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textSecondary(isDark),
+                  side: BorderSide(color: AppColors.border(isDark)),
+                  shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 18,
+                    vertical: 13,
                   ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 child: const Text('Cancel'),
               ),
@@ -1168,9 +1181,10 @@ class SettingsView extends StatelessWidget {
                   foregroundColor: Colors.white,
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
+                    horizontal: 20,
+                    vertical: 13,
                   ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 icon: const Icon(Icons.logout_rounded, size: 18),
                 label: const Text('Logout'),
@@ -1274,14 +1288,17 @@ class SettingsView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              OutlinedButton(
                 onPressed: () => Get.back(),
-                style: TextButton.styleFrom(
+                style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textSecondary(isDark),
+                  side: BorderSide(color: AppColors.border(isDark)),
+                  shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 18,
+                    vertical: 13,
                   ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 child: const Text('Cancel'),
               ),
@@ -1296,9 +1313,10 @@ class SettingsView extends StatelessWidget {
                   foregroundColor: Colors.white,
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
+                    horizontal: 20,
+                    vertical: 13,
                   ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
                 label: const Text('Delete Account'),
