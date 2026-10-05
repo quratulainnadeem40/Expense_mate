@@ -12,8 +12,7 @@ class SettingsView extends StatelessWidget {
 
   static const String _addCurrencyOption = '__add_currency__';
 
-  SettingsController get controller =>
-      Get.find<SettingsController>();
+  SettingsController get controller => Get.find<SettingsController>();
 
   Future<void> _showAddCurrencyDialog() async {
     final currencyController = TextEditingController();
@@ -37,10 +36,7 @@ class SettingsView extends StatelessWidget {
           },
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               final code = currencyController.text.trim();
@@ -58,55 +54,43 @@ class SettingsView extends StatelessWidget {
     if (currency != null && currency.trim().isNotEmpty) {
       await controller.addCustomCurrency(currency);
     }
-
   }
-  Future<void> _showCurrencyListDialog(BuildContext context) async {
-  await Get.dialog(
-    AlertDialog(
-      title: const Text('Select Currency'),
-      content: SizedBox(
-        width: 400,
-        child: Obx(
-          () {
-            const defaultCurrencies = [
-              'PKR',
-              'USD',
-              'EUR',
-              'GBP',
-            ];
 
-            final customCurrencies =
-                controller.customCurrencies.toList();
+  Future<void> _showCurrencyListDialog(BuildContext context) async {
+    await Get.dialog(
+      AlertDialog(
+        title: const Text('Select Currency'),
+        content: SizedBox(
+          width: 400,
+          child: Obx(() {
+            const defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
+
+            final customCurrencies = controller.customCurrencies.toList();
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // DEFAULT CURRENCIES
-                ...defaultCurrencies.map(
-                  (currency) {
-                    final isSelected =
-                        controller.selectedCurrency.value ==
-                            currency;
+                ...defaultCurrencies.map((currency) {
+                  final isSelected =
+                      controller.selectedCurrency.value == currency;
 
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        isSelected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: isSelected
-                            ? AppColors.primary
-                            : null,
-                      ),
-                      title: Text(currency),
-                      subtitle: const Text('Default currency'),
-                      onTap: () async {
-                        await controller.changeCurrency(currency);
-                        Get.back();
-                      },
-                    );
-                  },
-                ),
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      isSelected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: isSelected ? AppColors.primary : null,
+                    ),
+                    title: Text(currency),
+                    subtitle: const Text('Default currency'),
+                    onTap: () async {
+                      await controller.changeCurrency(currency);
+                      Get.back();
+                    },
+                  );
+                }),
 
                 // CUSTOM CURRENCIES
                 if (customCurrencies.isNotEmpty) ...[
@@ -117,133 +101,116 @@ class SettingsView extends StatelessWidget {
                     child: Text(
                       'My Currencies',
                       style: AppTextStyles.bodyMedium(
-                        Theme.of(context).brightness ==
-                                Brightness.dark
+                        Theme.of(context).brightness == Brightness.dark
                             ? true
                             : false,
-                      ).copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
 
                   const SizedBox(height: 6),
 
-                  ...customCurrencies.map(
-                    (currency) {
-                      final isSelected =
-                          controller.selectedCurrency.value ==
-                              currency;
+                  ...customCurrencies.map((currency) {
+                    final isSelected =
+                        controller.selectedCurrency.value == currency;
 
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          isSelected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                          color: isSelected
-                              ? AppColors.primary
-                              : null,
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: isSelected ? AppColors.primary : null,
+                      ),
+                      title: Text(currency),
+                      subtitle: const Text('Custom currency'),
+                      onTap: () async {
+                        await controller.changeCurrency(currency);
+                        Get.back();
+                      },
+                      trailing: IconButton(
+                        tooltip: 'Delete currency',
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppColors.expenseRed,
                         ),
-                        title: Text(currency),
-                        subtitle: const Text('Custom currency'),
-                        onTap: () async {
-                          await controller.changeCurrency(currency);
-                          Get.back();
+                        onPressed: () async {
+                          await _confirmDeleteCurrency(context, currency);
                         },
-                        trailing: IconButton(
-                          tooltip: 'Delete currency',
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: AppColors.expenseRed,
-                          ),
-                          onPressed: () async {
-                            await _confirmDeleteCurrency(
-                              context,
-                              currency,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  }),
                 ],
               ],
             );
-          },
+          }),
         ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Get.back();
+              _showAddCurrencyDialog();
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add Currency'),
+          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
+        ],
       ),
-      actions: [
-        TextButton.icon(
-          onPressed: () {
-            Get.back();
-            _showAddCurrencyDialog();
-          },
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Add Currency'),
+    );
+  }
+
+  Future<void> _confirmDeleteCurrency(
+    BuildContext context,
+    String currency,
+  ) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Delete Currency?'),
+        content: Text(
+          'Are you sure you want to remove "$currency" from your custom currencies?',
         ),
-        TextButton(
-          onPressed: () => Get.back(),
-          child: const Text('Close'),
-        ),
-      ],
-    ),
-  );
-}
-Future<void> _confirmDeleteCurrency(
-  BuildContext context,
-  String currency,
-) async {
-  final confirmed = await Get.dialog<bool>(
-    AlertDialog(
-      title: const Text('Delete Currency?'),
-      content: Text(
-        'Are you sure you want to remove "$currency" from your custom currencies?',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(result: false),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Get.back(result: true),
-          child: const Text(
-            'Delete',
-            style: TextStyle(
-              color: AppColors.expenseRed,
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.expenseRed),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
 
-  if (confirmed == true) {
-    await controller.deleteCustomCurrency(currency);
+    if (confirmed == true) {
+      await controller.deleteCustomCurrency(currency);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-appBar: AppBar(
-  title: Text(
-    'Profile',
-    style: AppTextStyles.headingMedium(isDark).copyWith(
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-  centerTitle: false,
-  actions: const [
-    Padding(
-      padding: EdgeInsets.only(right: 16),
-      child: SyncStatusIndicator(),
-    ),
-  ],
-),
+      appBar: AppBar(
+        title: Text(
+          'Profile',
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: false,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: SyncStatusIndicator(),
+          ),
+        ],
+      ),
       body: Obx(
         () => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
@@ -255,7 +222,6 @@ appBar: AppBar(
             // =====================================================
             // APPEARANCE
             // =====================================================
-
             _SectionHeader(
               title: 'Appearance',
               isDark: isDark,
@@ -280,9 +246,9 @@ appBar: AppBar(
                   ),
                   title: Text(
                     'Dark Mode',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     controller.isDarkMode.value
@@ -301,7 +267,6 @@ appBar: AppBar(
             // =====================================================
             // CURRENCY
             // =====================================================
-
             _SectionHeader(
               title: 'Currency',
               isDark: isDark,
@@ -311,63 +276,60 @@ appBar: AppBar(
             const SizedBox(height: 10),
 
             _SettingsCard(
-  isDark: isDark,
-  children: [
-    ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 6,
-      ),
-      leading: _IconContainer(
-        icon: Icons.currency_exchange_rounded,
-        isDark: isDark,
-      ),
-      title: Text(
-        'Default Currency',
-        style: AppTextStyles.bodyLarge(isDark).copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Obx(
-        () => Text(
-          controller.selectedCurrency.value,
-          style: AppTextStyles.bodyMedium(isDark),
-        ),
-      ),
-      trailing: Obx(
-        () => Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 7,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(
-              alpha: 0.10,
+              isDark: isDark,
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.currency_exchange_rounded,
+                    isDark: isDark,
+                  ),
+                  title: Text(
+                    'Default Currency',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Obx(
+                    () => Text(
+                      controller.selectedCurrency.value,
+                      style: AppTextStyles.bodyMedium(isDark),
+                    ),
+                  ),
+                  trailing: Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        controller.selectedCurrency.value,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    _showCurrencyListDialog(context);
+                  },
+                ),
+              ],
             ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            controller.selectedCurrency.value,
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-      onTap: () {
-        _showCurrencyListDialog(context);
-      },
-    ),
-  ],
-),
 
             const SizedBox(height: 24),
 
             // =====================================================
             // NOTIFICATIONS
             // =====================================================
-
             _SectionHeader(
               title: 'Notifications',
               isDark: isDark,
@@ -390,9 +352,9 @@ appBar: AppBar(
                   ),
                   title: Text(
                     'Bill Notifications',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Receive reminders for upcoming bills',
@@ -409,7 +371,6 @@ appBar: AppBar(
             // =====================================================
             // ACCOUNT
             // =====================================================
-
             _SectionHeader(
               title: 'Account',
               isDark: isDark,
@@ -432,9 +393,9 @@ appBar: AppBar(
                   ),
                   title: Text(
                     'Logout',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Sign out from your ExpenseMate account',
@@ -453,8 +414,7 @@ appBar: AppBar(
                   height: 1,
                   indent: 74,
                   endIndent: 16,
-                  color:
-                      isDark ? Colors.white12 : Colors.black12,
+                  color: isDark ? Colors.white12 : Colors.black12,
                 ),
 
                 ListTile(
@@ -466,9 +426,7 @@ appBar: AppBar(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.expenseRed.withValues(
-                        alpha: 0.10,
-                      ),
+                      color: AppColors.expenseRed.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(13),
                     ),
                     child: const Icon(
@@ -503,7 +461,6 @@ appBar: AppBar(
             // =====================================================
             // ABOUT
             // =====================================================
-
             _SectionHeader(
               title: 'About',
               isDark: isDark,
@@ -527,9 +484,9 @@ appBar: AppBar(
                   ),
                   title: Text(
                     'ExpenseMate',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Expense management made simple',
@@ -542,10 +499,7 @@ appBar: AppBar(
             const SizedBox(height: 30),
 
             Center(
-              child: Text(
-                'ExpenseMate',
-                style: AppTextStyles.caption(isDark),
-              ),
+              child: Text('ExpenseMate', style: AppTextStyles.caption(isDark)),
             ),
 
             const SizedBox(height: 4),
@@ -568,29 +522,22 @@ appBar: AppBar(
   // PROFILE HEADER
   // =============================================================
 
-  Widget _buildProfileHeader(
-    BuildContext context,
-    bool isDark,
-  ) {
+  Widget _buildProfileHeader(BuildContext context, bool isDark) {
     // IMPORTANT:
     // Use the controller's observable values here.
     // Do not read authUser directly for the displayed name/email.
-    final displayName =
-        controller.profileName.value.isNotEmpty
-            ? controller.profileName.value
-            : 'User';
+    final displayName = controller.profileName.value.isNotEmpty
+        ? controller.profileName.value
+        : 'User';
 
-    final displayEmail =
-        controller.profileEmail.value.isNotEmpty
-            ? controller.profileEmail.value
-            : 'No email available';
+    final displayEmail = controller.profileEmail.value.isNotEmpty
+        ? controller.profileEmail.value
+        : 'No email available';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.surfaceDark
-            : AppColors.surfaceLight,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: isDark
@@ -599,9 +546,7 @@ appBar: AppBar(
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: isDark ? 0.12 : 0.05,
-            ),
+            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.05),
             blurRadius: 18,
             offset: const Offset(0, 7),
           ),
@@ -611,29 +556,17 @@ appBar: AppBar(
         children: [
           Align(
             alignment: Alignment.topRight,
-            child: TextButton.icon(
+            child: IconButton(
               onPressed: () {
                 _showEditProfileDialog(context);
               },
-              icon: const Icon(
-                Icons.edit_rounded,
-                size: 17,
-              ),
-              label: const Text(
-                'Edit',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              tooltip: 'Edit profile',
+              icon: const Icon(Icons.edit_rounded, size: 17),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: EdgeInsets.zero,
                 minimumSize: Size.zero,
-                tapTargetSize:
-                    MaterialTapTargetSize.shrinkWrap,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
           ),
@@ -650,9 +583,7 @@ appBar: AppBar(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.primary.withValues(
-                          alpha: 0.25,
-                        ),
+                        color: AppColors.primary.withValues(alpha: 0.25),
                         width: 2,
                       ),
                     ),
@@ -661,23 +592,20 @@ appBar: AppBar(
                       backgroundColor: AppColors.primary,
                       backgroundImage:
                           controller.profilePictureUrl.value.isNotEmpty
-                              ? NetworkImage(
-                                  controller.profilePictureUrl.value,
-                                )
-                              : null,
-                      child:
-                          controller.profilePictureUrl.value.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 29,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
+                          ? NetworkImage(controller.profilePictureUrl.value)
+                          : null,
+                      child: controller.profilePictureUrl.value.isEmpty
+                          ? Text(
+                              displayName.isNotEmpty
+                                  ? displayName[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 29,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
 
@@ -719,17 +647,15 @@ appBar: AppBar(
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:
-                          AppTextStyles.headingMedium(isDark).copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.headingMedium(
+                        isDark,
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
 
                     const SizedBox(height: 5),
@@ -749,11 +675,8 @@ appBar: AppBar(
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(
-                          alpha: 0.10,
-                        ),
-                        borderRadius:
-                            BorderRadius.circular(20),
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
                         'ExpenseMate Account',
@@ -779,8 +702,7 @@ appBar: AppBar(
   // =============================================================
 
   void _showEditProfileDialog(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Get the latest values at the moment the dialog opens.
     final nameController = TextEditingController(
@@ -797,24 +719,20 @@ appBar: AppBar(
 
     Get.dialog(
       AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : Colors.white,
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         title: Row(
           children: [
             Expanded(
               child: Text(
                 'Edit Profile',
-                style:
-                    AppTextStyles.headingMedium(isDark).copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             IconButton(
               onPressed: () => Get.back(),
-              icon: const Icon(
-                Icons.close_rounded,
-              ),
+              icon: const Icon(Icons.close_rounded),
             ),
           ],
         ),
@@ -834,42 +752,35 @@ appBar: AppBar(
                     backgroundColor: AppColors.primary,
                     backgroundImage:
                         controller.profilePictureUrl.value.isNotEmpty
-                            ? NetworkImage(
-                                controller.profilePictureUrl.value,
-                              )
-                            : null,
-                    child:
-                        controller.profilePictureUrl.value.isEmpty
-                            ? Text(
-                                controller.profileName.value.isNotEmpty
-                                    ? controller.profileName.value[0]
-                                        .toUpperCase()
-                                    : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
+                        ? NetworkImage(controller.profilePictureUrl.value)
+                        : null,
+                    child: controller.profilePictureUrl.value.isEmpty
+                        ? Text(
+                            controller.profileName.value.isNotEmpty
+                                ? controller.profileName.value[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
                 Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Obx(
                       () => OutlinedButton.icon(
-                        onPressed:
-                            controller.isUpdatingProfile.value
-                                ? null
-                                : () async {
-                                    await controller
-                                        .pickProfilePicture();
-                                  },
+                        onPressed: controller.isUpdatingProfile.value
+                            ? null
+                            : () async {
+                                await controller.pickProfilePicture();
+                              },
                         icon: const Icon(
                           Icons.photo_library_outlined,
                           size: 18,
@@ -881,32 +792,21 @@ appBar: AppBar(
                     const SizedBox(width: 8),
 
                     Obx(
-                      () => controller
-                              .profilePictureUrl
-                              .value
-                              .isNotEmpty
+                      () => controller.profilePictureUrl.value.isNotEmpty
                           ? OutlinedButton.icon(
-                              onPressed:
-                                  controller
-                                          .isUpdatingProfile
-                                          .value
-                                      ? null
-                                      : () async {
-                                          await controller
-                                              .clearProfilePicture();
-                                        },
+                              onPressed: controller.isUpdatingProfile.value
+                                  ? null
+                                  : () async {
+                                      await controller.clearProfilePicture();
+                                    },
                               icon: const Icon(
                                 Icons.delete_outline_rounded,
                                 size: 18,
-                                color:
-                                    AppColors.expenseRed,
+                                color: AppColors.expenseRed,
                               ),
                               label: const Text(
                                 'Clear',
-                                style: TextStyle(
-                                  color:
-                                      AppColors.expenseRed,
-                                ),
+                                style: TextStyle(color: AppColors.expenseRed),
                               ),
                             )
                           : const SizedBox.shrink(),
@@ -919,16 +819,12 @@ appBar: AppBar(
                 // =================================================
                 // NAME
                 // =================================================
-
                 TextField(
                   controller: nameController,
-                  textCapitalization:
-                      TextCapitalization.words,
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: 'Name',
-                    prefixIcon: Icon(
-                      Icons.person_outline_rounded,
-                    ),
+                    prefixIcon: Icon(Icons.person_outline_rounded),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -938,16 +834,12 @@ appBar: AppBar(
                 // =================================================
                 // EMAIL
                 // =================================================
-
                 TextField(
                   controller: emailController,
-                  keyboardType:
-                      TextInputType.emailAddress,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: Icon(
-                      Icons.email_outlined,
-                    ),
+                    prefixIcon: Icon(Icons.email_outlined),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -957,23 +849,17 @@ appBar: AppBar(
                 // =================================================
                 // PASSWORD
                 // =================================================
-
                 Obx(
                   () => TextField(
                     controller: passwordController,
-                    obscureText:
-                        obscurePassword.value,
+                    obscureText: obscurePassword.value,
                     decoration: InputDecoration(
                       labelText: 'New Password',
-                      hintText:
-                          'Leave empty to keep current password',
-                      prefixIcon: const Icon(
-                        Icons.lock_outline_rounded,
-                      ),
+                      hintText: 'Leave empty to keep current password',
+                      prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(
                         onPressed: () {
-                          obscurePassword.value =
-                              !obscurePassword.value;
+                          obscurePassword.value = !obscurePassword.value;
                         },
                         icon: Icon(
                           obscurePassword.value
@@ -981,8 +867,7 @@ appBar: AppBar(
                               : Icons.visibility_outlined,
                         ),
                       ),
-                      border:
-                          const OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -993,8 +878,7 @@ appBar: AppBar(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Leave password empty if you do not want to change it.',
-                    style:
-                        AppTextStyles.caption(isDark),
+                    style: AppTextStyles.caption(isDark),
                   ),
                 ),
               ],
@@ -1002,36 +886,26 @@ appBar: AppBar(
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
 
           Obx(
             () => ElevatedButton(
-              onPressed:
-                  controller.isUpdatingProfile.value
-                      ? null
-                      : () async {
-                          await controller.updateProfile(
-                            name: nameController.text,
-                            email: emailController.text,
-                            password: passwordController.text,
-                          );
-                        },
-              child:
-                  controller.isUpdatingProfile.value
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Save Changes',
-                        ),
+              onPressed: controller.isUpdatingProfile.value
+                  ? null
+                  : () async {
+                      await controller.updateProfile(
+                        name: nameController.text,
+                        email: emailController.text,
+                        password: passwordController.text,
+                      );
+                    },
+              child: controller.isUpdatingProfile.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save Changes'),
             ),
           ),
         ],
@@ -1052,10 +926,7 @@ appBar: AppBar(
           'Are you sure you want to logout from your ExpenseMate account?',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
@@ -1063,9 +934,7 @@ appBar: AppBar(
             },
             child: const Text(
               'Logout',
-              style: TextStyle(
-                color: AppColors.expenseRed,
-              ),
+              style: TextStyle(color: AppColors.expenseRed),
             ),
           ),
         ],
@@ -1087,10 +956,7 @@ appBar: AppBar(
           'You will not be able to recover your account.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
@@ -1098,9 +964,7 @@ appBar: AppBar(
             },
             child: const Text(
               'Delete Account',
-              style: TextStyle(
-                color: AppColors.expenseRed,
-              ),
+              style: TextStyle(color: AppColors.expenseRed),
             ),
           ),
         ],
@@ -1132,24 +996,17 @@ class _SectionHeader extends StatelessWidget {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(
-              alpha: 0.10,
-            ),
+            color: AppColors.primary.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Icon(
-            icon,
-            size: 17,
-            color: AppColors.primary,
-          ),
+          child: Icon(icon, size: 17, color: AppColors.primary),
         ),
         const SizedBox(width: 10),
         Text(
           title,
-          style:
-              AppTextStyles.headingMedium(isDark).copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -1164,18 +1021,13 @@ class _SettingsCard extends StatelessWidget {
   final List<Widget> children;
   final bool isDark;
 
-  const _SettingsCard({
-    required this.children,
-    required this.isDark,
-  });
+  const _SettingsCard({required this.children, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.surfaceDark
-            : AppColors.surfaceLight,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark
@@ -1184,9 +1036,7 @@ class _SettingsCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: isDark ? 0.08 : 0.035,
-            ),
+            color: Colors.black.withValues(alpha: isDark ? 0.08 : 0.035),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1194,9 +1044,7 @@ class _SettingsCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
@@ -1210,10 +1058,7 @@ class _IconContainer extends StatelessWidget {
   final IconData icon;
   final bool isDark;
 
-  const _IconContainer({
-    required this.icon,
-    required this.isDark,
-  });
+  const _IconContainer({required this.icon, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -1221,15 +1066,10 @@ class _IconContainer extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
-          alpha: 0.10,
-        ),
+        color: AppColors.primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(13),
       ),
-      child: Icon(
-        icon,
-        color: AppColors.primary,
-      ),
+      child: Icon(icon, color: AppColors.primary),
     );
   }
 }
