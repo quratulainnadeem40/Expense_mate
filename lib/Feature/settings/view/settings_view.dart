@@ -1,5 +1,6 @@
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -228,15 +229,21 @@ Future<void> _confirmDeleteCurrency(
         Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: AppTextStyles.headingMedium(isDark).copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: false,
-      ),
+appBar: AppBar(
+  title: Text(
+    'Profile',
+    style: AppTextStyles.headingMedium(isDark).copyWith(
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  centerTitle: false,
+  actions: const [
+    Padding(
+      padding: EdgeInsets.only(right: 16),
+      child: SyncStatusIndicator(),
+    ),
+  ],
+),
       body: Obx(
         () => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),

@@ -726,10 +726,20 @@ class BudgetController extends GetxController {
   // ================================================================
 
   Future<void> _saveCategoryBudgetToDatabase({
+    
     required String userId,
     required CategoryModel category,
     required double amount,
   }) async {
+    if (amount < 0) {
+  throw Exception('Budget amount cannot be negative.');
+}
+
+if (amount > 9999999999.99) {
+  throw Exception(
+    'Budget amount cannot be greater than 9,999,999,999.99.',
+  );
+}
     final budgets =
         await budgetLocal.getBudgets(userId);
 
@@ -792,6 +802,15 @@ class BudgetController extends GetxController {
     required String userId,
     required double amount,
   }) async {
+    if (amount < 0) {
+  throw Exception('Budget amount cannot be negative.');
+}
+
+if (amount > 9999999999.99) {
+  throw Exception(
+    'Budget amount cannot be greater than 9,999,999,999.99.',
+  );
+}
     final budgets =
         await budgetLocal.getBudgets(userId);
 

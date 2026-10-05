@@ -10,10 +10,17 @@ import 'package:expense_mate/Feature/Categories/controller/categories_controller
 
 
 
-import 'package:expense_mate/Feature/Wallets/controller/wallets_controller.dart';
+import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 
 class AddTransactionDialog extends StatefulWidget {
-  const AddTransactionDialog({super.key});
+  final TransactionModel? transaction;
+
+  const AddTransactionDialog({
+    super.key,
+    this.transaction,
+  });
+
+  bool get isEdit => transaction != null;
 
   @override
   State<AddTransactionDialog> createState() => _AddTransactionDialogState();
@@ -34,18 +41,33 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   bool _isSaving = false;
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    _titleController = TextEditingController();
-    _amountController = TextEditingController();
+  _titleController = TextEditingController();
+  _amountController = TextEditingController();
 
-    _transactionController = Get.find<TransactionsController>();
-    _categoryController = Get.find<CategoriesController>();
-    _walletController = Get.find<WalletsController>();
+_transactionController = Get.find<TransactionsController>();
+_categoryController = Get.find<CategoriesController>();
 
-    _loadData();
+if (Get.isRegistered<WalletsController>()) {
+  _walletController = Get.find<WalletsController>();
+} else {
+  _walletController = Get.put(WalletsController());
+}
+
+  final transaction = widget.transaction;
+
+  if (transaction != null) {
+    _titleController.text = transaction.title;
+    _amountController.text = transaction.amount.toString();
+    _selectedCategoryId = transaction.categoryId;
+    _selectedWalletId = transaction.walletId;
+    _isIncome = transaction.type.toLowerCase() == 'income';
   }
+
+  _loadData();
+}
 
   Future<void> _loadData() async {
     try {
@@ -139,92 +161,112 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   // ------------------------------------------------------------
 
   Future<void> _saveTransaction() async {
-    if (_isSaving) return;
+  if (_isSaving) return;
 
-    final String title = _titleController.text.trim();
-    final String amountText = _amountController.text.trim();
+  final String title = _titleController.text.trim();
+  final String amountText = _amountController.text.trim();
 
-    if (title.isEmpty) {
-      await _showMessage(
-        'Missing title',
-        'Please enter a transaction title.',
+  if (title.isEmpty) {
+    await _showMessage(
+      'Missing title',
+      'Please enter a transaction title.',
+    );
+    return;
+  }
+
+  if (amountText.isEmpty) {
+    await _showMessage(
+      'Missing amount',
+      'Please enter an amount.',
+    );
+    return;
+  }
+
+  final double? amount = double.tryParse(amountText);
+
+  if (amount == null || amount <= 0) {
+    await _showMessage(
+      'Invalid amount',
+      'Please enter a valid amount.',
+    );
+    return;
+  }
+
+  if (_selectedCategoryId == null ||
+      _selectedCategoryId!.trim().isEmpty) {
+    await _showMessage(
+      'Missing category',
+      'Please select a category.',
+    );
+    return;
+  }
+
+  if (_selectedWalletId == null ||
+      _selectedWalletId!.trim().isEmpty) {
+    await _showMessage(
+      'Missing wallet',
+      'Please select a wallet.',
+    );
+    return;
+  }
+
+  setState(() {
+    _isSaving = true;
+  });
+
+  try {
+    final existingTransaction = widget.transaction;
+
+    final TransactionModel transaction = TransactionModel(
+      id: existingTransaction?.id ?? _generateUuid(),
+      userId: existingTransaction?.userId ?? '',
+      walletId: _selectedWalletId!,
+      categoryId: _selectedCategoryId!,
+      title: title,
+      amount: amount,
+      type: _isIncome ? 'income' : 'expense',
+      transactionDate:
+          existingTransaction?.transactionDate ?? DateTime.now(),
+      note: existingTransaction?.note ?? title,
+      createdAt: existingTransaction?.createdAt ?? DateTime.now(),
+    );
+
+    bool success;
+
+    if (widget.isEdit) {
+      success = await _transactionController.updateTransaction(
+        transaction,
       );
-      return;
+    } else {
+      success = await _transactionController.addTransaction(
+        transaction,
+      );
     }
 
-    if (amountText.isEmpty) {
-      await _showMessage(
-        'Missing amount',
-        'Please enter an amount.',
-      );
-      return;
-    }
+    if (!mounted) return;
 
-    final double? amount = double.tryParse(amountText);
-
-    if (amount == null || amount <= 0) {
-      await _showMessage(
-        'Invalid amount',
-        'Please enter a valid amount.',
-      );
-      return;
-    }
-
-    if (_selectedCategoryId == null ||
-        _selectedCategoryId!.trim().isEmpty) {
-      await _showMessage(
-        'Missing category',
-        'Please select a category.',
-      );
-      return;
-    }
-
-    if (_selectedWalletId == null ||
-        _selectedWalletId!.trim().isEmpty) {
-      await _showMessage(
-        'Missing wallet',
-        'Please select a wallet.',
-      );
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      final TransactionModel transaction = TransactionModel(
-        id: _generateUuid(),
-        userId: '',
-        walletId: _selectedWalletId!,
-        categoryId: _selectedCategoryId!,
-        title: title,
-        amount: amount,
-        type: _isIncome ? 'income' : 'expense',
-        transactionDate: DateTime.now(),
-        note: title,
-        createdAt: DateTime.now(),
-      );
-
-      await _transactionController.addTransaction(transaction);
-
-      if (!mounted) return;
-
+    if (success) {
       Navigator.of(context).pop();
-    } catch (e) {
-      if (!mounted) return;
-
+    } else {
       setState(() {
         _isSaving = false;
       });
-
-      await _showMessage(
-        'Save failed',
-        'Unable to save transaction. Please try again.',
-      );
     }
-  }
+  } catch (e) {
+    if (!mounted) return;
 
+    setState(() {
+      _isSaving = false;
+    });
+
+    await _showMessage(
+      widget.isEdit ? 'Update failed' : 'Save failed',
+      widget.isEdit
+          ? 'Unable to update transaction. Please try again.'
+          : 'Unable to save transaction. Please try again.',
+    );
+  }
+}
   // ------------------------------------------------------------
   // MESSAGE
   // ------------------------------------------------------------
@@ -276,9 +318,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
     return AlertDialog(
       title: Text(
-        'Add Transaction',
-        style: AppTextStyles.headingMedium(isDark),
-      ),
+  widget.isEdit ? 'Edit Transaction' : 'Add Transaction',
+  style: AppTextStyles.headingMedium(isDark),
+),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -487,7 +529,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                     strokeWidth: 2,
                   ),
                 )
-              : const Text('Save'),
+             : Text(widget.isEdit ? 'Update' : 'Save'),
         ),
       ],
     );

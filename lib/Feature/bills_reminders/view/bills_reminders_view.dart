@@ -52,33 +52,33 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // SUMMARY
               // ====================================================
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryCard(
-                      title: 'Upcoming',
-                      count: controller.upcomingCount,
-                      currency:
-                          settingsController.selectedCurrency.value,
-                      amount: controller.upcomingAmount,
-                      icon: Icons.event_note_rounded,
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _SummaryCard(
-                      title: 'Overdue',
-                      count: controller.overdueCount,
-                      currency:
-                          settingsController.selectedCurrency.value,
-                      amount: controller.overdueAmount,
-                      icon: Icons.warning_amber_rounded,
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
-              ),
+Column(
+  children: [
+    _SummaryCard(
+      title: 'Upcoming',
+      count: controller.upcomingCount,
+      currency:
+          settingsController.selectedCurrency.value,
+      amount: controller.upcomingAmount,
+      icon: Icons.event_note_rounded,
+      isDark: isDark,
+      fullWidth: true,
+    ),
+
+    const SizedBox(height: 12),
+
+    _SummaryCard(
+      title: 'Overdue',
+      count: controller.overdueCount,
+      currency:
+          settingsController.selectedCurrency.value,
+      amount: controller.overdueAmount,
+      icon: Icons.warning_amber_rounded,
+      isDark: isDark,
+      fullWidth: true,
+    ),
+  ],
+),
 
               const SizedBox(height: 12),
 
