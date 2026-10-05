@@ -57,93 +57,170 @@ class SettingsView extends StatelessWidget {
   }
 
   Future<void> _showCurrencyListDialog(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     await Get.dialog(
       AlertDialog(
-        title: const Text('Select Currency'),
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+        title: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(
+                Icons.currency_exchange_rounded,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Currency',
+                    style: AppTextStyles.headingMedium(
+                      isDark,
+                    ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Choose your preferred currency',
+                    style: AppTextStyles.caption(isDark),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         content: SizedBox(
           width: 400,
-          child: Obx(() {
-            const defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 390),
+            child: SingleChildScrollView(
+              child: Obx(() {
+                const defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
 
-            final customCurrencies = controller.customCurrencies.toList();
+                final customCurrencies = controller.customCurrencies.toList();
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // DEFAULT CURRENCIES
-                ...defaultCurrencies.map((currency) {
+                Widget currencyTile({
+                  required String currency,
+                  required bool isCustom,
+                }) {
                   final isSelected =
                       controller.selectedCurrency.value == currency;
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      isSelected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_off,
-                      color: isSelected ? AppColors.primary : null,
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary.withValues(
+                              alpha: isDark ? 0.2 : 0.08,
+                            )
+                          : AppColors.cardAlt(isDark),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.45)
+                            : AppColors.border(isDark),
+                      ),
                     ),
-                    title: Text(currency),
-                    subtitle: const Text('Default currency'),
-                    onTap: () async {
-                      await controller.changeCurrency(currency);
-                      Get.back();
-                    },
-                  );
-                }),
-
-                // CUSTOM CURRENCIES
-                if (customCurrencies.isNotEmpty) ...[
-                  const Divider(height: 20),
-
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'My Currencies',
-                      style: AppTextStyles.bodyMedium(
-                        Theme.of(context).brightness == Brightness.dark
-                            ? true
-                            : false,
-                      ).copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  ...customCurrencies.map((currency) {
-                    final isSelected =
-                        controller.selectedCurrency.value == currency;
-
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.only(
+                        left: 14,
+                        right: isCustom ? 4 : 14,
+                      ),
+                      minVerticalPadding: 10,
                       leading: Icon(
                         isSelected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: isSelected ? AppColors.primary : null,
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary(isDark),
                       ),
-                      title: Text(currency),
-                      subtitle: const Text('Custom currency'),
+                      title: Text(
+                        currency,
+                        style: AppTextStyles.bodyLarge(
+                          isDark,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        isCustom ? 'Custom currency' : 'Default currency',
+                        style: AppTextStyles.caption(isDark),
+                      ),
                       onTap: () async {
                         await controller.changeCurrency(currency);
                         Get.back();
                       },
-                      trailing: IconButton(
-                        tooltip: 'Delete currency',
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: AppColors.expenseRed,
+                      trailing: isCustom
+                          ? IconButton(
+                              tooltip: 'Delete currency',
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.expenseRed,
+                              ),
+                              onPressed: () async {
+                                await _confirmDeleteCurrency(context, currency);
+                              },
+                            )
+                          : null,
+                    ),
+                  );
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...defaultCurrencies.map(
+                      (currency) =>
+                          currencyTile(currency: currency, isCustom: false),
+                    ),
+                    if (customCurrencies.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Divider(color: AppColors.border(isDark)),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              child: Text(
+                                'MY CURRENCIES',
+                                style: AppTextStyles.caption(isDark).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(color: AppColors.border(isDark)),
+                            ),
+                          ],
                         ),
-                        onPressed: () async {
-                          await _confirmDeleteCurrency(context, currency);
-                        },
                       ),
-                    );
-                  }),
-                ],
-              ],
-            );
-          }),
+                      ...customCurrencies.map(
+                        (currency) =>
+                            currencyTile(currency: currency, isCustom: true),
+                      ),
+                    ],
+                  ],
+                );
+              }),
+            ),
+          ),
         ),
         actions: [
           TextButton.icon(
@@ -153,8 +230,19 @@ class SettingsView extends StatelessWidget {
             },
             icon: const Icon(Icons.add_rounded),
             label: const Text('Add Currency'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
           ),
-          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Get.back(),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary(isDark),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -717,9 +805,41 @@ class SettingsView extends StatelessWidget {
 
     final obscurePassword = true.obs;
 
+    InputDecoration profileFieldDecoration({
+      required String label,
+      required IconData icon,
+      String? hint,
+      Widget? suffix,
+    }) {
+      final radius = BorderRadius.circular(12);
+      return InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: AppColors.cardAlt(isDark),
+        border: OutlineInputBorder(borderRadius: radius),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: AppColors.border(isDark)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      );
+    }
+
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 16, 16, 4),
+        contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 20, 18),
+        actionsAlignment: MainAxisAlignment.end,
         title: Row(
           children: [
             Expanded(
@@ -733,6 +853,10 @@ class SettingsView extends StatelessWidget {
             IconButton(
               onPressed: () => Get.back(),
               icon: const Icon(Icons.close_rounded),
+              style: IconButton.styleFrom(
+                foregroundColor: AppColors.textSecondary(isDark),
+                backgroundColor: AppColors.cardAlt(isDark),
+              ),
             ),
           ],
         ),
@@ -747,25 +871,45 @@ class SettingsView extends StatelessWidget {
                 // =================================================
 
                 Obx(
-                  () => CircleAvatar(
-                    radius: 45,
-                    backgroundColor: AppColors.primary,
-                    backgroundImage:
-                        controller.profilePictureUrl.value.isNotEmpty
-                        ? NetworkImage(controller.profilePictureUrl.value)
-                        : null,
-                    child: controller.profilePictureUrl.value.isEmpty
-                        ? Text(
-                            controller.profileName.value.isNotEmpty
-                                ? controller.profileName.value[0].toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
+                  () => Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.28),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.24 : 0.08,
+                          ),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 41,
+                      backgroundColor: AppColors.primary,
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
+                          ? NetworkImage(controller.profilePictureUrl.value)
+                          : null,
+                      child: controller.profilePictureUrl.value.isEmpty
+                          ? Text(
+                              controller.profileName.value.isNotEmpty
+                                  ? controller.profileName.value[0]
+                                        .toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
                 ),
 
@@ -786,6 +930,17 @@ class SettingsView extends StatelessWidget {
                           size: 18,
                         ),
                         label: const Text('Change'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                          ),
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 11,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -808,6 +963,19 @@ class SettingsView extends StatelessWidget {
                                 'Clear',
                                 style: TextStyle(color: AppColors.expenseRed),
                               ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.expenseRed,
+                                side: BorderSide(
+                                  color: AppColors.expenseRed.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                ),
+                                shape: const StadiumBorder(),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 11,
+                                ),
+                              ),
                             )
                           : const SizedBox.shrink(),
                     ),
@@ -822,10 +990,9 @@ class SettingsView extends StatelessWidget {
                 TextField(
                   controller: nameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
-                    border: OutlineInputBorder(),
+                  decoration: profileFieldDecoration(
+                    label: 'Name',
+                    icon: Icons.person_outline_rounded,
                   ),
                 ),
 
@@ -837,10 +1004,9 @@ class SettingsView extends StatelessWidget {
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: profileFieldDecoration(
+                    label: 'Email',
+                    icon: Icons.email_outlined,
                   ),
                 ),
 
@@ -853,11 +1019,11 @@ class SettingsView extends StatelessWidget {
                   () => TextField(
                     controller: passwordController,
                     obscureText: obscurePassword.value,
-                    decoration: InputDecoration(
-                      labelText: 'New Password',
-                      hintText: 'Leave empty to keep current password',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      suffixIcon: IconButton(
+                    decoration: profileFieldDecoration(
+                      label: 'New Password',
+                      hint: 'Leave empty to keep current password',
+                      icon: Icons.lock_outline_rounded,
+                      suffix: IconButton(
                         onPressed: () {
                           obscurePassword.value = !obscurePassword.value;
                         },
@@ -867,7 +1033,6 @@ class SettingsView extends StatelessWidget {
                               : Icons.visibility_outlined,
                         ),
                       ),
-                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -886,7 +1051,14 @@ class SettingsView extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.back(),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary(isDark),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            child: const Text('Cancel'),
+          ),
 
           Obx(
             () => ElevatedButton(
@@ -899,6 +1071,16 @@ class SettingsView extends StatelessWidget {
                         password: passwordController.text,
                       );
                     },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 13,
+                ),
+              ),
               child: controller.isUpdatingProfile.value
                   ? const SizedBox(
                       width: 20,
@@ -919,23 +1101,81 @@ class SettingsView extends StatelessWidget {
   // =============================================================
 
   void _showLogoutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Get.dialog(
       AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        title: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(
+                  alpha: isDark ? 0.18 : 0.1,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: AppColors.expenseRed,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Logout?',
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
           'Are you sure you want to logout from your ExpenseMate account?',
+          style: AppTextStyles.bodyMedium(isDark).copyWith(height: 1.5),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-              await controller.logout();
-            },
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: AppColors.expenseRed),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Get.back(),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary(isDark),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () async {
+                  Get.back();
+                  await controller.logout();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.expenseRed,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                ),
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: const Text('Logout'),
+              ),
+            ],
           ),
         ],
       ),
@@ -947,25 +1187,123 @@ class SettingsView extends StatelessWidget {
   // =============================================================
 
   void _showDeleteAccountDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Get.dialog(
       AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text(
-          'This action is permanent. Your ExpenseMate account '
-          'and associated account data will be deleted. '
-          'You will not be able to recover your account.',
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        title: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(
+                  alpha: isDark ? 0.18 : 0.1,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.delete_forever_rounded,
+                color: AppColors.expenseRed,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Delete Account?',
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This action is permanent. Your ExpenseMate account '
+              'and associated account data will be deleted. '
+              'You will not be able to recover your account.',
+              style: AppTextStyles.bodyMedium(isDark).copyWith(height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(
+                  alpha: isDark ? 0.16 : 0.08,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.expenseRed.withValues(alpha: 0.22),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.expenseRed,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'This cannot be undone.',
+                      style: AppTextStyles.bodyMedium(isDark).copyWith(
+                        color: AppColors.expenseRed,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-              await controller.deleteAccount();
-            },
-            child: const Text(
-              'Delete Account',
-              style: TextStyle(color: AppColors.expenseRed),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Get.back(),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary(isDark),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () async {
+                  Get.back();
+                  await controller.deleteAccount();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.expenseRed,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text('Delete Account'),
+              ),
+            ],
           ),
         ],
       ),
