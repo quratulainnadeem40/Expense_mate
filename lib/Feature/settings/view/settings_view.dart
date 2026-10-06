@@ -650,145 +650,157 @@ class SettingsView extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: IconButton(
-              onPressed: () {
-                _showEditProfileDialog(context);
-              },
-              tooltip: 'Edit profile',
-              icon: const Icon(Icons.edit_rounded, size: 17),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.25),
-                        width: 2,
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundColor: AppColors.primary,
-                      backgroundImage:
-                          controller.profilePictureUrl.value.isNotEmpty
-                          ? NetworkImage(controller.profilePictureUrl.value)
-                          : null,
-                      child: controller.profilePictureUrl.value.isEmpty
-                          ? Text(
-                              displayName.isNotEmpty
-                                  ? displayName[0].toUpperCase()
-                                  : 'U',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 29,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Material(
-                      color: AppColors.primary,
-                      shape: const CircleBorder(),
-                      elevation: 3,
-                      child: InkWell(
-                        onTap: controller.pickProfilePicture,
-                        customBorder: const CircleBorder(),
-                        child: Container(
-                          width: 31,
-                          height: 31,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark
-                                  ? AppColors.surfaceDark
-                                  : AppColors.surfaceLight,
-                              width: 2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt_rounded,
-                            color: Colors.white,
-                            size: 15,
-                          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 50),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          width: 2,
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(width: 18),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.headingMedium(
-                        isDark,
-                      ).copyWith(fontWeight: FontWeight.bold),
-                    ),
-
-                    const SizedBox(height: 5),
-
-                    Text(
-                      displayEmail,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyMedium(isDark),
-                    ),
-
-                    const SizedBox(height: 9),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.primary,
+                        backgroundImage:
+                            controller.profilePictureUrl.value.isNotEmpty
+                            ? NetworkImage(controller.profilePictureUrl.value)
+                            : null,
+                        child: controller.profilePictureUrl.value.isEmpty
+                            ? Text(
+                                displayName.isNotEmpty
+                                    ? displayName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 29,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'ExpenseMate Account',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                    ),
+
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Material(
+                        color: AppColors.primary,
+                        shape: const CircleBorder(),
+                        elevation: 3,
+                        child: InkWell(
+                          onTap: controller.pickProfilePicture,
+                          customBorder: const CircleBorder(),
+                          child: Container(
+                            width: 31,
+                            height: 31,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : AppColors.surfaceLight,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 15,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
+
+                const SizedBox(width: 18),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.headingMedium(
+                          isDark,
+                        ).copyWith(fontWeight: FontWeight.bold),
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      Text(
+                        displayEmail,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMedium(isDark),
+                      ),
+
+                      const SizedBox(height: 9),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'ExpenseMate Account',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Material(
+              color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.09),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _showEditProfileDialog(context),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.16),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -846,18 +858,42 @@ class SettingsView extends StatelessWidget {
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-        titlePadding: const EdgeInsets.fromLTRB(24, 16, 16, 4),
+        titlePadding: const EdgeInsets.fromLTRB(24, 22, 16, 6),
         contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 20, 18),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actionsAlignment: MainAxisAlignment.end,
         title: Row(
           children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.manage_accounts_rounded,
+                color: AppColors.primary,
+                size: 23,
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                'Edit Profile',
-                style: AppTextStyles.headingMedium(
-                  isDark,
-                ).copyWith(fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Edit profile',
+                    style: AppTextStyles.headingMedium(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Update your account details',
+                    style: AppTextStyles.caption(isDark),
+                  ),
+                ],
               ),
             ),
             IconButton(
@@ -923,7 +959,7 @@ class SettingsView extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -992,7 +1028,20 @@ class SettingsView extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 22),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'ACCOUNT DETAILS',
+                    style: AppTextStyles.caption(isDark).copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 // =================================================
                 // NAME
@@ -1000,6 +1049,7 @@ class SettingsView extends StatelessWidget {
                 TextField(
                   controller: nameController,
                   textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
                   decoration: profileFieldDecoration(
                     label: 'Name',
                     icon: Icons.person_outline_rounded,
@@ -1014,6 +1064,7 @@ class SettingsView extends StatelessWidget {
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   decoration: profileFieldDecoration(
                     label: 'Email',
                     icon: Icons.email_outlined,
@@ -1029,6 +1080,7 @@ class SettingsView extends StatelessWidget {
                   () => TextField(
                     controller: passwordController,
                     obscureText: obscurePassword.value,
+                    textInputAction: TextInputAction.done,
                     decoration: profileFieldDecoration(
                       label: 'New Password',
                       hint: 'Leave empty to keep current password',
@@ -1065,7 +1117,7 @@ class SettingsView extends StatelessWidget {
             onPressed: () => Get.back(),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary(isDark),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
             ),
             child: const Text('Cancel'),
           ),
@@ -1085,9 +1137,11 @@ class SettingsView extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: const StadiumBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(13),
+                ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
+                  horizontal: 20,
                   vertical: 13,
                 ),
               ),
@@ -1097,7 +1151,10 @@ class SettingsView extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save Changes'),
+                  : const Text(
+                      'Save changes',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
             ),
           ),
         ],
