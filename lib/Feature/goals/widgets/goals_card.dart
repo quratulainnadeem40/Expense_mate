@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../controller/goals_controller.dart';
+import '../model/goal_icon.dart';
 import '../model/goals_model.dart';
 
 const Color kGoalGreen = Color(0xFF2EA44F);
@@ -58,7 +57,11 @@ class GoalsCard extends StatelessWidget {
                   color: kGoalGreen.withOpacity(isDark ? 0.18 : 0.10),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Text(goal.emoji, style: const TextStyle(fontSize: 22)),
+                child: Icon(
+                  goalIconFor(goal.iconKey).icon,
+                  color: kGoalGreen,
+                  size: 23,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -93,10 +96,19 @@ class GoalsCard extends StatelessWidget {
                 },
                 itemBuilder: (_) => [
                   _menuItem('edit', Icons.edit_outlined, 'Edit goal', theme),
-                  _menuItem('withdraw', Icons.south_west_rounded,
-                      'Withdraw money', theme),
-                  _menuItem('delete', Icons.delete_outline_rounded,
-                      'Delete goal', theme, danger: true),
+                  _menuItem(
+                    'withdraw',
+                    Icons.south_west_rounded,
+                    'Withdraw money',
+                    theme,
+                  ),
+                  _menuItem(
+                    'delete',
+                    Icons.delete_outline_rounded,
+                    'Delete goal',
+                    theme,
+                    danger: true,
+                  ),
                 ],
               ),
             ],
@@ -151,8 +163,9 @@ class GoalsCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: goal.progress,
               minHeight: 9,
-              backgroundColor:
-                  isDark ? Colors.white12 : Colors.black.withOpacity(0.07),
+              backgroundColor: isDark
+                  ? Colors.white12
+                  : Colors.black.withOpacity(0.07),
               valueColor: const AlwaysStoppedAnimation<Color>(kGoalGreen),
             ),
           ),
@@ -196,7 +209,7 @@ class GoalsCard extends StatelessWidget {
                       Text(
                         goal.daysLeft > 0
                             ? 'Save about Rs. '
-                                '${formatMoney(goal.monthlyTarget)} a month'
+                                  '${formatMoney(goal.monthlyTarget)} a month'
                             : 'Target date has passed',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
