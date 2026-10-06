@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -93,6 +92,11 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
       text: existingMember?['name'] ?? '',
     );
 
+    final TextEditingController fatherHusbandNameController =
+        TextEditingController(
+      text: existingMember?['fatherHusbandName'] ?? '',
+    );
+
     final TextEditingController phoneController =
         TextEditingController(
       text: existingMember?['phone'] ?? '',
@@ -122,6 +126,16 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                TextField(
+                  controller: fatherHusbandNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Father Name / Husband Name',
+                    hintText: 'Enter father name or husband name',
+                  ),
+                ),
+                const SizedBox(height: 12),
+
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
@@ -131,6 +145,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   ),
                 ),
                 const SizedBox(height: 12),
+
                 TextField(
                   controller: contributionController,
                   keyboardType:
@@ -160,6 +175,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                 final String name =
                     nameController.text.trim();
 
+                final String fatherHusbandName =
+                    fatherHusbandNameController.text.trim();
+
                 final String phone =
                     phoneController.text.trim();
 
@@ -173,6 +191,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                 setState(() {
                   final Map<String, String> newMember = {
                     'name': name,
+                    'fatherHusbandName': fatherHusbandName,
                     'phone': phone,
                     'contribution': contribution,
                     'paymentStatus': isEdit
@@ -245,15 +264,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           children: [
             _buildHeader(),
             const SizedBox(height: 20),
-
             _buildSummarySection(),
-
             const SizedBox(height: 20),
-
             _buildProgressSection(),
-
             const SizedBox(height: 20),
-
             _buildMembersSection(),
           ],
         ),
@@ -684,4 +698,3 @@ class ThousandsSeparatorInputFormatter
     return result.toString();
   }
 }
-

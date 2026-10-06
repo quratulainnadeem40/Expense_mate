@@ -1241,7 +1241,6 @@ class ThousandsSeparatorInputFormatter
         decimalPart != null
             ? '$formattedInteger.$decimalPart'
             : formattedInteger;
-
     return TextEditingValue(
       text: formattedValue,
       selection: TextSelection.collapsed(
