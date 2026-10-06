@@ -49,19 +49,9 @@ class GoalsCard extends StatelessWidget {
           // ---------------------------------------------------- header
           Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: kGoalGreen.withOpacity(isDark ? 0.18 : 0.10),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  goalIconFor(goal.iconKey).icon,
-                  color: kGoalGreen,
-                  size: 23,
-                ),
+              GoalIconBadge(
+                iconKey: goal.iconKey,
+                size: 46,
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -229,7 +229,6 @@ class GoalsView extends GetView<GoalsController> {
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final iconKey = iconKeys[i];
-                        final option = goalIconFor(iconKey);
                         final selected = current == iconKey;
                         return GestureDetector(
                           onTap: () =>
@@ -251,13 +250,7 @@ class GoalsView extends GetView<GoalsController> {
                                 width: 1.6,
                               ),
                             ),
-                            child: Icon(
-                              option.icon,
-                              size: 23,
-                              color: selected
-                                  ? kGoalGreen
-                                  : theme.textTheme.bodyLarge?.color,
-                            ),
+                            child: GoalIconBadge(iconKey: iconKey, size: 38),
                           ),
                         );
                       },
@@ -560,11 +553,7 @@ class GoalsView extends GetView<GoalsController> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(
-                                goalIconFor(goal.iconKey).icon,
-                                size: 16,
-                                color: kGoalGreen,
-                              ),
+                              GoalIconBadge(iconKey: goal.iconKey, size: 24),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
@@ -1171,13 +1160,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  option.icon,
-                                  size: 22,
-                                  color: selected
-                                      ? kGoalGreen
-                                      : theme.textTheme.bodyLarge?.color,
-                                ),
+                                GoalIconBadge(iconKey: option.key, size: 34),
                                 const SizedBox(height: 5),
                                 Text(
                                   option.label,
@@ -1267,13 +1250,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
-                                    option.icon,
-                                    size: 25,
-                                    color: selected
-                                        ? kGoalGreen
-                                        : theme.textTheme.bodyLarge?.color,
-                                  ),
+                                  GoalIconBadge(iconKey: option.key, size: 42),
                                   const SizedBox(height: 7),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(

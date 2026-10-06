@@ -13,10 +13,129 @@ class GoalIconOption {
   final IconData icon;
   final String keywords;
 
+  String get emoji => _goalIconEmojis[key] ?? '🎯';
+
+  Color get badgeColor {
+    final index = goalIconOptions.indexWhere((option) => option.key == key);
+    return _goalIconBadgeColors[(index < 0 ? 0 : index) %
+        _goalIconBadgeColors.length];
+  }
+
   bool matches(String query) {
     final normalizedQuery = query.trim().toLowerCase();
     if (normalizedQuery.isEmpty) return true;
     return '$label $key $keywords'.toLowerCase().contains(normalizedQuery);
+  }
+}
+
+const Map<String, String> _goalIconEmojis = {
+  'target': '🎯',
+  'savings': '🐷',
+  'home': '🏠',
+  'car': '🚗',
+  'phone': '📱',
+  'laptop': '💻',
+  'travel': '✈️',
+  'education': '🎓',
+  'wedding': '💍',
+  'health': '🏥',
+  'gift': '🎁',
+  'work': '💼',
+  'business': '🏢',
+  'investment': '📈',
+  'retirement': '🏖️',
+  'emergency': '🧰',
+  'family': '👨‍👩‍👧‍👦',
+  'child': '🧒',
+  'pet': '🐾',
+  'food': '🍽️',
+  'coffee': '☕',
+  'clothing': '👕',
+  'fitness': '🏋️',
+  'bicycle': '🚲',
+  'motorcycle': '🏍️',
+  'home_repair': '🛠️',
+  'furniture': '🛋️',
+  'camera': '📷',
+  'music': '🎵',
+  'gaming': '🎮',
+  'book': '📚',
+  'art': '🎨',
+  'charity': '🤝',
+  'nature': '🌳',
+  'camping': '🏕️',
+  'water': '🏊',
+  'solar': '☀️',
+  'phone_bill': '🧾',
+  'credit_card': '💳',
+  'bank': '🏦',
+  'cash': '💵',
+  'chart': '📊',
+  'calendar': '🗓️',
+  'clock': '⏰',
+  'key': '🔑',
+  'shield': '🛡️',
+  'light': '💡',
+  'star': '⭐',
+  'diamond': '💎',
+  'watch': '⌚',
+  'flight': '✈️',
+  'train': '🚆',
+  'bus': '🚌',
+  'boat': '🚤',
+  'apartment': '🏙️',
+  'store': '🏬',
+  'tools': '🔧',
+  'computer': '🖥️',
+  'tablet': '📲',
+  'headphones': '🎧',
+  'watch_sport': '⚽',
+  'trophy': '🏆',
+  'language': '🌐',
+  'science': '🔬',
+  'medical': '🩺',
+  'dentist': '🦷',
+  'baby': '👶',
+  'celebration': '🎉',
+  'heart': '❤️',
+  'check': '✅',
+};
+
+const List<Color> _goalIconBadgeColors = [
+  Color(0xFFE8E8F7),
+  Color(0xFFFFE5DC),
+  Color(0xFFFFEDCF),
+  Color(0xFFE0F0FF),
+  Color(0xFFE5F3E6),
+  Color(0xFFF5E4F2),
+  Color(0xFFE4F2F0),
+  Color(0xFFF2E9DC),
+];
+
+class GoalIconBadge extends StatelessWidget {
+  const GoalIconBadge({super.key, required this.iconKey, required this.size});
+
+  final String? iconKey;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final option = goalIconFor(iconKey);
+
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: option.badgeColor,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        option.emoji,
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: size * 0.58, height: 1),
+      ),
+    );
   }
 }
 
