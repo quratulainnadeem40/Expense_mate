@@ -215,13 +215,20 @@ class GoalsView extends GetView<GoalsController> {
                   height: 50,
                   child: Obx(() {
                     final current = controller.selectedIconKey.value;
+                    final iconKeys = [
+                      current,
+                      ...GoalsController.quickIconKeys.where(
+                        (iconKey) => iconKey != current,
+                      ),
+                    ];
 
                     return ListView.separated(
+                      key: ValueKey(current),
                       scrollDirection: Axis.horizontal,
-                      itemCount: GoalsController.quickIconKeys.length,
+                      itemCount: iconKeys.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
-                        final iconKey = GoalsController.quickIconKeys[i];
+                        final iconKey = iconKeys[i];
                         final option = goalIconFor(iconKey);
                         final selected = current == iconKey;
                         return GestureDetector(
@@ -694,8 +701,10 @@ class GoalsView extends GetView<GoalsController> {
       builder: (pickerContext) => _GoalIconPickerSheet(
         isDark: isDark,
         selectedKey: controller.selectedIconKey.value,
+        recentKeys: controller.recentIconKeys.toList(),
         onSelect: (iconKey) {
           controller.selectedIconKey.value = iconKey;
+          controller.recordRecentIcon(iconKey);
           Navigator.pop(pickerContext);
         },
       ),
@@ -927,11 +936,13 @@ class _GoalIconPickerSheet extends StatefulWidget {
   const _GoalIconPickerSheet({
     required this.isDark,
     required this.selectedKey,
+    required this.recentKeys,
     required this.onSelect,
   });
 
   final bool isDark;
   final String selectedKey;
+  final List<String> recentKeys;
   final ValueChanged<String> onSelect;
 
   @override
@@ -957,6 +968,10 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
     final sheetHeight = (availableHeight * 0.78).clamp(280.0, 680.0);
     final query = _searchController.text.trim();
     final icons = goalIconOptions
+        .where((option) => option.matches(query))
+        .toList();
+    final recentIcons = widget.recentKeys
+        .map(goalIconFor)
         .where((option) => option.matches(query))
         .toList();
 
@@ -1100,6 +1115,95 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                 ],
               ),
             ),
+            if (query.isEmpty && recentIcons.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'RECENTLY USED',
+                    style: TextStyle(
+                      color: theme.hintColor,
+                      fontSize: 11,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 76,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recentIcons.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final option = recentIcons[index];
+                    final selected = option.key == widget.selectedKey;
+
+                    return SizedBox(
+                      width: 76,
+                      child: Material(
+                        color: selected
+                            ? kGoalGreen.withValues(
+                                alpha: widget.isDark ? 0.22 : 0.1,
+                              )
+                            : widget.isDark
+                            ? Colors.white.withValues(alpha: 0.045)
+                            : Colors.black.withValues(alpha: 0.025),
+                        borderRadius: BorderRadius.circular(15),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(15),
+                          onTap: () => widget.onSelect(option.key),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: selected
+                                    ? kGoalGreen
+                                    : theme.dividerColor.withValues(
+                                        alpha: 0.28,
+                                      ),
+                                width: selected ? 1.6 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  option.icon,
+                                  size: 22,
+                                  color: selected
+                                      ? kGoalGreen
+                                      : theme.textTheme.bodyLarge?.color,
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  option.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: selected
+                                        ? kGoalGreen
+                                        : theme.hintColor,
+                                    fontSize: 10,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Expanded(
               child: icons.isEmpty
                   ? Center(

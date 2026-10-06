@@ -7,9 +7,11 @@ import '../model/goals_model.dart';
 
 class GoalsController extends GetxController {
   final goals = <GoalModel>[].obs;
+  final recentIconKeys = <String>[].obs;
 
   final GetStorage _storage = GetStorage();
   static const String _storageKey = 'saved_user_goals';
+  static const String _recentIconsStorageKey = 'recent_goal_icons';
 
   // ----------------------------------------------------------------
   // FORM STATE  (used by the add / edit sheet)
@@ -64,6 +66,7 @@ class GoalsController extends GetxController {
   void onInit() {
     super.onInit();
     _load();
+    _loadRecentIcons();
   }
 
   // ----------------------------------------------------------------
@@ -87,6 +90,28 @@ class GoalsController extends GetxController {
 
   void _save() {
     _storage.write(_storageKey, goals.map((g) => g.toMap()).toList());
+  }
+
+  void _loadRecentIcons() {
+    final stored = _storage.read<List>(_recentIconsStorageKey);
+    if (stored == null) return;
+
+    final knownKeys = goalIconOptions.map((option) => option.key).toSet();
+    recentIconKeys.assignAll(
+      stored
+          .whereType<String>()
+          .where(knownKeys.contains)
+          .toSet()
+          .toList(),
+    );
+  }
+
+  void recordRecentIcon(String iconKey) {
+    if (!goalIconOptions.any((option) => option.key == iconKey)) return;
+
+    recentIconKeys.remove(iconKey);
+    recentIconKeys.insert(0, iconKey);
+    _storage.write(_recentIconsStorageKey, recentIconKeys.toList());
   }
 
   // ----------------------------------------------------------------
