@@ -7,10 +7,8 @@ import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-
-
-
 import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
+import 'package:uuid/uuid.dart';
 
 class AddTransactionDialog extends StatefulWidget {
   final TransactionModel? transaction;
@@ -25,9 +23,11 @@ class AddTransactionDialog extends StatefulWidget {
   @override
   State<AddTransactionDialog> createState() =>
       _AddTransactionDialogState();
+ 
 }
 
-class _AddTransactionDialogState extends State<AddTransactionDialog> {
+class _AddTransactionDialogState
+    extends State<AddTransactionDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _amountController;
 
@@ -42,33 +42,40 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   bool _isSaving = false;
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  _titleController = TextEditingController();
-  _amountController = TextEditingController();
+    _titleController = TextEditingController();
+    _amountController = TextEditingController();
 
-_transactionController = Get.find<TransactionsController>();
-_categoryController = Get.find<CategoriesController>();
+    _transactionController =
+        Get.find<TransactionsController>();
 
-if (Get.isRegistered<WalletsController>()) {
-  _walletController = Get.find<WalletsController>();
-} else {
-  _walletController = Get.put(WalletsController());
-}
+    _categoryController =
+        Get.find<CategoriesController>();
 
-  final transaction = widget.transaction;
+    if (Get.isRegistered<WalletsController>()) {
+      _walletController = Get.find<WalletsController>();
+    } else {
+      _walletController = Get.put(WalletsController());
+    }
 
-  if (transaction != null) {
-    _titleController.text = transaction.title;
-    _amountController.text = transaction.amount.toString();
-    _selectedCategoryId = transaction.categoryId;
-    _selectedWalletId = transaction.walletId;
-    _isIncome = transaction.type.toLowerCase() == 'income';
+    final transaction = widget.transaction;
+
+    if (transaction != null) {
+      _titleController.text = transaction.title;
+      _amountController.text =
+          transaction.amount.toString();
+
+      _selectedCategoryId = transaction.categoryId;
+      _selectedWalletId = transaction.walletId;
+
+      _isIncome =
+          transaction.type.toLowerCase() == 'income';
+    }
+
+    _loadData();
   }
-
-  _loadData();
-}
 
   Future<void> _loadData() async {
     try {
@@ -92,211 +99,293 @@ if (Get.isRegistered<WalletsController>()) {
     super.dispose();
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // CATEGORY
-  // ------------------------------------------------------------
+  // ============================================================
 
   Future<void> _openMoreCategoryDialog() async {
+  if (!mounted) return;
+
+  final String? categoryName = await showDialog<String>(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) {
+      return const _CustomCategoryDialog();
+    },
+  );
+
+  if (!mounted || categoryName == null) return;
+
+  final String name = categoryName.trim();
+
+  if (name.isEmpty) return;
+
+  // Current transaction type
+  final String categoryType =
+      _isIncome ? 'income' : 'expense';
+
+  // ----------------------------------------------------------
+  // CHECK DUPLICATE CATEGORY
+  // ----------------------------------------------------------
+
+  final bool alreadyExists =
+      _categoryController.categoryList.any(
+    (category) =>
+        category.name.trim().toLowerCase() ==
+            name.toLowerCase() &&
+        category.type.trim().toLowerCase() ==
+            categoryType,
+  );
+
+  if (alreadyExists) {
+    await _showMessage(
+      'Category already exists',
+      'Please choose a different category name.',
+    );
+    return;
+  }
+
+  // ----------------------------------------------------------
+  // CREATE VALID UUID
+  // ----------------------------------------------------------
+
+  final String categoryId = _generateUuid();
+
+  final CategoryModel newCategory = CategoryModel(
+    id: categoryId,
+    name: name,
+    icon: 'category',
+    colorValue: 0xFF2E7D32,
+    isDefault: false,
+    type: categoryType,
+  );
+
+  try {
+    await _categoryController.addCategory(
+      newCategory,
+      closeDialog: false,
+    );
+
     if (!mounted) return;
 
-    final String? categoryName = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return const _CustomCategoryDialog();
-      },
+    setState(() {
+      _selectedCategoryId = categoryId;
+    });
+  } catch (e) {
+    if (!mounted) return;
+
+    await _showMessage(
+      'Category Error',
+      'Unable to create category. Please try again.',
     );
+  }
+}
+  // ============================================================
+  // SAVE TRANSACTION
+  // ============================================================
 
-    if (!mounted || categoryName == null) return;
+  Future<void> _saveTransaction() async {
+    if (_isSaving) return;
 
-    final String name = categoryName.trim();
+    final String title =
+        _titleController.text.trim();
 
-    if (name.isEmpty) return;
+    final String amountText =
+        _amountController.text.trim();
 
-    final bool alreadyExists =
-        _categoryController.categoryList.any(
-      (category) =>
-          category.name.trim().toLowerCase() ==
-              name.toLowerCase() &&
-          category.type.trim().toLowerCase() == 'expense',
-    );
+    // ----------------------------------------------------------
+    // TITLE VALIDATION
+    // ----------------------------------------------------------
 
-    if (alreadyExists) {
+    if (title.isEmpty) {
       await _showMessage(
-        'Category already exists',
-        'Please choose a different category name.',
+        'Missing title',
+        'Please enter a transaction title.',
       );
       return;
     }
 
-    final String categoryId = _generateUuid();
+    // ----------------------------------------------------------
+    // AMOUNT VALIDATION
+    // ----------------------------------------------------------
 
-    final CategoryModel newCategory = CategoryModel(
-      id: categoryId,
-      name: name,
-      icon: 'category',
-      colorValue: 0xFF2E7D32,
-      isDefault: false,
-      type: 'expense',
-    );
+    if (amountText.isEmpty) {
+      await _showMessage(
+        'Missing amount',
+        'Please enter an amount.',
+      );
+      return;
+    }
+
+    final double? amount =
+        double.tryParse(amountText);
+
+    if (amount == null || amount <= 0) {
+      await _showMessage(
+        'Invalid amount',
+        'Please enter a valid amount.',
+      );
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // CATEGORY VALIDATION
+    // ----------------------------------------------------------
+
+   // ----------------------------------------------------------
+// CATEGORY VALIDATION
+// ----------------------------------------------------------
+
+if (!_isIncome &&
+    (_selectedCategoryId == null ||
+        _selectedCategoryId!.trim().isEmpty)) {
+  await _showMessage(
+    'Missing category',
+    'Please select an expense category.',
+  );
+  return;
+}
+final String requiredCategoryType =
+    _isIncome ? 'income' : 'expense';
+
+final selectedCategories =
+    _categoryController.categoryList.where(
+  (category) =>
+      category.id == _selectedCategoryId &&
+      category.type.trim().toLowerCase() ==
+          requiredCategoryType,
+);
+
+if (selectedCategories.isEmpty) {
+  await _showMessage(
+    'Invalid category',
+    _isIncome
+        ? 'Please select a valid income category.'
+        : 'Please select a valid expense category.',
+  );
+  return;
+}
+
+    // ----------------------------------------------------------
+    // WALLET VALIDATION
+    // ----------------------------------------------------------
+
+    if (_selectedWalletId == null ||
+        _selectedWalletId!.trim().isEmpty) {
+      await _showMessage(
+        'Missing wallet',
+        'Please select a wallet.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
-      await _categoryController.addCategory(
-        newCategory,
-        closeDialog: false,
+      final existingTransaction =
+          widget.transaction;
+
+      // --------------------------------------------------------
+      // CREATE TRANSACTION MODEL
+      // --------------------------------------------------------
+
+      final TransactionModel transaction =
+          TransactionModel(
+        id: existingTransaction?.id ??
+            _generateUuid(),
+
+        userId: existingTransaction?.userId ?? '',
+
+        walletId: _selectedWalletId!,
+
+        categoryId: _selectedCategoryId!,
+
+        title: title,
+
+        amount: amount,
+
+        type: _isIncome
+            ? 'income'
+            : 'expense',
+
+        transactionDate:
+            existingTransaction
+                    ?.transactionDate ??
+                DateTime.now(),
+
+        note:
+            existingTransaction?.note ??
+                title,
+
+        createdAt:
+            existingTransaction?.createdAt ??
+                DateTime.now(),
+
+        // Preserve custom category if your
+        // TransactionModel contains this field.
+        customCategory:
+            existingTransaction?.customCategory ??
+                '',
       );
+
+      bool success;
+
+      // --------------------------------------------------------
+      // UPDATE
+      // --------------------------------------------------------
+
+      if (widget.isEdit) {
+        success =
+            await _transactionController
+                .updateTransaction(
+          transaction,
+        );
+      }
+
+      // --------------------------------------------------------
+      // ADD
+      // --------------------------------------------------------
+
+      else {
+        success =
+            await _transactionController
+                .addTransaction(
+          transaction,
+        );
+      }
 
       if (!mounted) return;
 
-      setState(() {
-        _selectedCategoryId = categoryId;
-        _isIncome = false;
-      });
+      if (success) {
+        Navigator.of(context).pop();
+      } else {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
 
-      await _showMessage(
-        'Category Error',
-        'Unable to create category. Please try again.',
-      );
-    }
-  }
-
-  // ------------------------------------------------------------
-  // SELECTED CATEGORY
-  // ------------------------------------------------------------
-
-  CategoryModel? _getSelectedCategory() {
-    final String? selectedId = _selectedCategoryId;
-
-    if (selectedId == null || selectedId.trim().isEmpty) {
-      return null;
-    }
-
-    for (final category
-        in _categoryController.categoryList) {
-      if (category.id.trim() == selectedId.trim()) {
-        return category;
-      }
-    }
-
-    return null;
-  }
-
-  // ------------------------------------------------------------
-  // SAVE TRANSACTION
-  // ------------------------------------------------------------
-
-  Future<void> _saveTransaction() async {
-  if (_isSaving) return;
-
-  final String title = _titleController.text.trim();
-  final String amountText = _amountController.text.trim();
-
-  if (title.isEmpty) {
-    await _showMessage(
-      'Missing title',
-      'Please enter a transaction title.',
-    );
-    return;
-  }
-
-  if (amountText.isEmpty) {
-    await _showMessage(
-      'Missing amount',
-      'Please enter an amount.',
-    );
-    return;
-  }
-
-  final double? amount = double.tryParse(amountText);
-
-  if (amount == null || amount <= 0) {
-    await _showMessage(
-      'Invalid amount',
-      'Please enter a valid amount.',
-    );
-    return;
-  }
-
-  if (_selectedCategoryId == null ||
-      _selectedCategoryId!.trim().isEmpty) {
-    await _showMessage(
-      'Missing category',
-      'Please select a category.',
-    );
-    return;
-  }
-
-  if (_selectedWalletId == null ||
-      _selectedWalletId!.trim().isEmpty) {
-    await _showMessage(
-      'Missing wallet',
-      'Please select a wallet.',
-    );
-    return;
-  }
-
-  setState(() {
-    _isSaving = true;
-  });
-
-  try {
-    final existingTransaction = widget.transaction;
-
-    final TransactionModel transaction = TransactionModel(
-      id: existingTransaction?.id ?? _generateUuid(),
-      userId: existingTransaction?.userId ?? '',
-      walletId: _selectedWalletId!,
-      categoryId: _selectedCategoryId!,
-      title: title,
-      amount: amount,
-      type: _isIncome ? 'income' : 'expense',
-      transactionDate:
-          existingTransaction?.transactionDate ?? DateTime.now(),
-      note: existingTransaction?.note ?? title,
-      createdAt: existingTransaction?.createdAt ?? DateTime.now(),
-    );
-
-    bool success;
-
-    if (widget.isEdit) {
-      success = await _transactionController.updateTransaction(
-        transaction,
-      );
-    } else {
-      success = await _transactionController.addTransaction(
-        transaction,
-      );
-    }
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.of(context).pop();
-    } else {
       setState(() {
         _isSaving = false;
       });
+
+      await _showMessage(
+        widget.isEdit
+            ? 'Update failed'
+            : 'Save failed',
+        widget.isEdit
+            ? 'Unable to update transaction. Please try again.'
+            : 'Unable to save transaction. Please try again.',
+      );
     }
-  } catch (e) {
-    if (!mounted) return;
-
-    setState(() {
-      _isSaving = false;
-    });
-
-    await _showMessage(
-      widget.isEdit ? 'Update failed' : 'Save failed',
-      widget.isEdit
-          ? 'Unable to update transaction. Please try again.'
-          : 'Unable to save transaction. Please try again.',
-    );
   }
-}
-  // ------------------------------------------------------------
+
+  // ============================================================
   // MESSAGE
-  // ------------------------------------------------------------
+  // ============================================================
 
   Future<void> _showMessage(
     String title,
@@ -323,70 +412,126 @@ if (Get.isRegistered<WalletsController>()) {
     );
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // UUID
-  // ------------------------------------------------------------
+  // ============================================================
 
   String _generateUuid() {
-    final now = DateTime.now().microsecondsSinceEpoch;
-
-    return '${now.toRadixString(16)}-'
-        '${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}-'
-        '${now.toString().substring(0, 8)}';
+    return const Uuid().v4();
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // BUILD
-  // ------------------------------------------------------------
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
     final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+        Theme.of(context).brightness ==
+            Brightness.dark;
 
     return AlertDialog(
       title: Text(
-  widget.isEdit ? 'Edit Transaction' : 'Add Transaction',
-  style: AppTextStyles.headingMedium(isDark),
-),
+        widget.isEdit
+            ? 'Edit Transaction'
+            : 'Add Transaction',
+        style:
+            AppTextStyles.headingMedium(isDark),
+      ),
+
       content: SizedBox(
         width: 420,
+
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+
             children: [
-              // --------------------------------------------------
+
+              // ==================================================
               // TYPE
-              // --------------------------------------------------
+              // ==================================================
 
               Row(
                 children: [
+
                   Expanded(
                     child: ChoiceChip(
-                      label: const Text('Expense'),
+                      label:
+                          const Text('Expense'),
+
                       selected: !_isIncome,
+
                       onSelected: (_) {
                         if (!mounted) return;
 
                         setState(() {
                           _isIncome = false;
-                          _selectedCategoryId = null;
+
+                          // Clear category if the
+                          // previous category was income.
+                          final categories =
+                              _categoryController
+                                  .categoryList;
+
+                          final selected =
+                              categories
+                                  .where(
+                                    (category) =>
+                                        category.id ==
+                                        _selectedCategoryId,
+                                  )
+                                  .toList();
+
+                          if (selected.isNotEmpty &&
+                              selected.first.type !=
+                                  'expense') {
+                            _selectedCategoryId =
+                                null;
+                          }
                         });
                       },
                     ),
                   ),
+
                   const SizedBox(width: 8),
+
                   Expanded(
                     child: ChoiceChip(
-                      label: const Text('Income'),
+                      label:
+                          const Text('Income'),
+
                       selected: _isIncome,
+
                       onSelected: (_) {
                         if (!mounted) return;
 
                         setState(() {
                           _isIncome = true;
-                          _selectedCategoryId = null;
+
+                          // Clear category if the
+                          // previous category was expense.
+                          final categories =
+                              _categoryController
+                                  .categoryList;
+
+                          final selected =
+                              categories
+                                  .where(
+                                    (category) =>
+                                        category.id ==
+                                        _selectedCategoryId,
+                                  )
+                                  .toList();
+
+                          if (selected.isNotEmpty &&
+                              selected.first.type !=
+                                  'income') {
+                            _selectedCategoryId =
+                                null;
+                          }
                         });
                       },
                     ),
@@ -396,110 +541,129 @@ if (Get.isRegistered<WalletsController>()) {
 
               const SizedBox(height: 16),
 
-              // --------------------------------------------------
+              // ==================================================
               // TITLE
-              // --------------------------------------------------
+              // ==================================================
 
               TextField(
-                controller: _titleController,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
+                controller:
+                    _titleController,
+
+                textInputAction:
+                    TextInputAction.next,
+
+                decoration:
+                    const InputDecoration(
                   labelText: 'Title',
-                  hintText: 'e.g. Grocery shopping',
-                  border: OutlineInputBorder(),
+                  hintText:
+                      'e.g. Grocery shopping',
+                  border:
+                      OutlineInputBorder(),
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              // --------------------------------------------------
+              // ==================================================
               // AMOUNT
-              // --------------------------------------------------
+              // ==================================================
 
               TextField(
-                controller: _amountController,
+                controller:
+                    _amountController,
+
                 keyboardType:
-                    const TextInputType.numberWithOptions(
+                    const TextInputType
+                        .numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
+
+                decoration:
+                    const InputDecoration(
                   labelText: 'Amount',
-                  hintText: 'Enter amount',
-                  border: OutlineInputBorder(),
+                  hintText:
+                      'Enter amount',
+                  border:
+                      OutlineInputBorder(),
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              // --------------------------------------------------
+              // ==================================================
               // CATEGORY
-              // --------------------------------------------------
+              // ==================================================
 
-              Obx(
-                () {
-                  final String requiredType =
-                      _isIncome ? 'income' : 'expense';
+             if (!_isIncome)
+  Obx(
+    () {
+      final categories =
+          _categoryController.categoryList
+              .where(
+                (category) =>
+                    category.type
+                        .trim()
+                        .toLowerCase() ==
+                    'expense',
+              )
+              .toList();
 
-                  final categories =
-                      _categoryController.categoryList
-                          .where(
-                            (category) =>
-                                category.type
-                                    .trim()
-                                    .toLowerCase() ==
-                                requiredType,
-                          )
-                          .toList();
+      return DropdownButtonFormField<String>(
+        value: categories.any(
+          (category) =>
+              category.id == _selectedCategoryId,
+        )
+            ? _selectedCategoryId
+            : null,
+        decoration: const InputDecoration(
+          labelText: 'Category',
+          border: OutlineInputBorder(),
+        ),
+        hint: const Text(
+          'Select expense category',
+        ),
+        items: categories.map(
+          (category) {
+            return DropdownMenuItem<String>(
+              value: category.id,
+              child: Text(category.name),
+            );
+          },
+        ).toList(),
+        onChanged: (value) {
+          if (!mounted) return;
 
-                  return DropdownButtonFormField<String>(
-                    value: categories.any(
-                      (category) =>
-                          category.id ==
-                          _selectedCategoryId,
-                    )
-                        ? _selectedCategoryId
-                        : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                      border: OutlineInputBorder(),
-                    ),
-                    hint: Text(
-                      _isIncome
-                          ? 'Select income category'
-                          : 'Select expense category',
-                    ),
-                    items: categories.map(
-                      (category) {
-                        return DropdownMenuItem<String>(
-                          value: category.id,
-                          child: Text(category.name),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (value) {
-                      if (!mounted) return;
-
-                      setState(() {
-                        _selectedCategoryId = value;
-                      });
-                    },
-                  );
-                },
-              ),
+          setState(() {
+            _selectedCategoryId = value;
+          });
+        },
+      );
+    },
+  ),
 
               const SizedBox(height: 8),
 
-              // --------------------------------------------------
+              // ==================================================
               // MORE CATEGORY BUTTON
-              // --------------------------------------------------
+              // ==================================================
 
               if (!_isIncome)
                 SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _openMoreCategoryDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text(
+                  width:
+                      double.infinity,
+
+                  child:
+                      OutlinedButton.icon(
+                    onPressed:
+                        _openMoreCategoryDialog,
+
+                    icon:
+                        const Icon(
+                      Icons.add,
+                    ),
+
+                    label:
+                        const Text(
                       'More... Add your own category',
                     ),
                   ),
@@ -507,76 +671,95 @@ if (Get.isRegistered<WalletsController>()) {
 
               const SizedBox(height: 16),
 
-              // --------------------------------------------------
-              // WALLET
-              // --------------------------------------------------
+              // ==================================================
+// WALLET
+// ==================================================
 
-              Obx(
-                () {
-                  final wallets =
-                      _walletController.wallets;
+Obx(
+  () {
+    final wallets = _walletController.wallets;
 
-                  return DropdownButtonFormField<String>(
-                    value: wallets.any(
-                      (wallet) =>
-                          wallet.id ==
-                          _selectedWalletId,
-                    )
-                        ? _selectedWalletId
-                        : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Wallet',
-                      border: OutlineInputBorder(),
-                    ),
-                    hint: const Text('Select wallet'),
-                    items: wallets.map(
-                      (wallet) {
-                        return DropdownMenuItem<String>(
-                          value: wallet.id,
-                          child: Text(wallet.name),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (value) {
-                      if (!mounted) return;
+    return DropdownButtonFormField<String>(
+      value: wallets.any(
+        (wallet) => wallet.id == _selectedWalletId,
+      )
+          ? _selectedWalletId
+          : null,
 
-                      setState(() {
-                        _selectedWalletId = value;
-                      });
-                    },
-                  );
-                },
-              ),
+      decoration: const InputDecoration(
+        labelText: 'Wallet',
+        border: OutlineInputBorder(),
+      ),
+
+      hint: const Text(
+        'Select wallet',
+      ),
+
+      items: wallets.map(
+        (wallet) {
+          return DropdownMenuItem<String>(
+            value: wallet.id,
+            child: Text(
+              wallet.name,
+            ),
+          );
+        },
+      ).toList(),
+
+      onChanged: (value) {
+        if (!mounted) return;
+
+        setState(() {
+          _selectedWalletId = value;
+        });
+      },
+    );
+  },
+),
             ],
           ),
         ),
       ),
-
-      // ----------------------------------------------------------
+      // ==========================================================
       // ACTIONS
-      // ----------------------------------------------------------
+      // ==========================================================
 
       actions: [
+
         TextButton(
           onPressed: _isSaving
               ? null
               : () {
-                  Navigator.of(context).pop();
+                  Navigator.of(
+                    context,
+                  ).pop();
                 },
-          child: const Text('Cancel'),
+
+          child:
+              const Text('Cancel'),
         ),
+
         ElevatedButton(
           onPressed:
-              _isSaving ? null : _saveTransaction,
+              _isSaving
+                  ? null
+                  : _saveTransaction,
+
           child: _isSaving
               ? const SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(
+
+                  child:
+                      CircularProgressIndicator(
                     strokeWidth: 2,
                   ),
                 )
-             : Text(widget.isEdit ? 'Update' : 'Save'),
+              : Text(
+                  widget.isEdit
+                      ? 'Update'
+                      : 'Save',
+                ),
         ),
       ],
     );
@@ -587,23 +770,27 @@ if (Get.isRegistered<WalletsController>()) {
 // CUSTOM CATEGORY DIALOG
 // ============================================================================
 
-class _CustomCategoryDialog extends StatefulWidget {
+class _CustomCategoryDialog
+    extends StatefulWidget {
   const _CustomCategoryDialog();
 
   @override
-  State<_CustomCategoryDialog> createState() =>
-      _CustomCategoryDialogState();
+  State<_CustomCategoryDialog>
+      createState() =>
+          _CustomCategoryDialogState();
 }
 
 class _CustomCategoryDialogState
     extends State<_CustomCategoryDialog> {
-  late final TextEditingController _controller;
+  late final TextEditingController
+      _controller;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = TextEditingController();
+    _controller =
+        TextEditingController();
   }
 
   @override
@@ -614,42 +801,70 @@ class _CustomCategoryDialogState
   }
 
   void _useName() {
-    final String name = _controller.text.trim();
+    final String name =
+        _controller.text.trim();
 
     if (name.isEmpty) {
       return;
     }
 
+    // Return the category name.
     Navigator.of(context).pop(name);
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Custom Category'),
+      title:
+          const Text(
+        'Add Custom Category',
+      ),
+
       content: TextField(
-        controller: _controller,
+        controller:
+            _controller,
+
         autofocus: true,
-        textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(
-          labelText: 'Category name',
-          hintText: 'e.g. Shopping',
-          border: OutlineInputBorder(),
+
+        textCapitalization:
+            TextCapitalization.words,
+
+        decoration:
+            const InputDecoration(
+          labelText:
+              'Category name',
+          hintText:
+              'e.g. Shopping',
+          border:
+              OutlineInputBorder(),
         ),
+
         onSubmitted: (_) {
           _useName();
         },
       ),
+
       actions: [
+
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop();
+            Navigator.of(
+              context,
+            ).pop();
           },
-          child: const Text('Cancel'),
+
+          child:
+              const Text('Cancel'),
         ),
+
         ElevatedButton(
-          onPressed: _useName,
-          child: const Text('Use Name'),
+          onPressed:
+              _useName,
+
+          child:
+              const Text(
+            'Use Name',
+          ),
         ),
       ],
     );

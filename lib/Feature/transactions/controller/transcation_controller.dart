@@ -361,7 +361,7 @@ class TransactionsController extends GetxController {
   }
 
   // ==========================================================
-  // DELETE TRANSACTION
+  // DELETE SINGLE TRANSACTION
   // ==========================================================
 
   Future<bool> deleteTransaction(
@@ -416,6 +416,79 @@ class TransactionsController extends GetxController {
     } catch (_) {
       _showError(
         'Unable to delete transaction.',
+      );
+
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ==========================================================
+  // DELETE MULTIPLE TRANSACTIONS
+  // ==========================================================
+
+  Future<bool> deleteMultipleTransactions(
+    List<String> transactionIds,
+  ) async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError(
+        'Please login first.',
+      );
+      return false;
+    }
+
+    if (transactionIds.isEmpty) {
+      return true;
+    }
+
+    try {
+      isLoading.value = true;
+
+      // ------------------------------------------------------
+      // Delete each transaction through existing sync flow
+      // ------------------------------------------------------
+
+      for (final transactionId
+          in transactionIds) {
+        await _repositories
+            .transactionSync
+            .deleteTransaction(
+          userId: user.id,
+          id: transactionId,
+        );
+      }
+
+      // ------------------------------------------------------
+      // Remove selected transactions
+      // from reactive list
+      // ------------------------------------------------------
+
+      transactions.removeWhere(
+        (transaction) =>
+            transactionIds.contains(
+          transaction.id,
+        ),
+      );
+
+      // ------------------------------------------------------
+      // Recalculate totals
+      // ------------------------------------------------------
+
+      _calculateTotals();
+
+      // ------------------------------------------------------
+      // Sync all queued delete operations
+      // ------------------------------------------------------
+
+      _syncInBackground();
+
+      return true;
+    } catch (_) {
+      _showError(
+        'Unable to delete selected transactions.',
       );
 
       return false;
@@ -591,4 +664,3 @@ class TransactionsController extends GetxController {
     return '$part1-$part2-$part3-$part4-$part5';
   }
 }
-
