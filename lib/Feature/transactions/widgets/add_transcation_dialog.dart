@@ -2,6 +2,7 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -22,6 +23,7 @@ class AddTransactionDialog extends StatefulWidget {
   @override
   State<AddTransactionDialog> createState() =>
       _AddTransactionDialogState();
+ 
 }
 
 class _AddTransactionDialogState
@@ -78,6 +80,10 @@ class _AddTransactionDialogState
   Future<void> _loadData() async {
     try {
       await _walletController.loadWallets();
+    } catch (_) {}
+
+    try {
+      await _categoryController.fetchCategories();
     } catch (_) {}
 
     if (!mounted) return;
@@ -666,67 +672,54 @@ if (selectedCategories.isEmpty) {
               const SizedBox(height: 16),
 
               // ==================================================
-              // WALLET
-              // ==================================================
+// WALLET
+// ==================================================
 
-              Obx(
-                () {
-                  final wallets =
-                      _walletController.wallets;
+Obx(
+  () {
+    final wallets = _walletController.wallets;
 
-                  return DropdownButtonFormField<
-                      String>(
-                    value: wallets.any(
-                      (wallet) =>
-                          wallet.id ==
-                          _selectedWalletId,
-                    )
-                        ? _selectedWalletId
-                        : null,
+    return DropdownButtonFormField<String>(
+      value: wallets.any(
+        (wallet) => wallet.id == _selectedWalletId,
+      )
+          ? _selectedWalletId
+          : null,
 
-                    decoration:
-                        const InputDecoration(
-                      labelText: 'Wallet',
-                      border:
-                          OutlineInputBorder(),
-                    ),
+      decoration: const InputDecoration(
+        labelText: 'Wallet',
+        border: OutlineInputBorder(),
+      ),
 
-                    hint:
-                        const Text(
-                      'Select wallet',
-                    ),
+      hint: const Text(
+        'Select wallet',
+      ),
 
-                    items: wallets.map(
-                      (wallet) {
-                        return DropdownMenuItem<
-                            String>(
-                          value:
-                              wallet.id,
+      items: wallets.map(
+        (wallet) {
+          return DropdownMenuItem<String>(
+            value: wallet.id,
+            child: Text(
+              wallet.name,
+            ),
+          );
+        },
+      ).toList(),
 
-                          child:
-                              Text(
-                            wallet.name,
-                          ),
-                        );
-                      },
-                    ).toList(),
+      onChanged: (value) {
+        if (!mounted) return;
 
-                    onChanged: (value) {
-                      if (!mounted) return;
-
-                      setState(() {
-                        _selectedWalletId =
-                            value;
-                      });
-                    },
-                  );
-                },
-              ),
+        setState(() {
+          _selectedWalletId = value;
+        });
+      },
+    );
+  },
+),
             ],
           ),
         ),
       ),
-
       // ==========================================================
       // ACTIONS
       // ==========================================================

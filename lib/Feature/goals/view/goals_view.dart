@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
+import 'package:expense_mate/Feature/goals/model/goal_icon.dart';
 import 'package:expense_mate/Feature/goals/model/goals_model.dart';
 import 'package:expense_mate/Feature/goals/widgets/goals_card.dart';
 
@@ -186,26 +187,52 @@ class GoalsView extends GetView<GoalsController> {
 
                 const SizedBox(height: 14),
 
-                // ------------------------------------------ emoji picker
-                _Label(text: 'Pick an icon'),
+                // -------------------------------------------- icon picker
+                Row(
+                  children: [
+                    const Expanded(child: _Label(text: 'Pick an icon')),
+                    TextButton.icon(
+                      onPressed: () =>
+                          _showGoalIconPicker(context, isDark: isDark),
+                      icon: const Icon(Icons.search_rounded, size: 18),
+                      label: const Text('Browse icons'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: kGoalGreen,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 50,
                   child: Obx(() {
-                    // Read the observable HERE, inside the Obx builder.
-                    // Reading it only inside itemBuilder runs too late and
-                    // GetX throws "improper use of a GetX".
-                    final current = controller.selectedEmoji.value;
+                    final current = controller.selectedIconKey.value;
+                    final iconKeys = [
+                      current,
+                      ...GoalsController.quickIconKeys.where(
+                        (iconKey) => iconKey != current,
+                      ),
+                    ];
 
                     return ListView.separated(
+                      key: ValueKey(current),
                       scrollDirection: Axis.horizontal,
-                      itemCount: GoalsController.emojiChoices.length,
+                      itemCount: iconKeys.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
-                        final emoji = GoalsController.emojiChoices[i];
-                        final selected = current == emoji;
+                        final iconKey = iconKeys[i];
+                        final selected = current == iconKey;
                         return GestureDetector(
-                          onTap: () => controller.selectedEmoji.value = emoji,
+                          onTap: () =>
+                              controller.selectedIconKey.value = iconKey,
                           child: Container(
                             width: 50,
                             alignment: Alignment.center,
@@ -223,10 +250,7 @@ class GoalsView extends GetView<GoalsController> {
                                 width: 1.6,
                               ),
                             ),
-                            child: Text(
-                              emoji,
-                              style: const TextStyle(fontSize: 22),
-                            ),
+                            child: GoalIconBadge(iconKey: iconKey, size: 38),
                           ),
                         );
                       },
@@ -239,8 +263,6 @@ class GoalsView extends GetView<GoalsController> {
                 _Label(text: 'Goal name'),
                 const SizedBox(height: 8),
                 Obx(() {
-                  // Reading nameHint touches selectedEmoji, so the hint
-                  // refreshes as soon as a different icon is tapped.
                   final hint = controller.nameHint;
 
                   return _Field(
@@ -261,6 +283,66 @@ class GoalsView extends GetView<GoalsController> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Quick picks. Tapping sets the amount, and tapping a
+                // second one adds to it, so 50k + 10k reaches 60k without
+                // any typing.
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ...[5000, 10000, 25000, 50000, 100000].map((amount) {
+                      return GestureDetector(
+                        onTap: () => _bumpTargetAmount(amount),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '+ ${_shortAmount(amount)}',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    GestureDetector(
+                      onTap: () => controller.targetController.clear(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Clear',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -387,6 +469,36 @@ class GoalsView extends GetView<GoalsController> {
     );
   }
 
+  /// Adds [amount] to whatever is already typed in the target field.
+  ///
+  /// Adding rather than replacing means a few taps can build any figure,
+  /// instead of the chips only offering five fixed amounts.
+  void _bumpTargetAmount(int amount) {
+    final current =
+        double.tryParse(controller.targetController.text.trim()) ?? 0;
+
+    final next = (current + amount).round();
+
+    controller.targetController.text = next.toString();
+    controller.targetController.selection = TextSelection.fromPosition(
+      TextPosition(offset: controller.targetController.text.length),
+    );
+  }
+
+  /// 5000 -> 5k, 100000 -> 1 lakh.
+  String _shortAmount(int amount) {
+    if (amount >= 100000) {
+      final lakhs = amount / 100000;
+      return lakhs == lakhs.roundToDouble()
+          ? '${lakhs.toStringAsFixed(0)} lakh'
+          : '${lakhs.toStringAsFixed(1)} lakh';
+    }
+
+    if (amount >= 1000) return '${amount ~/ 1000}k';
+
+    return '$amount';
+  }
+
   // =================================================================
   // ADD / WITHDRAW MONEY SHEET
   // =================================================================
@@ -439,16 +551,26 @@ class GoalsView extends GetView<GoalsController> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            isDeposit
-                                ? '${goal.emoji}  ${goal.title} — Rs. '
-                                      '${formatMoney(goal.remaining)} still needed'
-                                : '${goal.emoji}  ${goal.title} — Rs. '
-                                      '${formatMoney(goal.savedAmount)} available',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: theme.hintColor,
-                            ),
+                          Row(
+                            children: [
+                              GoalIconBadge(iconKey: goal.iconKey, size: 24),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  isDeposit
+                                      ? '${goal.title} — Rs. '
+                                            '${formatMoney(goal.remaining)} still needed'
+                                      : '${goal.title} — Rs. '
+                                            '${formatMoney(goal.savedAmount)} available',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.hintColor,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -555,6 +677,25 @@ class GoalsView extends GetView<GoalsController> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showGoalIconPicker(BuildContext context, {required bool isDark}) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (pickerContext) => _GoalIconPickerSheet(
+        isDark: isDark,
+        selectedKey: controller.selectedIconKey.value,
+        recentKeys: controller.recentIconKeys.toList(),
+        onSelect: (iconKey) {
+          controller.selectedIconKey.value = iconKey;
+          controller.recordRecentIcon(iconKey);
+          Navigator.pop(pickerContext);
+        },
       ),
     );
   }
@@ -776,6 +917,371 @@ class _SectionLabel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _GoalIconPickerSheet extends StatefulWidget {
+  const _GoalIconPickerSheet({
+    required this.isDark,
+    required this.selectedKey,
+    required this.recentKeys,
+    required this.onSelect,
+  });
+
+  final bool isDark;
+  final String selectedKey;
+  final List<String> recentKeys;
+  final ValueChanged<String> onSelect;
+
+  @override
+  State<_GoalIconPickerSheet> createState() => _GoalIconPickerSheetState();
+}
+
+class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final background = theme.cardColor;
+    final availableHeight =
+        MediaQuery.of(context).size.height -
+        MediaQuery.of(context).viewInsets.bottom;
+    final sheetHeight = (availableHeight * 0.78).clamp(280.0, 680.0);
+    final query = _searchController.text.trim();
+    final icons = goalIconOptions
+        .where((option) => option.matches(query))
+        .toList();
+    final recentIcons = widget.recentKeys
+        .map(goalIconFor)
+        .where((option) => option.matches(query))
+        .toList();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        height: sheetHeight,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: widget.isDark ? 0.35 : 0.16,
+              ),
+              blurRadius: 28,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            const _SheetHandle(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 16, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: kGoalGreen.withValues(
+                        alpha: widget.isDark ? 0.2 : 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      Icons.widgets_rounded,
+                      color: kGoalGreen,
+                      size: 23,
+                    ),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Choose an icon',
+                          style: TextStyle(
+                            color: theme.textTheme.bodyLarge?.color,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${goalIconOptions.length} icons · Search by name',
+                          style: TextStyle(
+                            color: theme.hintColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close icon picker',
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded, color: theme.hintColor),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: 'Search home, travel, savings...',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: query.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Clear search',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                  filled: true,
+                  fillColor: widget.isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.035),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: kGoalGreen, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: Row(
+                children: [
+                  Text(
+                    query.isEmpty ? 'ALL ICONS' : 'SEARCH RESULTS',
+                    style: TextStyle(
+                      color: theme.hintColor,
+                      fontSize: 11,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${icons.length} found',
+                    style: TextStyle(
+                      color: theme.hintColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (query.isEmpty && recentIcons.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'RECENTLY USED',
+                    style: TextStyle(
+                      color: theme.hintColor,
+                      fontSize: 11,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 76,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recentIcons.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final option = recentIcons[index];
+                    final selected = option.key == widget.selectedKey;
+
+                    return SizedBox(
+                      width: 76,
+                      child: Material(
+                        color: selected
+                            ? kGoalGreen.withValues(
+                                alpha: widget.isDark ? 0.22 : 0.1,
+                              )
+                            : widget.isDark
+                            ? Colors.white.withValues(alpha: 0.045)
+                            : Colors.black.withValues(alpha: 0.025),
+                        borderRadius: BorderRadius.circular(15),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(15),
+                          onTap: () => widget.onSelect(option.key),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: selected
+                                    ? kGoalGreen
+                                    : theme.dividerColor.withValues(
+                                        alpha: 0.28,
+                                      ),
+                                width: selected ? 1.6 : 1,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                GoalIconBadge(iconKey: option.key, size: 34),
+                                const SizedBox(height: 5),
+                                Text(
+                                  option.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: selected
+                                        ? kGoalGreen
+                                        : theme.hintColor,
+                                    fontSize: 10,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Expanded(
+              child: icons.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 42,
+                            color: theme.disabledColor,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'No matching icons',
+                            style: TextStyle(
+                              color: theme.hintColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 2, 16, 20),
+                      itemCount: icons.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 100,
+                            mainAxisExtent: 88,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                      itemBuilder: (context, index) {
+                        final option = icons[index];
+                        final selected = option.key == widget.selectedKey;
+
+                        return Material(
+                          color: selected
+                              ? kGoalGreen.withValues(
+                                  alpha: widget.isDark ? 0.22 : 0.1,
+                                )
+                              : widget.isDark
+                              ? Colors.white.withValues(alpha: 0.045)
+                              : Colors.black.withValues(alpha: 0.025),
+                          borderRadius: BorderRadius.circular(17),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(17),
+                            onTap: () => widget.onSelect(option.key),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(17),
+                                border: Border.all(
+                                  color: selected
+                                      ? kGoalGreen
+                                      : theme.dividerColor.withValues(
+                                          alpha: 0.28,
+                                        ),
+                                  width: selected ? 1.6 : 1,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  GoalIconBadge(iconKey: option.key, size: 42),
+                                  const SizedBox(height: 7),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    child: Text(
+                                      option.label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: selected
+                                            ? kGoalGreen
+                                            : theme.hintColor,
+                                        fontSize: 10.5,
+                                        fontWeight: selected
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

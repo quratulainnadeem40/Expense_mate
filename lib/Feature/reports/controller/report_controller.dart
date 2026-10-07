@@ -1,4 +1,3 @@
-
 import 'package:get/get.dart';
 
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
@@ -9,38 +8,22 @@ class ReportController extends GetxController {
   late final TransactionsController _txController;
   late final CategoriesController _categoriesController;
 
-  // ==========================================================
-  // TRANSACTIONS
-  // ==========================================================
-
   RxList<TransactionModel> get transactions =>
       _txController.transactions;
-
-  // ==========================================================
-  // MONTH FILTER
-  // ==========================================================
 
   final RxnInt selectedMonth = RxnInt();
 
   void setMonthFilter(int month) {
     selectedMonth.value = month;
+    update();
   }
-
-  // ==========================================================
-  // ALL TRANSACTIONS
-  // ==========================================================
 
   List<TransactionModel> get allTransactions {
     return _txController.transactions.toList();
   }
 
-  // ==========================================================
-  // FILTERED TRANSACTIONS
-  // ==========================================================
-
   List<TransactionModel> get filteredTransactions {
     final int? month = selectedMonth.value;
-
     final List<TransactionModel> data =
         _txController.transactions.toList();
 
@@ -52,10 +35,6 @@ class ReportController extends GetxController {
       return transaction.transactionDate.month == month;
     }).toList();
   }
-
-  // ==========================================================
-  // TRANSACTION TYPE
-  // ==========================================================
 
   String _transactionType(TransactionModel transaction) {
     return transaction.type.trim().toLowerCase();
@@ -102,7 +81,7 @@ class ReportController extends GetxController {
   }
 
   // ==========================================================
-  // REMAINING BALANCE
+  // BALANCE
   // ==========================================================
 
   double get totalBalance {
@@ -110,11 +89,14 @@ class ReportController extends GetxController {
   }
 
   // ==========================================================
-  // CATEGORY NAME
+  // GET CATEGORY NAME
   // ==========================================================
 
   String _getCategoryName(TransactionModel transaction) {
-    // Custom category
+    // --------------------------------------------------------
+    // 1. First try custom category name
+    // --------------------------------------------------------
+
     final String customName =
         transaction.customCategoryName.trim();
 
@@ -122,33 +104,62 @@ class ReportController extends GetxController {
       return customName;
     }
 
-    // Category ID -> Category Name
+    // --------------------------------------------------------
+    // 2. Get category ID from transaction
+    // --------------------------------------------------------
+
     final String categoryId =
         transaction.categoryId.trim();
 
-    if (categoryId.isNotEmpty) {
-      final category =
-          _categoriesController.categoryList.firstWhereOrNull(
-        (item) => item.id.trim() == categoryId,
-      );
+    if (categoryId.isEmpty) {
+      return '';
+    }
 
-      if (category != null) {
-        final String categoryName =
-            category.name.trim();
+    // --------------------------------------------------------
+    // 3. Find category by ID
+    // --------------------------------------------------------
 
-        if (categoryName.isNotEmpty) {
-          return categoryName;
-        }
+    final category =
+        _categoriesController.categoryList.firstWhereOrNull(
+      (item) {
+        return item.id.trim().toLowerCase() ==
+            categoryId.toLowerCase();
+      },
+    );
+
+    if (category != null) {
+      final String name = category.name.trim();
+
+      if (name.isNotEmpty) {
+        return name;
       }
     }
 
-    // Stored category value
+    // --------------------------------------------------------
+    // 4. Try transaction category value
+    // --------------------------------------------------------
+
     final String categoryValue =
         transaction.category.trim();
 
     if (categoryValue.isNotEmpty &&
-        categoryValue != categoryId) {
+        categoryValue.toLowerCase() !=
+            categoryId.toLowerCase()) {
       return categoryValue;
+    }
+
+    // --------------------------------------------------------
+    // 5. Handle default category IDs
+    // --------------------------------------------------------
+
+    if (categoryId.toLowerCase().startsWith('default_')) {
+      final String defaultName =
+          categoryId.substring('default_'.length).trim();
+
+      if (defaultName.isNotEmpty) {
+        return defaultName[0].toUpperCase() +
+            defaultName.substring(1);
+      }
     }
 
     return '';
@@ -182,6 +193,34 @@ class ReportController extends GetxController {
   }
 
   // ==========================================================
+  // INCOME CATEGORIES
+  // ==========================================================
+
+  Map<String, double> get incomeCategories {
+    final Map<String, double> categoryTotals = {};
+
+    for (final transaction in filteredTransactions) {
+      // Only income transactions
+      if (!_isIncome(transaction)) {
+        continue;
+      }
+
+      final String categoryName =
+          _getCategoryName(transaction);
+
+      if (categoryName.isEmpty) {
+        continue;
+      }
+
+      categoryTotals[categoryName] =
+          (categoryTotals[categoryName] ?? 0.0) +
+              transaction.amount;
+    }
+
+    return categoryTotals;
+  }
+
+  // ==========================================================
   // MONTHLY EXPENSES
   // ==========================================================
 
@@ -191,9 +230,34 @@ class ReportController extends GetxController {
         month: 0.0,
     };
 
-    // Monthly graph always uses all transactions.
     for (final transaction in allTransactions) {
       if (!_isExpense(transaction)) {
+        continue;
+      }
+
+      final int month =
+          transaction.transactionDate.month;
+
+      monthlyTotals[month] =
+          (monthlyTotals[month] ?? 0.0) +
+              transaction.amount;
+    }
+
+    return monthlyTotals;
+  }
+
+  // ==========================================================
+  // MONTHLY INCOME
+  // ==========================================================
+
+  Map<int, double> get monthlyIncome {
+    final Map<int, double> monthlyTotals = {
+      for (int month = 1; month <= 12; month++)
+        month: 0.0,
+    };
+
+    for (final transaction in allTransactions) {
+      if (!_isIncome(transaction)) {
         continue;
       }
 
@@ -229,7 +293,7 @@ class ReportController extends GetxController {
   }
 
   // ==========================================================
-  // DATA CHECKS
+  // STATUS
   // ==========================================================
 
   bool get hasTransactions {
@@ -246,6 +310,10 @@ class ReportController extends GetxController {
 
   bool get hasCategoryData {
     return expenseCategories.isNotEmpty;
+  }
+
+  bool get hasIncomeCategoryData {
+    return incomeCategories.isNotEmpty;
   }
 
   // ==========================================================
@@ -267,7 +335,7 @@ class ReportController extends GetxController {
   }
 
   // ==========================================================
-  // DEBUG
+  // DEBUG REPORT DATA
   // ==========================================================
 
   void printReportData() {
@@ -275,27 +343,19 @@ class ReportController extends GetxController {
     print('========================================');
     print('          EXPENSE MATE REPORTS');
     print('========================================');
-    print(
-      'Transactions: ${allTransactions.length}',
-    );
-    print(
-      'Filtered: ${filteredTransactions.length}',
-    );
-    print(
-      'Income: $totalIncome',
-    );
-    print(
-      'Expense: $totalExpense',
-    );
-    print(
-      'Balance: $totalBalance',
-    );
-    print(
-      'Categories: $expenseCategories',
-    );
-    print(
-      'Monthly: $monthlyExpenses',
-    );
+
+    print('Transactions: ${allTransactions.length}');
+    print('Filtered: ${filteredTransactions.length}');
+    print('Income: $totalIncome');
+    print('Expense: $totalExpense');
+    print('Balance: $totalBalance');
+
+    print('Expense Categories: $expenseCategories');
+    print('Income Categories: $incomeCategories');
+
+    print('Monthly Expenses: $monthlyExpenses');
+    print('Monthly Income: $monthlyIncome');
+
     print('========================================');
     print('');
 
@@ -306,7 +366,9 @@ class ReportController extends GetxController {
         'amount=${transaction.amount} | '
         'type=${transaction.type} | '
         'date=${transaction.transactionDate} | '
-        'categoryId=${transaction.categoryId}',
+        'categoryId=${transaction.categoryId} | '
+        'category=${transaction.category} | '
+        'customCategory=${transaction.customCategoryName}',
       );
     }
   }
@@ -319,7 +381,6 @@ class ReportController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Existing TransactionsController use karo.
     if (Get.isRegistered<TransactionsController>()) {
       _txController =
           Get.find<TransactionsController>();
@@ -328,7 +389,6 @@ class ReportController extends GetxController {
           Get.put(TransactionsController());
     }
 
-    // Existing CategoriesController use karo.
     if (Get.isRegistered<CategoriesController>()) {
       _categoriesController =
           Get.find<CategoriesController>();
@@ -337,7 +397,7 @@ class ReportController extends GetxController {
           Get.put(CategoriesController());
     }
 
-    // Transactions change hone par Reports update hoga.
+    // Refresh Reports whenever transactions change
     ever(
       _txController.transactions,
       (_) {
@@ -345,7 +405,7 @@ class ReportController extends GetxController {
       },
     );
 
-    // Categories change hone par Reports update hoga.
+    // Refresh Reports whenever categories change
     ever(
       _categoriesController.categoryList,
       (_) {
@@ -356,4 +416,3 @@ class ReportController extends GetxController {
     printReportData();
   }
 }
-

@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import '../model/goal_icon.dart';
 import '../model/goals_model.dart';
 
 class GoalsController extends GetxController {
   final goals = <GoalModel>[].obs;
+  final recentIconKeys = <String>[].obs;
 
   final GetStorage _storage = GetStorage();
   static const String _storageKey = 'saved_user_goals';
+  static const String _recentIconsStorageKey = 'recent_goal_icons';
 
   // ----------------------------------------------------------------
   // FORM STATE  (used by the add / edit sheet)
@@ -19,46 +22,28 @@ class GoalsController extends GetxController {
   final amountController = TextEditingController();
 
   final selectedDate = Rxn<DateTime>();
-  final selectedEmoji = '🎯'.obs;
+  final selectedIconKey = 'target'.obs;
 
   /// Null when creating, set to the goal id when editing.
   final editingId = RxnString();
 
   bool get isEditing => editingId.value != null;
 
-  /// Emoji choices shown in the sheet. Kept short on purpose.
-  static const List<String> emojiChoices = [
-    '🎯',
-    '🏠',
-    '🚗',
-    '📱',
-    '💻',
-    '✈️',
-    '🎓',
-    '💍',
-    '🏥',
-    '🎁',
+  /// Frequently used goal icons shown before opening the full picker.
+  static const List<String> quickIconKeys = [
+    'target',
+    'home',
+    'car',
+    'phone',
+    'laptop',
+    'travel',
+    'education',
+    'wedding',
+    'health',
+    'gift',
   ];
 
-  /// Example goal name for each icon, shown as the hint under "Goal name".
-  /// Changing the icon changes the example, so the user gets a nudge
-  /// about what to type instead of a generic placeholder.
-  static const Map<String, String> emojiHints = {
-    '🎯': 'e.g. Emergency fund',
-    '🏠': 'e.g. House down payment',
-    '🚗': 'e.g. New bike',
-    '📱': 'e.g. New phone',
-    '💻': 'e.g. New laptop',
-    '✈️': 'e.g. Umrah trip',
-    '🎓': 'e.g. University fee',
-    '💍': 'e.g. Wedding savings',
-    '🏥': 'e.g. Medical emergency',
-    '🎁': 'e.g. Eid gifts',
-  };
-
-  /// Hint for the goal name field, based on the icon that is selected.
-  String get nameHint =>
-      emojiHints[selectedEmoji.value] ?? 'e.g. Emergency fund';
+  String get nameHint => 'e.g. ${goalIconFor(selectedIconKey.value).label} goal';
 
   // ----------------------------------------------------------------
   // SUMMARY  (for the header card)
@@ -81,6 +66,7 @@ class GoalsController extends GetxController {
   void onInit() {
     super.onInit();
     _load();
+    _loadRecentIcons();
   }
 
   // ----------------------------------------------------------------
@@ -106,6 +92,28 @@ class GoalsController extends GetxController {
     _storage.write(_storageKey, goals.map((g) => g.toMap()).toList());
   }
 
+  void _loadRecentIcons() {
+    final stored = _storage.read<List>(_recentIconsStorageKey);
+    if (stored == null) return;
+
+    final knownKeys = goalIconOptions.map((option) => option.key).toSet();
+    recentIconKeys.assignAll(
+      stored
+          .whereType<String>()
+          .where(knownKeys.contains)
+          .toSet()
+          .toList(),
+    );
+  }
+
+  void recordRecentIcon(String iconKey) {
+    if (!goalIconOptions.any((option) => option.key == iconKey)) return;
+
+    recentIconKeys.remove(iconKey);
+    recentIconKeys.insert(0, iconKey);
+    _storage.write(_recentIconsStorageKey, recentIconKeys.toList());
+  }
+
   // ----------------------------------------------------------------
   // FORM HELPERS
   // ----------------------------------------------------------------
@@ -115,7 +123,7 @@ class GoalsController extends GetxController {
     targetController.clear();
     savedController.clear();
     selectedDate.value = null;
-    selectedEmoji.value = '🎯';
+    selectedIconKey.value = 'target';
   }
 
   void prepareForEdit(GoalModel goal) {
@@ -124,7 +132,7 @@ class GoalsController extends GetxController {
     targetController.text = goal.targetAmount.toStringAsFixed(0);
     savedController.text = goal.savedAmount.toStringAsFixed(0);
     selectedDate.value = goal.targetDate;
-    selectedEmoji.value = goal.emoji;
+    selectedIconKey.value = goal.iconKey;
   }
 
   /// Quick date chips: 3 months, 6 months, 1 year.
@@ -174,7 +182,7 @@ class GoalsController extends GetxController {
       if (index != -1) {
         final goal = goals[index];
         goal.title = title;
-        goal.emoji = selectedEmoji.value;
+        goal.iconKey = selectedIconKey.value;
         goal.targetAmount = target;
         goal.savedAmount = saved;
         goal.targetDate = selectedDate.value!;
@@ -190,7 +198,7 @@ class GoalsController extends GetxController {
       GoalModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: title,
-        emoji: selectedEmoji.value,
+        iconKey: selectedIconKey.value,
         targetAmount: target,
         savedAmount: saved,
         targetDate: selectedDate.value!,
@@ -287,4 +295,3 @@ class GoalsController extends GetxController {
     super.onClose();
   }
 }
-

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:expense_mate/Core/theme/custom_colors.dart';
+import 'package:expense_mate/Core/routes/app_routes.dart';
 
 /// About screen for Expense Mate.
 ///
@@ -18,12 +19,13 @@ class AboutView extends StatelessWidget {
   static const String tagline = 'Track • Save • Grow';
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
-  static const String developerName = '[YOUR NAME OR COMPANY]';
-  static const String supportEmail = '[YOUR SUPPORT EMAIL]';
-  static const String websiteUrl = '[YOUR WEBSITE]';
-  static const String privacyPolicyUrl = '[YOUR PRIVACY POLICY URL]';
-  static const String termsUrl = '[YOUR TERMS URL]';
-  static const String packageName = '[YOUR PACKAGE NAME]';
+  static const String developerName = 'Innovexa Technologies';
+  static const String supportEmail = 'innovexa.technologies01@gmail.com';
+  static const String websiteUrl = 'innovexa-technologies.vercel.app';
+  static const String privacyPolicyUrl = 'Read the privacy policy';
+  static const String termsUrl = 'Read the terms and conditions';
+  // Must match applicationId in android/app/build.gradle.
+  static const String packageName = 'com.example.expense_mate';
   static const int copyrightYear = 2026;
 
   @override
@@ -84,72 +86,107 @@ class AboutView extends StatelessWidget {
 
             _Section(
               isDark: isDark,
-              title: 'What you can do',
+              title: 'What each screen does',
               child: Column(
                 children: const [
                   _Feature(
-                    icon: Icons.swap_horiz_rounded,
+                    icon: Icons.home_rounded,
                     colour: Color(0xFF2EA44F),
-                    title: 'Income & expenses',
+                    title: 'Home',
                     detail:
-                        'Record every transaction with a category, wallet '
-                        'and note.',
+                        'Your starting point. Shows the total balance, '
+                        'income and expense for the month, and the latest '
+                        'transactions.',
                   ),
                   _Feature(
-                    icon: Icons.pie_chart_rounded,
-                    colour: Color(0xFFFF9800),
-                    title: 'Monthly budgets',
+                    icon: Icons.swap_horiz_rounded,
+                    colour: Color(0xFF3A5BA0),
+                    title: 'Transactions',
                     detail:
-                        'Set a limit for the month and watch how much is '
-                        'left as you spend.',
+                        'The full record of every income and expense. '
+                        'Search it, edit an entry, or delete one or '
+                        'several at once.',
+                  ),
+                  _Feature(
+                    icon: Icons.add_circle_outline_rounded,
+                    colour: Color(0xFF00897B),
+                    title: 'Add Transaction',
+                    detail:
+                        'Record money in or out. Pick a category and '
+                        'wallet for an expense, add a note, and the '
+                        'wallet balance updates on its own.',
                   ),
                   _Feature(
                     icon: Icons.account_balance_wallet_rounded,
                     colour: Color(0xFF2B82FB),
-                    title: 'Multiple wallets',
+                    title: 'Wallets',
                     detail:
-                        'Cash, bank account, JazzCash, Easypaisa, credit '
-                        'card — each with its own balance.',
+                        'Keep cash, bank account, JazzCash, Easypaisa and '
+                        'credit card apart, each with its own balance, so '
+                        'you know where the money actually sits.',
                   ),
                   _Feature(
                     icon: Icons.category_rounded,
                     colour: Color(0xFF7E57C2),
-                    title: 'Custom categories',
+                    title: 'Categories',
                     detail:
-                        'Build your own income and expense categories to '
-                        'match how you actually spend.',
+                        'Decide what your spending is sorted into. Use the '
+                        'built-in ones or add your own, and tap any '
+                        'category to see its transactions.',
                   ),
                   _Feature(
-                    icon: Icons.stars_rounded,
-                    colour: Color(0xFFE91E63),
-                    title: 'Savings goals',
+                    icon: Icons.donut_small_rounded,
+                    colour: Color(0xFFFF9800),
+                    title: 'Budgets',
                     detail:
-                        'Set a target amount and track how close you are '
-                        'to reaching it.',
+                        'Set a spending limit for the month, overall and '
+                        'per category, and watch how much is left. The '
+                        'budget resets on the day you choose, and past '
+                        'cycles are kept in the history.',
+                  ),
+                  _Feature(
+                    icon: Icons.flag_rounded,
+                    colour: Color(0xFFB26A00),
+                    title: 'Goals',
+                    detail:
+                        'Save towards something specific. Set the amount '
+                        'and date, add money whenever you can, and see how '
+                        'much is still needed each month.',
                   ),
                   _Feature(
                     icon: Icons.notifications_active_rounded,
-                    colour: Color(0xFF9C27B0),
-                    title: 'Bills & reminders',
+                    colour: Color(0xFF7A4EAB),
+                    title: 'Bills & Reminders',
                     detail:
-                        'Get notified before a bill is due so nothing is '
+                        'Keep track of what is due and when. The app '
+                        'notifies you before the date so a bill is never '
                         'missed.',
+                  ),
+                  _Feature(
+                    icon: Icons.groups_rounded,
+                    colour: Color(0xFF00695C),
+                    title: 'Digital Committee',
+                    detail:
+                        'Run a committee without a register. Add members, '
+                        'track who has paid each month, and see whose turn '
+                        'it is to collect.',
                   ),
                   _Feature(
                     icon: Icons.bar_chart_rounded,
                     colour: Color(0xFF00BCD4),
-                    title: 'Reports & charts',
+                    title: 'Reports',
                     detail:
-                        'See your spending broken down by category and by '
-                        'month.',
+                        'See where the money went. Income against expense, '
+                        'a breakdown by category, and the trend across the '
+                        'last six months.',
                   ),
                   _Feature(
-                    icon: Icons.dark_mode_rounded,
-                    colour: Color(0xFF607D8B),
-                    title: 'Light & dark mode',
+                    icon: Icons.person_rounded,
+                    colour: Color(0xFF455A64),
+                    title: 'Profile & Settings',
                     detail:
-                        'A true black dark theme that is easy on the eyes '
-                        'and on the battery.',
+                        'Your account, the currency the app displays, '
+                        'light or dark theme, and notification settings.',
                     isLast: true,
                   ),
                 ],
@@ -211,11 +248,6 @@ class AboutView extends StatelessWidget {
                   ),
                   _InfoTile(
                     isDark: isDark,
-                    label: 'Currency',
-                    value: 'PKR — Pakistani Rupee',
-                  ),
-                  _InfoTile(
-                    isDark: isDark,
                     label: 'Developer',
                     value: developerName,
                   ),
@@ -243,6 +275,7 @@ class AboutView extends StatelessWidget {
                     title: 'Contact support',
                     subtitle: supportEmail,
                     onTap: () => _copy(supportEmail, 'Email address copied'),
+                    showCopy: true,
                   ),
                   _ActionTile(
                     isDark: isDark,
@@ -250,20 +283,21 @@ class AboutView extends StatelessWidget {
                     title: 'Website',
                     subtitle: websiteUrl,
                     onTap: () => _copy(websiteUrl, 'Link copied'),
+                    showCopy: true,
                   ),
                   _ActionTile(
                     isDark: isDark,
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy policy',
                     subtitle: privacyPolicyUrl,
-                    onTap: () => _copy(privacyPolicyUrl, 'Link copied'),
+                    onTap: () => Get.toNamed(AppRoutes.privacy),
                   ),
                   _ActionTile(
                     isDark: isDark,
                     icon: Icons.description_outlined,
                     title: 'Terms of service',
                     subtitle: termsUrl,
-                    onTap: () => _copy(termsUrl, 'Link copied'),
+                    onTap: () => Get.toNamed(AppRoutes.terms),
                     isLast: true,
                   ),
                 ],
@@ -605,6 +639,7 @@ class _ActionTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.isLast = false,
+    this.showCopy = false,
   });
 
   final bool isDark;
@@ -613,6 +648,7 @@ class _ActionTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool isLast;
+  final bool showCopy;
 
   @override
   Widget build(BuildContext context) {
@@ -656,11 +692,12 @@ class _ActionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.copy_rounded,
-                size: 16,
-                color: AppColors.textSecondary(isDark),
-              ),
+              if (showCopy)
+                Icon(
+                  Icons.copy_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary(isDark),
+                ),
             ],
           ),
         ),

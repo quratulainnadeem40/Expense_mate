@@ -456,7 +456,10 @@ class _BudgetViewState extends State<BudgetView> {
 
             final nextResetText =
                 '${candidateResetDate.day} ${_monthName(candidateResetDate.month)} ${candidateResetDate.year}';
-            final monthStartLabel = '${selectedMonthStartDay}th of every month';
+            // 1th / 2th / 3th read badly, so the suffix follows the
+            // usual English rule.
+            final monthStartLabel =
+                '${_ordinal(selectedMonthStartDay)} of every month';
 
             return Container(
               margin: const EdgeInsets.only(top: 18),
@@ -467,7 +470,11 @@ class _BudgetViewState extends State<BudgetView> {
                 ),
               ),
               child: SafeArea(
-                child: Padding(
+                // Short screens pushed the last rows past the bottom
+                // edge. Scrolling keeps every control reachable without
+                // changing any of them.
+                child: SingleChildScrollView(
+                  child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1274,6 +1281,7 @@ class _BudgetViewState extends State<BudgetView> {
                     ],
                   ),
                 ),
+                ),
               ),
             );
           },
@@ -1403,6 +1411,22 @@ class _BudgetViewState extends State<BudgetView> {
         );
       },
     );
+  }
+
+  /// 1 -> 1st, 2 -> 2nd, 3 -> 3rd, 11 -> 11th, 21 -> 21st.
+  String _ordinal(int day) {
+    if (day >= 11 && day <= 13) return '${day}th';
+
+    switch (day % 10) {
+      case 1:
+        return '${day}st';
+      case 2:
+        return '${day}nd';
+      case 3:
+        return '${day}rd';
+      default:
+        return '${day}th';
+    }
   }
 
   String _monthName(int month) {

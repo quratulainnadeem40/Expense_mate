@@ -1,7 +1,9 @@
+import 'goal_icon.dart';
+
 class GoalModel {
   final String id;
   String title;
-  String emoji;
+  String iconKey;
   double targetAmount;
   double savedAmount;
   DateTime targetDate;
@@ -13,7 +15,7 @@ class GoalModel {
     required this.targetAmount,
     required this.targetDate,
     this.savedAmount = 0.0,
-    this.emoji = '🎯',
+    this.iconKey = 'target',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -58,7 +60,7 @@ class GoalModel {
     return {
       'id': id,
       'title': title,
-      'emoji': emoji,
+      'icon': iconKey,
       'targetAmount': targetAmount,
       'savedAmount': savedAmount,
       'targetDate': targetDate.toIso8601String(),
@@ -66,14 +68,16 @@ class GoalModel {
     };
   }
 
-  /// Tolerant of goals saved by the older version of the app, which had
-  /// no emoji and no createdAt.
+  /// Tolerant of goals saved by older versions, which may have stored an
+  /// emoji instead of an icon key or omitted the creation date.
   factory GoalModel.fromMap(Map<String, dynamic> map) {
     return GoalModel(
       id: map['id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       title: map['title']?.toString() ?? 'Untitled goal',
-      emoji: map['emoji']?.toString() ?? '🎯',
+      iconKey: goalIconKeyFromStoredValue(
+        (map['icon'] ?? map['emoji'])?.toString(),
+      ),
       targetAmount: (map['targetAmount'] as num?)?.toDouble() ?? 0.0,
       savedAmount: (map['savedAmount'] as num?)?.toDouble() ?? 0.0,
       targetDate: DateTime.tryParse(map['targetDate']?.toString() ?? '') ??
@@ -85,7 +89,7 @@ class GoalModel {
   GoalModel copy() => GoalModel(
         id: id,
         title: title,
-        emoji: emoji,
+        iconKey: iconKey,
         targetAmount: targetAmount,
         savedAmount: savedAmount,
         targetDate: targetDate,

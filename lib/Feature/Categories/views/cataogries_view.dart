@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
@@ -314,6 +313,123 @@ class _CategoriesViewState extends State<CategoriesView> {
   // ============================================================
   // CATEGORY ICONS
   // ============================================================
+
+  /// Emoji for a stored icon name.
+  ///
+  /// The Add Category dialog already shows emoji, so the list has to
+  /// match or the icon changes the moment a category is saved.
+  String _getEmoji(String iconName) {
+    switch (iconName.toLowerCase().trim()) {
+      case 'food':
+      case 'food & dining':
+      case 'restaurant':
+      case 'meal':
+        return '\u{1F37D}\u{FE0F}';
+
+      case 'groceries':
+        return '\u{1F6D2}';
+
+      case 'rent':
+      case 'housing':
+        return '\u{1F3E0}';
+
+      case 'home':
+      case 'home maintenance':
+        return '\u{1F3E1}';
+
+      case 'bills':
+      case 'utilities':
+        return '\u{1F9FE}';
+
+      case 'transport':
+      case 'transportation':
+      case 'directions_car':
+        return '\u{1F697}';
+
+      case 'fuel':
+        return '\u{26FD}';
+
+      case 'shopping':
+      case 'shopping_bag':
+        return '\u{1F6CD}\u{FE0F}';
+
+      case 'clothing':
+        return '\u{1F455}';
+
+      case 'health':
+      case 'healthcare':
+        return '\u{1F3E5}';
+
+      case 'medicine':
+        return '\u{1F48A}';
+
+      case 'education':
+      case 'school':
+        return '\u{1F393}';
+
+      case 'mobile':
+      case 'phone':
+      case 'mobile & internet':
+        return '\u{1F4F1}';
+
+      case 'internet':
+      case 'wifi':
+        return '\u{1F310}';
+
+      case 'entertainment':
+      case 'movie':
+        return '\u{1F3AC}';
+
+      case 'travel':
+      case 'flight':
+        return '\u{2708}\u{FE0F}';
+
+      case 'beauty':
+      case 'personal care':
+        return '\u{1F484}';
+
+      case 'fitness':
+      case 'sports':
+        return '\u{1F3CB}\u{FE0F}';
+
+      case 'pets':
+        return '\u{1F43E}';
+
+      case 'gifts':
+      case 'gift':
+      case 'gifts & donations':
+        return '\u{1F381}';
+
+      case 'subscriptions':
+        return '\u{1F4FA}';
+
+      case 'maintenance':
+      case 'tools':
+        return '\u{1F527}';
+
+      case 'work':
+        return '\u{1F4BC}';
+
+      case 'salary':
+        return '\u{1F4B5}';
+
+      case 'freelance':
+        return '\u{1F4BB}';
+
+      case 'business':
+        return '\u{1F3EA}';
+
+      case 'investment':
+        return '\u{1F4C8}';
+
+      case 'bookmark':
+        return '\u{1F516}';
+
+      case 'other':
+      default:
+        return '\u{1F4E6}';
+    }
+  }
 
   IconData _getIconData(String iconName) {
     switch (iconName.toLowerCase().trim()) {
@@ -646,10 +762,10 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     shape: BoxShape.circle,
                                   ),
 
-                                  child: Icon(
-                                    _getIconData(category.icon),
-                                    color: baseColor,
-                                    size: 24,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    _getEmoji(category.icon),
+                                    style: const TextStyle(fontSize: 23),
                                   ),
                                 ),
 
@@ -990,8 +1106,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       _buildDrawerOption(
                                         context: context,
                                         icon: Icons.person_rounded,
-                                        iconColor: const Color(0xFF00BCD4),
-                                        emoji: '🧑',
+                                        iconColor: const Color(0xFFF2C14E),
                                         title: 'Profile',
                                         subtitle:
                                             'Manage your profile and account settings',
@@ -1237,8 +1352,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.person_rounded,
-                        iconColor: const Color(0xFF455A64),
-                        emoji: '🧑',
+                        iconColor: const Color(0xFFF2C14E),
                         title: 'Profile',
                         subtitle: 'Manage your profile and account settings',
                         onTap: () => _closeDrawerAndNavigate(
@@ -1359,4 +1473,3 @@ class _CategoriesViewState extends State<CategoriesView> {
     );
   }
 }
-
