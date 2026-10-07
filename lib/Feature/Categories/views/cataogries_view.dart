@@ -723,9 +723,9 @@ class _CategoriesViewState extends State<CategoriesView> {
                           onTap: () {
                             _closeDrawerInstantly();
 
-                            if (isSelectionMode) {
+                            if (isSelectionMode && !isDefaultCategory) {
                               _toggleCategorySelection(category.id);
-                            } else {
+                            } else if (!isSelectionMode || isDefaultCategory) {
                               Get.to(
                                 () => CategoryTransactionsScreen(
                                   categoryId: category.id,
@@ -769,7 +769,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   ),
                                 ),
 
-                    const SizedBox(width: 14),
+                                const SizedBox(width: 14),
 
                                 Expanded(
                                   child: Column(
@@ -817,7 +817,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                   ),
                                 ),
 
-                                if (isSelectionMode)
+                                if (isSelectionMode && !isDefaultCategory)
                                   Icon(
                                     isSelected
                                         ? Icons.check_circle_rounded
