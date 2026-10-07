@@ -177,34 +177,26 @@ class SyncManager extends GetxController {
       // ------------------------------------------------------
       // STEP 1: Upload local pending changes.
       // ------------------------------------------------------
+await _syncPendingOperations(user.id);
 
-      await _syncPendingOperations(user.id);
+await _syncCloudToLocal(user.id);
 
-      // ------------------------------------------------------
-      // STEP 2: Download cloud changes.
-      // ------------------------------------------------------
+await _refreshPendingCount(user.id);
 
-      await _syncCloudToLocal(user.id);
+if (pendingCount.value == 0) {
+  syncStatus.value = 'Synced';
+  lastError.value = '';
 
-      // ------------------------------------------------------
-      // STEP 3: Check remaining pending operations.
-      // ------------------------------------------------------
+  _lastSuccessfulSync = DateTime.now();
 
-      await _refreshPendingCount(user.id);
+  debugPrint('SYNC SUCCESSFUL');
+} else {
+  syncStatus.value = 'Pending';
 
-      if (pendingCount.value == 0) {
-        syncStatus.value = 'Synced';
-
-        _lastSuccessfulSync = DateTime.now();
-
-        debugPrint('SYNC SUCCESSFUL');
-      } else {
-        syncStatus.value = 'Pending';
-
-        debugPrint(
-          'SYNC STILL PENDING: ${pendingCount.value}',
-        );
-      }
+  debugPrint(
+    'SYNC STILL PENDING: ${pendingCount.value}',
+  );
+}
     } catch (e, stackTrace) {
       await _refreshPendingCount(user.id);
 
@@ -248,76 +240,65 @@ class SyncManager extends GetxController {
   // PENDING OPERATIONS
   // ==========================================================
 
-  Future<void> _syncPendingOperations(
-    String userId,
-  ) async {
-    final pendingOperations =
-        await syncQueue.getPendingOperations(userId);
+Future<void> _syncPendingOperations(
+  String userId,
+) async {
+  final pendingOperations =
+      await syncQueue.getPendingOperations(userId);
 
-    pendingCount.value = pendingOperations.length;
+  pendingCount.value = pendingOperations.length;
 
-    debugPrint(
-      'Processing ${pendingOperations.length} '
-      'pending operation(s)',
-    );
+  debugPrint(
+    'Processing ${pendingOperations.length} '
+    'pending operation(s)',
+  );
 
-    for (final queueItem in pendingOperations) {
-      try {
-        debugPrint('--------------------------------');
-        debugPrint('SYNC QUEUE ITEM');
-        debugPrint('ID: ${queueItem.id}');
-        debugPrint('Entity: ${queueItem.entityTable}');
-        debugPrint('Record: ${queueItem.recordId}');
-        debugPrint('Operation: ${queueItem.operation}');
+  for (final queueItem in pendingOperations) {
+    try {
+      debugPrint('--------------------------------');
+      debugPrint('SYNC QUEUE ITEM');
+      debugPrint('ID: ${queueItem.id}');
+      debugPrint('Entity: ${queueItem.entityTable}');
+      debugPrint('Record: ${queueItem.recordId}');
+      debugPrint('Operation: ${queueItem.operation}');
 
-        await _processQueueItem(queueItem);
+      await _processQueueItem(queueItem);
 
-        if (pendingCount.value > 0) {
-          pendingCount.value--;
-        }
+      debugPrint('QUEUE ITEM SYNCED');
+    } catch (e, stackTrace) {
+      final nextRetryCount =
+          queueItem.retryCount + 1;
 
-        debugPrint('QUEUE ITEM SYNCED');
-      } catch (e, stackTrace) {
-        final nextRetryCount =
-            queueItem.retryCount + 1;
+      final errorMessage = e.toString();
 
-        final errorMessage = e.toString();
+      await syncQueue.updateRetryInfo(
+        id: queueItem.id,
+        retryCount: nextRetryCount,
+        lastError: errorMessage,
+      );
 
-        await syncQueue.updateRetryInfo(
-          id: queueItem.id,
-          retryCount: nextRetryCount,
-          lastError: errorMessage,
-        );
+      lastError.value = errorMessage;
+      syncStatus.value = 'Sync failed';
 
-        lastError.value = errorMessage;
-        syncStatus.value = 'Sync failed';
+      debugPrint('--------------------------------');
+      debugPrint('QUEUE ITEM FAILED');
+      debugPrint('Entity: ${queueItem.entityTable}');
+      debugPrint('Record: ${queueItem.recordId}');
+      debugPrint('Operation: ${queueItem.operation}');
+      debugPrint('Retry count: $nextRetryCount');
+      debugPrint('ERROR: $errorMessage');
+      debugPrint('STACK TRACE: $stackTrace');
+      debugPrint('--------------------------------');
 
-        debugPrint('--------------------------------');
-        debugPrint('QUEUE ITEM FAILED');
-        debugPrint(
-          'Entity: ${queueItem.entityTable}',
-        );
-        debugPrint(
-          'Record: ${queueItem.recordId}',
-        );
-        debugPrint(
-          'Operation: ${queueItem.operation}',
-        );
-        debugPrint(
-          'Retry count: $nextRetryCount',
-        );
-        debugPrint(
-          'ERROR: $errorMessage',
-        );
-        debugPrint(
-          'STACK TRACE: $stackTrace',
-        );
-        debugPrint('--------------------------------');
-      }
+      // IMPORTANT:
+      // Do not process the remaining queue items as if
+      // everything succeeded.
+      rethrow;
     }
-
-    await _refreshPendingCount(userId);
   }
+
+  await _refreshPendingCount(userId);
+}
 
   // ==========================================================
   // PROCESS QUEUE ITEM

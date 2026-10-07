@@ -10,75 +10,123 @@ class AddCommitteeView extends StatefulWidget {
 }
 
 class _AddCommitteeViewState extends State<AddCommitteeView> {
-  final TextEditingController nameController =
-      TextEditingController();
-
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController contributionController =
       TextEditingController();
-
-  final TextEditingController membersController =
-      TextEditingController();
-
-  final TextEditingController durationController =
-      TextEditingController();
+  final TextEditingController membersController = TextEditingController();
+  final TextEditingController durationController = TextEditingController();
 
   DateTime? startDate;
+  DateTime? endingDate;
   DateTime? dueDate;
+
+  String durationUnit = 'Months';
+
+  @override
+  void initState() {
+    super.initState();
+    durationController.addListener(_calculateEndingDate);
+  }
 
   @override
   void dispose() {
     nameController.dispose();
     contributionController.dispose();
     membersController.dispose();
+    durationController.removeListener(_calculateEndingDate);
     durationController.dispose();
     super.dispose();
+  }
+
+  void _calculateEndingDate() {
+    if (startDate == null) {
+      if (endingDate != null) {
+        setState(() {
+          endingDate = null;
+        });
+      }
+      return;
+    }
+
+    // Same date, next year.
+    // Example:
+    // 05/10/2026 -> 05/10/2027
+    final DateTime calculatedDate = DateTime(
+      startDate!.year + 1,
+      startDate!.month,
+      startDate!.day,
+    );
+
+    if (endingDate == null ||
+        endingDate!.year != calculatedDate.year ||
+        endingDate!.month != calculatedDate.month ||
+        endingDate!.day != calculatedDate.day) {
+      setState(() {
+        endingDate = calculatedDate;
+      });
+    }
   }
 
   Future<void> selectStartDate() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: startDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null) {
-      setState(() {
-        startDate = pickedDate;
+    if (pickedDate == null) return;
 
-        if (dueDate != null && dueDate!.isBefore(pickedDate)) {
-          dueDate = null;
-        }
-      });
-    }
+    setState(() {
+      startDate = pickedDate;
+
+      // Automatically set Ending Date to the same date
+      // in the following year.
+      //
+      // 05/10/2026 -> 05/10/2027
+      endingDate = DateTime(
+        pickedDate.year + 1,
+        pickedDate.month,
+        pickedDate.day,
+      );
+
+      if (dueDate != null && dueDate!.isBefore(pickedDate)) {
+        dueDate = null;
+      }
+    });
   }
 
   Future<void> selectDueDate() async {
-    final DateTime minimumDate =
-        startDate ?? DateTime.now();
+    final DateTime minimumDate = startDate ?? DateTime.now();
 
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: startDate ?? DateTime.now(),
+      initialDate: dueDate ?? minimumDate,
       firstDate: minimumDate,
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null) {
-      setState(() {
-        dueDate = pickedDate;
-      });
-    }
+    if (pickedDate == null) return;
+
+    setState(() {
+      dueDate = pickedDate;
+    });
+  }
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
   }
 
   void saveCommittee() {
     final String name = nameController.text.trim();
     final String contributionText =
         contributionController.text.trim();
-    final String membersText =
-        membersController.text.trim();
-    final String durationText =
-        durationController.text.trim();
+    final String membersText = membersController.text.trim();
+    final String durationText = durationController.text.trim();
 
     if (name.isEmpty) {
       showMessage('Please enter committee name.');
@@ -90,42 +138,13 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       return;
     }
 
-    final double? contribution = double.tryParse(
-      contributionText.replaceAll(',', ''),
-    );
-
-    if (contribution == null || contribution <= 0) {
-      showMessage(
-        'Please enter a valid monthly contribution.',
-      );
-      return;
-    }
-
     if (membersText.isEmpty) {
       showMessage('Please enter number of members.');
       return;
     }
 
-    final int? members = int.tryParse(membersText);
-
-    if (members == null || members <= 0) {
-      showMessage(
-        'Please enter a valid number of members.',
-      );
-      return;
-    }
-
     if (durationText.isEmpty) {
-      showMessage('Please enter committee duration.');
-      return;
-    }
-
-    final int? duration = int.tryParse(durationText);
-
-    if (duration == null || duration <= 0) {
-      showMessage(
-        'Please enter a valid duration in months.',
-      );
+      showMessage('Please enter duration.');
       return;
     }
 
@@ -134,17 +153,34 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       return;
     }
 
-    if (dueDate == null) {
-      showMessage('Please select due date.');
+    final int? contribution = int.tryParse(contributionText);
+    final int? members = int.tryParse(membersText);
+    final int? duration = int.tryParse(durationText);
+
+    if (contribution == null || contribution <= 0) {
+      showMessage('Please enter a valid monthly contribution.');
       return;
     }
 
-    if (dueDate!.isBefore(startDate!)) {
-      showMessage(
-        'Due date cannot be before start date.',
-      );
+    if (members == null || members <= 0) {
+      showMessage('Please enter a valid number of members.');
       return;
     }
+
+    if (duration == null || duration <= 0) {
+      showMessage('Please enter a valid duration.');
+      return;
+    }
+
+    // Keep Ending Date automatically generated.
+    // Same date in the next year.
+    endingDate = DateTime(
+      startDate!.year + 1,
+      startDate!.month,
+      startDate!.day,
+    );
+
+    setState(() {});
 
     Navigator.pop(
       context,
@@ -153,243 +189,187 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
         'contribution': contribution,
         'members': members,
         'duration': duration,
+        'durationUnit': durationUnit,
         'startDate': startDate,
+        'endingDate': endingDate,
         'dueDate': dueDate,
       },
     );
   }
 
-  void showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
+  String _formatDate(DateTime? date) {
+    if (date == null) {
+      return 'Select Date';
+    }
+
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    bool readOnly = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        readOnly: true,
+        controller: TextEditingController(
+          text: date == null && readOnly ? '' : _formatDate(date),
         ),
-      );
+        onTap: readOnly ? null : onTap,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: Icon(
+            readOnly
+                ? Icons.event
+                : Icons.calendar_today,
+          ),
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
-
-    final Color backgroundColor =
-        isDark ? Colors.black : const Color(0xFFF5F5F5);
-
-    final Color cardColor =
-        isDark ? const Color(0xFF0A0A0A) : Colors.white;
-
-    final Color primaryTextColor =
-        isDark ? Colors.white : Colors.black87;
-
-    final Color secondaryTextColor =
-        isDark ? Colors.white60 : Colors.black54;
-
     return Scaffold(
-      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Add Committee',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor:
-            isDark ? Colors.black : Colors.white,
-        foregroundColor: primaryTextColor,
-        elevation: 0,
+        title: const Text('Add Committee'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
           children: [
-            Text(
-              'Committee Information',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: primaryTextColor,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Enter the basic details of your committee.',
-              style: TextStyle(
-                fontSize: 13,
-                color: secondaryTextColor,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildTextField(
+            TextField(
               controller: nameController,
-              label: 'Committee Name',
-              hint: 'Enter committee name',
-              icon: Icons.groups_rounded,
-              isDark: isDark,
+              decoration: const InputDecoration(
+                labelText: 'Committee Name',
+                border: OutlineInputBorder(),
+              ),
             ),
+
             const SizedBox(height: 16),
-            _buildTextField(
+
+            TextField(
               controller: contributionController,
-              label: 'Monthly Contribution',
-              hint: 'Enter amount',
-              icon: Icons.currency_exchange_rounded,
               keyboardType: TextInputType.number,
-              isDark: isDark,
               inputFormatters: [
-                ThousandsSeparatorInputFormatter(),
+                FilteringTextInputFormatter.digitsOnly,
               ],
+              decoration: const InputDecoration(
+                labelText: 'Monthly Contribution',
+                border: OutlineInputBorder(),
+              ),
             ),
+
             const SizedBox(height: 16),
-            _buildTextField(
+
+            TextField(
               controller: membersController,
-              label: 'Number of Members',
-              hint: 'Enter members',
-              icon: Icons.people_alt_rounded,
               keyboardType: TextInputType.number,
-              isDark: isDark,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Number of Members',
+                border: OutlineInputBorder(),
+              ),
             ),
+
             const SizedBox(height: 16),
-            _buildTextField(
-              controller: durationController,
-              label: 'Duration',
-              hint: 'Enter duration in months',
-              icon: Icons.calendar_month_rounded,
-              keyboardType: TextInputType.number,
-              isDark: isDark,
-            ),
-            const SizedBox(height: 20),
-            _buildDateField(
-              title: 'Start Date',
-              date: startDate,
-              icon: Icons.event_rounded,
-              onTap: selectStartDate,
-              isDark: isDark,
-              cardColor: cardColor,
-              textColor: primaryTextColor,
-            ),
-            const SizedBox(height: 16),
-            _buildDateField(
-              title: 'Due Date',
-              date: dueDate,
-              icon: Icons.event_available_rounded,
-              onTap: selectDueDate,
-              isDark: isDark,
-              cardColor: cardColor,
-              textColor: primaryTextColor,
-            ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: saveCommittee,
-                icon: const Icon(Icons.save_rounded),
-                label: const Text(
-                  'Create Committee',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: durationController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Duration',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required bool isDark,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      style: TextStyle(
-        color: isDark ? Colors.white : Colors.black87,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor:
-            isDark ? const Color(0xFF0A0A0A) : Colors.white,
-        labelStyle: TextStyle(
-          color:
-              isDark ? Colors.white70 : Colors.black54,
-        ),
-        hintStyle: TextStyle(
-          color:
-              isDark ? Colors.white38 : Colors.black38,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
+                const SizedBox(width: 12),
 
-  Widget _buildDateField({
-    required String title,
-    required DateTime? date,
-    required IconData icon,
-    required VoidCallback onTap,
-    required bool isDark,
-    required Color cardColor,
-    required Color textColor,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
-        ),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isDark
-                  ? Colors.white70
-                  : Colors.black54,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                date == null
-                    ? title
-                    : '${date.day}/${date.month}/${date.year}',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: textColor,
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: durationUnit,
+                    decoration: const InputDecoration(
+                      labelText: 'Unit',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Days',
+                        child: Text('Days'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Weeks',
+                        child: Text('Weeks'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Months',
+                        child: Text('Months'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      setState(() {
+                        durationUnit = value;
+                      });
+
+                      _calculateEndingDate();
+                    },
+                  ),
                 ),
-              ),
+              ],
             ),
-            Icon(
-              Icons.arrow_drop_down_rounded,
-              color: isDark
-                  ? Colors.white70
-                  : Colors.black54,
+
+            const SizedBox(height: 16),
+
+            // START DATE
+            _buildDateField(
+              label: 'Start Date',
+              date: startDate,
+              onTap: selectStartDate,
+            ),
+
+            // ENDING DATE
+            // Automatically filled.
+            // User cannot select or edit it.
+            _buildDateField(
+              label: 'Ending Date',
+              date: endingDate,
+              onTap: () {},
+              readOnly: true,
+            ),
+
+            // DUE DATE
+            _buildDateField(
+              label: 'Due Date',
+              date: dueDate,
+              onTap: selectDueDate,
+            ),
+
+            const SizedBox(height: 8),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: saveCommittee,
+                child: const Text('Save Committee'),
+              ),
             ),
           ],
         ),
@@ -398,42 +378,3 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 }
 
-class ThousandsSeparatorInputFormatter
-    extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final String digitsOnly =
-        newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-
-    if (digitsOnly.isEmpty) {
-      return const TextEditingValue();
-    }
-
-    final String formatted =
-        _formatWithCommas(digitsOnly);
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(
-        offset: formatted.length,
-      ),
-    );
-  }
-
-  String _formatWithCommas(String value) {
-    final StringBuffer result = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 && (value.length - i) % 3 == 0) {
-        result.write(',');
-      }
-
-      result.write(value[i]);
-    }
-
-    return result.toString();
-  }
-}

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:expense_mate/Core/theme/custom_colors.dart';
+import 'package:expense_mate/Core/routes/app_routes.dart';
 
 /// About screen for Expense Mate.
 ///
@@ -19,10 +20,10 @@ class AboutView extends StatelessWidget {
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
   static const String developerName = 'Innovexa Technologies';
-  static const String supportEmail = '[YOUR SUPPORT EMAIL]';
-  static const String websiteUrl = '[YOUR WEBSITE]';
-  static const String privacyPolicyUrl = '[YOUR PRIVACY POLICY URL]';
-  static const String termsUrl = '[YOUR TERMS URL]';
+  static const String supportEmail = 'innovexa.technologies01@gmail.com';
+  static const String websiteUrl = 'innovexa-technologies.vercel.app';
+  static const String privacyPolicyUrl = 'Read the privacy policy';
+  static const String termsUrl = 'Read the terms and conditions';
   // Must match applicationId in android/app/build.gradle.
   static const String packageName = 'com.example.expense_mate';
   static const int copyrightYear = 2026;
@@ -274,6 +275,7 @@ class AboutView extends StatelessWidget {
                     title: 'Contact support',
                     subtitle: supportEmail,
                     onTap: () => _copy(supportEmail, 'Email address copied'),
+                    showCopy: true,
                   ),
                   _ActionTile(
                     isDark: isDark,
@@ -281,20 +283,21 @@ class AboutView extends StatelessWidget {
                     title: 'Website',
                     subtitle: websiteUrl,
                     onTap: () => _copy(websiteUrl, 'Link copied'),
+                    showCopy: true,
                   ),
                   _ActionTile(
                     isDark: isDark,
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy policy',
                     subtitle: privacyPolicyUrl,
-                    onTap: () => _copy(privacyPolicyUrl, 'Link copied'),
+                    onTap: () => Get.toNamed(AppRoutes.privacy),
                   ),
                   _ActionTile(
                     isDark: isDark,
                     icon: Icons.description_outlined,
                     title: 'Terms of service',
                     subtitle: termsUrl,
-                    onTap: () => _copy(termsUrl, 'Link copied'),
+                    onTap: () => Get.toNamed(AppRoutes.terms),
                     isLast: true,
                   ),
                 ],
@@ -636,6 +639,7 @@ class _ActionTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.isLast = false,
+    this.showCopy = false,
   });
 
   final bool isDark;
@@ -644,6 +648,7 @@ class _ActionTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool isLast;
+  final bool showCopy;
 
   @override
   Widget build(BuildContext context) {
@@ -687,11 +692,12 @@ class _ActionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.copy_rounded,
-                size: 16,
-                color: AppColors.textSecondary(isDark),
-              ),
+              if (showCopy)
+                Icon(
+                  Icons.copy_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary(isDark),
+                ),
             ],
           ),
         ),

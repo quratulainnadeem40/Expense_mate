@@ -7,6 +7,7 @@ import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 class CategoriesController extends GetxController {
   static const List<String> protectedCategoryOrder = [
@@ -300,6 +301,18 @@ class CategoriesController extends GetxController {
     final localCategories =
         await _repositories.categories
             .getCategories(userId);
+            debugPrint('===== LOCAL CATEGORIES =====');
+
+for (final category in localCategories) {
+  debugPrint(
+    'CATEGORY => id=${category.id}, '
+    'name=${category.name}, '
+    'type=${category.type}, '
+    'isDeleted=${category.isDeleted}',
+  );
+}
+
+debugPrint('============================');
 
     final localTransactions =
         await _repositories.transactions
@@ -468,8 +481,22 @@ Future<void> addCategory(
 // Generate/use local UUID
 // ------------------------------------------------------
 
-final categoryId = category.id.trim().isNotEmpty
-    ? category.id.trim()
+bool _isValidUuid(String value) {
+  final uuidRegex = RegExp(
+    r'^[0-9a-fA-F]{8}-'
+    r'[0-9a-fA-F]{4}-'
+    r'[1-5][0-9a-fA-F]{3}-'
+    r'[89abAB][0-9a-fA-F]{3}-'
+    r'[0-9a-fA-F]{12}$',
+  );
+
+  return uuidRegex.hasMatch(value);
+}
+
+final oldId = category.id.trim();
+
+final categoryId = _isValidUuid(oldId)
+    ? oldId
     : _generateUuid();
 
 final colorHex = category.colorValue
@@ -759,64 +786,12 @@ final colorHex = category.colorValue
   // UUID
   // ==========================================================
 
+   // ==========================================================
+  // UUID
+  // ==========================================================
+
   String _generateUuid() {
-    final random = Random();
-
-    String hex(int count) {
-      final bytes =
-          List<int>.generate(
-        count,
-        (_) => random.nextInt(256),
-      );
-
-      return bytes
-          .map(
-            (value) => value
-                .toRadixString(16)
-                .padLeft(2, '0'),
-          )
-          .join();
-    }
-
-    final part1 = hex(4);
-    final part2 = hex(2);
-
-    final part3Bytes =
-        List<int>.generate(
-      2,
-      (_) => random.nextInt(256),
-    );
-
-    part3Bytes[0] =
-        (part3Bytes[0] & 0x0f) | 0x40;
-
-    final part3 = part3Bytes
-        .map(
-          (value) => value
-              .toRadixString(16)
-              .padLeft(2, '0'),
-        )
-        .join();
-
-    final part4Bytes =
-        List<int>.generate(
-      2,
-      (_) => random.nextInt(256),
-    );
-
-    part4Bytes[0] =
-        (part4Bytes[0] & 0x3f) | 0x80;
-
-    final part4 = part4Bytes
-        .map(
-          (value) => value
-              .toRadixString(16)
-              .padLeft(2, '0'),
-        )
-        .join();
-
-    final part5 = hex(6);
-
-    return '$part1-$part2-$part3-$part4-$part5';
+    return const Uuid().v4();
   }
+
 }

@@ -3,7 +3,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:uuid/uuid.dart';
 import '../controller/categories_controller.dart';
 
 class AddCategoryDialog extends StatefulWidget {
@@ -385,32 +385,32 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
 
         FilledButton(
           onPressed: () async {
-            final String categoryName = nameController.text.trim();
+  final String categoryName =
+      nameController.text.trim();
 
-            if (categoryName.isEmpty) {
-              Get.snackbar(
-                'Required',
-                'Please enter category name.',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-              return;
-            }
+  if (categoryName.isEmpty) {
+    Get.snackbar(
+      'Required',
+      'Please enter category name.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    return;
+  }
 
-            final newCategory = CategoryModel(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              name: categoryName,
-              icon: selectedIcon,
-              colorValue: 0xFF2E7D32,
-              isDefault: false,
-              type: 'expense',
-            );
+  final newCategory = CategoryModel(
+    id: const Uuid().v4(),
+    name: categoryName,
+    icon: selectedIcon,
+    colorValue: 0xFF2E7D32,
+    isDefault: false,
+    type: 'expense',
+  );
 
-            await controller.addCategory(newCategory);
-
-            if (Get.isDialogOpen == true) {
-              Get.back();
-            }
-          },
+  await controller.addCategory(
+    newCategory,
+    closeDialog: true,
+  );
+},
           style: FilledButton.styleFrom(
             backgroundColor: accent,
             foregroundColor: Colors.white,

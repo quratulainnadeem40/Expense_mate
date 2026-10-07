@@ -23,11 +23,15 @@ class _WalletsViewState extends State<WalletsView> {
   bool isSelectionMode = false;
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
+  if (Get.isRegistered<WalletsController>()) {
     controller = Get.find<WalletsController>();
+  } else {
+    controller = Get.put(WalletsController());
   }
+}
 
   // ============================================================
   // ENTER SELECTION MODE
