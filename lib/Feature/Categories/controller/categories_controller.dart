@@ -28,6 +28,11 @@ class CategoriesController extends GetxController {
 
   final isLoading = false.obs;
 
+  /// Old transactions stored a typed-in category as free text instead of
+  /// pointing at a category record. They are turned into real categories
+  /// once per app run so those records are not left stranded.
+  bool _backfilledCustomCategories = false;
+
   final RepositoryProvider _repositories =
       RepositoryProvider.instance;
 
@@ -434,6 +439,50 @@ debugPrint('============================');
 
     categoryCounts.assignAll(countsMap);
     categoryList.assignAll(categories);
+
+    if (!_backfilledCustomCategories) {
+      _backfilledCustomCategories = true;
+      unawaited(_createMissingCustomCategories(localTransactions));
+    }
+  }
+
+  /// Creates a category for every typed-in name found in transactions
+  /// that has no category of its own yet.
+  Future<void> _createMissingCustomCategories(
+    List<dynamic> localTransactions,
+  ) async {
+    final existing = categoryList
+        .map((category) => _normalizeCategoryName(category.name))
+        .toSet();
+
+    final missing = <String, String>{};
+
+    for (final transaction in localTransactions) {
+      final raw = (transaction.customCategory ?? '').toString().trim();
+      if (raw.isEmpty) continue;
+
+      final key = _normalizeCategoryName(raw);
+      if (key.isEmpty || existing.contains(key)) continue;
+
+      // Keep the first spelling the user actually typed.
+      missing.putIfAbsent(key, () => raw);
+    }
+
+    if (missing.isEmpty) return;
+
+    for (final name in missing.values) {
+      await addCategory(
+        CategoryModel(
+          id: '',
+          name: name,
+          icon: 'other',
+          colorValue: 0xFF2E7D32,
+          isDefault: false,
+          type: 'expense',
+        ),
+        closeDialog: false,
+      );
+    }
   }
 
   // ==========================================================
