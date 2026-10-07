@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../Categories/model/categories_model.dart';
 import '../controller/expense_controller.dart';
 
 class AddExpenseView extends GetView<ExpenseController> {
   const AddExpenseView({super.key});
 
   static const String _addCategoryOption = '__add_custom_category__';
+  static const String _incomeDefaultPrefix = '__income_default__:';
+  static const List<String> _defaultIncomeCategories = [
+    'Salary',
+    'Freelance',
+    'Business',
+    'Gift',
+    'Profit',
+  ];
 
   Future<void> _openCustomExpenseCategoryDialog(
     String previousCategoryId,
@@ -34,19 +43,13 @@ class AddExpenseView extends GetView<ExpenseController> {
           },
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               final name = nameController.text.trim();
 
               if (name.isEmpty) {
-                Get.snackbar(
-                  'Required',
-                  'Enter a category name.',
-                );
+                Get.snackbar('Required', 'Enter a category name.');
                 return;
               }
 
@@ -69,6 +72,98 @@ class AddExpenseView extends GetView<ExpenseController> {
     controller.customCategoryName.value = customName.trim();
   }
 
+  Future<void> _openCustomIncomeCategoryDialog(
+    String previousCategoryId,
+  ) async {
+    final nameController = TextEditingController();
+
+    final customName = await Get.dialog<String>(
+      AlertDialog(
+        title: const Text('Other income source'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Source of Income',
+            hintText: 'Enter a source of income',
+          ),
+          onSubmitted: (value) {
+            final name = value.trim();
+
+            if (name.isNotEmpty) {
+              Get.back(result: name);
+            }
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+
+              if (name.isEmpty) {
+                Get.snackbar('Required', 'Enter a source of income.');
+                return;
+              }
+
+              Get.back(result: name);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    nameController.dispose();
+
+    if (customName == null || customName.trim().isEmpty) {
+      controller.selectedCategoryId.value = previousCategoryId;
+      return;
+    }
+
+    await _saveIncomeCategory(customName.trim(), previousCategoryId);
+  }
+
+  Future<void> _saveIncomeCategory(
+    String name,
+    String previousCategoryId,
+  ) async {
+    final existingCategory = controller.incomeCategories.firstWhereOrNull(
+      (category) => category.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+
+    if (existingCategory != null) {
+      controller.selectedCategoryId.value = existingCategory.id;
+      controller.customCategoryName.value = '';
+      return;
+    }
+
+    await controller.categoriesController.addCategory(
+      CategoryModel(
+        id: '',
+        name: name,
+        icon: 'category',
+        colorValue: const Color(0xFF2EA44F).value,
+        isDefault: false,
+        type: 'income',
+      ),
+      closeDialog: false,
+    );
+
+    final savedCategory = controller.incomeCategories.firstWhereOrNull(
+      (category) => category.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+
+    if (savedCategory == null) {
+      controller.selectedCategoryId.value = previousCategoryId;
+      return;
+    }
+
+    controller.selectedCategoryId.value = savedCategory.id;
+    controller.customCategoryName.value = '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -85,10 +180,7 @@ class AddExpenseView extends GetView<ExpenseController> {
             controller.isEditMode.value
                 ? 'Edit Transaction'
                 : 'Add Transaction',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
         centerTitle: true,
@@ -127,33 +219,28 @@ class AddExpenseView extends GetView<ExpenseController> {
                           children: [
                             Expanded(
                               child: GestureDetector(
-                                onTap: () =>
-                                    controller.toggleType(true),
+                                onTap: () => controller.toggleType(true),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: isExpense
                                         ? expenseRed
                                         : Colors.transparent,
-                                    borderRadius:
-                                        BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(10),
                                     boxShadow: isExpense
                                         ? [
                                             BoxShadow(
-                                              color:
-                                                  expenseRed.withOpacity(
+                                              color: expenseRed.withOpacity(
                                                 0.3,
                                               ),
                                               blurRadius: 8,
-                                              offset:
-                                                  const Offset(0, 3),
+                                              offset: const Offset(0, 3),
                                             ),
                                           ]
                                         : [],
                                   ),
                                   alignment: Alignment.center,
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.arrow_upward_rounded,
@@ -186,33 +273,28 @@ class AddExpenseView extends GetView<ExpenseController> {
                             ),
                             Expanded(
                               child: GestureDetector(
-                                onTap: () =>
-                                    controller.toggleType(false),
+                                onTap: () => controller.toggleType(false),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: !isExpense
                                         ? primaryGreen
                                         : Colors.transparent,
-                                    borderRadius:
-                                        BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(10),
                                     boxShadow: !isExpense
                                         ? [
                                             BoxShadow(
-                                              color:
-                                                  primaryGreen.withOpacity(
+                                              color: primaryGreen.withOpacity(
                                                 0.3,
                                               ),
                                               blurRadius: 8,
-                                              offset:
-                                                  const Offset(0, 3),
+                                              offset: const Offset(0, 3),
                                             ),
                                           ]
                                         : [],
                                   ),
                                   alignment: Alignment.center,
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.arrow_downward_rounded,
@@ -254,8 +336,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                     // AMOUNT
                     // -------------------------------------------------------
                     Obx(() {
-                      final isExpense =
-                          controller.isExpense.value;
+                      final isExpense = controller.isExpense.value;
 
                       final currentColor = isExpense
                           ? expenseRed
@@ -277,8 +358,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                           ),
                         ),
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Amount',
@@ -290,24 +370,21 @@ class AddExpenseView extends GetView<ExpenseController> {
                             ),
                             const SizedBox(height: 4),
                             TextField(
-                              controller:
-                                  controller.amountController,
+                              controller: controller.amountController,
                               onTap: () {
-                                final text = controller
-                                    .amountController.text
+                                final text = controller.amountController.text
                                     .trim();
 
                                 if (text == '0' ||
                                     text == '0.0' ||
                                     text == '0.00') {
-                                  controller.amountController
-                                      .clear();
+                                  controller.amountController.clear();
                                 }
                               },
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                               inputFormatters: [
                                 ThousandsSeparatorInputFormatter(),
                               ],
@@ -322,12 +399,10 @@ class AddExpenseView extends GetView<ExpenseController> {
                                 prefixStyle: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      currentColor.withOpacity(0.7),
+                                  color: currentColor.withOpacity(0.7),
                                 ),
                                 hintStyle: TextStyle(
-                                  color:
-                                      currentColor.withOpacity(0.4),
+                                  color: currentColor.withOpacity(0.4),
                                 ),
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -353,12 +428,38 @@ class AddExpenseView extends GetView<ExpenseController> {
                     // Now it works for BOTH Expense and Income.
                     // -------------------------------------------------------
                     Obx(() {
-                      final isExpense =
-                          controller.isExpense.value;
+                      final isExpense = controller.isExpense.value;
 
-                      final currentList = isExpense
+                      final categoryList = isExpense
                           ? controller.expenseCategories
                           : controller.incomeCategories;
+
+                      final dropdownCategories = List<dynamic>.from(
+                        categoryList,
+                      );
+
+                      if (!isExpense) {
+                        for (final name in _defaultIncomeCategories) {
+                          final alreadySaved = categoryList.any(
+                            (category) =>
+                                category.name.trim().toLowerCase() ==
+                                name.toLowerCase(),
+                          );
+
+                          if (!alreadySaved) {
+                            dropdownCategories.add(
+                              CategoryModel(
+                                id: '$_incomeDefaultPrefix$name',
+                                name: name,
+                                icon: 'category',
+                                colorValue: const Color(0xFF2EA44F).value,
+                                isDefault: true,
+                                type: 'income',
+                              ),
+                            );
+                          }
+                        }
+                      }
 
                       final selectedCategoryId =
                           controller.selectedCategoryId.value;
@@ -367,34 +468,25 @@ class AddExpenseView extends GetView<ExpenseController> {
                           controller.customCategoryName.value;
 
                       return Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildFieldLabel(
                             theme,
-                            isExpense
-                                ? 'Category'
-                                : 'Income Category',
+                            isExpense ? 'Category' : 'Source of Income',
                           ),
 
                           const SizedBox(height: 6),
 
-                          if (currentList.isEmpty)
+                          if (dropdownCategories.isEmpty)
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(14),
-                              decoration:
-                                  _inputBoxDecoration(
-                                theme,
-                                isDark,
-                              ),
+                              decoration: _inputBoxDecoration(theme, isDark),
                               child: Text(
                                 isExpense
                                     ? 'No expense categories available.'
-                                    : 'No income categories available.',
-                                style: TextStyle(
-                                  color: theme.hintColor,
-                                ),
+                                    : 'No income sources available.',
+                                style: TextStyle(color: theme.hintColor),
                               ),
                             )
                           else
@@ -403,11 +495,11 @@ class AddExpenseView extends GetView<ExpenseController> {
                                 '$selectedCategoryId:$customCategoryName:$isExpense',
                               ),
 
-                              value: currentList.any(
-                                (category) =>
-                                    category.id ==
-                                    selectedCategoryId,
-                              )
+                              value:
+                                  dropdownCategories.any(
+                                    (category) =>
+                                        category.id == selectedCategoryId,
+                                  )
                                   ? selectedCategoryId
                                   : null,
 
@@ -416,31 +508,23 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     ? 'Select Category'
                                     : customCategoryName,
                                 style: TextStyle(
-                                  color: theme.hintColor
-                                      .withOpacity(0.6),
+                                  color: theme.hintColor.withOpacity(0.6),
                                   fontSize: 14,
                                 ),
                               ),
 
-                              selectedItemBuilder:
-                                  (BuildContext context) {
+                              selectedItemBuilder: (BuildContext context) {
                                 return [
-                                  ...currentList.map<Widget>(
-                                    (category) {
-                                      return Text(
-                                        category.name,
-                                        style: TextStyle(
-                                          color: theme
-                                              .textTheme
-                                              .bodyLarge
-                                              ?.color,
-                                          fontWeight:
-                                              FontWeight.w500,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const Text('More...'),
+                                  ...dropdownCategories.map<Widget>((category) {
+                                    return Text(
+                                      category.name,
+                                      style: TextStyle(
+                                        color: theme.textTheme.bodyLarge?.color,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    );
+                                  }),
+                                  Text(isExpense ? 'More...' : 'Other'),
                                 ];
                               },
 
@@ -449,72 +533,80 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   : Colors.white,
 
                               icon: Icon(
-                                Icons
-                                    .keyboard_arrow_down_rounded,
-                                color: theme.iconTheme.color ??
-                                    Colors.grey,
+                                Icons.keyboard_arrow_down_rounded,
+                                color: theme.iconTheme.color ?? Colors.grey,
                               ),
 
-                              decoration:
-                                  _buildInputDecoration(
-                                theme,
-                                isDark,
-                              ),
+                              decoration: _buildInputDecoration(theme, isDark),
 
-                              items: currentList
-                                  .map<DropdownMenuItem<String>>(
-                                (category) {
-                                  return DropdownMenuItem<String>(
-                                    value: category.id,
-                                    child: Text(
-                                      category.name,
-                                      style: TextStyle(
-                                        color: theme
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.color,
+                              items:
+                                  dropdownCategories
+                                      .map<DropdownMenuItem<String>>((
+                                        category,
+                                      ) {
+                                        return DropdownMenuItem<String>(
+                                          value: category.id,
+                                          child: Text(
+                                            category.name,
+                                            style: TextStyle(
+                                              color: theme
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.color,
+                                            ),
+                                          ),
+                                        );
+                                      })
+                                      .toList()
+                                    ..add(
+                                      DropdownMenuItem<String>(
+                                        value: _addCategoryOption,
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.add_rounded),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              isExpense ? 'More...' : 'Other',
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ).toList()
-                                ..add(
-                                  const DropdownMenuItem<String>(
-                                    value: _addCategoryOption,
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.add_rounded,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text('More...'),
-                                      ],
-                                    ),
-                                  ),
-                                ),
 
                               onChanged: (value) {
-                                if (value ==
-                                    _addCategoryOption) {
-                                  controller
-                                          .selectedCategoryId
-                                          .value =
-                                      _addCategoryOption;
-
-                                  _openCustomExpenseCategoryDialog(
-                                    selectedCategoryId,
-                                  );
+                                if (value == _addCategoryOption) {
+                                  if (isExpense) {
+                                    controller.selectedCategoryId.value =
+                                        _addCategoryOption;
+                                    _openCustomExpenseCategoryDialog(
+                                      selectedCategoryId,
+                                    );
+                                  } else {
+                                    _openCustomIncomeCategoryDialog(
+                                      selectedCategoryId,
+                                    );
+                                  }
 
                                   return;
                                 }
 
-                                controller
-                                    .customCategoryName
-                                    .value = '';
+                                if (!isExpense &&
+                                    value != null &&
+                                    value.startsWith(_incomeDefaultPrefix)) {
+                                  final defaultName = value.substring(
+                                    _incomeDefaultPrefix.length,
+                                  );
+                                  _saveIncomeCategory(
+                                    defaultName,
+                                    selectedCategoryId,
+                                  );
+                                  return;
+                                }
 
-                                controller
-                                    .selectedCategoryId
-                                    .value = value ?? '';
+                                controller.customCategoryName.value = '';
+
+                                controller.selectedCategoryId.value =
+                                    value ?? '';
                               },
                             ),
 
@@ -531,31 +623,24 @@ class AddExpenseView extends GetView<ExpenseController> {
                     const SizedBox(height: 6),
 
                     Obx(() {
-                      final wallets =
-                          controller.walletsController.wallets;
+                      final wallets = controller.walletsController.wallets;
 
                       if (wallets.isEmpty) {
                         return Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
-                          decoration: _inputBoxDecoration(
-                            theme,
-                            isDark,
-                          ),
+                          decoration: _inputBoxDecoration(theme, isDark),
                           child: Text(
                             'No wallets available.',
-                            style: TextStyle(
-                              color: theme.hintColor,
-                            ),
+                            style: TextStyle(color: theme.hintColor),
                           ),
                         );
                       }
 
-                      final selectedWalletVal = wallets.any(
-                        (w) =>
-                            w.id ==
-                            controller.selectedWalletId.value,
-                      )
+                      final selectedWalletVal =
+                          wallets.any(
+                            (w) => w.id == controller.selectedWalletId.value,
+                          )
                           ? controller.selectedWalletId.value
                           : null;
 
@@ -565,22 +650,17 @@ class AddExpenseView extends GetView<ExpenseController> {
                         hint: Text(
                           'Select Wallet',
                           style: TextStyle(
-                            color: theme.hintColor
-                                .withOpacity(0.6),
+                            color: theme.hintColor.withOpacity(0.6),
                             fontSize: 14,
                           ),
                         ),
 
-                        selectedItemBuilder:
-                            (BuildContext context) {
+                        selectedItemBuilder: (BuildContext context) {
                           return wallets.map<Widget>((wallet) {
                             return Text(
                               wallet.name,
                               style: TextStyle(
-                                color: theme
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.color,
+                                color: theme.textTheme.bodyLarge?.color,
                                 fontWeight: FontWeight.w500,
                               ),
                             );
@@ -593,48 +673,35 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                         icon: Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color:
-                              theme.iconTheme.color ??
-                                  Colors.grey,
+                          color: theme.iconTheme.color ?? Colors.grey,
                         ),
 
-                        decoration:
-                            _buildInputDecoration(
-                          theme,
-                          isDark,
-                        ),
+                        decoration: _buildInputDecoration(theme, isDark),
 
-                        items: wallets
-                            .map<DropdownMenuItem<String>>(
-                          (wallet) {
-                            return DropdownMenuItem<String>(
-                              value: wallet.id,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _walletIcon(wallet.type),
-                                    size: 18,
-                                    color: primaryGreen,
+                        items: wallets.map<DropdownMenuItem<String>>((wallet) {
+                          return DropdownMenuItem<String>(
+                            value: wallet.id,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _walletIcon(wallet.type),
+                                  size: 18,
+                                  color: primaryGreen,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  wallet.name,
+                                  style: TextStyle(
+                                    color: theme.textTheme.bodyMedium?.color,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    wallet.name,
-                                    style: TextStyle(
-                                      color: theme
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.color,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ).toList(),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
 
                         onChanged: (value) {
-                          controller.selectedWalletId.value =
-                              value ?? '';
+                          controller.selectedWalletId.value = value ?? '';
                         },
                       );
                     }),
@@ -644,23 +711,18 @@ class AddExpenseView extends GetView<ExpenseController> {
                     // -------------------------------------------------------
                     // NOTE
                     // -------------------------------------------------------
-                    _buildFieldLabel(
-                      theme,
-                      'Note (Optional)',
-                    ),
+                    _buildFieldLabel(theme, 'Note (Optional)'),
 
                     const SizedBox(height: 6),
 
                     Obx(() {
-                      final isExpense =
-                          controller.isExpense.value;
+                      final isExpense = controller.isExpense.value;
 
                       final currentList = isExpense
                           ? controller.expenseCategories
                           : controller.incomeCategories;
 
-                      final selectedId =
-                          controller.selectedCategoryId.value;
+                      final selectedId = controller.selectedCategoryId.value;
 
                       String? selectedName;
 
@@ -672,29 +734,18 @@ class AddExpenseView extends GetView<ExpenseController> {
                       }
 
                       return TextField(
-                        controller:
-                            controller.noteController,
+                        controller: controller.noteController,
                         style: TextStyle(
-                          color: theme
-                              .textTheme
-                              .bodyLarge
-                              ?.color,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
-                        decoration:
-                            _buildInputDecoration(
-                          theme,
-                          isDark,
-                        ).copyWith(
-                          hintText: _noteHint(
-                            selectedName,
-                            isExpense,
-                          ),
-                          hintStyle: TextStyle(
-                            color: theme.hintColor
-                                .withOpacity(0.6),
-                            fontSize: 13,
-                          ),
-                        ),
+                        decoration: _buildInputDecoration(theme, isDark)
+                            .copyWith(
+                              hintText: _noteHint(selectedName, isExpense),
+                              hintStyle: TextStyle(
+                                color: theme.hintColor.withOpacity(0.6),
+                                fontSize: 13,
+                              ),
+                            ),
                       );
                     }),
                   ],
@@ -718,81 +769,65 @@ class AddExpenseView extends GetView<ExpenseController> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryGreen,
                           elevation: 2,
-                          shadowColor:
-                              primaryGreen.withOpacity(0.4),
+                          shadowColor: primaryGreen.withOpacity(0.4),
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed:
-                            controller.isLoading.value
-                                ? null
-                                : () {
-                                    // Category is now required
-                                    // for BOTH Expense and Income.
-                                    if (controller
-                                            .selectedCategoryId
-                                            .value
-                                            .isEmpty &&
-                                        controller
-                                            .customCategoryName
-                                            .value
-                                            .trim()
-                                            .isEmpty) {
-                                      Get.snackbar(
-                                        'Warning',
-                                        controller.isExpense.value
-                                            ? 'Please select an expense category'
-                                            : 'Please select an income category',
-                                        snackPosition:
-                                            SnackPosition.BOTTOM,
-                                      );
-                                      return;
-                                    }
-
-                                    if (controller
-                                        .selectedWalletId
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : () {
+                                // Category is now required
+                                // for BOTH Expense and Income.
+                                if (controller
+                                        .selectedCategoryId
                                         .value
+                                        .isEmpty &&
+                                    controller.customCategoryName.value
+                                        .trim()
                                         .isEmpty) {
-                                      Get.snackbar(
-                                        'Warning',
-                                        'Please select a wallet',
-                                        snackPosition:
-                                            SnackPosition.BOTTOM,
-                                      );
-                                      return;
-                                    }
+                                  Get.snackbar(
+                                    'Warning',
+                                    controller.isExpense.value
+                                        ? 'Please select an expense category'
+                                        : 'Please select an income category',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
 
-                                    controller.saveExpense();
-                                  },
-                        child:
-                            controller.isLoading.value
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child:
-                                        CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Obx(
-                                    () => Text(
-                                      controller
-                                              .isEditMode
-                                              .value
-                                          ? 'Update Transaction'
-                                          : 'Save Transaction',
-                                      style:
-                                          const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    ),
+                                if (controller.selectedWalletId.value.isEmpty) {
+                                  Get.snackbar(
+                                    'Warning',
+                                    'Please select a wallet',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
+
+                                controller.saveExpense();
+                              },
+                        child: controller.isLoading.value
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Obx(
+                                () => Text(
+                                  controller.isEditMode.value
+                                      ? 'Update Transaction'
+                                      : 'Save Transaction',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -819,12 +854,8 @@ class AddExpenseView extends GetView<ExpenseController> {
     );
   }
 
-  String _noteHint(
-    String? categoryName,
-    bool isExpense,
-  ) {
-    final name =
-        (categoryName ?? '').toLowerCase().trim();
+  String _noteHint(String? categoryName, bool isExpense) {
+    final name = (categoryName ?? '').toLowerCase().trim();
 
     if (name.isEmpty) {
       return isExpense
@@ -832,26 +863,14 @@ class AddExpenseView extends GetView<ExpenseController> {
           : 'e.g., Where did this income come from?';
     }
 
-    bool has(List<String> keys) =>
-        keys.any((k) => name.contains(k));
+    bool has(List<String> keys) => keys.any((k) => name.contains(k));
 
     if (isExpense) {
-      if (has([
-        'food',
-        'restaurant',
-        'dining',
-        'lunch',
-        'dinner',
-      ])) {
+      if (has(['food', 'restaurant', 'dining', 'lunch', 'dinner'])) {
         return 'e.g., Lunch with team';
       }
 
-      if (has([
-        'grocer',
-        'kitchen',
-        'vegetable',
-        'market',
-      ])) {
+      if (has(['grocer', 'kitchen', 'vegetable', 'market'])) {
         return 'e.g., Monthly grocery shopping';
       }
 
@@ -869,30 +888,15 @@ class AddExpenseView extends GetView<ExpenseController> {
         return 'e.g., Fuel for the bike';
       }
 
-      if (has([
-        'shop',
-        'cloth',
-        'fashion',
-        'apparel',
-      ])) {
+      if (has(['shop', 'cloth', 'fashion', 'apparel'])) {
         return 'e.g., New pair of shoes';
       }
 
-      if (has([
-        'bill',
-        'utilit',
-        'electric',
-        'gas',
-        'water',
-      ])) {
+      if (has(['bill', 'utilit', 'electric', 'gas', 'water'])) {
         return 'e.g., Electricity bill for this month';
       }
 
-      if (has([
-        'rent',
-        'house',
-        'home',
-      ])) {
+      if (has(['rent', 'house', 'home'])) {
         return 'e.g., House rent payment';
       }
 
@@ -920,13 +924,7 @@ class AddExpenseView extends GetView<ExpenseController> {
         return 'e.g., Semester fee payment';
       }
 
-      if (has([
-        'entertain',
-        'movie',
-        'game',
-        'fun',
-        'outing',
-      ])) {
+      if (has(['entertain', 'movie', 'game', 'fun', 'outing'])) {
         return 'e.g., Movie tickets with friends';
       }
 
@@ -943,58 +941,27 @@ class AddExpenseView extends GetView<ExpenseController> {
         return 'e.g., Monthly internet package';
       }
 
-      if (has([
-        'gift',
-        'donat',
-        'charity',
-        'zakat',
-        'sadqa',
-      ])) {
+      if (has(['gift', 'donat', 'charity', 'zakat', 'sadqa'])) {
         return 'e.g., Gift for a friend\'s wedding';
       }
 
-      if (has([
-        'personal',
-        'care',
-        'salon',
-        'grooming',
-        'beauty',
-      ])) {
+      if (has(['personal', 'care', 'salon', 'grooming', 'beauty'])) {
         return 'e.g., Haircut and grooming';
       }
 
-      if (has([
-        'famil',
-        'kid',
-        'child',
-        'parent',
-      ])) {
+      if (has(['famil', 'kid', 'child', 'parent'])) {
         return 'e.g., Kids\' monthly expenses';
       }
 
-      if (has([
-        'repair',
-        'maintain',
-        'maintenance',
-        'service',
-      ])) {
+      if (has(['repair', 'maintain', 'maintenance', 'service'])) {
         return 'e.g., Bike servicing and repair';
       }
 
-      if (has([
-        'insur',
-        'tax',
-        'loan',
-        'installment',
-        'emi',
-      ])) {
+      if (has(['insur', 'tax', 'loan', 'installment', 'emi'])) {
         return 'e.g., Monthly installment payment';
       }
 
-      if (has([
-        'pet',
-        'animal',
-      ])) {
+      if (has(['pet', 'animal'])) {
         return 'e.g., Pet food and vet visit';
       }
 
@@ -1004,101 +971,50 @@ class AddExpenseView extends GetView<ExpenseController> {
     // ---------------------------------------------------------------
     // INCOME CATEGORY NOTE HINTS
     // ---------------------------------------------------------------
-    if (has([
-      'salary',
-      'wage',
-      'pay',
-    ])) {
+    if (has(['salary', 'wage', 'pay'])) {
       return 'e.g., Salary for this month';
     }
 
-    if (has([
-      'business',
-      'shop',
-      'sale',
-      'profit',
-    ])) {
+    if (has(['business', 'shop', 'sale', 'profit'])) {
       return 'e.g., Profit from shop sales';
     }
 
-    if (has([
-      'freelanc',
-      'client',
-      'project',
-      'fiverr',
-      'upwork',
-    ])) {
+    if (has(['freelanc', 'client', 'project', 'fiverr', 'upwork'])) {
       return 'e.g., Payment from a client project';
     }
 
-    if (has([
-      'invest',
-      'stock',
-      'dividend',
-      'interest',
-      'saving',
-    ])) {
+    if (has(['invest', 'stock', 'dividend', 'interest', 'saving'])) {
       return 'e.g., Return on investment';
     }
 
-    if (has([
-      'bonus',
-      'commission',
-      'incentive',
-      'overtime',
-    ])) {
+    if (has(['bonus', 'commission', 'incentive', 'overtime'])) {
       return 'e.g., Performance bonus from office';
     }
 
-    if (has([
-      'gift',
-      'eidi',
-      'award',
-      'prize',
-    ])) {
+    if (has(['gift', 'eidi', 'award', 'prize'])) {
       return 'e.g., Eidi received from family';
     }
 
-    if (has([
-      'rent',
-      'property',
-    ])) {
+    if (has(['rent', 'property'])) {
       return 'e.g., Rent received from tenant';
     }
 
-    if (has([
-      'refund',
-      'cashback',
-      'return',
-    ])) {
+    if (has(['refund', 'cashback', 'return'])) {
       return 'e.g., Refund for a cancelled order';
     }
 
-    if (has([
-      'loan',
-      'borrow',
-      'debt',
-      'repay',
-    ])) {
+    if (has(['loan', 'borrow', 'debt', 'repay'])) {
       return 'e.g., Loan amount returned by a friend';
     }
 
-    if (has([
-      'pension',
-      'allowance',
-      'stipend',
-      'scholarship',
-    ])) {
+    if (has(['pension', 'allowance', 'stipend', 'scholarship'])) {
       return 'e.g., Monthly allowance received';
     }
 
     return 'e.g., Add a short note for $categoryName';
   }
 
-  Widget _buildFieldLabel(
-    ThemeData theme,
-    String title,
-  ) {
+  Widget _buildFieldLabel(ThemeData theme, String title) {
     return Text(
       title,
       style: TextStyle(
@@ -1109,51 +1025,30 @@ class AddExpenseView extends GetView<ExpenseController> {
     );
   }
 
-  InputDecoration _buildInputDecoration(
-    ThemeData theme,
-    bool isDark,
-  ) {
+  InputDecoration _buildInputDecoration(ThemeData theme, bool isDark) {
     return InputDecoration(
       filled: true,
-      fillColor: isDark
-          ? const Color(0xFF252A2D)
-          : const Color(0xFFF7F8FA),
-      contentPadding:
-          const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
+      fillColor: isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: isDark
-              ? Colors.white10
-              : Colors.black.withOpacity(0.06),
+          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(
-          color: Color(0xFF2EA44F),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFF2EA44F), width: 1.5),
       ),
     );
   }
 
-  BoxDecoration _inputBoxDecoration(
-    ThemeData theme,
-    bool isDark,
-  ) {
+  BoxDecoration _inputBoxDecoration(ThemeData theme, bool isDark) {
     return BoxDecoration(
-      color: isDark
-          ? const Color(0xFF252A2D)
-          : const Color(0xFFF7F8FA),
+      color: isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: isDark
-            ? Colors.white10
-            : Colors.black.withOpacity(0.06),
+        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
       ),
     );
   }
@@ -1182,8 +1077,7 @@ class AddExpenseView extends GetView<ExpenseController> {
   }
 }
 
-class ThousandsSeparatorInputFormatter
-    extends TextInputFormatter {
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -1197,55 +1091,43 @@ class ThousandsSeparatorInputFormatter
 
     value = value.replaceAll(',', '');
 
-    value = value.replaceAll(
-      RegExp(r'[^0-9.]'),
-      '',
-    );
+    value = value.replaceAll(RegExp(r'[^0-9.]'), '');
 
     final firstDot = value.indexOf('.');
 
     if (firstDot != -1) {
-      final beforeDecimal =
-          value.substring(0, firstDot);
+      final beforeDecimal = value.substring(0, firstDot);
 
-      var afterDecimal =
-          value.substring(firstDot + 1);
+      var afterDecimal = value.substring(firstDot + 1);
 
       if (afterDecimal.length > 2) {
-        afterDecimal =
-            afterDecimal.substring(0, 2);
+        afterDecimal = afterDecimal.substring(0, 2);
       }
 
-      value =
-          '$beforeDecimal.$afterDecimal';
+      value = '$beforeDecimal.$afterDecimal';
     }
 
     final parts = value.split('.');
 
     String integerPart = parts[0];
 
-    final decimalPart =
-        parts.length > 1 ? parts[1] : null;
+    final decimalPart = parts.length > 1 ? parts[1] : null;
 
     if (integerPart.isEmpty) {
       integerPart = '0';
     }
 
-    final formattedInteger =
-        integerPart.replaceAllMapped(
+    final formattedInteger = integerPart.replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+(?!\d))'),
       (match) => ',',
     );
 
-    final formattedValue =
-        decimalPart != null
-            ? '$formattedInteger.$decimalPart'
-            : formattedInteger;
+    final formattedValue = decimalPart != null
+        ? '$formattedInteger.$decimalPart'
+        : formattedInteger;
     return TextEditingValue(
       text: formattedValue,
-      selection: TextSelection.collapsed(
-        offset: formattedValue.length,
-      ),
+      selection: TextSelection.collapsed(offset: formattedValue.length),
     );
   }
 }
