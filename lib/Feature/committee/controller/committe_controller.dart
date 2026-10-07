@@ -1,21 +1,17 @@
+
 import 'package:get/get.dart';
 
 class CommitteeController extends GetxController {
-
   final committeeName = ''.obs;
   final monthlyContribution = 0.0.obs;
   final totalMembers = 0.obs;
   final durationMonths = 0.obs;
 
-  
   final members = <Map<String, dynamic>>[].obs;
-
 
   final payments = <Map<String, dynamic>>[].obs;
 
- 
   final isLoading = false.obs;
-
 
   void addCommittee({
     required String name,
@@ -29,18 +25,20 @@ class CommitteeController extends GetxController {
     durationMonths.value = duration;
   }
 
- 
   void addMember({
     required String name,
+    required String fatherName,
     required String phone,
+    required double contribution,
   }) {
     members.add({
       'name': name,
+      'fatherName': fatherName,
       'phone': phone,
+      'contribution': contribution,
     });
   }
 
-  
   void addPayment({
     required String memberName,
     required double amount,
@@ -60,7 +58,6 @@ class CommitteeController extends GetxController {
     }
   }
 
- 
   void markPaymentPending(int index) {
     if (index >= 0 && index < payments.length) {
       payments[index]['status'] = 'Pending';
@@ -68,12 +65,10 @@ class CommitteeController extends GetxController {
     }
   }
 
-  
   double get totalPool {
     return monthlyContribution.value * totalMembers.value;
   }
 
-  
   void clearCommittee() {
     committeeName.value = '';
     monthlyContribution.value = 0.0;
