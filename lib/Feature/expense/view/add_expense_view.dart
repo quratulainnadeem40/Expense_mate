@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../Categories/model/categories_model.dart';
+import '../../settings/controller/settings_controller.dart';
 import '../controller/expense_controller.dart';
 
 class AddExpenseView extends GetView<ExpenseController> {
@@ -168,6 +169,9 @@ class AddExpenseView extends GetView<ExpenseController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = Get.isDarkMode;
+    final settingsController = Get.isRegistered<SettingsController>()
+        ? Get.find<SettingsController>()
+        : Get.put(SettingsController());
 
     const primaryGreen = Color(0xFF2EA44F);
     const expenseRed = Color(0xFFE53935);
@@ -369,47 +373,62 @@ class AddExpenseView extends GetView<ExpenseController> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            TextField(
-                              controller: controller.amountController,
-                              onTap: () {
-                                final text = controller.amountController.text
-                                    .trim();
-
-                                if (text == '0' ||
-                                    text == '0.0' ||
-                                    text == '0.00') {
-                                  controller.amountController.clear();
-                                }
-                              },
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Obx(
+                                  () => Text(
+                                    '${settingsController.selectedCurrency.value} ',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: currentColor.withOpacity(0.7),
+                                    ),
                                   ),
-                              inputFormatters: [
-                                ThousandsSeparatorInputFormatter(),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: TextField(
+                                    controller: controller.amountController,
+                                    onTap: () {
+                                      final text = controller
+                                          .amountController
+                                          .text
+                                          .trim();
+
+                                      if (text == '0' ||
+                                          text == '0.0' ||
+                                          text == '0.00') {
+                                        controller.amountController.clear();
+                                      }
+                                    },
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    inputFormatters: [
+                                      ThousandsSeparatorInputFormatter(),
+                                    ],
+                                    style: TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                      color: currentColor,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: '0.00',
+                                      hintStyle: TextStyle(
+                                        color: currentColor.withOpacity(0.4),
+                                      ),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                                ),
                               ],
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: currentColor,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: '0.00',
-                                prefixText: 'PKR ',
-                                prefixStyle: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: currentColor.withOpacity(0.7),
-                                ),
-                                hintStyle: TextStyle(
-                                  color: currentColor.withOpacity(0.4),
-                                ),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
                             ),
                           ],
                         ),
