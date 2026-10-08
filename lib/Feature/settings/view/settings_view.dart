@@ -302,12 +302,7 @@ class SettingsView extends StatelessWidget {
           ).copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: SyncStatusIndicator(),
-          ),
-        ],
+       
       ),
       body: Obx(
         () => ListView(
