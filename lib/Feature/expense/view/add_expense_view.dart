@@ -69,8 +69,11 @@ class AddExpenseView extends GetView<ExpenseController> {
       return;
     }
 
-    controller.selectedCategoryId.value = '';
-    controller.customCategoryName.value = customName.trim();
+    await _saveCategory(
+      customName.trim(),
+      'expense',
+      previousCategoryId,
+    );
   }
 
   Future<void> _openCustomIncomeCategoryDialog(
@@ -123,15 +126,22 @@ class AddExpenseView extends GetView<ExpenseController> {
       return;
     }
 
-    await _saveIncomeCategory(customName.trim(), previousCategoryId);
+    await _saveCategory(
+      customName.trim(),
+      'income',
+      previousCategoryId,
+    );
   }
 
-  Future<void> _saveIncomeCategory(
+  Future<void> _saveCategory(
     String name,
+    String type,
     String previousCategoryId,
   ) async {
-    final existingCategory = controller.incomeCategories.firstWhereOrNull(
-      (category) => category.name.trim().toLowerCase() == name.toLowerCase(),
+    final categoriesController = controller.categoriesController;
+    final existingCategory = await categoriesController.findCategoryByName(
+      name,
+      type: type,
     );
 
     if (existingCategory != null) {
@@ -140,20 +150,32 @@ class AddExpenseView extends GetView<ExpenseController> {
       return;
     }
 
-    await controller.categoriesController.addCategory(
+    final conflictingCategory =
+        await categoriesController.findCategoryByName(name);
+    if (conflictingCategory != null) {
+      controller.selectedCategoryId.value = previousCategoryId;
+      Get.snackbar(
+        'Category already exists',
+        'This name is already used by a ${conflictingCategory.type} category. Choose that category or use a different name.',
+      );
+      return;
+    }
+
+    await categoriesController.addCategory(
       CategoryModel(
         id: '',
         name: name,
         icon: 'category',
         colorValue: const Color(0xFF2EA44F).value,
         isDefault: false,
-        type: 'income',
+        type: type,
       ),
       closeDialog: false,
     );
 
-    final savedCategory = controller.incomeCategories.firstWhereOrNull(
-      (category) => category.name.trim().toLowerCase() == name.toLowerCase(),
+    final savedCategory = await categoriesController.findCategoryByName(
+      name,
+      type: type,
     );
 
     if (savedCategory == null) {
@@ -615,8 +637,9 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   final defaultName = value.substring(
                                     _incomeDefaultPrefix.length,
                                   );
-                                  _saveIncomeCategory(
+                                  _saveCategory(
                                     defaultName,
+                                    'income',
                                     selectedCategoryId,
                                   );
                                   return;

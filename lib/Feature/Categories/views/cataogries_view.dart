@@ -730,6 +730,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                 () => CategoryTransactionsScreen(
                                   categoryId: category.id,
                                   categoryName: category.name,
+                                  categoryType: category.type,
                                 ),
                               );
                             }

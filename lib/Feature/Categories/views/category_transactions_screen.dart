@@ -1,15 +1,16 @@
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoryTransactionsScreen extends StatelessWidget {
   final String categoryId;
   final String categoryName;
+  final String categoryType;
 
   const CategoryTransactionsScreen({
     super.key,
     required this.categoryId,
     required this.categoryName,
+    required this.categoryType,
   });
 
   String _formatAmount(double amount) {
@@ -35,42 +36,56 @@ class CategoryTransactionsScreen extends StatelessWidget {
       return [];
     }
 
+    final categoryResponse = await Supabase.instance.client
+        .from('categories')
+        .select('id, name, type')
+        .eq('user_id', user.id);
+
+    final normalizedName = _normalizeCategoryName(categoryName);
+    final normalizedType = categoryType.trim().toLowerCase();
+    final categoryIds = <String>{categoryId};
+
+    for (final category in List<Map<String, dynamic>>.from(categoryResponse)) {
+      if (_normalizeCategoryName(category['name']?.toString() ?? '') ==
+              normalizedName &&
+          (category['type']?.toString().trim().toLowerCase() ?? '') ==
+              normalizedType) {
+        final id = category['id']?.toString() ?? '';
+        if (id.isNotEmpty) categoryIds.add(id);
+      }
+    }
+
     final response = await Supabase.instance.client
         .from('transactions')
         .select()
         .eq('user_id', user.id)
-        .eq('category_id', categoryId)
+        .inFilter('category_id', categoryIds.toList())
         .order('transaction_date', ascending: false);
 
     return List<Map<String, dynamic>>.from(response);
   }
 
+  String _normalizeCategoryName(String name) =>
+      name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(categoryName),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(categoryName), centerTitle: true),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _loadTransactions(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
             return Center(
               child: Text(
                 'Unable to load transactions.',
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
-                ),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
               ),
             );
           }
@@ -85,8 +100,7 @@ class CategoryTransactionsScreen extends StatelessWidget {
             if (amount is num) {
               totalAmount += amount.toDouble();
             } else {
-              totalAmount +=
-                  double.tryParse(amount?.toString() ?? '') ?? 0;
+              totalAmount += double.tryParse(amount?.toString() ?? '') ?? 0;
             }
           }
 
@@ -117,8 +131,7 @@ class CategoryTransactionsScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color:
-                            isDark ? Colors.white : Colors.black,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -126,9 +139,7 @@ class CategoryTransactionsScreen extends StatelessWidget {
                       'Total Amount',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark
-                            ? Colors.grey[400]
-                            : Colors.grey[600],
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -143,10 +154,7 @@ class CategoryTransactionsScreen extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       '${transactions.length} Transactions',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -155,45 +163,31 @@ class CategoryTransactionsScreen extends StatelessWidget {
               Expanded(
                 child: transactions.isEmpty
                     ? const Center(
-                        child: Text(
-                          'No transactions found in this category.',
-                        ),
+                        child: Text('No transactions found in this category.'),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: transactions.length,
                         itemBuilder: (context, index) {
-                          final transaction =
-                              transactions[index];
+                          final transaction = transactions[index];
 
-                          final amountValue =
-                              transaction['amount'];
+                          final amountValue = transaction['amount'];
 
-                          final double amount =
-                              amountValue is num
-                                  ? amountValue.toDouble()
-                                  : double.tryParse(
-                                        amountValue?.toString() ??
-                                            '',
-                                      ) ??
-                                      0;
+                          final double amount = amountValue is num
+                              ? amountValue.toDouble()
+                              : double.tryParse(
+                                      amountValue?.toString() ?? '',
+                                    ) ??
+                                    0;
 
                           final String title =
-                              transaction['title']
-                                      ?.toString() ??
-                                  categoryName;
+                              transaction['title']?.toString() ?? categoryName;
 
                           final String type =
-                              transaction['type']
-                                      ?.toString() ??
-                                  'expense';
+                              transaction['type']?.toString() ?? 'expense';
 
                           return Container(
-                            margin: const EdgeInsets.only(
-                              bottom: 10,
-                            ),
+                            margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 15,
@@ -202,8 +196,7 @@ class CategoryTransactionsScreen extends StatelessWidget {
                               color: isDark
                                   ? const Color(0xFF0A0A0A)
                                   : Theme.of(context).cardColor,
-                              borderRadius:
-                                  BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: Row(
                               children: [
@@ -219,8 +212,7 @@ class CategoryTransactionsScreen extends StatelessWidget {
                                     title,
                                     style: const TextStyle(
                                       fontSize: 15,
-                                      fontWeight:
-                                          FontWeight.w600,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
@@ -244,5 +236,3 @@ class CategoryTransactionsScreen extends StatelessWidget {
     );
   }
 }
-
-

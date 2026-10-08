@@ -28,8 +28,7 @@ class CategoriesController extends GetxController {
 
   final isLoading = false.obs;
 
-  final RepositoryProvider _repositories =
-      RepositoryProvider.instance;
+  final RepositoryProvider _repositories = RepositoryProvider.instance;
 
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -38,22 +37,52 @@ class CategoriesController extends GetxController {
   // ==========================================================
 
   static String _normalizeCategoryName(String? name) {
-    return (name ?? '').trim().toLowerCase().replaceAll(
-          RegExp(r'\s+'),
-          ' ',
-        );
+    return (name ?? '').trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   static bool isProtectedCategoryName(String? name) {
-    return protectedCategoryOrder.contains(
-      _normalizeCategoryName(name),
+    return protectedCategoryOrder.contains(_normalizeCategoryName(name));
+  }
+
+  Future<CategoryModel?> findCategoryByName(String name, {String? type}) async {
+    final normalizedName = _normalizeCategoryName(name);
+    final normalizedType = type?.trim().toLowerCase();
+
+    bool matches(CategoryModel category) {
+      return _normalizeCategoryName(category.name) == normalizedName &&
+          (normalizedType == null ||
+              category.type.trim().toLowerCase() == normalizedType);
+    }
+
+    final visibleMatch = categoryList.firstWhereOrNull(matches);
+    if (visibleMatch != null) return visibleMatch;
+
+    final user = currentUser;
+    if (user == null) return null;
+
+    final localCategories = await _repositories.categories.getCategories(
+      user.id,
+    );
+    final localMatch = localCategories.firstWhereOrNull(
+      (category) =>
+          _normalizeCategoryName(category.name) == normalizedName &&
+          (normalizedType == null ||
+              category.type.trim().toLowerCase() == normalizedType),
+    );
+
+    if (localMatch == null) return null;
+
+    return CategoryModel(
+      id: localMatch.id,
+      name: localMatch.name,
+      icon: localMatch.icon ?? 'category',
+      colorValue: _parseColor(localMatch.color),
+      isDefault: isProtectedCategoryName(localMatch.name),
+      type: localMatch.type.toLowerCase(),
     );
   }
 
-  static int compareCategoryOrder(
-    CategoryModel a,
-    CategoryModel b,
-  ) {
+  static int compareCategoryOrder(CategoryModel a, CategoryModel b) {
     final aProtected = isProtectedCategoryName(a.name);
     final bProtected = isProtectedCategoryName(b.name);
 
@@ -77,20 +106,14 @@ class CategoriesController extends GetxController {
       return aIndex.compareTo(bIndex);
     }
 
-    return a.name
-        .toLowerCase()
-        .compareTo(b.name.toLowerCase());
+    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
   }
 
   static List<String> filterDeletableCategoryIds(
     List<String> ids,
     Set<String> idsInUseByTransactions,
   ) {
-    return ids
-        .where(
-          (id) => !idsInUseByTransactions.contains(id),
-        )
-        .toList();
+    return ids.where((id) => !idsInUseByTransactions.contains(id)).toList();
   }
 
   // ==========================================================
@@ -111,52 +134,40 @@ class CategoriesController extends GetxController {
       }
 
       final name = item['name']?.toString() ?? '';
+      final normalizedName = _normalizeCategoryName(name);
+      final type = item['type']?.toString().trim().toLowerCase();
+      final categoryType = type == null || type.isEmpty ? 'expense' : type;
+      final categoryKey = '$categoryType:$normalizedName';
 
-      final normalizedName =
-          _normalizeCategoryName(name);
-
-      if (normalizedName.isEmpty ||
-          seen.contains(normalizedName)) {
+      if (normalizedName.isEmpty || seen.contains(categoryKey)) {
         continue;
       }
 
-      seen.add(normalizedName);
+      seen.add(categoryKey);
 
-      if (protectedCategoryOrder.contains(
-        normalizedName,
-      )) {
-        protectedItems.add(
-          Map<String, dynamic>.from(item),
-        );
+      if (categoryType == 'expense' &&
+          protectedCategoryOrder.contains(normalizedName)) {
+        protectedItems.add(Map<String, dynamic>.from(item));
       } else {
-        customItems.add(
-          Map<String, dynamic>.from(item),
-        );
+        customItems.add(Map<String, dynamic>.from(item));
       }
     }
 
-    customItems.sort(
-      (a, b) {
-        return _normalizeCategoryName(
-          a['name']?.toString() ?? '',
-        ).compareTo(
-          _normalizeCategoryName(
-            b['name']?.toString() ?? '',
-          ),
-        );
-      },
-    );
+    customItems.sort((a, b) {
+      return _normalizeCategoryName(
+        a['name']?.toString() ?? '',
+      ).compareTo(_normalizeCategoryName(b['name']?.toString() ?? ''));
+    });
 
     final ordered = <Map<String, dynamic>>[];
 
-    for (final categoryName
-        in protectedCategoryOrder) {
+    for (final categoryName in protectedCategoryOrder) {
       final match = protectedItems.firstWhereOrNull(
         (item) =>
-            _normalizeCategoryName(
-              item['name']?.toString() ?? '',
-            ) ==
-            categoryName,
+            _normalizeCategoryName(item['name']?.toString() ?? '') ==
+                categoryName &&
+            (item['type']?.toString().trim().toLowerCase() ?? 'expense') ==
+                'expense',
       );
 
       if (match != null) {
@@ -179,9 +190,7 @@ class CategoriesController extends GetxController {
     return ordered;
   }
 
-  static String _defaultDisplayName(
-    String categoryName,
-  ) {
+  static String _defaultDisplayName(String categoryName) {
     switch (categoryName) {
       case 'education':
         return 'Education';
@@ -198,14 +207,11 @@ class CategoriesController extends GetxController {
           return '';
         }
 
-        return categoryName[0].toUpperCase() +
-            categoryName.substring(1);
+        return categoryName[0].toUpperCase() + categoryName.substring(1);
     }
   }
 
-  static int _defaultColorValue(
-    String categoryName,
-  ) {
+  static int _defaultColorValue(String categoryName) {
     switch (categoryName) {
       case 'education':
         return 0xFF5C6BC0;
@@ -269,9 +275,7 @@ class CategoriesController extends GetxController {
       unawaited(_syncAndReload(user.id));
     } catch (_) {
       isLoading.value = false;
-      _showError(
-        'Unable to load categories.',
-      );
+      _showError('Unable to load categories.');
     }
   }
 
@@ -295,31 +299,28 @@ class CategoriesController extends GetxController {
   // LOAD FROM LOCAL DATABASE
   // ==========================================================
 
-  Future<void> _loadFromLocal(
-    String userId,
-  ) async {
-    final localCategories =
-        await _repositories.categories
-            .getCategories(userId);
-            debugPrint('===== LOCAL CATEGORIES =====');
+  Future<void> _loadFromLocal(String userId) async {
+    final localCategories = await _repositories.categories.getCategories(
+      userId,
+    );
+    debugPrint('===== LOCAL CATEGORIES =====');
 
-for (final category in localCategories) {
-  debugPrint(
-    'CATEGORY => id=${category.id}, '
-    'name=${category.name}, '
-    'type=${category.type}, '
-    'isDeleted=${category.isDeleted}',
-  );
-}
+    for (final category in localCategories) {
+      debugPrint(
+        'CATEGORY => id=${category.id}, '
+        'name=${category.name}, '
+        'type=${category.type}, '
+        'isDeleted=${category.isDeleted}',
+      );
+    }
 
-debugPrint('============================');
+    debugPrint('============================');
 
-    final localTransactions =
-        await _repositories.transactions
-            .getTransactions(userId);
+    final localTransactions = await _repositories.transactions.getTransactions(
+      userId,
+    );
 
-    final rawCategories =
-        <Map<String, dynamic>>[];
+    final rawCategories = <Map<String, dynamic>>[];
 
     for (final category in localCategories) {
       rawCategories.add({
@@ -328,13 +329,11 @@ debugPrint('============================');
         'icon': category.icon,
         'color': category.color,
         'type': category.type,
-        'isDefault':
-            isProtectedCategoryName(category.name),
+        'isDefault': isProtectedCategoryName(category.name),
       });
     }
 
-    final visibleData =
-        filterVisibleCategories(rawCategories);
+    final visibleData = filterVisibleCategories(rawCategories);
 
     final countsMap = <String, int>{};
 
@@ -343,8 +342,7 @@ debugPrint('============================');
     // ----------------------------------------------------------
 
     for (final category in visibleData) {
-      final categoryId =
-          category['id']?.toString() ?? '';
+      final categoryId = category['id']?.toString() ?? '';
 
       if (categoryId.isEmpty) {
         continue;
@@ -353,42 +351,30 @@ debugPrint('============================');
       // Virtual protected categories have IDs such as
       // default_food. Their real transactions use the real
       // Supabase category ID, so count by category name below.
-      final categoryName =
-          _normalizeCategoryName(
-        category['name']?.toString(),
-      );
+      final categoryName = _normalizeCategoryName(category['name']?.toString());
 
       int count = 0;
 
-      for (final transaction
-          in localTransactions) {
-        final transactionCategoryId =
-            transaction.categoryId;
+      for (final transaction in localTransactions) {
+        final transactionCategoryId = transaction.categoryId;
 
-        if (transactionCategoryId == null ||
-            transactionCategoryId.isEmpty) {
+        if (transactionCategoryId == null || transactionCategoryId.isEmpty) {
           continue;
         }
 
-        if (transactionCategoryId ==
-            categoryId) {
+        if (transactionCategoryId == categoryId) {
           count++;
           continue;
         }
 
         // For protected virtual category IDs, resolve the
         // category through the local category record.
-        final matchingLocalCategory =
-            localCategories.firstWhereOrNull(
-          (localCategory) =>
-              localCategory.id ==
-              transactionCategoryId,
+        final matchingLocalCategory = localCategories.firstWhereOrNull(
+          (localCategory) => localCategory.id == transactionCategoryId,
         );
 
         if (matchingLocalCategory != null &&
-            _normalizeCategoryName(
-                  matchingLocalCategory.name,
-                ) ==
+            _normalizeCategoryName(matchingLocalCategory.name) ==
                 categoryName) {
           count++;
         }
@@ -400,32 +386,20 @@ debugPrint('============================');
     final categories = <CategoryModel>[];
 
     for (final item in visibleData) {
-      final rawName =
-          item['name']?.toString() ?? '';
+      final rawName = item['name']?.toString() ?? '';
 
-      final normalizedName =
-          _normalizeCategoryName(rawName);
+      final normalizedName = _normalizeCategoryName(rawName);
 
-      final categoryId =
-          item['id']?.toString() ??
-              'default_$normalizedName';
+      final categoryId = item['id']?.toString() ?? 'default_$normalizedName';
 
       categories.add(
         CategoryModel(
           id: categoryId,
           name: rawName,
-          icon:
-              item['icon']?.toString() ??
-                  normalizedName,
-          colorValue:
-              _parseColor(item['color']),
-          isDefault:
-              isProtectedCategoryName(rawName),
-          type:
-              item['type']
-                      ?.toString()
-                      .toLowerCase() ??
-                  'expense',
+          icon: item['icon']?.toString() ?? normalizedName,
+          colorValue: _parseColor(item['color']),
+          isDefault: isProtectedCategoryName(rawName),
+          type: item['type']?.toString().toLowerCase() ?? 'expense',
         ),
       );
     }
@@ -440,15 +414,11 @@ debugPrint('============================');
   // CATEGORY COUNT
   // ==========================================================
 
-  int getCategoryCount(
-    String categoryId,
-  ) {
+  int getCategoryCount(String categoryId) {
     return categoryCounts[categoryId] ?? 0;
   }
 
-  double getCategoryTotal(
-    String categoryId,
-  ) {
+  double getCategoryTotal(String categoryId) {
     return categoryTotals[categoryId] ?? 0;
   }
 
@@ -456,122 +426,120 @@ debugPrint('============================');
   // ADD CATEGORY
   // ==========================================================
 
-Future<void> addCategory(
-  CategoryModel category, {
-  bool closeDialog = true,
-}) async {
-  final user = currentUser;
+  Future<void> addCategory(
+    CategoryModel category, {
+    bool closeDialog = true,
+  }) async {
+    final user = currentUser;
 
-  if (user == null) {
-    _showError('Please login first.');
-    return;
-  }
-
-  final trimmedName = category.name.trim();
-
-  if (trimmedName.isEmpty) {
-    _showError('Please enter category name.');
-    return;
-  }
-
-  try {
-    isLoading.value = true;
-
-   // ------------------------------------------------------
-// Generate/use local UUID
-// ------------------------------------------------------
-
-bool _isValidUuid(String value) {
-  final uuidRegex = RegExp(
-    r'^[0-9a-fA-F]{8}-'
-    r'[0-9a-fA-F]{4}-'
-    r'[1-5][0-9a-fA-F]{3}-'
-    r'[89abAB][0-9a-fA-F]{3}-'
-    r'[0-9a-fA-F]{12}$',
-  );
-
-  return uuidRegex.hasMatch(value);
-}
-
-final oldId = category.id.trim();
-
-final categoryId = _isValidUuid(oldId)
-    ? oldId
-    : _generateUuid();
-
-final colorHex = category.colorValue
-    .toRadixString(16)
-    .padLeft(8, '0');
-    // ------------------------------------------------------
-    // LOCAL FIRST
-    // ------------------------------------------------------
-
-    await _repositories.categorySync.createCategory(
-      userId: user.id,
-      id: categoryId,
-      name: trimmedName,
-      type: category.type,
-      icon: category.icon,
-      color: colorHex,
-    );
-
-    // ------------------------------------------------------
-    // Update UI immediately
-    // ------------------------------------------------------
-
-    final newCategory = CategoryModel(
-      id: categoryId,
-      name: trimmedName,
-      icon: category.icon,
-      colorValue: category.colorValue,
-      isDefault: false,
-      type: category.type.toLowerCase(),
-    );
-
-    if (!categoryList.any(
-      (item) => item.id == categoryId,
-    )) {
-      categoryList.add(newCategory);
+    if (user == null) {
+      _showError('Please login first.');
+      return;
     }
 
-    categoryList.sort(compareCategoryOrder);
+    final trimmedName = category.name.trim();
 
-    categoryCounts[categoryId] = 0;
-
-    // ------------------------------------------------------
-    // IMPORTANT
-    //
-    // Do NOT start SyncManager while the custom dialog
-    // is still transitioning back to AddTransactionDialog.
-    // ------------------------------------------------------
-
-    if (closeDialog && (Get.isDialogOpen ?? false)) {
-      Get.back();
+    if (trimmedName.isEmpty) {
+      _showError('Please enter category name.');
+      return;
     }
 
-    // ------------------------------------------------------
-    // Start cloud sync AFTER the local/UI operation.
-    // ------------------------------------------------------
+    try {
+      isLoading.value = true;
 
-    Future<void>.delayed(
-      const Duration(milliseconds: 300),
-      _syncInBackground,
-    );
-  } catch (e) {
-    _showError(
-      'Unable to add category.',
-    );
-  } finally {
-    isLoading.value = false;
+      final existingCategory = await findCategoryByName(trimmedName);
+      if (existingCategory != null) {
+        _showError(
+          'A category with this name already exists. Select the existing category or use a different name.',
+        );
+        return;
+      }
+
+      // ------------------------------------------------------
+      // Generate/use local UUID
+      // ------------------------------------------------------
+
+      bool _isValidUuid(String value) {
+        final uuidRegex = RegExp(
+          r'^[0-9a-fA-F]{8}-'
+          r'[0-9a-fA-F]{4}-'
+          r'[1-5][0-9a-fA-F]{3}-'
+          r'[89abAB][0-9a-fA-F]{3}-'
+          r'[0-9a-fA-F]{12}$',
+        );
+
+        return uuidRegex.hasMatch(value);
+      }
+
+      final oldId = category.id.trim();
+
+      final categoryId = _isValidUuid(oldId) ? oldId : _generateUuid();
+
+      final colorHex = category.colorValue.toRadixString(16).padLeft(8, '0');
+      // ------------------------------------------------------
+      // LOCAL FIRST
+      // ------------------------------------------------------
+
+      await _repositories.categorySync.createCategory(
+        userId: user.id,
+        id: categoryId,
+        name: trimmedName,
+        type: category.type,
+        icon: category.icon,
+        color: colorHex,
+      );
+
+      // ------------------------------------------------------
+      // Update UI immediately
+      // ------------------------------------------------------
+
+      final newCategory = CategoryModel(
+        id: categoryId,
+        name: trimmedName,
+        icon: category.icon,
+        colorValue: category.colorValue,
+        isDefault: false,
+        type: category.type.toLowerCase(),
+      );
+
+      if (!categoryList.any((item) => item.id == categoryId)) {
+        categoryList.add(newCategory);
+      }
+
+      categoryList.sort(compareCategoryOrder);
+
+      categoryCounts[categoryId] = 0;
+
+      // ------------------------------------------------------
+      // IMPORTANT
+      //
+      // Do NOT start SyncManager while the custom dialog
+      // is still transitioning back to AddTransactionDialog.
+      // ------------------------------------------------------
+
+      if (closeDialog && (Get.isDialogOpen ?? false)) {
+        Get.back();
+      }
+
+      // ------------------------------------------------------
+      // Start cloud sync AFTER the local/UI operation.
+      // ------------------------------------------------------
+
+      Future<void>.delayed(
+        const Duration(milliseconds: 300),
+        _syncInBackground,
+      );
+    } catch (e) {
+      _showError('Unable to add category.');
+    } finally {
+      isLoading.value = false;
+    }
   }
-}
   // ==========================================================
   // DELETE SINGLE CATEGORY
   // ==========================================================
 
-  Future<void> deleteCategory(
-    String id,
-  ) async {
+  Future<void> deleteCategory(String id) async {
     await deleteCategories([id]);
   }
 
@@ -579,9 +547,7 @@ final colorHex = category.colorValue
   // DELETE MULTIPLE CATEGORIES
   // ==========================================================
 
-  Future<void> deleteCategories(
-    List<String> ids,
-  ) async {
+  Future<void> deleteCategories(List<String> ids) async {
     final user = currentUser;
 
     if (user == null) {
@@ -597,57 +563,39 @@ final colorHex = category.colorValue
     // Remove protected/default categories from deletion.
     // --------------------------------------------------------
 
-    final selectedCategories =
-        categoryList
-            .where(
-              (category) =>
-                  ids.contains(category.id),
-            )
-            .toList();
+    final selectedCategories = categoryList
+        .where((category) => ids.contains(category.id))
+        .toList();
 
-    final protectedIds =
-        selectedCategories
-            .where(
-              (category) =>
-                  category.isDefault,
-            )
-            .map(
-              (category) => category.id,
-            )
-            .toList();
+    final protectedIds = selectedCategories
+        .where((category) => category.isDefault)
+        .map((category) => category.id)
+        .toList();
 
     if (protectedIds.isNotEmpty) {
-      _showError(
-        'Default categories cannot be deleted.',
-      );
+      _showError('Default categories cannot be deleted.');
       return;
     }
 
     try {
       isLoading.value = true;
 
-      final idsToDelete =
-          ids.toSet().toList();
+      final idsToDelete = ids.toSet().toList();
 
       // ------------------------------------------------------
       // Find transactions belonging to these categories.
       // ------------------------------------------------------
 
-      final localTransactions =
-          await _repositories.transactions
-              .getTransactions(user.id);
+      final localTransactions = await _repositories.transactions
+          .getTransactions(user.id);
 
-      final transactionsToDelete =
-          localTransactions
-              .where(
-                (transaction) =>
-                    transaction.categoryId !=
-                        null &&
-                    idsToDelete.contains(
-                      transaction.categoryId,
-                    ),
-              )
-              .toList();
+      final transactionsToDelete = localTransactions
+          .where(
+            (transaction) =>
+                transaction.categoryId != null &&
+                idsToDelete.contains(transaction.categoryId),
+          )
+          .toList();
 
       // ------------------------------------------------------
       // LOCAL FIRST:
@@ -656,11 +604,8 @@ final colorHex = category.colorValue
       // queue system before deleting their categories.
       // ------------------------------------------------------
 
-      for (final transaction
-          in transactionsToDelete) {
-        await _repositories
-            .transactionSync
-            .deleteTransaction(
+      for (final transaction in transactionsToDelete) {
+        await _repositories.transactionSync.deleteTransaction(
           userId: user.id,
           id: transaction.id,
         );
@@ -670,10 +615,8 @@ final colorHex = category.colorValue
       // Delete categories locally and queue cloud deletes.
       // ------------------------------------------------------
 
-      for (final categoryId
-          in idsToDelete) {
-        await _repositories.categorySync
-            .deleteCategory(
+      for (final categoryId in idsToDelete) {
+        await _repositories.categorySync.deleteCategory(
           userId: user.id,
           id: categoryId,
         );
@@ -683,21 +626,13 @@ final colorHex = category.colorValue
       // Update UI immediately.
       // ------------------------------------------------------
 
-      categoryList.removeWhere(
-        (category) =>
-            idsToDelete.contains(category.id),
-      );
+      categoryList.removeWhere((category) => idsToDelete.contains(category.id));
 
-      for (final categoryId
-          in idsToDelete) {
-        categoryCounts.remove(
-          categoryId,
-        );
+      for (final categoryId in idsToDelete) {
+        categoryCounts.remove(categoryId);
       }
 
-      categoryList.sort(
-        compareCategoryOrder,
-      );
+      categoryList.sort(compareCategoryOrder);
 
       // ------------------------------------------------------
       // Background synchronization.
@@ -705,9 +640,7 @@ final colorHex = category.colorValue
 
       _syncInBackground();
     } catch (_) {
-      _showError(
-        'Unable to delete category.',
-      );
+      _showError('Unable to delete category.');
     } finally {
       isLoading.value = false;
     }
@@ -717,9 +650,7 @@ final colorHex = category.colorValue
   // COLOR PARSER
   // ==========================================================
 
-  int _parseColor(
-    dynamic value,
-  ) {
+  int _parseColor(dynamic value) {
     if (value == null) {
       return 0xFF757575;
     }
@@ -728,10 +659,7 @@ final colorHex = category.colorValue
       return value;
     }
 
-    String hex =
-        value.toString()
-            .replaceAll('#', '')
-            .trim();
+    String hex = value.toString().replaceAll('#', '').trim();
 
     if (hex.startsWith('0x')) {
       hex = hex.substring(2);
@@ -741,11 +669,7 @@ final colorHex = category.colorValue
       hex = 'FF$hex';
     }
 
-    return int.tryParse(
-          hex,
-          radix: 16,
-        ) ??
-        0xFF757575;
+    return int.tryParse(hex, radix: 16) ?? 0xFF757575;
   }
 
   // ==========================================================
@@ -755,9 +679,7 @@ final colorHex = category.colorValue
   void _syncInBackground() {
     try {
       if (Get.isRegistered<SyncManager>()) {
-        unawaited(
-          Get.find<SyncManager>().sync(),
-        );
+        unawaited(Get.find<SyncManager>().sync());
       }
     } catch (_) {
       // Local changes are already safely stored in SQLite.
@@ -770,9 +692,7 @@ final colorHex = category.colorValue
   // ERROR
   // ==========================================================
 
-  void _showError(
-    String message,
-  ) {
+  void _showError(String message) {
     // Do not use Get.snackbar().
     //
     // GetX snackbar previously caused:
@@ -786,12 +706,11 @@ final colorHex = category.colorValue
   // UUID
   // ==========================================================
 
-   // ==========================================================
+  // ==========================================================
   // UUID
   // ==========================================================
 
   String _generateUuid() {
     return const Uuid().v4();
   }
-
 }

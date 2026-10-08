@@ -2369,8 +2369,14 @@ class _BudgetViewState extends State<BudgetView> {
                   final category = controller.categoriesController.categoryList
                       .firstWhere(
                         (element) =>
-                            element.name.trim().toLowerCase() ==
-                            item.categoryName.trim().toLowerCase(),
+                            element.name
+                                    .trim()
+                                    .toLowerCase()
+                                    .replaceAll(RegExp(r'\s+'), ' ') ==
+                                item.categoryName
+                                    .trim()
+                                    .toLowerCase()
+                                    .replaceAll(RegExp(r'\s+'), ' '),
                         orElse: () =>
                             controller.categoriesController.categoryList.first,
                       );

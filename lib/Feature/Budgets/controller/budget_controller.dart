@@ -418,26 +418,50 @@ class BudgetController extends GetxController {
   // ================================================================
 
   static String _normalizeName(String value) =>
-      value.trim().toLowerCase();
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+  double? _categoryNameLimit(String categoryName) {
+    final normalizedName = _normalizeName(categoryName);
+    final matchingLimits = customLimits.entries
+        .where((entry) => _normalizeName(entry.key) == normalizedName)
+        .map((entry) => entry.value);
+
+    if (matchingLimits.isEmpty) {
+      return null;
+    }
+
+    return matchingLimits.reduce((a, b) => a > b ? a : b);
+  }
+
+  void _setCategoryNameLimit(String categoryName, double amount) {
+    final normalizedName = _normalizeName(categoryName);
+    final duplicateKeys = customLimits.keys
+        .where(
+          (key) =>
+              key != categoryName &&
+              _normalizeName(key) == normalizedName,
+        )
+        .toList();
+
+    for (final key in duplicateKeys) {
+      customLimits.remove(key);
+    }
+
+    customLimits[categoryName] = amount;
+  }
 
   double _resolvedCategoryLimit(
     CategoryModel category,
   ) {
     final byId =
         customLimits[category.id];
+    final byName = _categoryNameLimit(category.name);
 
-    if (byId != null) {
-      return byId;
+    if (byId != null && byName != null) {
+      return byId > byName ? byId : byName;
     }
 
-    final byName =
-        customLimits[category.name];
-
-    if (byName != null) {
-      return byName;
-    }
-
-    return 0.0;
+    return byId ?? byName ?? 0.0;
   }
 
   double getCategoryLimit(
@@ -642,8 +666,7 @@ class BudgetController extends GetxController {
       );
 
       if (category != null) {
-        customLimits[category.name] =
-            budget.amount;
+        _setCategoryNameLimit(category.name, budget.amount);
       }
     }
   }
@@ -1217,13 +1240,8 @@ if (amount > 9999999999.99) {
                       t.categoryId == cat.id;
 
               final matchesLegacyName =
-                  t.categoryId.isEmpty &&
-                      _normalizeName(
-                            t.category,
-                          ) ==
-                          _normalizeName(
-                            cat.name,
-                          );
+                  _normalizeName(t.category) ==
+                  _normalizeName(cat.name);
 
               return !t.isIncome &&
                   (matchesCategoryId ||
@@ -1394,10 +1412,13 @@ if (amount > 9999999999.99) {
       customLimits[
           matchedCategory.id] =
           newLimit;
+      _setCategoryNameLimit(
+        matchedCategory.name,
+        newLimit,
+      );
+    } else {
+      _setCategoryNameLimit(categoryName, newLimit);
     }
-
-    customLimits[categoryName] =
-        newLimit;
 
     calculateBudgets();
 
@@ -1453,9 +1474,10 @@ if (amount > 9999999999.99) {
           existingCategory.id] =
           amount;
 
-      customLimits[
-          existingCategory.name] =
-          amount;
+      _setCategoryNameLimit(
+        existingCategory.name,
+        amount,
+      );
     } else {
       final newCategory =
           CategoryModel(
@@ -1474,9 +1496,10 @@ if (amount > 9999999999.99) {
           newCategory.id] =
           amount;
 
-      customLimits[
-          newCategory.name] =
-          amount;
+      _setCategoryNameLimit(
+        newCategory.name,
+        amount,
+      );
     }
 
     savePersistedState();
