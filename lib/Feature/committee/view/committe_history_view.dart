@@ -1,17 +1,21 @@
-
 import 'package:flutter/material.dart';
+
+import '../controller/committe_controller.dart';
 
 class CommitteeHistoryView extends StatelessWidget {
   const CommitteeHistoryView({super.key});
 
-  String _formatAmount(String amount) {
-    final String cleanAmount =
-        amount.replaceAll('PKR', '').replaceAll(',', '').trim();
+  String _formatAmount(dynamic amount) {
+    final String cleanAmount = amount
+        .toString()
+        .replaceAll('PKR', '')
+        .replaceAll(',', '')
+        .trim();
 
     final double? value = double.tryParse(cleanAmount);
 
     if (value == null) {
-      return amount;
+      return amount.toString();
     }
 
     final String number;
@@ -43,74 +47,132 @@ class CommitteeHistoryView extends StatelessWidget {
     return 'PKR ${formatted.toString()}';
   }
 
+  String _formatDate(DateTime? date) {
+    if (date == null) {
+      return 'Not Added';
+    }
+
+    const List<String> months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return '${date.day} ${months[date.month - 1]}, ${date.year}';
+  }
+
+  String _monthName(int month) {
+    const List<String> months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    if (month < 1 || month > 12) {
+      return '';
+    }
+
+    return months[month - 1];
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark =
         Theme.of(context).brightness == Brightness.dark;
 
-    final List<Map<String, String>> receivingHistory = [
-      {
-        'month': 'January',
-        'member': 'Fatima',
-        'amount': 'PKR 25,000',
-        'status': 'Received',
-      },
-      {
-        'month': 'February',
-        'member': 'Maryam',
-        'amount': 'PKR 25,000',
-        'status': 'Received',
-      },
-      {
-        'month': 'March',
-        'member': 'Sheeza',
-        'amount': 'PKR 25,000',
-        'status': 'Received',
-      },
-      {
-        'month': 'April',
-        'member': 'Zara',
-        'amount': 'PKR 25,000',
-        'status': 'Received',
-      },
-    ];
+    final CommitteeController committeeController =
+        CommitteeController.instance;
 
-    final List<Map<String, String>> paymentHistory = [
-      {
-        'member': 'Fatima',
-        'amount': 'PKR 5,000',
-        'date': 'January 5, 2026',
-        'status': 'Paid',
-      },
-      {
-        'member': 'Maryam',
-        'amount': 'PKR 5,000',
-        'date': 'January 5, 2026',
-        'status': 'Paid',
-      },
-      {
-        'member': 'Sheeza',
-        'amount': 'PKR 5,000',
-        'date': 'January 6, 2026',
-        'status': 'Paid',
-      },
-      {
-        'member': 'Zara',
-        'amount': 'PKR 5,000',
-        'date': 'January 6, 2026',
-        'status': 'Paid',
-      },
-    ];
+    final List<Map<String, dynamic>> receivingHistory =
+        committeeController.receivingSchedule;
+
+    final List<Map<String, dynamic>> paymentHistory =
+        committeeController.payments;
+
+    final double monthlyContribution =
+        committeeController.monthlyContribution.value;
+
+    final int totalMembers =
+        committeeController.members.length;
+
+    final double totalPool =
+        committeeController.totalPool;
+
+    final double totalCollected = paymentHistory.fold(
+      0.0,
+      (sum, payment) =>
+          sum + ((payment['amount'] as num?)?.toDouble() ?? 0.0),
+    );
+
+    final double totalPaidOut = receivingHistory
+        .where(
+          (item) =>
+              item['status']?.toString().toLowerCase() ==
+              'received',
+        )
+        .fold(
+          0.0,
+          (sum, item) =>
+              sum + ((item['amount'] as num?)?.toDouble() ?? 0.0),
+        );
+
+    final int completedMonths = receivingHistory
+        .where(
+          (item) =>
+              item['status']?.toString().toLowerCase() ==
+              'received',
+        )
+        .length;
+
+    final String status;
+
+    if (committeeController.committeeName.value.isEmpty) {
+      status = 'No Committee';
+    } else if (committeeController.endingDate.value != null &&
+        DateTime.now().isAfter(
+          committeeController.endingDate.value!,
+        )) {
+      status = 'Completed';
+    } else {
+      status = 'Active';
+    }
 
     return Scaffold(
       backgroundColor:
           isDark ? Colors.black : const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text(
-          'Committee History',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.history_rounded,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Committee History',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         backgroundColor:
@@ -126,6 +188,13 @@ class CommitteeHistoryView extends StatelessWidget {
           children: [
             _buildCommitteeSummary(
               isDark: isDark,
+              committeeController: committeeController,
+              totalMembers: totalMembers,
+              monthlyContribution: monthlyContribution,
+              totalCollected: totalCollected,
+              totalPaidOut: totalPaidOut,
+              completedMonths: completedMonths,
+              status: status,
             ),
 
             const SizedBox(height: 24),
@@ -143,18 +212,33 @@ class CommitteeHistoryView extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            ...receivingHistory.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildReceivingCard(
-                  isDark: isDark,
-                  month: item['month'] ?? '',
-                  member: item['member'] ?? '',
-                  amount: item['amount'] ?? '',
-                  status: item['status'] ?? '',
+            if (receivingHistory.isEmpty)
+              _buildEmptyCard(
+                isDark: isDark,
+                icon: Icons.calendar_month_rounded,
+                message:
+                    'No receiving history available yet.',
+              )
+            else
+              ...receivingHistory.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildReceivingCard(
+                    isDark: isDark,
+                    month: _monthName(
+                      item['month'] as int? ?? 0,
+                    ),
+                    member:
+                        item['memberName']?.toString() ??
+                            'Member',
+                    amount:
+                        item['amount']?.toString() ?? '0',
+                    status:
+                        item['status']?.toString() ??
+                            'Upcoming',
+                  ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 12),
 
@@ -171,23 +255,42 @@ class CommitteeHistoryView extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            ...paymentHistory.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildPaymentCard(
-                  isDark: isDark,
-                  memberName: item['member'] ?? '',
-                  amount: item['amount'] ?? '',
-                  date: item['date'] ?? '',
-                  status: item['status'] ?? '',
+            if (paymentHistory.isEmpty)
+              _buildEmptyCard(
+                isDark: isDark,
+                icon: Icons.payments_rounded,
+                message:
+                    'No payment history available yet.',
+              )
+            else
+              ...paymentHistory.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildPaymentCard(
+                    isDark: isDark,
+                    memberName:
+                        item['memberName']?.toString() ??
+                            'Member',
+                    amount:
+                        item['amount']?.toString() ?? '0',
+                    date: _formatPaymentDate(
+                      item['paymentDate'],
+                    ),
+                    status:
+                        _paymentStatus(
+                      item['status']?.toString(),
+                    ),
+                  ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 8),
 
             _buildHistoryInfo(
               isDark: isDark,
+              hasCommittee:
+                  committeeController.committeeName.value
+                      .isNotEmpty,
             ),
           ],
         ),
@@ -195,8 +298,50 @@ class CommitteeHistoryView extends StatelessWidget {
     );
   }
 
+  String _formatPaymentDate(dynamic date) {
+    if (date == null) {
+      return 'Date not available';
+    }
+
+    if (date is DateTime) {
+      return _formatDate(date);
+    }
+
+    final DateTime? parsed =
+        DateTime.tryParse(date.toString());
+
+    if (parsed == null) {
+      return date.toString();
+    }
+
+    return _formatDate(parsed);
+  }
+
+  String _paymentStatus(String? status) {
+    if (status == null || status.isEmpty) {
+      return 'Pending';
+    }
+
+    if (status.toLowerCase() == 'received') {
+      return 'Paid';
+    }
+
+    if (status.toLowerCase() == 'overdue') {
+      return 'Overdue';
+    }
+
+    return 'Pending';
+  }
+
   Widget _buildCommitteeSummary({
     required bool isDark,
+    required CommitteeController committeeController,
+    required int totalMembers,
+    required double monthlyContribution,
+    required double totalCollected,
+    required double totalPaidOut,
+    required int completedMonths,
+    required String status,
   }) {
     return Container(
       width: double.infinity,
@@ -221,13 +366,27 @@ class CommitteeHistoryView extends StatelessWidget {
             ),
           ),
 
+          if (committeeController
+              .committeeName.value.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              committeeController.committeeName.value,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark
+                    ? Colors.white60
+                    : Colors.grey[600],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 18),
 
           _summaryRow(
             isDark: isDark,
             icon: Icons.groups_rounded,
             title: 'Members',
-            value: '4',
+            value: totalMembers.toString(),
           ),
 
           const SizedBox(height: 12),
@@ -236,7 +395,20 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.payments_rounded,
             title: 'Monthly Contribution',
-            value: _formatAmount('5000'),
+            value: _formatAmount(
+              monthlyContribution,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          _summaryRow(
+            isDark: isDark,
+            icon: Icons.account_balance_wallet_rounded,
+            title: 'Total Committee Amount',
+            value: _formatAmount(
+              committeeController.totalPool,
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -245,7 +417,9 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.account_balance_wallet_rounded,
             title: 'Total Collected',
-            value: _formatAmount('20000'),
+            value: _formatAmount(
+              totalCollected,
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -254,7 +428,9 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.send_rounded,
             title: 'Total Paid Out',
-            value: _formatAmount('20000'),
+            value: _formatAmount(
+              totalPaidOut,
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -263,7 +439,18 @@ class CommitteeHistoryView extends StatelessWidget {
             isDark: isDark,
             icon: Icons.check_circle_rounded,
             title: 'Completed Months',
-            value: '4',
+            value: completedMonths.toString(),
+          ),
+
+          const SizedBox(height: 12),
+
+          _summaryRow(
+            isDark: isDark,
+            icon: Icons.play_circle_outline_rounded,
+            title: 'Start Date',
+            value: _formatDate(
+              committeeController.startDate.value,
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -271,8 +458,19 @@ class CommitteeHistoryView extends StatelessWidget {
           _summaryRow(
             isDark: isDark,
             icon: Icons.event_rounded,
+            title: 'Ending Date',
+            value: _formatDate(
+              committeeController.endingDate.value,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          _summaryRow(
+            isDark: isDark,
+            icon: Icons.check_circle_rounded,
             title: 'Status',
-            value: 'Completed',
+            value: status,
           ),
         ],
       ),
@@ -309,14 +507,17 @@ class CommitteeHistoryView extends StatelessWidget {
           ),
         ),
 
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: isDark
-                ? Colors.white
-                : Colors.black87,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? Colors.white
+                  : Colors.black87,
+            ),
           ),
         ),
       ],
@@ -330,6 +531,9 @@ class CommitteeHistoryView extends StatelessWidget {
     required String amount,
     required String status,
   }) {
+    final bool received =
+        status.toLowerCase() == 'received';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -400,10 +604,12 @@ class CommitteeHistoryView extends StatelessWidget {
 
               Text(
                 status,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.green,
+                  color: received
+                      ? Colors.green
+                      : Colors.orange,
                 ),
               ),
             ],
@@ -505,8 +711,48 @@ class CommitteeHistoryView extends StatelessWidget {
     );
   }
 
+  Widget _buildEmptyCard({
+    required bool isDark,
+    required IconData icon,
+    required String message,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF0A0A0A)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 40,
+            color: isDark
+                ? Colors.white54
+                : Colors.grey,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark
+                  ? Colors.white60
+                  : Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHistoryInfo({
     required bool isDark,
+    required bool hasCommittee,
   }) {
     return Container(
       width: double.infinity,
@@ -543,9 +789,11 @@ class CommitteeHistoryView extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            'Your completed committee records, '
-            'receiving order and payment history '
-            'will be available here.',
+            hasCommittee
+                ? 'Your committee records, receiving order '
+                    'and payment history are shown above.'
+                : 'Create a committee first. Your committee '
+                    'records and payment history will appear here.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -559,5 +807,3 @@ class CommitteeHistoryView extends StatelessWidget {
     );
   }
 }
-
-

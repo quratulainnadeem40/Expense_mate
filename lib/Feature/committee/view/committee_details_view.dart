@@ -1,179 +1,415 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
-import '../widgets/member_card.dart';
+import '../controller/committe_controller.dart';
 
 class CommitteeDetailsView extends StatefulWidget {
-  const CommitteeDetailsView({super.key});
+  const CommitteeDetailsView({
+    super.key,
+  });
 
   @override
-  State<CommitteeDetailsView> createState() => _CommitteeDetailsViewState();
+  State<CommitteeDetailsView> createState() =>
+      _CommitteeDetailsViewState();
 }
 
-class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
-  final List<Map<String, String>> members = [];
+class _CommitteeDetailsViewState
+    extends State<CommitteeDetailsView> {
+  final CommitteeController committeeController =
+      CommitteeController.instance;
 
-  double get totalPool {
+  double _toDouble(dynamic value) {
+    if (value is double) {
+      return value;
+    }
+
+    if (value is int) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0.0;
+  }
+
+  String _formatAmount(double amount) {
+    return 'PKR ${amount.toStringAsFixed(0)}';
+  }
+
+  String _durationText() {
+    final int duration =
+        committeeController.duration.value;
+
+    if (duration <= 0) {
+      return 'Not Set';
+    }
+
+    final String unit =
+        committeeController.durationUnit.value;
+
+    if (duration == 1) {
+      if (unit.toLowerCase().contains('year')) {
+        return '1 Year';
+      }
+
+      if (unit.toLowerCase().contains('week')) {
+        return '1 Week';
+      }
+
+      if (unit.toLowerCase().contains('day')) {
+        return '1 Day';
+      }
+
+      return '1 Month';
+    }
+
+    return '$duration $unit';
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) {
+      return 'Not Set';
+    }
+
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
+  // --------------------------------------------------
+  // PAYMENT SUMMARY
+  // --------------------------------------------------
+
+  double get collectedAmount {
     double total = 0;
 
-    for (final member in members) {
-      total += double.tryParse(
-            member['contribution']?.replaceAll(',', '') ?? '0',
-          ) ??
-          0;
+    for (
+      final Map<String, dynamic> member
+          in committeeController.members
+    ) {
+      final String status =
+          (member['paymentStatus'] ??
+                  'Pending')
+              .toString()
+              .toLowerCase();
+
+      if (status == 'received' ||
+          status == 'paid') {
+        total +=
+            _toDouble(
+          member['contribution'],
+        );
+      }
     }
 
     return total;
   }
 
-  double get collectedAmount {
-    double collected = 0;
-
-    for (final member in members) {
-      final status = (member['paymentStatus'] ?? '').toLowerCase();
-
-      if (status == 'paid' || status == 'received') {
-        collected += double.tryParse(
-              member['contribution']?.replaceAll(',', '') ?? '0',
-            ) ??
-            0;
-      }
-    }
-
-    return collected;
-  }
-
   double get remainingAmount {
-    final remaining = totalPool - collectedAmount;
-    return remaining < 0 ? 0 : remaining;
+    final double value =
+        committeeController.totalPool -
+            collectedAmount;
+
+    return value < 0 ? 0 : value;
   }
 
   double get progress {
-    if (totalPool == 0) {
+    final double total =
+        committeeController.totalPool;
+
+    if (total <= 0) {
       return 0;
     }
 
-    return (collectedAmount / totalPool).clamp(0.0, 1.0);
+    final double value =
+        collectedAmount / total;
+
+    return value > 1 ? 1 : value;
   }
 
-  String _formatAmount(double amount) {
-    if (amount == amount.roundToDouble()) {
-      return _addThousandsSeparator(amount.toInt().toString());
-    }
+  // --------------------------------------------------
+  // DUPLICATE MEMBER CHECK
+  // --------------------------------------------------
 
-    final String decimalValue = amount.toStringAsFixed(2);
-    final List<String> parts = decimalValue.split('.');
+  bool _isDuplicateMember({
+    required String name,
+    required String fatherHusbandName,
+    int? editIndex,
+  }) {
+    final String newName =
+        name.trim().toLowerCase();
 
-    return '${_addThousandsSeparator(parts[0])}.${parts[1]}';
-  }
+    final String newFatherHusband =
+        fatherHusbandName
+            .trim()
+            .toLowerCase();
 
-  String _addThousandsSeparator(String value) {
-    final StringBuffer result = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 && (value.length - i) % 3 == 0) {
-        result.write(',');
+    for (
+      int i = 0;
+      i < committeeController.members.length;
+      i++
+    ) {
+      if (editIndex != null &&
+          i == editIndex) {
+        continue;
       }
 
-      result.write(value[i]);
+      final Map<String, dynamic> member =
+          committeeController.members[i];
+
+      final String existingName =
+          (member['name'] ?? '')
+              .toString()
+              .trim()
+              .toLowerCase();
+
+      final String existingFatherHusband =
+          (member['fatherHusbandName'] ??
+                  member['fatherName'] ??
+                  '')
+              .toString()
+              .trim()
+              .toLowerCase();
+
+      if (existingName == newName &&
+          existingFatherHusband ==
+              newFatherHusband) {
+        return true;
+      }
     }
 
-    return result.toString();
+    return false;
   }
 
-  void _showMemberDialog({int? editIndex}) {
-    final bool isEdit = editIndex != null;
+  // --------------------------------------------------
+  // ORDINAL
+  // --------------------------------------------------
 
-    final Map<String, String>? existingMember =
-        isEdit ? members[editIndex!] : null;
+  String _ordinal(int number) {
+    if (number % 100 >= 11 &&
+        number % 100 <= 13) {
+      return '${number}th';
+    }
 
-    final TextEditingController nameController = TextEditingController(
-      text: existingMember?['name'] ?? '',
-    );
+    switch (number % 10) {
+      case 1:
+        return '${number}st';
 
-    final TextEditingController fatherHusbandNameController =
+      case 2:
+        return '${number}nd';
+
+      case 3:
+        return '${number}rd';
+
+      default:
+        return '${number}th';
+    }
+  }
+
+  // --------------------------------------------------
+  // ADD / EDIT MEMBER
+  // --------------------------------------------------
+
+  void _showMemberDialog({
+    int? editIndex,
+  }) {
+    final bool isEdit =
+        editIndex != null;
+
+    Map<String, dynamic>?
+        existingMember;
+
+    if (isEdit &&
+        editIndex >= 0 &&
+        editIndex <
+            committeeController
+                .members
+                .length) {
+      existingMember =
+          committeeController
+              .members[editIndex];
+    }
+
+    final TextEditingController
+        nameController =
         TextEditingController(
-      text: existingMember?['fatherHusbandName'] ?? '',
+      text:
+          existingMember?['name']
+                  ?.toString() ??
+              '',
     );
 
-    final TextEditingController phoneController = TextEditingController(
-      text: existingMember?['phone'] ?? '',
-    );
-
-    final TextEditingController contributionController =
+    final TextEditingController
+        fatherHusbandController =
         TextEditingController(
-      text: existingMember?['contribution'] ?? '',
+      text:
+          (existingMember?[
+                      'fatherHusbandName'] ??
+                  existingMember?[
+                      'fatherName'] ??
+                  '')
+              .toString(),
     );
 
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final TextEditingController
+        phoneController =
+        TextEditingController(
+      text:
+          existingMember?['phone']
+                  ?.toString() ??
+              '',
+    );
+
+    final TextEditingController
+        contributionController =
+        TextEditingController(
+      text: existingMember == null
+          ? ''
+          : _toDouble(
+              existingMember[
+                  'contribution'],
+            ).toStringAsFixed(0),
+    );
+
+    final GlobalKey<FormState>
+        formKey =
+        GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(
-            isEdit ? 'Edit Member' : 'Add Member',
+            isEdit
+                ? 'Edit Member'
+                : 'Add Member',
           ),
-          content: SingleChildScrollView(
+          content:
+              SingleChildScrollView(
             child: Form(
               key: formKey,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize:
+                    MainAxisSize.min,
                 children: [
                   TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Member Name',
-                      hintText: 'Enter member name',
+                    controller:
+                        nameController,
+                    textCapitalization:
+                        TextCapitalization
+                            .words,
+                    decoration:
+                        const InputDecoration(
+                      labelText:
+                          'Member Name',
+                      border:
+                          OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter member name.';
+                    validator:
+                        (value) {
+                      if (value ==
+                              null ||
+                          value
+                              .trim()
+                              .isEmpty) {
+                        return 'Please enter member name';
                       }
 
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(
+                    height: 14,
+                  ),
+
                   TextFormField(
-                    controller: fatherHusbandNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Father Name / Husband Name',
-                      hintText: 'Enter father name or husband name',
+                    controller:
+                        fatherHusbandController,
+                    textCapitalization:
+                        TextCapitalization
+                            .words,
+                    decoration:
+                        const InputDecoration(
+                      labelText:
+                          'Father Name / Husband Name',
+                      border:
+                          OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter father name / husband name.';
+                    validator:
+                        (value) {
+                      if (value ==
+                              null ||
+                          value
+                              .trim()
+                              .isEmpty) {
+                        return 'Please enter father/husband name';
                       }
 
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(
+                    height: 14,
+                  ),
+
                   TextFormField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number (Optional)',
-                      hintText: 'Enter phone number',
+                    controller:
+                        phoneController,
+                    keyboardType:
+                        TextInputType.phone,
+                    decoration:
+                        const InputDecoration(
+                      labelText:
+                          'Phone Number (Optional)',
+                      border:
+                          OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(
+                    height: 14,
+                  ),
+
                   TextFormField(
-                    controller: contributionController,
-                    keyboardType: const TextInputType.numberWithOptions(
+                    controller:
+                        contributionController,
+                    keyboardType:
+                        const TextInputType
+                            .numberWithOptions(
                       decimal: true,
                     ),
-                    inputFormatters: [
-                      ThousandsSeparatorInputFormatter(),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Monthly Contribution',
-                      hintText: 'Enter contribution',
+                    decoration:
+                        const InputDecoration(
+                      labelText:
+                          'Monthly Contribution',
+                      prefixText:
+                          'PKR ',
+                      border:
+                          OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter contribution.';
+                    validator:
+                        (value) {
+                      if (value ==
+                              null ||
+                          value
+                              .trim()
+                              .isEmpty) {
+                        return 'Please enter contribution';
+                      }
+
+                      final double?
+                          amount =
+                          double.tryParse(
+                        value.trim(),
+                      );
+
+                      if (amount ==
+                              null ||
+                          amount <= 0) {
+                        return 'Enter a valid amount';
                       }
 
                       return null;
@@ -186,51 +422,187 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(dialogContext);
+                Navigator.pop(
+                  dialogContext,
+                );
               },
-              child: const Text('Cancel'),
+              child:
+                  const Text('Cancel'),
             ),
+
             ElevatedButton(
               onPressed: () {
-                // Validate all required fields first.
-                // If any required field is empty,
-                // member will NOT be added and dialog will remain open.
-                if (!formKey.currentState!.validate()) {
+                if (!formKey
+                    .currentState!
+                    .validate()) {
                   return;
                 }
 
-                final String name = nameController.text.trim();
+                final String name =
+                    nameController.text
+                        .trim();
 
-                final String fatherHusbandName =
-                    fatherHusbandNameController.text.trim();
+                final String
+                    fatherHusbandName =
+                    fatherHusbandController
+                        .text
+                        .trim();
 
-                final String phone = phoneController.text.trim();
+                final String phone =
+                    phoneController.text
+                        .trim();
 
-                final String contribution =
-                    contributionController.text.trim();
+                final double
+                    contribution =
+                    double.parse(
+                  contributionController
+                      .text
+                      .trim(),
+                );
 
-                setState(() {
-                  final Map<String, String> newMember = {
-                    'name': name,
-                    'fatherHusbandName': fatherHusbandName,
-                    'phone': phone,
-                    'contribution': contribution,
-                    'paymentStatus': isEdit
-                        ? (existingMember?['paymentStatus'] ?? 'Pending')
-                        : 'Pending',
-                  };
+                // --------------------------------
+                // DUPLICATE CHECK
+                // --------------------------------
 
-                  if (isEdit) {
-                    members[editIndex!] = newMember;
-                  } else {
-                    members.add(newMember);
-                  }
-                });
+                if (_isDuplicateMember(
+                  name: name,
+                  fatherHusbandName:
+                      fatherHusbandName,
+                  editIndex:
+                      editIndex,
+                )) {
+                  ScaffoldMessenger
+                          .of(context)
+                      .showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'This member already exists with the same name and father/husband name.',
+                      ),
+                    ),
+                  );
 
-                Navigator.pop(dialogContext);
+                  return;
+                }
+
+                // --------------------------------
+                // EDIT MEMBER
+                // --------------------------------
+
+                if (isEdit &&
+                    editIndex != null) {
+                  committeeController
+                      .updateMember(
+                    index: editIndex,
+                    name: name,
+                    fatherName:
+                        fatherHusbandName,
+                    phone: phone,
+                    contribution:
+                        contribution,
+                  );
+
+                  Navigator.pop(
+                    dialogContext,
+                  );
+
+                  setState(() {});
+
+                  ScaffoldMessenger
+                          .of(context)
+                      .showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Member updated successfully.',
+                      ),
+                    ),
+                  );
+
+                  return;
+                }
+
+                // --------------------------------
+                // HARD MEMBER LIMIT
+                // --------------------------------
+
+                final int selectedMembers =
+                    committeeController
+                        .totalMembers
+                        .value;
+
+                final int nextMemberNumber =
+                    committeeController
+                            .members
+                            .length +
+                        1;
+
+                if (selectedMembers <=
+                        0 ||
+                    committeeController
+                            .members
+                            .length >=
+                        selectedMembers) {
+                  ScaffoldMessenger
+                          .of(context)
+                      .showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'You selected $selectedMembers members. ${_ordinal(nextMemberNumber)} member cannot be added.',
+                      ),
+                    ),
+                  );
+
+                  return;
+                }
+
+                // --------------------------------
+                // ADD MEMBER
+                // --------------------------------
+
+                final bool added =
+                    committeeController
+                        .addMember(
+                  name: name,
+                  fatherName:
+                      fatherHusbandName,
+                  phone: phone,
+                  contribution:
+                      contribution,
+                );
+
+                if (!added) {
+                  ScaffoldMessenger
+                          .of(context)
+                      .showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'You selected $selectedMembers members. ${_ordinal(nextMemberNumber)} member cannot be added.',
+                      ),
+                    ),
+                  );
+
+                  return;
+                }
+
+                Navigator.pop(
+                  dialogContext,
+                );
+
+                setState(() {});
+
+                ScaffoldMessenger
+                        .of(context)
+                    .showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Member added successfully.',
+                    ),
+                  ),
+                );
               },
               child: Text(
-                isEdit ? 'Update' : 'Add',
+                isEdit
+                    ? 'Update'
+                    : 'Add',
               ),
             ),
           ],
@@ -239,31 +611,67 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     );
   }
 
+  // --------------------------------------------------
+  // DELETE MEMBER
+  // --------------------------------------------------
+
   void _deleteMember(int index) {
+    if (index < 0 ||
+        index >=
+            committeeController
+                .members
+                .length) {
+      return;
+    }
+
+    final String name =
+        committeeController
+                .members[index]['name']
+                ?.toString() ??
+            'Member';
+
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete Member'),
-          content: const Text(
-            'Are you sure you want to delete this member?',
+          title:
+              const Text('Delete Member'),
+          content: Text(
+            'Are you sure you want to delete $name?',
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(dialogContext);
+                Navigator.pop(
+                  dialogContext,
+                );
               },
-              child: const Text('Cancel'),
+              child:
+                  const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  members.removeAt(index);
-                });
+                committeeController
+                    .deleteMember(index);
 
-                Navigator.pop(dialogContext);
+                Navigator.pop(
+                  dialogContext,
+                );
+
+                setState(() {});
+
+                ScaffoldMessenger
+                        .of(context)
+                    .showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Member deleted successfully.',
+                    ),
+                  ),
+                );
               },
-              child: const Text('Delete'),
+              child:
+                  const Text('Delete'),
             ),
           ],
         );
@@ -271,444 +679,720 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Committee Details'),
+  // --------------------------------------------------
+  // MEMBER CARD
+  // --------------------------------------------------
+
+  Widget _buildMemberCard(
+    Map<String, dynamic> member,
+    int index,
+  ) {
+    final String name =
+        member['name']
+                ?.toString() ??
+            'Member';
+
+    final String fatherHusband =
+        (member['fatherHusbandName'] ??
+                member['fatherName'] ??
+                '')
+            .toString();
+
+    final String phone =
+        member['phone']
+                ?.toString() ??
+            '';
+
+    final double contribution =
+        _toDouble(
+      member['contribution'],
+    );
+
+    final String status =
+        member['paymentStatus']
+                ?.toString() ??
+            'Pending';
+
+    return Card(
+      margin:
+          const EdgeInsets.only(
+        bottom: 12,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      child: Padding(
+        padding:
+            const EdgeInsets.all(14),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildSummarySection(),
-            const SizedBox(height: 20),
-            _buildProgressSection(),
-            const SizedBox(height: 20),
-            _buildMembersSection(),
+            Row(
+              children: [
+                CircleAvatar(
+                  child: Text(
+                    name.isNotEmpty
+                        ? name[0]
+                            .toUpperCase()
+                        : 'M',
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 12,
+                ),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+                    children: [
+                      Text(
+                        name,
+                        style:
+                            const TextStyle(
+                          fontSize: 16,
+                          fontWeight:
+                              FontWeight
+                                  .bold,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 4,
+                      ),
+
+                      Text(
+                        fatherHusband
+                                .isEmpty
+                            ? 'Father/Husband: Not Added'
+                            : 'Father/Husband: $fatherHusband',
+                        style:
+                            const TextStyle(
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                PopupMenuButton<
+                    String>(
+                  onSelected:
+                      (value) {
+                    if (value ==
+                        'edit') {
+                      _showMemberDialog(
+                        editIndex:
+                            index,
+                      );
+                    }
+
+                    if (value ==
+                        'delete') {
+                      _deleteMember(
+                        index,
+                      );
+                    }
+                  },
+                  itemBuilder:
+                      (context) {
+                    return const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child:
+                            Text(
+                          'Edit',
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child:
+                            Text(
+                          'Delete',
+                        ),
+                      ),
+                    ];
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(
+              height: 12,
+            ),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    phone.isEmpty
+                        ? 'Phone: Not Added'
+                        : 'Phone: $phone',
+                    style:
+                        const TextStyle(
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+
+                Expanded(
+                  child: Text(
+                    _formatAmount(
+                      contribution,
+                    ),
+                    textAlign:
+                        TextAlign.end,
+                    style:
+                        const TextStyle(
+                      fontSize: 12,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(
+              height: 10,
+            ),
+
+            Align(
+              alignment:
+                  Alignment.centerLeft,
+              child: Text(
+                'Payment Status: $status',
+                style:
+                    TextStyle(
+                  fontSize: 12,
+                  fontWeight:
+                      FontWeight.w600,
+                  color: status
+                              .toLowerCase() ==
+                          'received'
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Theme.of(context).cardColor,
+  // --------------------------------------------------
+  // SUMMARY CARD
+  // --------------------------------------------------
+
+  Widget _buildSummaryCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      child: Padding(
+        padding:
+            const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(icon),
+
+            const SizedBox(
+              height: 7,
+            ),
+
+            Text(
+              title,
+              maxLines: 1,
+              overflow:
+                  TextOverflow.ellipsis,
+              style:
+                  const TextStyle(
+                fontSize: 11,
+              ),
+            ),
+
+            const SizedBox(
+              height: 3,
+            ),
+
+            Text(
+              value,
+              maxLines: 1,
+              overflow:
+                  TextOverflow.ellipsis,
+              style:
+                  const TextStyle(
+                fontSize: 15,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: Colors.green.withOpacity(0.12),
+    );
+  }
+
+  // --------------------------------------------------
+  // COMMITTEE SUMMARY
+  // --------------------------------------------------
+
+  Widget _buildSummary() {
+    return Obx(
+      () {
+        return Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Committee Summary',
+              style:
+                  TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
             ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              size: 32,
+
+            const SizedBox(
+              height: 12,
             ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics:
+                  const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.65,
               children: [
-                Text(
-                  'Digital Committee',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                _buildSummaryCard(
+                  icon:
+                      Icons.payments_outlined,
+                  title:
+                      'Monthly Contribution',
+                  value:
+                      _formatAmount(
+                    committeeController
+                        .monthlyContribution
+                        .value,
                   ),
                 ),
-                SizedBox(height: 4),
+
+                _buildSummaryCard(
+                  icon:
+                      Icons.people_outline,
+                  title:
+                      'Members',
+                  value:
+                      '${committeeController.members.length}/${committeeController.totalMembers.value}',
+                ),
+
+                _buildSummaryCard(
+                  icon:
+                      Icons.account_balance_wallet_outlined,
+                  title:
+                      'Total Pool',
+                  value:
+                      _formatAmount(
+                    committeeController
+                        .totalPool,
+                  ),
+                ),
+
+                _buildSummaryCard(
+                  icon:
+                      Icons.schedule_outlined,
+                  title:
+                      'Duration',
+                  value:
+                      _durationText(),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --------------------------------------------------
+  // PAYMENT SUMMARY
+  // --------------------------------------------------
+
+  Widget _buildPaymentSummary() {
+    return Obx(
+      () {
+        return Card(
+          child: Padding(
+            padding:
+                const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+              children: [
+                const Text(
+                  'Payment Summary',
+                  style:
+                      TextStyle(
+                    fontSize: 18,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 16,
+                ),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child:
+                          _paymentItem(
+                        'Total',
+                        committeeController
+                            .totalPool,
+                        Icons
+                            .account_balance_outlined,
+                      ),
+                    ),
+
+                    Expanded(
+                      child:
+                          _paymentItem(
+                        'Received',
+                        collectedAmount,
+                        Icons
+                            .check_circle_outline,
+                      ),
+                    ),
+
+                    Expanded(
+                      child:
+                          _paymentItem(
+                        'Remaining',
+                        remainingAmount,
+                        Icons
+                            .pending_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(
+                  height: 18,
+                ),
+
+                LinearProgressIndicator(
+                  value:
+                      progress,
+                  minHeight: 8,
+                ),
+
+                const SizedBox(
+                  height: 7,
+                ),
+
                 Text(
-                  'Money Pool',
-                  style: TextStyle(
-                    fontSize: 14,
+                  '${(progress * 100).toStringAsFixed(0)}% received',
+                  style:
+                      const TextStyle(
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummarySection() {
-    final double monthlyContribution = members.isNotEmpty
-        ? double.tryParse(
-              members.first['contribution']?.replaceAll(',', '') ?? '0',
-            ) ??
-            0
-        : 0;
-
-    return Row(
-      children: [
-        Expanded(
-          child: _summaryItem(
-            'Monthly',
-            'PKR ${_formatAmount(monthlyContribution)}',
-            Icons.payments_rounded,
-            () {
-              _showInfoDialog(
-                'Monthly Contribution',
-                members.isEmpty
-                    ? 'No member has been added yet.'
-                    : 'Monthly contribution per member is PKR ${_formatAmount(monthlyContribution)}.',
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _summaryItem(
-            'Members',
-            members.length.toString(),
-            Icons.groups_rounded,
-            () {
-              _showInfoDialog(
-                'Members',
-                members.isEmpty
-                    ? 'No members have been added yet.'
-                    : 'This committee has ${members.length} member${members.length == 1 ? '' : 's'}.',
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _summaryItem(
-            'Total Pool',
-            'PKR ${_formatAmount(totalPool)}',
-            Icons.account_balance_rounded,
-            () {
-              _showInfoDialog(
-                'Total Pool',
-                'Total committee pool is PKR ${_formatAmount(totalPool)}.',
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _summaryItem(
-            'Duration',
-            '${members.length} Months',
-            Icons.calendar_month_rounded,
-            () {
-              _showInfoDialog(
-                'Duration',
-                'Current duration is ${members.length} month${members.length == 1 ? '' : 's'}.',
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Theme.of(context).cardColor,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Collection Progress',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Track the total contribution from all members.',
-            style: TextStyle(
-              color: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.color
-                  ?.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 18),
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 9,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _progressText(
-                  'Collected',
-                  'PKR ${_formatAmount(collectedAmount)}',
-                ),
-              ),
-              Expanded(
-                child: _progressText(
-                  'Remaining',
-                  'PKR ${_formatAmount(remainingAmount)}',
-                  alignEnd: true,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMembersSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Theme.of(context).cardColor,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Members',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _showMemberDialog(),
-                icon: const Icon(
-                  Icons.person_add_alt_1_rounded,
-                ),
-                label: const Text('Add Member'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (members.isEmpty)
-            _emptyState()
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: members.length,
-              separatorBuilder: (context, index) {
-                return const SizedBox(height: 10);
-              },
-              itemBuilder: (context, index) {
-                final Map<String, String> member = members[index];
-
-                return MemberCard(
-                  memberName: member['name'] ?? '',
-                  phone: member['phone'] ?? '',
-                  contribution: member['contribution'] ?? '0',
-                  paymentStatus:
-                      member['paymentStatus'] ?? 'Pending',
-                  onEdit: () {
-                    _showMemberDialog(
-                      editIndex: index,
-                    );
-                  },
-                  onDelete: () {
-                    _deleteMember(index);
-                  },
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryItem(
-    String title,
-    String value,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: Theme.of(context).cardColor,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _progressText(
-    String title,
-    String value, {
-    bool alignEnd = false,
-  }) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 13,
-            color: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.color
-                ?.withOpacity(0.7),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _emptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: 30,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.groups_outlined,
-            size: 48,
-            color: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.color
-                ?.withOpacity(0.5),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'No members added yet.',
-            style: TextStyle(
-              color: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.color
-                  ?.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showInfoDialog(
-    String title,
-    String message,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('OK'),
-            ),
-          ],
         );
       },
     );
   }
-}
 
-class ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
+  Widget _paymentItem(
+    String title,
+    double amount,
+    IconData icon,
   ) {
-    final String digitsOnly =
-        newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    return Column(
+      children: [
+        Icon(
+          icon,
+          size: 21,
+        ),
 
-    if (digitsOnly.isEmpty) {
-      return const TextEditingValue();
-    }
+        const SizedBox(
+          height: 6,
+        ),
 
-    final String formatted = _formatWithCommas(digitsOnly);
+        Text(
+          title,
+          textAlign:
+              TextAlign.center,
+          style:
+              const TextStyle(
+            fontSize: 11,
+          ),
+        ),
 
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(
-        offset: formatted.length,
+        const SizedBox(
+          height: 3,
+        ),
+
+        Text(
+          _formatAmount(amount),
+          textAlign:
+              TextAlign.center,
+          style:
+              const TextStyle(
+            fontSize: 12,
+            fontWeight:
+                FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --------------------------------------------------
+  // BUILD
+  // --------------------------------------------------
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      appBar: AppBar(
+        title:
+            const Text(
+          'Committee Details',
+          style:
+              TextStyle(
+            fontWeight:
+                FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+
+      floatingActionButton:
+          FloatingActionButton.extended(
+        onPressed: () {
+          _showMemberDialog();
+        },
+        icon:
+            const Icon(
+          Icons.person_add_alt_1,
+        ),
+        label:
+            const Text(
+          'Add Member',
+        ),
+      ),
+
+      body: Obx(
+        () {
+          final members =
+              committeeController
+                  .members;
+
+          return SingleChildScrollView(
+            padding:
+                const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+              children: [
+                Text(
+                  committeeController
+                          .committeeName
+                          .value
+                          .isEmpty
+                      ? 'Committee'
+                      : committeeController
+                          .committeeName
+                          .value,
+                  style:
+                      const TextStyle(
+                    fontSize: 24,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 5,
+                ),
+
+                const Text(
+                  'Digital Committee',
+                  style:
+                      TextStyle(
+                    fontSize: 13,
+                    color:
+                        Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 10,
+                ),
+
+                if (committeeController
+                        .startDate
+                        .value !=
+                    null)
+                  Text(
+                    'Start Date: ${_formatDate(committeeController.startDate.value)}',
+                    style:
+                        const TextStyle(
+                      fontSize: 12,
+                      color:
+                          Colors.grey,
+                    ),
+                  ),
+
+                if (committeeController
+                        .endingDate
+                        .value !=
+                    null)
+                  Text(
+                    'Ending Date: ${_formatDate(committeeController.endingDate.value)}',
+                    style:
+                        const TextStyle(
+                      fontSize: 12,
+                      color:
+                          Colors.grey,
+                    ),
+                  ),
+
+                const SizedBox(
+                  height: 20,
+                ),
+
+                _buildSummary(),
+
+                const SizedBox(
+                  height: 20,
+                ),
+
+                _buildPaymentSummary(),
+
+                const SizedBox(
+                  height: 24,
+                ),
+
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Members',
+                        style:
+                            TextStyle(
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight
+                                  .bold,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '${members.length} / ${committeeController.totalMembers.value} Added',
+                      style:
+                          const TextStyle(
+                        fontSize: 12,
+                        color:
+                            Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(
+                  height: 12,
+                ),
+
+                if (members.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...List.generate(
+                    members.length,
+                    (index) {
+                      return _buildMemberCard(
+                        members[index],
+                        index,
+                      );
+                    },
+                  ),
+
+                const SizedBox(
+                  height: 100,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  String _formatWithCommas(String value) {
-    final StringBuffer result = StringBuffer();
+  Widget _buildEmptyState() {
+    return Card(
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 35,
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.people_outline,
+              size: 52,
+              color: Colors.grey,
+            ),
 
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 && (value.length - i) % 3 == 0) {
-        result.write(',');
-      }
+            const SizedBox(
+              height: 12,
+            ),
 
-      result.write(value[i]);
-    }
+            const Text(
+              'No Members Added',
+              style:
+                  TextStyle(
+                fontSize: 17,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
 
-    return result.toString();
+            const SizedBox(
+              height: 6,
+            ),
+
+            const Text(
+              'Tap "Add Member" to add committee members.',
+              textAlign:
+                  TextAlign.center,
+              style:
+                  TextStyle(
+                fontSize: 13,
+                color:
+                    Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
