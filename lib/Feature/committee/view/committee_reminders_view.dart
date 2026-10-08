@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import 'package:expense_mate/Core/service/notification_service.dart';
 
 class CommitteeRemindersView extends StatefulWidget {
   const CommitteeRemindersView({super.key});
@@ -42,21 +45,51 @@ class _CommitteeRemindersViewState
     );
   }
 
-  void _showTestNotificationMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Committee notification reminder is enabled.',
+  Future<void> _showTestNotification() async {
+    try {
+      final notificationService =
+          Get.find<NotificationService>();
+
+      await notificationService.showCommitteeNotification();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Committee reminder notification sent successfully.',
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to send notification: $e',
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reminders & Notifications'),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.notifications_rounded,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Reminders & Notifications',
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -152,7 +185,7 @@ class _CommitteeRemindersViewState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _showTestNotificationMessage,
+                onPressed: _showTestNotification,
                 icon: const Icon(
                   Icons.notifications_active_rounded,
                 ),
@@ -180,7 +213,3 @@ class _CommitteeRemindersViewState
     );
   }
 }
-
-
-
-

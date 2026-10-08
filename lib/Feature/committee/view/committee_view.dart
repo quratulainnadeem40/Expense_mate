@@ -1,13 +1,10 @@
-
 import 'package:flutter/material.dart';
 
 import 'add_committee_view.dart';
 import 'committee_details_view.dart';
 import 'monthly_schedule_view.dart';
- 
 import 'payment_tracking_view.dart';
 import 'committee_reminders_view.dart';
-
 
 class CommitteeView extends StatefulWidget {
   const CommitteeView({super.key});
@@ -130,7 +127,16 @@ class _CommitteeViewState extends State<CommitteeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Committee'),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.groups_rounded,
+            ),
+            SizedBox(width: 8),
+            Text('Committee'),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -243,7 +249,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             const SizedBox(height: 12),
 
             _buildFeatureCard(
-              icon: Icons.groups_rounded,
+              icon: '👥',
               title: 'Members',
               description:
                   'Manage committee members and their details.',
@@ -251,7 +257,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
 
             _buildFeatureCard(
-              icon: Icons.receipt_long_rounded,
+              icon: '💳',
               title: 'Payment Tracking',
               description:
                   'Track paid, pending and overdue committee payments.',
@@ -259,7 +265,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
 
             _buildFeatureCard(
-              icon: Icons.calendar_month_rounded,
+              icon: '📅',
               title: 'Monthly Schedule',
               description:
                   'Manage monthly schedule and receiving order.',
@@ -267,7 +273,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
 
             _buildFeatureCard(
-              icon: Icons.notifications_active_rounded,
+              icon: '🔔',
               title: 'Reminders & Notifications',
               description:
                   'Manage payment due dates and monthly reminders.',
@@ -275,7 +281,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
 
             _buildFeatureCard(
-              icon: Icons.history_rounded,
+              icon: '🕘',
               title: 'Committee History',
               description:
                   'View completed committees and payment history.',
@@ -288,7 +294,7 @@ class _CommitteeViewState extends State<CommitteeView> {
   }
 
   Widget _buildFeatureCard({
-    required IconData icon,
+    required String icon,
     required String title,
     required String description,
     required VoidCallback onTap,
@@ -296,8 +302,11 @@ class _CommitteeViewState extends State<CommitteeView> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(icon),
+        leading: Text(
+          icon,
+          style: const TextStyle(
+            fontSize: 28,
+          ),
         ),
         title: Text(
           title,
@@ -876,5 +885,3 @@ class CommitteeHistoryView extends StatelessWidget {
     );
   }
 }
-
-
