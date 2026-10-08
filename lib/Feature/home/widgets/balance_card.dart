@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 // SettingsController ka path
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 
-class BalanceCard extends StatelessWidget {
+class BalanceCard extends StatefulWidget {
   final double totalBalance;
   final double totalIncome;
   final double totalExpense;
@@ -16,6 +16,13 @@ class BalanceCard extends StatelessWidget {
     required this.totalIncome,
     required this.totalExpense,
   });
+
+  @override
+  State<BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<BalanceCard> {
+  bool _isBalanceVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -32,21 +39,64 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Total Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total Balance',
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              IconButton(
+                tooltip: _isBalanceVisible ? 'Hide balance' : 'Show balance',
+                onPressed: () {
+                  setState(() {
+                    _isBalanceVisible = !_isBalanceVisible;
+                  });
+                },
+                icon: Icon(
+                  _isBalanceVisible
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
-          
-          // Currency reactive status ke liye Obx inside wrapper
-          Obx(() => Text(
-                '${settingsController.selectedCurrency.value} ${totalBalance.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-              )),
-              
+
+          Obx(
+            () => Text(
+              _isBalanceVisible
+                  ? '${settingsController.selectedCurrency.value} ${widget.totalBalance.toStringAsFixed(2)}'
+                  : '${settingsController.selectedCurrency.value} ******',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoItem('Income', totalIncome, Colors.green, settingsController),
-              _buildInfoItem('Expense', totalExpense, AppColors.expenseRed, settingsController),
+              _buildInfoItem(
+                'Income',
+                widget.totalIncome,
+                Colors.green,
+                settingsController,
+              ),
+              _buildInfoItem(
+                'Expense',
+                widget.totalExpense,
+                AppColors.expenseRed,
+                settingsController,
+              ),
             ],
           ),
         ],
@@ -55,22 +105,33 @@ class BalanceCard extends StatelessWidget {
   }
 
   Widget _buildInfoItem(
-    String title, 
-    double amount, 
-    Color color, 
-    SettingsController settingsController
+    String title,
+    double amount,
+    Color color,
+    SettingsController settingsController,
   ) {
     final safeAmount = amount.isNaN || amount.isInfinite ? 0.0 : amount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(
+          title,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
         const SizedBox(height: 4),
-        Obx(() => Text(
-              '${settingsController.selectedCurrency.value} ${safeAmount.toStringAsFixed(2)}',
-              style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
-            )),
+        Obx(
+          () => Text(
+            _isBalanceVisible
+                ? '${settingsController.selectedCurrency.value} ${safeAmount.toStringAsFixed(2)}'
+                : '${settingsController.selectedCurrency.value} ******',
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ],
     );
   }

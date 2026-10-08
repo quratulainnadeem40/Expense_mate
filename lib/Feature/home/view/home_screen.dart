@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/widgets/coach_mark.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:flutter/material.dart';
@@ -395,6 +396,7 @@ class HomeScreen extends StatelessWidget {
 
                       // MENU BUTTON
                       IconButton(
+                        key: TourKeys.menuButton,
                         icon: Icon(
                           Icons.menu_rounded,
                           size: 28,
@@ -411,6 +413,7 @@ class HomeScreen extends StatelessWidget {
 
                   Obx(
                     () => BalanceCard(
+                      key: TourKeys.balanceCard,
                       totalBalance: reportController.totalBalance,
                       totalIncome: reportController.totalIncome,
                       totalExpense: reportController.totalExpense,
@@ -420,6 +423,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   Row(
+                    key: TourKeys.recentEntries,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(

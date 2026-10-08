@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../Categories/controller/categories_controller.dart';
+import '../../Categories/model/categories_model.dart';
 import '../../home/controller/home_controller.dart';
 import '../../transactions/controller/transcation_controller.dart';
 import '../../transactions/model/transcation_model.dart';
@@ -88,6 +89,90 @@ class ExpenseController extends GetxController {
     selectedWalletId.value = transaction.walletId;
   }
 
+  /// Returns the id of the category called [name], creating it first if
+  /// it does not exist yet.
+  ///
+  /// This is what makes a typed-in category show up on the Categories
+  /// screen and in the dropdown next time, instead of being stranded
+  /// inside one transaction.
+  Future<String> _resolveCategoryId(String name, String type) async {
+    final normalized = name.trim().toLowerCase();
+
+    CategoryModel? match;
+    for (final category in categoriesController.categoryList) {
+      if (category.name.trim().toLowerCase() == normalized) {
+        match = category;
+        break;
+      }
+    }
+
+    // A default category such as Food is stored as default_food until
+    // someone actually uses it, so treat that as a real match too.
+    if (match != null && !match.id.startsWith('default_')) {
+      return match.id;
+    }
+
+    await categoriesController.addCategory(
+      CategoryModel(
+        id: '',
+        name: name.trim(),
+        icon: _iconNameFor(name),
+        colorValue: 0xFF2E7D32,
+        isDefault: false,
+        type: type,
+      ),
+      closeDialog: false,
+    );
+
+    for (final category in categoriesController.categoryList) {
+      if (category.name.trim().toLowerCase() == normalized &&
+          !category.id.startsWith('default_')) {
+        return category.id;
+      }
+    }
+
+    return '';
+  }
+
+  /// Picks a sensible icon from the name, so a new category does not all
+  /// land on the generic box.
+  String _iconNameFor(String name) {
+    final n = name.toLowerCase();
+
+    bool has(List<String> keys) => keys.any(n.contains);
+
+    if (has(['food', 'eat', 'dining', 'lunch', 'dinner', 'party'])) {
+      return 'food';
+    }
+    if (has(['grocer', 'vegetable', 'market'])) return 'groceries';
+    if (has(['transport', 'taxi', 'uber', 'careem', 'bus', 'rickshaw'])) {
+      return 'transport';
+    }
+    if (has(['fuel', 'petrol', 'diesel'])) return 'fuel';
+    if (has(['bill', 'electric', 'gas', 'water'])) return 'bills';
+    if (has(['rent'])) return 'rent';
+    if (has(['health', 'doctor', 'hospital'])) return 'health';
+    if (has(['medicine', 'pharmac'])) return 'medicine';
+    if (has(['school', 'educat', 'fee', 'tuition', 'book'])) {
+      return 'education';
+    }
+    if (has(['mobile', 'phone', 'load', 'recharge'])) return 'mobile';
+    if (has(['internet', 'wifi'])) return 'internet';
+    if (has(['cloth', 'dress', 'shirt'])) return 'clothing';
+    if (has(['shop'])) return 'shopping';
+    if (has(['travel', 'trip', 'flight', 'umrah'])) return 'travel';
+    if (has(['movie', 'game', 'entertain'])) return 'entertainment';
+    if (has(['gym', 'fitness', 'sport'])) return 'fitness';
+    if (has(['gift', 'donat', 'charity', 'zakat'])) return 'gifts';
+    if (has(['salon', 'beauty', 'hair'])) return 'beauty';
+    if (has(['pet', 'cat', 'dog'])) return 'pets';
+    if (has(['repair', 'maintain', 'service'])) return 'maintenance';
+    if (has(['salary', 'income', 'wage'])) return 'salary';
+    if (has(['business', 'profit'])) return 'business';
+
+    return 'other';
+  }
+
   Future<void> saveExpense() async {
     final user = currentUser;
 
@@ -134,15 +219,24 @@ class ExpenseController extends GetxController {
       final wasEditing = isEditMode.value;
       final transactionId = editingTransactionId;
 
-      // IMPORTANT:
-      // Category ID is now saved for both Expense and Income.
-      final String categoryId =
-          customCategoryName.value.trim().isEmpty
-              ? selectedCategoryId.value.trim()
-              : '';
+      // A typed-in category used to live only inside the transaction, as
+      // free text. Nothing was created, so it never reached the
+      // Categories screen or the dropdown. Now it becomes a real
+      // category and the transaction points at it like any other.
+      final String typedName = customCategoryName.value.trim();
 
-      final String customCategory =
-          customCategoryName.value.trim();
+      String categoryId = selectedCategoryId.value.trim();
+
+      if (typedName.isNotEmpty) {
+        categoryId = await _resolveCategoryId(
+          typedName,
+          isExpense.value ? 'expense' : 'income',
+        );
+      }
+
+      // Kept empty from here on: the name now lives in the category
+      // record, not in the transaction.
+      const String customCategory = '';
 
       final transaction = TransactionModel(
         id: transactionId ?? '',
