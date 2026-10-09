@@ -7,6 +7,7 @@ class AppKeys {
 
   static const String settingsBox = 'settings_box';
   static const String budgetBox = 'budget_box';
+  static const String udhaarBox = 'udhaar_box';
 
   static const String isDarkModeKey = 'is_dark_mode';
   static const String monthlyBudgetKey = 'monthly_budget_limit';

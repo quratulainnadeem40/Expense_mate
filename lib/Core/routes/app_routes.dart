@@ -13,6 +13,8 @@ class AppRoutes {
 
   static const String more = '/more';
 
+  static const String udhaar = '/udhaar';
+
   static const login = '/login';
 
   static const signup = '/signup';

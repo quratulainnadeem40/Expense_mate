@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
+import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Feature/onboarding/binding/onboarding_binding.dart';
 import 'package:expense_mate/Feature/onboarding/view/onboarding_view.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
@@ -41,6 +43,12 @@ import 'app_routes.dart';
 
 class AppPages {
   static final pages = [
+    GetPage(
+      name: AppRoutes.udhaar,
+      page: () => const UdhaarView(),
+      binding: UdhaarBinding(),
+    ),
+
     GetPage(
       name: AppRoutes.splash,
       page: () => const SplashView(),
