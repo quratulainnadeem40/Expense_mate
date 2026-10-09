@@ -689,22 +689,38 @@ class ReportView extends StatelessWidget {
                       minX: 1,
                       maxX: 12,
                       minY: 0,
-
-                      // IMPORTANT:
-                      // The maximum Y value is exactly the
-                      // highest actual expense amount.
-                      maxY: _lineMax(monthlyData),
+                      maxY: _monthlyAxisMax(monthlyData),
 
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: true,
                         verticalInterval: 1,
-                        horizontalInterval: _lineInterval(monthlyData),
+                        horizontalInterval: _monthlyAxisInterval(monthlyData),
                       ),
 
                       borderData: FlBorderData(show: false),
 
-                      lineTouchData: LineTouchData(enabled: true),
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final int month = spot.x.round();
+                              final String monthName =
+                                  month >= 1 && month <= _months.length
+                                  ? _months[month - 1]
+                                  : '';
+                              return LineTooltipItem(
+                                '$monthName\nPKR ${spot.y}',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
 
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
@@ -718,11 +734,18 @@ class ReportView extends StatelessWidget {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 55,
-                            interval: _lineInterval(monthlyData),
+                            reservedSize: 68,
+                            interval: _monthlyAxisInterval(monthlyData),
                             getTitlesWidget: (value, meta) {
                               return Text(
-                                value.toInt().toString(),
+                                _formatMonthlyAxisValue(
+                                  value,
+                                  _monthlyAxisInterval(monthlyData),
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                                textAlign: TextAlign.right,
                                 style: const TextStyle(fontSize: 9),
                               );
                             },
@@ -760,7 +783,10 @@ class ReportView extends StatelessWidget {
                             final int month = index + 1;
 
                             // EXACT actual expense amount.
-                            final double amount = monthlyData[month] ?? 0.0;
+                            final double rawAmount = monthlyData[month] ?? 0.0;
+                            final double amount = rawAmount.isFinite
+                                ? rawAmount
+                                : 0;
 
                             return FlSpot(month.toDouble(), amount);
                           }),
@@ -795,13 +821,13 @@ class ReportView extends StatelessWidget {
                       minX: 1,
                       maxX: 12,
                       minY: 0,
-                      maxY: _monthlyIncomeAxisMax(monthlyIncomeData),
+                      maxY: _monthlyAxisMax(monthlyIncomeData),
 
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: true,
                         verticalInterval: 1,
-                        horizontalInterval: _monthlyIncomeAxisInterval(
+                        horizontalInterval: _monthlyAxisInterval(
                           monthlyIncomeData,
                         ),
                       ),
@@ -843,14 +869,12 @@ class ReportView extends StatelessWidget {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 68,
-                            interval: _monthlyIncomeAxisInterval(
-                              monthlyIncomeData,
-                            ),
+                            interval: _monthlyAxisInterval(monthlyIncomeData),
                             getTitlesWidget: (value, meta) {
                               return Text(
-                                _formatMonthlyIncomeAxisValue(
+                                _formatMonthlyAxisValue(
                                   value,
-                                  _monthlyIncomeAxisInterval(monthlyIncomeData),
+                                  _monthlyAxisInterval(monthlyIncomeData),
                                 ),
                                 maxLines: 1,
                                 softWrap: false,
@@ -1169,74 +1193,7 @@ class ReportView extends StatelessWidget {
     return '${value < 0 ? '-' : ''}$formatted$decimals';
   }
 
-  double _lineInterval(Map<int, double> data) {
-    double maximum = 0;
-
-    for (final double value in data.values) {
-      if (value > maximum) {
-        maximum = value;
-      }
-    }
-
-    if (maximum <= 0) {
-      return 100;
-    }
-
-    if (maximum <= 1000) {
-      return 100;
-    }
-
-    if (maximum <= 5000) {
-      return 500;
-    }
-
-    if (maximum <= 10000) {
-      return 1000;
-    }
-
-    if (maximum <= 50000) {
-      return 5000;
-    }
-
-    if (maximum <= 100000) {
-      return 10000;
-    }
-
-    if (maximum <= 500000) {
-      return 50000;
-    }
-
-    return 100000;
-  }
-
-  // ==============================================================
-  // UPDATED LINE GRAPH MAXIMUM
-  // ==============================================================
-
-  double _lineMax(Map<int, double> data) {
-    double maximum = 0;
-
-    for (final double value in data.values) {
-      if (value > maximum) {
-        maximum = value;
-      }
-    }
-
-    if (maximum <= 0) {
-      return 100;
-    }
-
-    // DO NOT add an extra interval.
-    // The graph maximum must remain the actual highest amount.
-    //
-    // 10,000  -> maxY = 10,000
-    // 15,000  -> maxY = 15,000
-    // 50,000  -> maxY = 50,000
-    // 100,000 -> maxY = 100,000
-    return maximum;
-  }
-
-  double _monthlyIncomeMaximum(Map<int, double> data) {
+  double _monthlyMaximum(Map<int, double> data) {
     double maximum = 0;
     for (final double amount in data.values) {
       if (amount.isFinite && amount > maximum) {
@@ -1246,8 +1203,8 @@ class ReportView extends StatelessWidget {
     return maximum;
   }
 
-  double _monthlyIncomeAxisInterval(Map<int, double> data) {
-    final double maximum = _monthlyIncomeMaximum(data);
+  double _monthlyAxisInterval(Map<int, double> data) {
+    final double maximum = _monthlyMaximum(data);
     if (maximum == 0) {
       return 1;
     }
@@ -1277,9 +1234,9 @@ class ReportView extends StatelessWidget {
     return interval > 0 && interval.isFinite ? interval : roughInterval;
   }
 
-  double _monthlyIncomeAxisMax(Map<int, double> data) {
-    final double maximum = _monthlyIncomeMaximum(data);
-    final double interval = _monthlyIncomeAxisInterval(data);
+  double _monthlyAxisMax(Map<int, double> data) {
+    final double maximum = _monthlyMaximum(data);
+    final double interval = _monthlyAxisInterval(data);
     if (maximum == 0) {
       return interval * 5;
     }
@@ -1293,7 +1250,7 @@ class ReportView extends StatelessWidget {
     return roundedMax;
   }
 
-  String _formatMonthlyIncomeAxisValue(double value, double interval) {
+  String _formatMonthlyAxisValue(double value, double interval) {
     if (value == 0) {
       return '0';
     }
