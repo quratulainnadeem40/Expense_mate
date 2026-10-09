@@ -795,22 +795,40 @@ class ReportView extends StatelessWidget {
                       minX: 1,
                       maxX: 12,
                       minY: 0,
-
-                      // IMPORTANT:
-                      // The maximum Y value is exactly the
-                      // highest actual income amount.
-                      maxY: _lineMax(monthlyIncomeData),
+                      maxY: _monthlyIncomeAxisMax(monthlyIncomeData),
 
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: true,
                         verticalInterval: 1,
-                        horizontalInterval: _lineInterval(monthlyIncomeData),
+                        horizontalInterval: _monthlyIncomeAxisInterval(
+                          monthlyIncomeData,
+                        ),
                       ),
 
                       borderData: FlBorderData(show: false),
 
-                      lineTouchData: LineTouchData(enabled: true),
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final int month = spot.x.round();
+                              final String monthName =
+                                  month >= 1 && month <= _months.length
+                                  ? _months[month - 1]
+                                  : '';
+                              return LineTooltipItem(
+                                '$monthName\nPKR ${spot.y}',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
 
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
@@ -824,11 +842,20 @@ class ReportView extends StatelessWidget {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 55,
-                            interval: _lineInterval(monthlyIncomeData),
+                            reservedSize: 68,
+                            interval: _monthlyIncomeAxisInterval(
+                              monthlyIncomeData,
+                            ),
                             getTitlesWidget: (value, meta) {
                               return Text(
-                                value.toInt().toString(),
+                                _formatMonthlyIncomeAxisValue(
+                                  value,
+                                  _monthlyIncomeAxisInterval(monthlyIncomeData),
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                                textAlign: TextAlign.right,
                                 style: const TextStyle(fontSize: 9),
                               );
                             },
@@ -866,8 +893,11 @@ class ReportView extends StatelessWidget {
                             final int month = index + 1;
 
                             // EXACT actual income amount.
-                            final double amount =
+                            final double rawAmount =
                                 monthlyIncomeData[month] ?? 0.0;
+                            final double amount = rawAmount.isFinite
+                                ? rawAmount
+                                : 0;
 
                             return FlSpot(month.toDouble(), amount);
                           }),
@@ -1204,6 +1234,112 @@ class ReportView extends StatelessWidget {
     // 50,000  -> maxY = 50,000
     // 100,000 -> maxY = 100,000
     return maximum;
+  }
+
+  double _monthlyIncomeMaximum(Map<int, double> data) {
+    double maximum = 0;
+    for (final double amount in data.values) {
+      if (amount.isFinite && amount > maximum) {
+        maximum = amount;
+      }
+    }
+    return maximum;
+  }
+
+  double _monthlyIncomeAxisInterval(Map<int, double> data) {
+    final double maximum = _monthlyIncomeMaximum(data);
+    if (maximum == 0) {
+      return 1;
+    }
+
+    final double roughInterval = maximum / 5;
+    if (roughInterval == 0 || !roughInterval.isFinite) {
+      return maximum;
+    }
+
+    final int exponent = (math.log(roughInterval) / math.ln10).floor();
+    final double magnitude = math.pow(10, exponent).toDouble();
+    if (magnitude == 0 || !magnitude.isFinite) {
+      return roughInterval;
+    }
+
+    final double normalized = roughInterval / magnitude;
+    final double step = normalized <= 1
+        ? 1
+        : normalized <= 2
+        ? 2
+        : normalized <= 2.5
+        ? 2.5
+        : normalized <= 5
+        ? 5
+        : 10;
+    final double interval = step * magnitude;
+    return interval > 0 && interval.isFinite ? interval : roughInterval;
+  }
+
+  double _monthlyIncomeAxisMax(Map<int, double> data) {
+    final double maximum = _monthlyIncomeMaximum(data);
+    final double interval = _monthlyIncomeAxisInterval(data);
+    if (maximum == 0) {
+      return interval * 5;
+    }
+
+    final double target = maximum + interval * 0.5;
+    final double safeTarget = target.isFinite ? target : maximum;
+    final double roundedMax = (safeTarget / interval).ceilToDouble() * interval;
+    if (!roundedMax.isFinite || roundedMax < maximum) {
+      return maximum;
+    }
+    return roundedMax;
+  }
+
+  String _formatMonthlyIncomeAxisValue(double value, double interval) {
+    if (value == 0) {
+      return '0';
+    }
+
+    final double absoluteValue = value.abs();
+    if (absoluteValue < 0.0001 || absoluteValue >= 1e15) {
+      return value.toStringAsExponential(2);
+    }
+
+    if (absoluteValue >= 1000) {
+      final (double divisor, String suffix) = absoluteValue >= 1e12
+          ? (1e12, 'T')
+          : absoluteValue >= 1e9
+          ? (1e9, 'B')
+          : absoluteValue >= 1e6
+          ? (1e6, 'M')
+          : (1e3, 'K');
+      final String scaled = (absoluteValue / divisor)
+          .toStringAsFixed(2)
+          .replaceFirst(RegExp(r'\.?0+$'), '');
+      return '${value < 0 ? '-' : ''}$scaled$suffix';
+    }
+
+    int decimalPlaces = 0;
+    double scaledInterval = interval;
+    while (decimalPlaces < 12 &&
+        (scaledInterval - scaledInterval.round()).abs() >
+            1e-9 * math.max(1, scaledInterval.abs())) {
+      scaledInterval *= 10;
+      decimalPlaces++;
+    }
+
+    final List<String> parts = absoluteValue
+        .toStringAsFixed(decimalPlaces)
+        .split('.');
+    final String digits = parts.first;
+    final StringBuffer formatted = StringBuffer();
+    for (int index = 0; index < digits.length; index++) {
+      if (index > 0 && (digits.length - index) % 3 == 0) {
+        formatted.write(',');
+      }
+      formatted.write(digits[index]);
+    }
+
+    final String decimals = parts.length > 1 ? '.${parts.last}' : '';
+    return '${value < 0 ? '-' : ''}$formatted$decimals';
   }
 
   Widget _categoryChart(
