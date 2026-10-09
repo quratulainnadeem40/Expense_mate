@@ -1,6 +1,8 @@
 class AppRoutes {
   static const String splash = '/splash';
 
+  static const String onboarding = '/onboarding';
+
   static const String home = '/home';
 
   static const String transactions = '/transactions';
@@ -10,6 +12,8 @@ class AppRoutes {
   static const String reports = '/reports';
 
   static const String more = '/more';
+
+  static const String udhaar = '/udhaar';
 
   static const login = '/login';
 

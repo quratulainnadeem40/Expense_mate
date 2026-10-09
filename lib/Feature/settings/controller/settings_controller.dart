@@ -19,6 +19,10 @@ class SettingsController extends GetxController {
   late Box settingsBox;
 
   final isDarkMode = false.obs;
+
+  /// Hides the figures on the balance card. Starts on, so the amounts
+  /// are not sitting in plain view the first time the app opens.
+  final hideAmounts = true.obs;
   final selectedCurrency = 'PKR'.obs;
   final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
@@ -706,6 +710,9 @@ class SettingsController extends GetxController {
 
     notificationsEnabled.value =
         settingsBox.get('notifications_enabled', defaultValue: true) as bool;
+
+    hideAmounts.value =
+        settingsBox.get('hide_amounts', defaultValue: true) as bool;
   }
 
   // ============================================================
@@ -764,6 +771,12 @@ class SettingsController extends GetxController {
     }
 
     await settingsBox.put('custom_currencies', customCurrencies.toList());
+  }
+
+  /// Flips the balance card between the real figures and dots.
+  Future<void> toggleHideAmounts() async {
+    hideAmounts.value = !hideAmounts.value;
+    await settingsBox.put('hide_amounts', hideAmounts.value);
   }
 
   Future<void> changeCurrency(String currency) async {

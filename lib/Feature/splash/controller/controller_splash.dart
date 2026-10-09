@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/onboarding/view/onboarding_view.dart';
+import 'package:expense_mate/Feature/onboarding/controller/onboarding_controller.dart';
 import 'dart:async';
 
 import 'package:expense_mate/Core/routes/app_routes.dart';
@@ -17,13 +19,21 @@ class SplashController extends GetxController {
     Timer(const Duration(seconds: 3), () {
       final user = _supabase.auth.currentUser;
 
-      if (user != null) {
-        // User is already logged in
-        Get.offAllNamed(AppRoutes.home);
-      } else {
-        // User is not logged in
-        Get.offAllNamed(AppRoutes.login);
+      final destination =
+          user != null ? AppRoutes.home : AppRoutes.login;
+
+      // Onboarding runs once per install, before anything else. The
+      // destination is passed along so onboarding does not have to know
+      // whether the user is signed in.
+      if (!OnboardingController.hasSeen) {
+        Get.offAllNamed(
+          AppRoutes.onboarding,
+          arguments: {OnboardingView.argNextRoute: destination},
+        );
+        return;
       }
+
+      Get.offAllNamed(destination);
     });
   }
 }
