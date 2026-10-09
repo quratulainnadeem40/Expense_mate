@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/onboarding/binding/onboarding_binding.dart';
+import 'package:expense_mate/Feature/onboarding/view/onboarding_view.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 
@@ -43,6 +45,12 @@ class AppPages {
       name: AppRoutes.splash,
       page: () => const SplashView(),
       binding: SplashBinding(),
+    ),
+
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingView(),
+      binding: OnboardingBinding(),
     ),
 
     GetPage(

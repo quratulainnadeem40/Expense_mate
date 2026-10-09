@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 // SettingsController ka path
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 
-class BalanceCard extends StatefulWidget {
+class BalanceCard extends StatelessWidget {
   final double totalBalance;
   final double totalIncome;
   final double totalExpense;
@@ -17,12 +17,11 @@ class BalanceCard extends StatefulWidget {
     required this.totalExpense,
   });
 
-  @override
-  State<BalanceCard> createState() => _BalanceCardState();
-}
-
-class _BalanceCardState extends State<BalanceCard> {
-  bool _isBalanceVisible = false;
+  /// What a hidden figure looks like.
+  ///
+  /// A fixed run of dots, not one per digit, so the length of the dots
+  /// does not quietly give the amount away.
+  static const String _masked = '••••••';
 
   @override
   Widget build(BuildContext context) {
@@ -40,60 +39,70 @@ class _BalanceCardState extends State<BalanceCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total Balance',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              IconButton(
-                tooltip: _isBalanceVisible ? 'Hide balance' : 'Show balance',
-                onPressed: () {
-                  setState(() {
-                    _isBalanceVisible = !_isBalanceVisible;
-                  });
-                },
-                icon: Icon(
-                  _isBalanceVisible
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
-                  color: Colors.white70,
-                  size: 20,
+              const Expanded(
+                child: Text(
+                  'Total Balance',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
+
+              // The eye sits beside the label rather than over the
+              // figure, so tapping it never hides what you are reading.
+              Obx(() {
+                final hidden = settingsController.hideAmounts.value;
+
+                return InkWell(
+                  onTap: settingsController.toggleHideAmounts,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      hidden
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      size: 20,
+                      color: Colors.white70,
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
+
           const SizedBox(height: 8),
 
-          Obx(
-            () => Text(
-              _isBalanceVisible
-                  ? '${settingsController.selectedCurrency.value} ${widget.totalBalance.toStringAsFixed(2)}'
-                  : '${settingsController.selectedCurrency.value} ******',
+          // Currency reactive status ke liye Obx inside wrapper
+          Obx(() {
+            final hidden = settingsController.hideAmounts.value;
+            final currency = settingsController.selectedCurrency.value;
+
+            return Text(
+              hidden
+                  ? '$currency $_masked'
+                  : '$currency ${totalBalance.toStringAsFixed(2)}',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
-            ),
-          ),
+            );
+          }),
 
           const SizedBox(height: 20),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildInfoItem(
                 'Income',
-                widget.totalIncome,
+                totalIncome,
                 Colors.green,
                 settingsController,
               ),
               _buildInfoItem(
                 'Expense',
-                widget.totalExpense,
+                totalExpense,
                 AppColors.expenseRed,
                 settingsController,
               ),
@@ -120,18 +129,24 @@ class _BalanceCardState extends State<BalanceCard> {
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         const SizedBox(height: 4),
-        Obx(
-          () => Text(
-            _isBalanceVisible
-                ? '${settingsController.selectedCurrency.value} ${safeAmount.toStringAsFixed(2)}'
-                : '${settingsController.selectedCurrency.value} ******',
+
+        // Income and expense are hidden with the balance. Leaving them
+        // visible would let anyone work the balance out anyway.
+        Obx(() {
+          final hidden = settingsController.hideAmounts.value;
+          final currency = settingsController.selectedCurrency.value;
+
+          return Text(
+            hidden
+                ? '$currency $_masked'
+                : '$currency ${safeAmount.toStringAsFixed(2)}',
             style: TextStyle(
               color: color,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
