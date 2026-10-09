@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -545,9 +547,26 @@ class ReportView extends StatelessWidget {
                     BarChartData(
                       minY: 0,
                       maxY: _barMax(income, expense),
-                      gridData: FlGridData(show: true),
+                      gridData: FlGridData(
+                        show: true,
+                        horizontalInterval: _barInterval(income, expense),
+                      ),
                       borderData: FlBorderData(show: false),
-                      barTouchData: BarTouchData(enabled: true),
+                      barTouchData: BarTouchData(
+                        enabled: true,
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final label = group.x == 0 ? 'Income' : 'Expense';
+                            return BarTooltipItem(
+                              '$label\nPKR ${rod.toY}',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
@@ -558,11 +577,15 @@ class ReportView extends StatelessWidget {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 50,
+                            reservedSize: 68,
+                            interval: _barInterval(income, expense),
                             getTitlesWidget: (value, meta) {
                               return Text(
-                                value.toInt().toString(),
-                                style: const TextStyle(fontSize: 10),
+                                _formatBarAxisValue(
+                                  value,
+                                  _barInterval(income, expense),
+                                ),
+                                style: const TextStyle(fontSize: 9),
                               );
                             },
                           ),
@@ -631,7 +654,7 @@ class ReportView extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                _categoryChart(context, categoryData),
+                _categoryChart(context, categoryData, isIncome: false),
 
                 const SizedBox(height: 28),
 
@@ -642,7 +665,7 @@ class ReportView extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                _categoryChart(context, incomeCategoryData),
+                _categoryChart(context, incomeCategoryData, isIncome: true),
 
                 const SizedBox(height: 28),
 
@@ -1019,12 +1042,101 @@ class ReportView extends StatelessWidget {
 
   double _barMax(double income, double expense) {
     final double maximum = income > expense ? income : expense;
+    final double interval = _barInterval(income, expense);
 
     if (maximum <= 0) {
-      return 100;
+      return 5 * interval;
     }
 
-    return maximum * 1.25;
+    final double paddedMaximum = maximum + maximum * 0.1;
+    final double targetMaximum = paddedMaximum.isFinite
+        ? paddedMaximum
+        : maximum;
+    final double roundedMaximum =
+        (targetMaximum / interval).ceilToDouble() * interval;
+
+    if (!roundedMaximum.isFinite || roundedMaximum < maximum) {
+      return maximum;
+    }
+
+    return roundedMaximum;
+  }
+
+  double _barInterval(double income, double expense) {
+    final double maximum = income > expense ? income : expense;
+
+    if (maximum <= 0) {
+      return 20;
+    }
+
+    final double roughInterval = maximum / 5;
+    if (roughInterval == 0) {
+      return maximum;
+    }
+
+    final int exponent = (math.log(roughInterval) / math.ln10).floor();
+    final double magnitude = math.pow(10, exponent).toDouble();
+    if (magnitude == 0 || !magnitude.isFinite) {
+      return roughInterval;
+    }
+    final double normalized = roughInterval / magnitude;
+    final double step = normalized <= 1
+        ? 1
+        : normalized <= 2
+        ? 2
+        : normalized <= 2.5
+        ? 2.5
+        : normalized <= 5
+        ? 5
+        : 10;
+
+    final double interval = step * magnitude;
+    return interval > 0 && interval.isFinite ? interval : roughInterval;
+  }
+
+  String _formatBarAxisValue(double value, double interval) {
+    if (value == 0) {
+      return '0';
+    }
+
+    final double absoluteValue = value.abs();
+    if (absoluteValue < 0.001 || absoluteValue >= 1e15) {
+      return value.toStringAsExponential(2);
+    }
+
+    if (absoluteValue >= 1e3) {
+      final (double divisor, String suffix) = absoluteValue >= 1e12
+          ? (1e12, 'T')
+          : absoluteValue >= 1e9
+          ? (1e9, 'B')
+          : absoluteValue >= 1e6
+          ? (1e6, 'M')
+          : (1e3, 'K');
+      final String scaled = (absoluteValue / divisor)
+          .toStringAsFixed(2)
+          .replaceFirst(RegExp(r'\.?0+$'), '');
+      return '${value < 0 ? '-' : ''}$scaled$suffix';
+    }
+
+    final String intervalString = interval.toString();
+    final int decimalPlaces = intervalString.contains('.')
+        ? intervalString.split('.').last.length
+        : 0;
+    final List<String> parts = absoluteValue
+        .toStringAsFixed(decimalPlaces)
+        .split('.');
+    final String digits = parts.first;
+    final StringBuffer formatted = StringBuffer();
+
+    for (int index = 0; index < digits.length; index++) {
+      if (index > 0 && (digits.length - index) % 3 == 0) {
+        formatted.write(',');
+      }
+      formatted.write(digits[index]);
+    }
+
+    final String decimals = parts.length > 1 ? '.${parts.last}' : '';
+    return '${value < 0 ? '-' : ''}$formatted$decimals';
   }
 
   double _lineInterval(Map<int, double> data) {
@@ -1094,8 +1206,16 @@ class ReportView extends StatelessWidget {
     return maximum;
   }
 
-  Widget _categoryChart(BuildContext context, Map<String, double> data) {
-    if (data.isEmpty) {
+  Widget _categoryChart(
+    BuildContext context,
+    Map<String, double> data, {
+    required bool isIncome,
+  }) {
+    final entries = data.entries
+        .where((entry) => entry.value.isFinite && entry.value > 0)
+        .toList();
+
+    if (entries.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
@@ -1107,9 +1227,20 @@ class ReportView extends StatelessWidget {
       );
     }
 
-    final double total = data.values.fold(0.0, (sum, value) => sum + value);
-
-    final List<MapEntry<String, double>> entries = data.entries.toList();
+    final double largestAmount = entries.fold<double>(
+      0,
+      (largest, entry) => entry.value > largest ? entry.value : largest,
+    );
+    final List<double> normalizedAmounts = entries
+        .map((entry) => entry.value / largestAmount)
+        .toList();
+    final double normalizedTotal = normalizedAmounts.fold(
+      0.0,
+      (sum, amount) => sum + amount,
+    );
+    final List<double> percentages = normalizedAmounts
+        .map((amount) => (amount / normalizedTotal) * 100)
+        .toList();
 
     return Container(
       width: double.infinity,
@@ -1127,17 +1258,25 @@ class ReportView extends StatelessWidget {
                 sectionsSpace: 2,
                 centerSpaceRadius: 45,
                 sections: List.generate(entries.length, (index) {
-                  final double percentage = total == 0
-                      ? 0
-                      : (entries[index].value / total) * 100;
+                  final double percentage = percentages[index];
+                  final Color color = _categoryColor(
+                    index,
+                    percentage: percentage,
+                    isIncome: isIncome,
+                  );
+                  final Color labelColor = color.computeLuminance() > 0.36
+                      ? const Color(0xFF142033)
+                      : Colors.white;
 
                   return PieChartSectionData(
-                    value: entries[index].value,
+                    value: percentage,
+                    color: color,
                     title: '${percentage.toStringAsFixed(1)}%',
                     radius: 80,
-                    titleStyle: const TextStyle(
+                    titleStyle: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      color: labelColor,
                     ),
                   );
                 }),
@@ -1148,8 +1287,12 @@ class ReportView extends StatelessWidget {
           ...List.generate(entries.length, (index) {
             final String name = entries[index].key;
             final double amount = entries[index].value;
-
-            final double percentage = total == 0 ? 0 : (amount / total) * 100;
+            final double percentage = percentages[index];
+            final Color color = _categoryColor(
+              index,
+              percentage: percentage,
+              isIncome: isIncome,
+            );
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 5),
@@ -1160,7 +1303,7 @@ class ReportView extends StatelessWidget {
                     height: 12,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _categoryColor(index),
+                      color: color,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1183,21 +1326,36 @@ class ReportView extends StatelessWidget {
     );
   }
 
-  Color _categoryColor(int index) {
-    const List<Color> colors = [
-      Colors.blue,
-      Colors.orange,
-      Colors.green,
-      Colors.red,
-      Colors.purple,
-      Colors.teal,
-      Colors.pink,
-      Colors.indigo,
-      Colors.amber,
-      Colors.cyan,
+  Color _categoryColor(
+    int index, {
+    required double percentage,
+    required bool isIncome,
+  }) {
+    const expenseColors = [
+      Color(0xFF2563EB),
+      Color(0xFFF59E0B),
+      Color(0xFF10B981),
+      Color(0xFFF43F5E),
+      Color(0xFF7C3AED),
+      Color(0xFF06B6D4),
+      Color(0xFFDB2777),
+      Color(0xFF84CC16),
     ];
+    const incomeColors = [
+      Color(0xFF8B5CF6),
+      Color(0xFF0EA5E9),
+      Color(0xFF22C55E),
+      Color(0xFFEC4899),
+      Color(0xFF6366F1),
+      Color(0xFF14B8A6),
+      Color(0xFFF97316),
+      Color(0xFFA855F7),
+    ];
+    final colors = isIncome ? incomeColors : expenseColors;
+    final Color baseColor = colors[index % colors.length];
+    final double share = percentage.clamp(0, 100).toDouble() / 100;
 
-    return colors[index % colors.length];
+    return Color.lerp(baseColor, Colors.black, share * 0.12)!;
   }
 
   Widget _buildDrawerOption({
