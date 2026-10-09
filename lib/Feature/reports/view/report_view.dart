@@ -529,136 +529,138 @@ class ReportView extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // ==================================================
-                // INCOME VS EXPENSE
+                // MONTHLY INCOME
                 // ==================================================
-                _sectionTitle(context, 'Income vs Expense'),
+                _sectionTitle(context, 'Monthly Income'),
 
                 const SizedBox(height: 12),
 
                 Container(
                   width: double.infinity,
                   height: 300,
-                  padding: const EdgeInsets.fromLTRB(12, 20, 20, 15),
+                  padding: const EdgeInsets.fromLTRB(10, 20, 20, 15),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: BarChart(
-                    BarChartData(
+                  child: LineChart(
+                    LineChartData(
+                      minX: 1,
+                      maxX: 12,
                       minY: 0,
-                      maxY: _barMax(income, expense),
+                      maxY: _monthlyAxisMax(monthlyIncomeData),
+
                       gridData: FlGridData(
                         show: true,
-                        horizontalInterval: _barInterval(income, expense),
+                        drawVerticalLine: true,
+                        verticalInterval: 1,
+                        horizontalInterval: _monthlyAxisInterval(
+                          monthlyIncomeData,
+                        ),
                       ),
+
                       borderData: FlBorderData(show: false),
-                      barTouchData: BarTouchData(
+
+                      lineTouchData: LineTouchData(
                         enabled: true,
-                        touchTooltipData: BarTouchTooltipData(
-                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                            final label = group.x == 0 ? 'Income' : 'Expense';
-                            return BarTooltipItem(
-                              '$label\nPKR ${rod.toY}',
-                              const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            );
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final int month = spot.x.round();
+                              final String monthName =
+                                  month >= 1 && month <= _months.length
+                                  ? _months[month - 1]
+                                  : '';
+                              return LineTooltipItem(
+                                '$monthName\nPKR ${spot.y}',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            }).toList();
                           },
                         ),
                       ),
+
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
+
                         rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
+
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 68,
-                            interval: _barInterval(income, expense),
+                            interval: _monthlyAxisInterval(monthlyIncomeData),
                             getTitlesWidget: (value, meta) {
                               return Text(
-                                _formatBarAxisValue(
+                                _formatMonthlyAxisValue(
                                   value,
-                                  _barInterval(income, expense),
+                                  _monthlyAxisInterval(monthlyIncomeData),
                                 ),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                                textAlign: TextAlign.right,
                                 style: const TextStyle(fontSize: 9),
                               );
                             },
                           ),
                         ),
+
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
+                            interval: 1,
                             reservedSize: 45,
                             getTitlesWidget: (value, meta) {
-                              String text = '';
+                              final int month = value.toInt();
 
-                              if (value.toInt() == 0) {
-                                text = 'Income';
-                              } else if (value.toInt() == 1) {
-                                text = 'Expense';
+                              if (month < 1 || month > 12) {
+                                return const SizedBox.shrink();
                               }
 
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 12),
+                              return SideTitleWidget(
+                                meta: meta,
+                                space: 12,
                                 child: Text(
-                                  text,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  _months[month - 1].substring(0, 3),
+                                  style: const TextStyle(fontSize: 9),
                                 ),
                               );
                             },
                           ),
                         ),
                       ),
-                      barGroups: [
-                        BarChartGroupData(
-                          x: 0,
-                          barsSpace: 0,
-                          barRods: [
-                            BarChartRodData(
-                              toY: income,
-                              width: 38,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ],
-                        ),
-                        BarChartGroupData(
-                          x: 1,
-                          barsSpace: 0,
-                          barRods: [
-                            BarChartRodData(
-                              toY: expense,
-                              width: 38,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ],
+
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: List.generate(12, (index) {
+                            final int month = index + 1;
+
+                            // EXACT actual income amount.
+                            final double rawAmount =
+                                monthlyIncomeData[month] ?? 0.0;
+                            final double amount = rawAmount.isFinite
+                                ? rawAmount
+                                : 0;
+
+                            return FlSpot(month.toDouble(), amount);
+                          }),
+                          isCurved: false,
+                          barWidth: 3,
+                          dotData: const FlDotData(show: true),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 28),
-
-                // ==================================================
-                // EXPENSE CATEGORIES
-                // ==================================================
-                _sectionTitle(context, 'Expense Categories'),
-
-                const SizedBox(height: 12),
-
-                _categoryChart(context, categoryData, isIncome: false),
-
-                const SizedBox(height: 28),
-
-                // ==================================================
                 // INCOME CATEGORIES
                 // ==================================================
                 _sectionTitle(context, 'Income Categories'),
@@ -802,138 +804,136 @@ class ReportView extends StatelessWidget {
                 const SizedBox(height: 28),
 
                 // ==================================================
-                // MONTHLY INCOME
+                // EXPENSE CATEGORIES
                 // ==================================================
-                _sectionTitle(context, 'Monthly Income'),
+                _sectionTitle(context, 'Expense Categories'),
+
+                const SizedBox(height: 12),
+
+                _categoryChart(context, categoryData, isIncome: false),
+
+                const SizedBox(height: 28),
+
+                // ==================================================
+                // INCOME VS EXPENSE
+                // ==================================================
+                _sectionTitle(context, 'Income vs Expense'),
 
                 const SizedBox(height: 12),
 
                 Container(
                   width: double.infinity,
                   height: 300,
-                  padding: const EdgeInsets.fromLTRB(10, 20, 20, 15),
+                  padding: const EdgeInsets.fromLTRB(12, 20, 20, 15),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: LineChart(
-                    LineChartData(
-                      minX: 1,
-                      maxX: 12,
+                  child: BarChart(
+                    BarChartData(
                       minY: 0,
-                      maxY: _monthlyAxisMax(monthlyIncomeData),
-
+                      maxY: _barMax(income, expense),
                       gridData: FlGridData(
                         show: true,
-                        drawVerticalLine: true,
-                        verticalInterval: 1,
-                        horizontalInterval: _monthlyAxisInterval(
-                          monthlyIncomeData,
-                        ),
+                        horizontalInterval: _barInterval(income, expense),
                       ),
-
                       borderData: FlBorderData(show: false),
-
-                      lineTouchData: LineTouchData(
+                      barTouchData: BarTouchData(
                         enabled: true,
-                        touchTooltipData: LineTouchTooltipData(
-                          getTooltipItems: (touchedSpots) {
-                            return touchedSpots.map((spot) {
-                              final int month = spot.x.round();
-                              final String monthName =
-                                  month >= 1 && month <= _months.length
-                                  ? _months[month - 1]
-                                  : '';
-                              return LineTooltipItem(
-                                '$monthName\nPKR ${spot.y}',
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              );
-                            }).toList();
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final label = group.x == 0 ? 'Income' : 'Expense';
+                            return BarTooltipItem(
+                              '$label\nPKR ${rod.toY}',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
                           },
                         ),
                       ),
-
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-
                         rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 68,
-                            interval: _monthlyAxisInterval(monthlyIncomeData),
+                            interval: _barInterval(income, expense),
                             getTitlesWidget: (value, meta) {
                               return Text(
-                                _formatMonthlyAxisValue(
+                                _formatBarAxisValue(
                                   value,
-                                  _monthlyAxisInterval(monthlyIncomeData),
+                                  _barInterval(income, expense),
                                 ),
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.clip,
-                                textAlign: TextAlign.right,
                                 style: const TextStyle(fontSize: 9),
                               );
                             },
                           ),
                         ),
-
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            interval: 1,
                             reservedSize: 45,
                             getTitlesWidget: (value, meta) {
-                              final int month = value.toInt();
+                              String text = '';
 
-                              if (month < 1 || month > 12) {
-                                return const SizedBox.shrink();
+                              if (value.toInt() == 0) {
+                                text = 'Income';
+                              } else if (value.toInt() == 1) {
+                                text = 'Expense';
                               }
 
-                              return SideTitleWidget(
-                                meta: meta,
-                                space: 12,
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 12),
                                 child: Text(
-                                  _months[month - 1].substring(0, 3),
-                                  style: const TextStyle(fontSize: 9),
+                                  text,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               );
                             },
                           ),
                         ),
                       ),
-
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: List.generate(12, (index) {
-                            final int month = index + 1;
-
-                            // EXACT actual income amount.
-                            final double rawAmount =
-                                monthlyIncomeData[month] ?? 0.0;
-                            final double amount = rawAmount.isFinite
-                                ? rawAmount
-                                : 0;
-
-                            return FlSpot(month.toDouble(), amount);
-                          }),
-                          isCurved: false,
-                          barWidth: 3,
-                          dotData: const FlDotData(show: true),
+                      barGroups: [
+                        BarChartGroupData(
+                          x: 0,
+                          barsSpace: 0,
+                          barRods: [
+                            BarChartRodData(
+                              toY: income,
+                              width: 38,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ],
+                        ),
+                        BarChartGroupData(
+                          x: 1,
+                          barsSpace: 0,
+                          barRods: [
+                            BarChartRodData(
+                              toY: expense,
+                              width: 38,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
 
+                const SizedBox(height: 28),
+
+                // ==================================================
                 const SizedBox(height: 25),
               ],
             ),
