@@ -1,1282 +1,1094 @@
-
 import 'package:fl_chart/fl_chart.dart';
-import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
+
+import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
+import 'package:expense_mate/Feature/committee/view/committee_view.dart';
+import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
+import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
+import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
+import 'package:expense_mate/Feature/goals/view/goals_view.dart';
+import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
+import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
+import 'package:expense_mate/Feature/settings/view/settings_view.dart';
+
 class ReportView extends StatelessWidget {
-  ReportView({super.key});
+  const ReportView({super.key});
 
-  final ReportController controller =
-      Get.isRegistered<ReportController>()
-          ? Get.find<ReportController>()
-          : Get.put(ReportController());
+  static final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>();
 
-  String formatAmount(double amount) {
-    final bool isNegative = amount < 0;
-    final int rounded = amount.abs().round();
+  static const List<String> _months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
 
-    final String value = rounded.toString();
-    final StringBuffer result = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      final int positionFromEnd = value.length - i;
-
-      result.write(value[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        result.write(',');
-      }
-    }
-
-    return isNegative ? '-${result.toString()}' : result.toString();
-  }
-
-  String formatPercentage(double percentage) {
-    if (percentage == percentage.roundToDouble()) {
-      return '${percentage.toInt()}%';
-    }
-
-    return '${percentage.toStringAsFixed(2)}%';
-  }
-
-  String getMonthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-
-    return months[month - 1];
-  }
-
-  Color getCategoryColor(
-    String categoryName,
-    CategoriesController categoriesController,
-  ) {
-    final category =
-        categoriesController.categoryList.firstWhereOrNull(
-      (item) =>
-          item.name.trim().toLowerCase() ==
-          categoryName.trim().toLowerCase(),
-    );
-
-    if (category != null) {
-      return Color(category.colorValue);
-    }
-
-    const fallbackColors = [
-      Color(0xFF2EA44F),
-      Color(0xFF2196F3),
-      Color(0xFFFF9800),
-      Color(0xFF9C27B0),
-      Color(0xFFE53935),
-      Color(0xFF00ACC1),
-      Color(0xFF795548),
-      Color(0xFF607D8B),
-      Color(0xFFF06292),
-      Color(0xFF7E57C2),
-    ];
-
-    final int index =
-        categoryName.codeUnits.fold<int>(
-              0,
-              (previous, element) => previous + element,
-            ) %
-            fallbackColors.length;
-
-    return fallbackColors[index];
+  String _formatAmount(double amount) {
+    return 'PKR ${amount.toStringAsFixed(0)}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    final bool isDarkMode = theme.brightness == Brightness.dark;
-
-    final Color backgroundColor = theme.scaffoldBackgroundColor;
-
-    final Color cardColor = theme.cardColor;
-
-    final Color textColor =
-        isDarkMode ? Colors.white : Colors.black87;
-
-    final Color mutedTextColor =
-        isDarkMode ? Colors.white70 : Colors.black54;
-
-    final Color borderColor =
-        isDarkMode ? Colors.white24 : Colors.black12;
-
-    final CategoriesController categoriesController =
-        Get.isRegistered<CategoriesController>()
-            ? Get.find<CategoriesController>()
-            : Get.put(CategoriesController());
+    final ReportController controller =
+        Get.isRegistered<ReportController>()
+            ? Get.find<ReportController>()
+            : Get.put(ReportController());
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('Reports'),
-        backgroundColor: backgroundColor,
-        foregroundColor: textColor,
-        elevation: 0,
-      ),
-      body: Obx(() {
-        final double income = controller.totalIncome;
+      key: _scaffoldKey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-        final double expense = controller.totalExpense;
+      // ==========================================================
+      // DRAWER
+      // ==========================================================
 
-        final double balance = controller.totalBalance;
-
-        final Map<String, double> categoryData =
-            controller.expenseCategories;
-
-        final Map<String, double> incomeCategoryData =
-            controller.incomeCategories;
-
-        final Map<int, double> monthlyData =
-            controller.monthlyExpenses;
-
-        final Map<int, double> monthlyIncomeData =
-            controller.monthlyIncome;
-
-        return RefreshIndicator(
-          onRefresh: controller.refreshReports,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              40,
-            ),
+      endDrawer: Drawer(
+        child: SafeArea(
+          child: Column(
             children: [
-              // MONTH FILTER
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Months',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  PopupMenuButton<int>(
-                    color: cardColor,
-                    onSelected: controller.setMonthFilter,
-                    itemBuilder: (context) {
-                      return List.generate(
-                        12,
-                        (index) {
-                          final int month = index + 1;
+              const SizedBox(height: 20),
 
-                          return PopupMenuItem<int>(
-                            value: month,
-                            child: Text(
-                              getMonthName(month),
-                              style: TextStyle(
-                                color: textColor,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: borderColor,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            controller.selectedMonth.value == null
-                                ? 'Select Month'
-                                : getMonthName(
-                                    controller.selectedMonth.value!,
-                                  ),
-                            style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            color: mutedTextColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // SUMMARY CARDS
-              Row(
-                children: [
-                  Expanded(
-                    child: _summaryCard(
-                      title: 'Total Income',
-                      amount: income,
-                      icon: Icons.arrow_downward,
-                      iconColor: Colors.green,
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      mutedTextColor: mutedTextColor,
-                      borderColor: borderColor,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _summaryCard(
-                      title: 'Total Expense',
-                      amount: expense,
-                      icon: Icons.arrow_upward,
-                      iconColor: Colors.red,
-                      cardColor: cardColor,
-                      textColor: textColor,
-                      mutedTextColor: mutedTextColor,
-                      borderColor: borderColor,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              _balanceCard(
-                balance: balance,
-                cardColor: cardColor,
-                textColor: textColor,
-                mutedTextColor: mutedTextColor,
-                borderColor: borderColor,
-              ),
-
-              const SizedBox(height: 24),
-
-              // INCOME VS EXPENSE
-              _sectionTitle(
-                'Income vs Expense',
-                textColor,
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
               ),
 
               const SizedBox(height: 10),
 
-              Container(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  16,
-                  16,
-                  22,
+              ListTile(
+                leading: const Icon(
+                  Icons.account_balance_wallet,
                 ),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: borderColor,
-                  ),
-                ),
-                child: income == 0 && expense == 0
-                    ? _emptyMessage(
-                        'No income or expense data available',
-                        mutedTextColor,
-                      )
-                    : SizedBox(
-                        height: 280,
-                        child: BarChart(
-                          BarChartData(
-                            alignment:
-                                BarChartAlignment.spaceAround,
-                            maxY: _maxChartValue(
-                              income,
-                              expense,
-                            ),
-                            borderData: FlBorderData(
-                              show: false,
-                            ),
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                            ),
-                            titlesData: FlTitlesData(
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: false,
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: false,
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 55,
-                                  getTitlesWidget:
-                                      (value, meta) {
-                                    return Text(
-                                      formatAmount(value),
-                                      style: TextStyle(
-                                        color: mutedTextColor,
-                                        fontSize: 11,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 35,
-                                  getTitlesWidget:
-                                      (value, meta) {
-                                    final String title =
-                                        value.toInt() == 0
-                                            ? 'Income'
-                                            : 'Expense';
+                title: const Text('Wallets'),
+                onTap: () {
+                  Navigator.of(context).pop();
 
-                                    return SideTitleWidget(
-                                      meta: meta,
-                                      space: 10,
-                                      child: Text(
-                                        title,
-                                        textAlign:
-                                            TextAlign.center,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontSize: 13,
-                                          fontWeight:
-                                              FontWeight.w500,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            barTouchData: BarTouchData(
-                              enabled: true,
-                              touchTooltipData:
-                                  BarTouchTooltipData(
-                                getTooltipItem: (
-                                  group,
-                                  groupIndex,
-                                  rod,
-                                  rodIndex,
-                                ) {
-                                  final String label =
-                                      group.x == 0
-                                          ? 'Income'
-                                          : 'Expense';
-
-                                  return BarTooltipItem(
-                                    '$label\nPKR ${formatAmount(rod.toY)}',
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight:
-                                          FontWeight.bold,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            barGroups: [
-                              BarChartGroupData(
-                                x: 0,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: income,
-                                    color: Colors.green,
-                                    width: 42,
-                                    borderRadius:
-                                        BorderRadius.circular(6),
-                                  ),
-                                ],
-                              ),
-                              BarChartGroupData(
-                                x: 1,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: expense,
-                                    color: Colors.red,
-                                    width: 42,
-                                    borderRadius:
-                                        BorderRadius.circular(6),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                  Get.to(
+                    () => const WalletsView(),
+                    binding: WalletsBinding(),
+                  );
+                },
               ),
 
-              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(
+                  Icons.account_balance,
+                ),
+                title: const Text('Budgets'),
+                onTap: () {
+                  Navigator.of(context).pop();
 
-              // EXPENSE CATEGORIES
-              _sectionTitle(
-                'Expense Categories',
-                textColor,
+                  Get.to(
+                    () => const BudgetView(),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.flag),
+                title: const Text('Goals'),
+                onTap: () {
+                  Navigator.of(context).pop();
+
+                  Get.to(
+                    () => const GoalsView(),
+                    binding: GoalsBinding(),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(
+                  Icons.notifications_active,
+                ),
+                title: const Text('Bills & Reminders'),
+                onTap: () {
+                  Navigator.of(context).pop();
+
+                  Get.to(
+                    () => const BillsRemindersView(),
+                    binding: BillsRemindersBinding(),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.groups),
+                title: const Text('Digital Committee'),
+                onTap: () {
+                  Navigator.of(context).pop();
+
+                  Get.to(
+                    () => const CommitteeView(),
+                  );
+                },
+              ),
+
+              const Spacer(),
+
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.of(context).pop();
+
+                  Get.to(
+                    () => const SettingsView(),
+                  );
+                },
               ),
 
               const SizedBox(height: 10),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: borderColor,
-                  ),
-                ),
-                child: categoryData.isEmpty
-                    ? _emptyMessage(
-                        'No expense categories yet.\nAdd an expense with a category to see the graph.',
-                        mutedTextColor,
-                      )
-                    : Column(
-                        children: [
-                          SizedBox(
-                            height: 300,
-                            child: PieChart(
-                              PieChartData(
-                                sectionsSpace: 3,
-                                centerSpaceRadius: 58,
-                                sections: categoryData.entries
-                                    .map(
-                                  (entry) {
-                                    final double percentage =
-                                        expense > 0
-                                            ? (entry.value / expense) *
-                                                100
-                                            : 0;
-
-                                    final Color categoryColor =
-                                        getCategoryColor(
-                                      entry.key,
-                                      categoriesController,
-                                    );
-
-                                    return PieChartSectionData(
-                                      value: entry.value,
-                                      color: categoryColor,
-                                      radius: 92,
-                                      title: formatPercentage(
-                                        percentage,
-                                      ),
-                                      titleStyle:
-                                          const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    );
-                                  },
-                                ).toList(),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 18),
-
-                          Container(
-                            width: double.infinity,
-                            padding:
-                                const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(12),
-                              border: Border.all(
-                                color: borderColor,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Total Expense',
-                                  style: TextStyle(
-                                    color: mutedTextColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  'PKR ${formatAmount(expense)}',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          ...categoryData.entries.map(
-                            (entry) {
-                              final double percentage =
-                                  expense > 0
-                                      ? (entry.value / expense) * 100
-                                      : 0;
-
-                              final Color categoryColor =
-                                  getCategoryColor(
-                                entry.key,
-                                categoriesController,
-                              );
-
-                              return Container(
-                                margin: const EdgeInsets.only(
-                                  bottom: 10,
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 11,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: borderColor,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 13,
-                                      height: 13,
-                                      decoration: BoxDecoration(
-                                        color: categoryColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        entry.key,
-                                        overflow:
-                                            TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontWeight:
-                                              FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      'PKR ${formatAmount(entry.value)}',
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontWeight:
-                                            FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    SizedBox(
-                                      width: 55,
-                                      child: Text(
-                                        formatPercentage(
-                                          percentage,
-                                        ),
-                                        textAlign:
-                                            TextAlign.right,
-                                        style: TextStyle(
-                                          color: mutedTextColor,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // INCOME CATEGORIES
-              _sectionTitle(
-                'Income Categories',
-                textColor,
-              ),
-
-              const SizedBox(height: 10),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: borderColor,
-                  ),
-                ),
-                child: incomeCategoryData.isEmpty
-                    ? _emptyMessage(
-                        'No income categories yet.\nAdd an income with a category to see the details.',
-                        mutedTextColor,
-                      )
-                    : Column(
-                        children: [
-                          SizedBox(
-                            height: 300,
-                            child: PieChart(
-                              PieChartData(
-                                sectionsSpace: 3,
-                                centerSpaceRadius: 58,
-                                sections:
-                                    incomeCategoryData.entries
-                                        .map(
-                                  (entry) {
-                                    final double percentage =
-                                        income > 0
-                                            ? (entry.value / income) *
-                                                100
-                                            : 0;
-
-                                    final Color categoryColor =
-                                        getCategoryColor(
-                                      entry.key,
-                                      categoriesController,
-                                    );
-
-                                    return PieChartSectionData(
-                                      value: entry.value,
-                                      color: categoryColor,
-                                      radius: 92,
-                                      title: formatPercentage(
-                                        percentage,
-                                      ),
-                                      titleStyle:
-                                          const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    );
-                                  },
-                                ).toList(),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 18),
-
-                          Container(
-                            width: double.infinity,
-                            padding:
-                                const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(12),
-                              border: Border.all(
-                                color: borderColor,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Total Income',
-                                  style: TextStyle(
-                                    color: mutedTextColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  'PKR ${formatAmount(income)}',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          ...incomeCategoryData.entries.map(
-                            (entry) {
-                              final double percentage =
-                                  income > 0
-                                      ? (entry.value / income) * 100
-                                      : 0;
-
-                              final Color categoryColor =
-                                  getCategoryColor(
-                                entry.key,
-                                categoriesController,
-                              );
-
-                              return Container(
-                                margin: const EdgeInsets.only(
-                                  bottom: 10,
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 11,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: borderColor,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 13,
-                                      height: 13,
-                                      decoration: BoxDecoration(
-                                        color: categoryColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        entry.key,
-                                        overflow:
-                                            TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontWeight:
-                                              FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      'PKR ${formatAmount(entry.value)}',
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontWeight:
-                                            FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    SizedBox(
-                                      width: 55,
-                                      child: Text(
-                                        formatPercentage(
-                                          percentage,
-                                        ),
-                                        textAlign:
-                                            TextAlign.right,
-                                        style: TextStyle(
-                                          color: mutedTextColor,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // MONTHLY EXPENSES
-              _sectionTitle(
-                'Monthly Expenses',
-                textColor,
-              ),
-
-              const SizedBox(height: 10),
-
-              const SizedBox(height: 8),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: borderColor,
-                  ),
-                ),
-                child: monthlyData.values.every(
-                  (value) => value == 0,
-                )
-                    ? _emptyMessage(
-                        'No monthly expense data available',
-                        mutedTextColor,
-                      )
-                    : SizedBox(
-                        height: 300,
-                        child: LineChart(
-                          LineChartData(
-                            minX: 1,
-                            maxX: 12,
-                            minY: 0,
-                            maxY: _monthlyMax(monthlyData),
-                            gridData: FlGridData(
-                              show: true,
-                            ),
-                            borderData: FlBorderData(
-                              show: false,
-                            ),
-                            titlesData: FlTitlesData(
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: false,
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: false,
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 55,
-                                  getTitlesWidget:
-                                      (value, meta) {
-                                    return Text(
-                                      formatAmount(value),
-                                      style: TextStyle(
-                                        color: mutedTextColor,
-                                        fontSize: 10,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  getTitlesWidget:
-                                      (value, meta) {
-                                    final int month =
-                                        value.toInt();
-
-                                    if (month < 1 ||
-                                        month > 12) {
-                                      return const SizedBox
-                                          .shrink();
-                                    }
-
-                                    return Padding(
-                                      padding:
-                                          const EdgeInsets.only(
-                                        top: 8,
-                                      ),
-                                      child: Text(
-                                        getMonthName(month)
-                                            .substring(0, 3),
-                                        style: TextStyle(
-                                          color: mutedTextColor,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            lineTouchData: LineTouchData(
-                              enabled: true,
-                              touchTooltipData:
-                                  LineTouchTooltipData(
-                                getTooltipItems: (spots) {
-                                  return spots.map(
-                                    (spot) {
-                                      return LineTooltipItem(
-                                        '${getMonthName(spot.x.toInt())}\nPKR ${formatAmount(spot.y)}',
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      );
-                                    },
-                                  ).toList();
-                                },
-                              ),
-                            ),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: List.generate(
-                                  12,
-                                  (index) {
-                                    final int month =
-                                        index + 1;
-
-                                    return FlSpot(
-                                      month.toDouble(),
-                                      monthlyData[month] ?? 0,
-                                    );
-                                  },
-                                ),
-                                isCurved: true,
-                                barWidth: 3,
-                                dotData: const FlDotData(
-                                  show: true,
-                                ),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // MONTHLY INCOME
-              _sectionTitle(
-                'Monthly Income',
-                textColor,
-              ),
-
-              const SizedBox(height: 10),
-
-              const SizedBox(height: 8),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: borderColor,
-                  ),
-                ),
-                child: monthlyIncomeData.values.every(
-                  (value) => value == 0,
-                )
-                    ? _emptyMessage(
-                        'No monthly income data available',
-                        mutedTextColor,
-                      )
-                    : SizedBox(
-                        height: 300,
-                        child: LineChart(
-                          LineChartData(
-                            minX: 1,
-                            maxX: 12,
-                            minY: 0,
-                            maxY: _monthlyMax(
-                              monthlyIncomeData,
-                            ),
-                            gridData: FlGridData(
-                              show: true,
-                            ),
-                            borderData: FlBorderData(
-                              show: false,
-                            ),
-                            titlesData: FlTitlesData(
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: false,
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: false,
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 55,
-                                  getTitlesWidget:
-                                      (value, meta) {
-                                    return Text(
-                                      formatAmount(value),
-                                      style: TextStyle(
-                                        color: mutedTextColor,
-                                        fontSize: 10,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  getTitlesWidget:
-                                      (value, meta) {
-                                    final int month =
-                                        value.toInt();
-
-                                    if (month < 1 ||
-                                        month > 12) {
-                                      return const SizedBox
-                                          .shrink();
-                                    }
-
-                                    return Padding(
-                                      padding:
-                                          const EdgeInsets.only(
-                                        top: 8,
-                                      ),
-                                      child: Text(
-                                        getMonthName(month)
-                                            .substring(0, 3),
-                                        style: TextStyle(
-                                          color: mutedTextColor,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            lineTouchData: LineTouchData(
-                              enabled: true,
-                              touchTooltipData:
-                                  LineTouchTooltipData(
-                                getTooltipItems: (spots) {
-                                  return spots.map(
-                                    (spot) {
-                                      return LineTooltipItem(
-                                        '${getMonthName(spot.x.toInt())}\nPKR ${formatAmount(spot.y)}',
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      );
-                                    },
-                                  ).toList();
-                                },
-                              ),
-                            ),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: List.generate(
-                                  12,
-                                  (index) {
-                                    final int month =
-                                        index + 1;
-
-                                    return FlSpot(
-                                      month.toDouble(),
-                                      monthlyIncomeData[month] ??
-                                          0,
-                                    );
-                                  },
-                                ),
-                                isCurved: true,
-                                barWidth: 3,
-                                dotData: const FlDotData(
-                                  show: true,
-                                ),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
-
-              const SizedBox(height: 30),
             ],
           ),
-        );
-      }),
-    );
-  }
-
-  Widget _summaryCard({
-    required String title,
-    required double amount,
-    required IconData icon,
-    required Color iconColor,
-    required Color cardColor,
-    required Color textColor,
-    required Color mutedTextColor,
-    required Color borderColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderColor,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 20,
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: mutedTextColor,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
+
+      // ==========================================================
+      // APP BAR
+      // ==========================================================
+
+      appBar: AppBar(
+        title: const Text('Reports'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor:
+            Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor:
+            Theme.of(context).textTheme.bodyLarge?.color,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              controller.refreshReports();
+            },
           ),
-          const SizedBox(height: 10),
-          Text(
-            'PKR ${formatAmount(amount)}',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              _scaffoldKey.currentState?.openEndDrawer();
+            },
           ),
         ],
       ),
+
+      // ==========================================================
+      // BODY
+      // ==========================================================
+
+      body: SafeArea(
+        child: Obx(
+          () {
+            final double income =
+                controller.totalIncome;
+
+            final double expense =
+                controller.totalExpense;
+
+            final double balance =
+                controller.totalBalance;
+
+            final Map<String, double> categoryData =
+                controller.expenseCategories;
+
+            final Map<String, double> incomeCategoryData =
+                controller.incomeCategories;
+
+            final Map<int, double> monthlyData =
+                controller.monthlyExpenses;
+
+            final Map<int, double> monthlyIncomeData =
+                controller.monthlyIncome;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                30,
+              ),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  // ==================================================
+                  // YEAR & MONTH FILTERS
+                  // ==================================================
+
+                  Row(
+                    children: [
+                      // ------------------------------------------------
+                      // YEAR
+                      // ------------------------------------------------
+
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).cardColor,
+                            borderRadius:
+                                BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          child: PopupMenuButton<int>(
+                            tooltip: 'Select Year',
+                            offset: const Offset(0, 50),
+                            onSelected: (int year) {
+                              controller.setYearFilter(year);
+                            },
+                            itemBuilder: (context) {
+                              final List<int> years =
+                                  controller.availableYears;
+
+                              if (years.isEmpty) {
+                                return [
+                                  PopupMenuItem<int>(
+                                    enabled: false,
+                                    child: Text(
+                                      DateTime.now()
+                                          .year
+                                          .toString(),
+                                    ),
+                                  ),
+                                ];
+                              }
+
+                              return years.map(
+                                (int year) {
+                                  return PopupMenuItem<int>(
+                                    value: year,
+                                    child: Text(
+                                      year.toString(),
+                                    ),
+                                  );
+                                },
+                              ).toList();
+                            },
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_today,
+                                    size: 19,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      controller
+                                              .selectedYear
+                                              .value
+                                              ?.toString() ??
+                                          'Year',
+                                      overflow:
+                                          TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.keyboard_arrow_down,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // ------------------------------------------------
+                      // MONTH
+                      // ------------------------------------------------
+
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).cardColor,
+                            borderRadius:
+                                BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          child: PopupMenuButton<int>(
+                            tooltip: 'Select Month',
+                            offset: const Offset(0, 50),
+                            onSelected: (int month) {
+                              controller.setMonthFilter(month);
+                            },
+                            itemBuilder: (context) {
+                              return List.generate(
+                                12,
+                                (index) {
+                                  final int month =
+                                      index + 1;
+
+                                  return PopupMenuItem<int>(
+                                    value: month,
+                                    child: Text(
+                                      _months[index],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.date_range,
+                                    size: 19,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      controller
+                                                  .selectedMonth
+                                                  .value !=
+                                              null
+                                          ? _months[
+                                              controller
+                                                      .selectedMonth
+                                                      .value! -
+                                                  1]
+                                          : 'Month',
+                                      overflow:
+                                          TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.keyboard_arrow_down,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ==================================================
+                  // SELECTED FILTER INFORMATION
+                  // ==================================================
+
+                  if (controller.selectedYear.value != null ||
+                      controller.selectedMonth.value != null)
+                    Container(
+                      width: double.infinity,
+                      padding:
+                          const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            Theme.of(context).cardColor,
+                        borderRadius:
+                            BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.filter_alt,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              controller.selectedYear.value !=
+                                          null &&
+                                      controller.selectedMonth
+                                              .value !=
+                                          null
+                                  ? '${_months[controller.selectedMonth.value! - 1]} ${controller.selectedYear.value}'
+                                  : controller.selectedYear
+                                              .value !=
+                                          null
+                                      ? 'Year ${controller.selectedYear.value}'
+                                      : _months[
+                                          controller
+                                                  .selectedMonth
+                                                  .value! -
+                                              1],
+                              style: const TextStyle(
+                                fontWeight:
+                                    FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            visualDensity:
+                                VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.clear,
+                              size: 19,
+                            ),
+                            onPressed: () {
+                              controller.clearYearFilter();
+                              controller.clearMonthFilter();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 18),
+
+                  // ==================================================
+                  // SUMMARY CARDS
+                  // ==================================================
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _summaryCard(
+                          context,
+                          title: 'Total Income',
+                          amount: income,
+                          icon: Icons.arrow_downward,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _summaryCard(
+                          context,
+                          title: 'Total Expense',
+                          amount: expense,
+                          icon: Icons.arrow_upward,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ==================================================
+                  // REMAINING BALANCE
+                  // ==================================================
+
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).cardColor,
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Remaining Balance',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _formatAmount(balance),
+                          style: const TextStyle(
+                            fontSize: 25,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ==================================================
+                  // INCOME VS EXPENSE
+                  // ==================================================
+
+                  _sectionTitle(
+                    context,
+                    'Income vs Expense',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    width: double.infinity,
+                    height: 300,
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      12,
+                      20,
+                      20,
+                      15,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).cardColor,
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                    child: BarChart(
+                      BarChartData(
+                        minY: 0,
+                        maxY:
+                            _barMax(income, expense),
+                        gridData: FlGridData(
+                          show: true,
+                        ),
+                        borderData:
+                            FlBorderData(
+                          show: false,
+                        ),
+                        barTouchData:
+                            BarTouchData(
+                          enabled: true,
+                        ),
+                        titlesData:
+                            FlTitlesData(
+                          topTitles:
+                              const AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: false,
+                            ),
+                          ),
+                          rightTitles:
+                              const AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: false,
+                            ),
+                          ),
+                          leftTitles:
+                              AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: true,
+                              reservedSize: 50,
+                              getTitlesWidget:
+                                  (value, meta) {
+                                return Text(
+                                  value
+                                      .toInt()
+                                      .toString(),
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 10,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          bottomTitles:
+                              AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: true,
+                              reservedSize: 45,
+                              getTitlesWidget:
+                                  (value, meta) {
+                                String text = '';
+
+                                if (value.toInt() ==
+                                    0) {
+                                  text = 'Income';
+                                } else if (value
+                                        .toInt() ==
+                                    1) {
+                                  text = 'Expense';
+                                }
+
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets
+                                          .only(
+                                    top: 12,
+                                  ),
+                                  child: Text(
+                                    text,
+                                    style:
+                                        const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight:
+                                          FontWeight
+                                              .w600,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        barGroups: [
+                          BarChartGroupData(
+                            x: 0,
+                            barsSpace: 0,
+                            barRods: [
+                              BarChartRodData(
+                                toY: income,
+                                width: 38,
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(4),
+                              ),
+                            ],
+                          ),
+                          BarChartGroupData(
+                            x: 1,
+                            barsSpace: 0,
+                            barRods: [
+                              BarChartRodData(
+                                toY: expense,
+                                width: 38,
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(4),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ==================================================
+                  // EXPENSE CATEGORIES
+                  // ==================================================
+
+                  _sectionTitle(
+                    context,
+                    'Expense Categories',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _categoryChart(
+                    context,
+                    categoryData,
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ==================================================
+                  // INCOME CATEGORIES
+                  // ==================================================
+
+                  _sectionTitle(
+                    context,
+                    'Income Categories',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _categoryChart(
+                    context,
+                    incomeCategoryData,
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ==================================================
+                  // MONTHLY EXPENSES
+                  // ==================================================
+
+                  _sectionTitle(
+                    context,
+                    'Monthly Expenses',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    width: double.infinity,
+                    height: 300,
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      10,
+                      20,
+                      20,
+                      15,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).cardColor,
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                    child: LineChart(
+                      LineChartData(
+                        minX: 1,
+                        maxX: 12,
+                        minY: 0,
+                        maxY:
+                            _lineMax(monthlyData),
+                        gridData: FlGridData(
+                          show: true,
+                        ),
+                        borderData:
+                            FlBorderData(
+                          show: false,
+                        ),
+                        titlesData:
+                            FlTitlesData(
+                          topTitles:
+                              const AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: false,
+                            ),
+                          ),
+                          rightTitles:
+                              const AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: false,
+                            ),
+                          ),
+                          leftTitles:
+                              AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: true,
+                              reservedSize: 48,
+                              getTitlesWidget:
+                                  (value, meta) {
+                                return Text(
+                                  value
+                                      .toInt()
+                                      .toString(),
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 9,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          bottomTitles:
+                              AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: true,
+                              interval: 1,
+                              reservedSize: 32,
+                              getTitlesWidget:
+                                  (value, meta) {
+                                final int month =
+                                    value.toInt();
+
+                                if (month < 1 ||
+                                    month > 12) {
+                                  return const SizedBox();
+                                }
+
+                                return Text(
+                                  _months[
+                                          month - 1]
+                                      .substring(
+                                          0, 3),
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 9,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots:
+                                List.generate(
+                              12,
+                              (index) {
+                                final int month =
+                                    index + 1;
+
+                                return FlSpot(
+                                  month.toDouble(),
+                                  monthlyData[
+                                          month] ??
+                                      0.0,
+                                );
+                              },
+                            ),
+                            isCurved: true,
+                            barWidth: 3,
+                            dotData:
+                                FlDotData(
+                              show: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ==================================================
+                  // MONTHLY INCOME
+                  // ==================================================
+
+                  _sectionTitle(
+                    context,
+                    'Monthly Income',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    width: double.infinity,
+                    height: 300,
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      10,
+                      20,
+                      20,
+                      15,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).cardColor,
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                    child: LineChart(
+                      LineChartData(
+                        minX: 1,
+                        maxX: 12,
+                        minY: 0,
+                        maxY:
+                            _lineMax(
+                          monthlyIncomeData,
+                        ),
+                        gridData: FlGridData(
+                          show: true,
+                        ),
+                        borderData:
+                            FlBorderData(
+                          show: false,
+                        ),
+                        titlesData:
+                            FlTitlesData(
+                          topTitles:
+                              const AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: false,
+                            ),
+                          ),
+                          rightTitles:
+                              const AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: false,
+                            ),
+                          ),
+                          leftTitles:
+                              AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: true,
+                              reservedSize: 48,
+                              getTitlesWidget:
+                                  (value, meta) {
+                                return Text(
+                                  value
+                                      .toInt()
+                                      .toString(),
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 9,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          bottomTitles:
+                              AxisTitles(
+                            sideTitles:
+                                SideTitles(
+                              showTitles: true,
+                              interval: 1,
+                              reservedSize: 32,
+                              getTitlesWidget:
+                                  (value, meta) {
+                                final int month =
+                                    value.toInt();
+
+                                if (month < 1 ||
+                                    month > 12) {
+                                  return const SizedBox();
+                                }
+
+                                return Text(
+                                  _months[
+                                          month - 1]
+                                      .substring(
+                                          0, 3),
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 9,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots:
+                                List.generate(
+                              12,
+                              (index) {
+                                final int month =
+                                    index + 1;
+
+                                return FlSpot(
+                                  month.toDouble(),
+                                  monthlyIncomeData[
+                                          month] ??
+                                      0.0,
+                                );
+                              },
+                            ),
+                            isCurved: true,
+                            barWidth: 3,
+                            dotData:
+                                FlDotData(
+                              show: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
-  Widget _balanceCard({
-    required double balance,
-    required Color cardColor,
-    required Color textColor,
-    required Color mutedTextColor,
-    required Color borderColor,
+  // ==========================================================
+  // SUMMARY CARD
+  // ==========================================================
+
+  Widget _summaryCard(
+    BuildContext context, {
+    required String title,
+    required double amount,
+    required IconData icon,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderColor,
-        ),
+        color: Theme.of(context).cardColor,
+        borderRadius:
+            BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Icon(
-            balance >= 0
-                ? Icons.account_balance_wallet_outlined
-                : Icons.warning_amber_rounded,
-            color: balance >= 0 ? Colors.green : Colors.red,
+            icon,
+            size: 22,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Remaining Balance',
-                  style: TextStyle(
-                    color: mutedTextColor,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'PKR ${formatAmount(balance.abs())}',
-                  style: TextStyle(
-                    color:
-                        balance >= 0 ? textColor : Colors.red,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight:
+                  FontWeight.w600,
             ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _formatAmount(amount),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight:
+                  FontWeight.bold,
+            ),
+            overflow:
+                TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
+  // ==========================================================
+  // SECTION TITLE
+  // ==========================================================
+
   Widget _sectionTitle(
+    BuildContext context,
     String title,
-    Color textColor,
   ) {
     return Text(
       title,
-      style: TextStyle(
-        color: textColor,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  Widget _emptyMessage(
-    String message,
-    Color mutedTextColor,
-  ) {
-    return SizedBox(
-      height: 120,
-      child: Center(
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: mutedTextColor,
+      style: Theme.of(context)
+          .textTheme
+          .titleMedium
+          ?.copyWith(
+            fontWeight:
+                FontWeight.bold,
           ),
-        ),
-      ),
     );
   }
 
-  double _maxChartValue(
+  // ==========================================================
+  // BAR CHART MAX
+  // ==========================================================
+
+  double _barMax(
     double income,
     double expense,
   ) {
@@ -1290,12 +1102,16 @@ class ReportView extends StatelessWidget {
     return maximum * 1.25;
   }
 
-  double _monthlyMax(
+  // ==========================================================
+  // LINE CHART MAX
+  // ==========================================================
+
+  double _lineMax(
     Map<int, double> data,
   ) {
     double maximum = 0;
 
-    for (final value in data.values) {
+    for (final double value in data.values) {
       if (value > maximum) {
         maximum = value;
       }
@@ -1307,5 +1123,183 @@ class ReportView extends StatelessWidget {
 
     return maximum * 1.25;
   }
-}
 
+  // ==========================================================
+  // CATEGORY CHART
+  // ==========================================================
+
+  Widget _categoryChart(
+    BuildContext context,
+    Map<String, double> data,
+  ) {
+    if (data.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding:
+            const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color:
+              Theme.of(context).cardColor,
+          borderRadius:
+              BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: Text(
+            'No category data available',
+          ),
+        ),
+      );
+    }
+
+    final double total =
+        data.values.fold(
+      0.0,
+      (sum, value) => sum + value,
+    );
+
+    final List<MapEntry<String, double>>
+        entries = data.entries.toList();
+
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).cardColor,
+        borderRadius:
+            BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 230,
+            child: PieChart(
+              PieChartData(
+                sectionsSpace: 2,
+                centerSpaceRadius: 45,
+                sections:
+                    List.generate(
+                  entries.length,
+                  (index) {
+                    final double
+                        percentage =
+                        total == 0
+                            ? 0
+                            : (entries[index]
+                                        .value /
+                                    total) *
+                                100;
+
+                    return PieChartSectionData(
+                      value:
+                          entries[index].value,
+                      title:
+                          '${percentage.toStringAsFixed(1)}%',
+                      radius: 80,
+                      titleStyle:
+                          const TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          ...List.generate(
+            entries.length,
+            (index) {
+              final String name =
+                  entries[index].key;
+
+              final double amount =
+                  entries[index].value;
+
+              final double percentage =
+                  total == 0
+                      ? 0
+                      : (amount / total) * 100;
+
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(
+                  vertical: 5,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration:
+                          BoxDecoration(
+                        shape:
+                            BoxShape.circle,
+                        color:
+                            _categoryColor(
+                                index),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        name,
+                        overflow:
+                            TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${percentage.toStringAsFixed(1)}%',
+                      style:
+                          const TextStyle(
+                        fontWeight:
+                            FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(
+                        width: 12),
+                    Text(
+                      _formatAmount(amount),
+                      style:
+                          const TextStyle(
+                        fontWeight:
+                            FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // CATEGORY COLORS
+  // ==========================================================
+
+  Color _categoryColor(int index) {
+    const List<Color> colors = [
+      Colors.blue,
+      Colors.orange,
+      Colors.green,
+      Colors.red,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+      Colors.amber,
+      Colors.cyan,
+    ];
+
+    return colors[
+        index % colors.length];
+  }
+}

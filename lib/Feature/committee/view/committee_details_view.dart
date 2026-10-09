@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -88,13 +87,16 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     final Map<String, String>? existingMember =
         isEdit ? members[editIndex!] : null;
 
-    final TextEditingController nameController =
-        TextEditingController(
+    final TextEditingController nameController = TextEditingController(
       text: existingMember?['name'] ?? '',
     );
 
-    final TextEditingController phoneController =
+    final TextEditingController fatherHusbandNameController =
         TextEditingController(
+      text: existingMember?['fatherHusbandName'] ?? '',
+    );
+
+    final TextEditingController phoneController = TextEditingController(
       text: existingMember?['phone'] ?? '',
     );
 
@@ -102,6 +104,8 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         TextEditingController(
       text: existingMember?['contribution'] ?? '',
     );
+
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -111,41 +115,72 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             isEdit ? 'Edit Member' : 'Add Member',
           ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Member Name',
-                    hintText: 'Enter member name',
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Member Name',
+                      hintText: 'Enter member name',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter member name.';
+                      }
+
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number (Optional)',
-                    hintText: 'Enter phone number',
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: fatherHusbandNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Father Name / Husband Name',
+                      hintText: 'Enter father name or husband name',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter father name / husband name.';
+                      }
+
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: contributionController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(
-                    decimal: true,
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number (Optional)',
+                      hintText: 'Enter phone number',
+                    ),
                   ),
-                  inputFormatters: [
-                    ThousandsSeparatorInputFormatter(),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Monthly Contribution',
-                    hintText: 'Enter contribution',
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: contributionController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      ThousandsSeparatorInputFormatter(),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Monthly Contribution',
+                      hintText: 'Enter contribution',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter contribution.';
+                      }
+
+                      return null;
+                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -157,27 +192,31 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             ),
             ElevatedButton(
               onPressed: () {
-                final String name =
-                    nameController.text.trim();
+                // Validate all required fields first.
+                // If any required field is empty,
+                // member will NOT be added and dialog will remain open.
+                if (!formKey.currentState!.validate()) {
+                  return;
+                }
 
-                final String phone =
-                    phoneController.text.trim();
+                final String name = nameController.text.trim();
+
+                final String fatherHusbandName =
+                    fatherHusbandNameController.text.trim();
+
+                final String phone = phoneController.text.trim();
 
                 final String contribution =
                     contributionController.text.trim();
 
-                if (name.isEmpty || contribution.isEmpty) {
-                  return;
-                }
-
                 setState(() {
                   final Map<String, String> newMember = {
                     'name': name,
+                    'fatherHusbandName': fatherHusbandName,
                     'phone': phone,
                     'contribution': contribution,
                     'paymentStatus': isEdit
-                        ? (existingMember?['paymentStatus'] ??
-                            'Pending')
+                        ? (existingMember?['paymentStatus'] ?? 'Pending')
                         : 'Pending',
                   };
 
@@ -245,15 +284,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           children: [
             _buildHeader(),
             const SizedBox(height: 20),
-
             _buildSummarySection(),
-
             const SizedBox(height: 20),
-
             _buildProgressSection(),
-
             const SizedBox(height: 20),
-
             _buildMembersSection(),
           ],
         ),
@@ -477,21 +511,18 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           else
             ListView.separated(
               shrinkWrap: true,
-              physics:
-                  const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: members.length,
               separatorBuilder: (context, index) {
                 return const SizedBox(height: 10);
               },
               itemBuilder: (context, index) {
-                final Map<String, String> member =
-                    members[index];
+                final Map<String, String> member = members[index];
 
                 return MemberCard(
                   memberName: member['name'] ?? '',
                   phone: member['phone'] ?? '',
-                  contribution:
-                      member['contribution'] ?? '0',
+                  contribution: member['contribution'] ?? '0',
                   paymentStatus:
                       member['paymentStatus'] ?? 'Pending',
                   onEdit: () {
@@ -561,9 +592,8 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     bool alignEnd = false,
   }) {
     return Column(
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         Text(
           title,
@@ -645,8 +675,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
   }
 }
 
-class ThousandsSeparatorInputFormatter
-    extends TextInputFormatter {
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -659,8 +688,7 @@ class ThousandsSeparatorInputFormatter
       return const TextEditingValue();
     }
 
-    final String formatted =
-        _formatWithCommas(digitsOnly);
+    final String formatted = _formatWithCommas(digitsOnly);
 
     return TextEditingValue(
       text: formatted,
@@ -684,4 +712,3 @@ class ThousandsSeparatorInputFormatter
     return result.toString();
   }
 }
-
