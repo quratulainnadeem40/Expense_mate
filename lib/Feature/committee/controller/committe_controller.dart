@@ -1,3 +1,4 @@
+
 import 'package:get/get.dart';
 
 class CommitteeController extends GetxController {
@@ -5,54 +6,104 @@ class CommitteeController extends GetxController {
       CommitteeController();
 
   // --------------------------------------------------
-  // COMMITTEE INFORMATION
+  // ALL COMMITTEES
+  // --------------------------------------------------
+
+  final committees = <Map<String, dynamic>>[].obs;
+
+  final RxnString activeCommitteeId = RxnString();
+
+  int _nextId = 1;
+
+  // --------------------------------------------------
+  // CURRENTLY SELECTED COMMITTEE
+  // Existing screens can continue using these fields.
   // --------------------------------------------------
 
   final committeeName = ''.obs;
-
   final monthlyContribution = 0.0.obs;
-
   final totalMembers = 0.obs;
-
   final duration = 0.obs;
-
   final durationUnit = 'Months'.obs;
-
   final startDate = Rxn<DateTime>();
-
   final endingDate = Rxn<DateTime>();
 
-  // --------------------------------------------------
-  // MEMBERS
-  // --------------------------------------------------
-
-  // No dummy members.
-  // Members will only appear when the user adds them.
   final members = <Map<String, dynamic>>[].obs;
-
-  // --------------------------------------------------
-  // PAYMENTS
-  // --------------------------------------------------
-
-  // No dummy payments.
-  // Payments will only appear for actual members.
   final payments = <Map<String, dynamic>>[].obs;
 
   final isLoading = false.obs;
 
+  bool get hasCommittee =>
+      committeeName.value.trim().isNotEmpty;
+
   // --------------------------------------------------
-  // CHECK WHETHER COMMITTEE EXISTS
+  // HELPERS
   // --------------------------------------------------
 
-  bool get hasCommittee {
-    return committeeName.value.trim().isNotEmpty;
+  String _newId() {
+    return '${DateTime.now().microsecondsSinceEpoch}_${_nextId++}';
+  }
+
+  Map<String, dynamic> _copyMap(
+    Map<String, dynamic> source,
+  ) {
+    return Map<String, dynamic>.from(source);
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value is DateTime) return value;
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
+  Map<String, dynamic> _currentCommitteeSnapshot() {
+    return {
+      'id': activeCommitteeId.value,
+      'name': committeeName.value,
+      'contribution': monthlyContribution.value,
+      'memberCount': totalMembers.value,
+      'duration': duration.value,
+      'unit': durationUnit.value,
+      'startDate': startDate.value,
+      'endingDate': endingDate.value,
+      'members': members
+          .map((member) => _copyMap(member))
+          .toList(),
+      'payments': payments
+          .map((payment) => _copyMap(payment))
+          .toList(),
+    };
+  }
+
+  void _saveActiveCommittee() {
+    final String? id = activeCommitteeId.value;
+
+    if (id == null || id.isEmpty || !hasCommittee) {
+      return;
+    }
+
+    final int index = committees.indexWhere(
+      (committee) => committee['id'] == id,
+    );
+
+    final Map<String, dynamic> snapshot =
+        _currentCommitteeSnapshot();
+
+    if (index == -1) {
+      committees.add(snapshot);
+    } else {
+      committees[index] = snapshot;
+    }
+
+    committees.refresh();
   }
 
   // --------------------------------------------------
-  // SAVE COMMITTEE
+  // ADD COMMITTEE
+  // Every new committee receives its own ID and data.
   // --------------------------------------------------
 
-  void addCommittee({
+  String addCommittee({
     required String name,
     required double contribution,
     required int memberCount,
@@ -61,24 +112,116 @@ class CommitteeController extends GetxController {
     required DateTime committeeStartDate,
     required DateTime committeeEndingDate,
   }) {
-    committeeName.value = name.trim();
+    // Save the previously selected committee first.
+    _saveActiveCommittee();
 
-    monthlyContribution.value = contribution;
+    final String id = _newId();
 
-    totalMembers.value = memberCount;
+    final Map<String, dynamic> newCommittee = {
+      'id': id,
+      'name': name.trim(),
+      'contribution': contribution,
+      'memberCount': memberCount,
+      'duration': committeeDuration,
+      'unit': unit,
+      'startDate': committeeStartDate,
+      'endingDate': committeeEndingDate,
+      'members': <Map<String, dynamic>>[],
+      'payments': <Map<String, dynamic>>[],
+    };
 
-    duration.value = committeeDuration;
+    committees.add(newCommittee);
+    committees.refresh();
 
-    durationUnit.value = unit;
+    // Open the newly created committee as active.
+    _loadCommittee(newCommittee);
 
-    startDate.value = committeeStartDate;
+    return id;
+  }
 
-    endingDate.value = committeeEndingDate;
+  // --------------------------------------------------
+  // SELECT A COMMITTEE
+  // --------------------------------------------------
 
-    // New committee starts with no members
-    // and no payments.
-    members.clear();
-    payments.clear();
+  bool selectCommittee(String id) {
+    final int index = committees.indexWhere(
+      (committee) => committee['id'] == id,
+    );
+
+    if (index == -1) return false;
+
+    // Save changes to the previously selected committee.
+    _saveActiveCommittee();
+
+    _loadCommittee(committees[index]);
+
+    return true;
+  }
+
+  void _loadCommittee(
+    Map<String, dynamic> committee,
+  ) {
+    activeCommitteeId.value =
+        committee['id']?.toString();
+
+    committeeName.value =
+        committee['name']?.toString() ?? '';
+
+    monthlyContribution.value =
+        double.tryParse(
+          committee['contribution']?.toString() ?? '0',
+        ) ?? 0;
+
+    totalMembers.value =
+        int.tryParse(
+          (committee['memberCount'] ??
+                  committee['membersCount'] ??
+                  '0')
+              .toString(),
+        ) ?? 0;
+
+    duration.value =
+        int.tryParse(
+          committee['duration']?.toString() ?? '0',
+        ) ?? 0;
+
+    durationUnit.value =
+        committee['unit']?.toString() ??
+            committee['durationUnit']?.toString() ??
+            'Months';
+
+    startDate.value = _parseDate(
+      committee['startDate'],
+    );
+
+    endingDate.value = _parseDate(
+      committee['endingDate'],
+    );
+
+    final dynamic savedMembers = committee['members'];
+    final dynamic savedPayments = committee['payments'];
+
+    members.assignAll(
+      savedMembers is List
+          ? savedMembers
+              .whereType<Map>()
+              .map(
+                (item) => Map<String, dynamic>.from(item),
+              )
+              .toList()
+          : <Map<String, dynamic>>[],
+    );
+
+    payments.assignAll(
+      savedPayments is List
+          ? savedPayments
+              .whereType<Map>()
+              .map(
+                (item) => Map<String, dynamic>.from(item),
+              )
+              .toList()
+          : <Map<String, dynamic>>[],
+    );
 
     members.refresh();
     payments.refresh();
@@ -94,61 +237,46 @@ class CommitteeController extends GetxController {
     required String phone,
     required double contribution,
   }) {
-    // Committee must exist first.
-    if (!hasCommittee) {
-      return false;
-    }
+    if (!hasCommittee) return false;
 
-    // HARD MEMBER LIMIT
     if (totalMembers.value > 0 &&
         members.length >= totalMembers.value) {
       return false;
     }
 
     final String memberName = name.trim();
-    final String fatherHusbandName =
-        fatherName.trim();
+    final String fatherHusbandName = fatherName.trim();
 
-    // Prevent exact duplicate member.
-    final bool alreadyExists = members.any(
-      (member) {
-        final String existingName =
-            member['name']?.toString().trim() ?? '';
+    final bool alreadyExists = members.any((member) {
+      final String existingName =
+          member['name']?.toString().trim() ?? '';
 
-        final String existingFatherName =
-            (member['fatherHusbandName'] ??
-                    member['fatherName'] ??
-                    '')
-                .toString()
-                .trim();
+      final String existingFatherName =
+          (member['fatherHusbandName'] ??
+                  member['fatherName'] ??
+                  '')
+              .toString()
+              .trim();
 
-        return existingName.toLowerCase() ==
-                memberName.toLowerCase() &&
-            existingFatherName.toLowerCase() ==
-                fatherHusbandName.toLowerCase();
-      },
-    );
+      return existingName.toLowerCase() ==
+              memberName.toLowerCase() &&
+          existingFatherName.toLowerCase() ==
+              fatherHusbandName.toLowerCase();
+    });
 
-    if (alreadyExists) {
-      return false;
-    }
+    if (alreadyExists) return false;
 
     members.add({
       'name': memberName,
-
-      // Both keys are kept for compatibility
-      // with existing code.
       'fatherName': fatherHusbandName,
       'fatherHusbandName': fatherHusbandName,
-
       'phone': phone.trim(),
-
       'contribution': contribution,
-
       'paymentStatus': 'Pending',
     });
 
     members.refresh();
+    _saveActiveCommittee();
 
     return true;
   }
@@ -169,21 +297,13 @@ class CommitteeController extends GetxController {
     }
 
     final String memberName = name.trim();
+    final String fatherHusbandName = fatherName.trim();
 
-    final String fatherHusbandName =
-        fatherName.trim();
-
-    // Prevent duplicate with another member.
     final bool alreadyExists = members.asMap().entries.any(
       (entry) {
-        final int existingIndex = entry.key;
+        if (entry.key == index) return false;
 
-        if (existingIndex == index) {
-          return false;
-        }
-
-        final Map<String, dynamic> member =
-            entry.value;
+        final Map<String, dynamic> member = entry.value;
 
         final String existingName =
             member['name']?.toString().trim() ?? '';
@@ -202,12 +322,9 @@ class CommitteeController extends GetxController {
       },
     );
 
-    if (alreadyExists) {
-      return false;
-    }
+    if (alreadyExists) return false;
 
-    final Map<String, dynamic> oldMember =
-        members[index];
+    final Map<String, dynamic> oldMember = members[index];
 
     members[index] = {
       'name': memberName,
@@ -215,13 +332,12 @@ class CommitteeController extends GetxController {
       'fatherHusbandName': fatherHusbandName,
       'phone': phone.trim(),
       'contribution': contribution,
-
-      // Keep existing payment status.
       'paymentStatus':
           oldMember['paymentStatus'] ?? 'Pending',
     };
 
     members.refresh();
+    _saveActiveCommittee();
 
     return true;
   }
@@ -231,32 +347,25 @@ class CommitteeController extends GetxController {
   // --------------------------------------------------
 
   void deleteMember(int index) {
-    if (index < 0 || index >= members.length) {
-      return;
-    }
+    if (index < 0 || index >= members.length) return;
 
-    final String? deletedMemberName =
-        members[index]['name']?.toString();
+    final String deletedName =
+        members[index]['name']?.toString() ?? '';
 
     members.removeAt(index);
 
-    // Remove payments belonging to deleted member.
-    if (deletedMemberName != null &&
-        deletedMemberName.trim().isNotEmpty) {
-      payments.removeWhere(
-        (payment) =>
-            payment['memberName']?.toString() ==
-            deletedMemberName,
-      );
-
-      payments.refresh();
-    }
+    payments.removeWhere(
+      (payment) =>
+          payment['memberName']?.toString() == deletedName,
+    );
 
     members.refresh();
+    payments.refresh();
+    _saveActiveCommittee();
   }
 
   // --------------------------------------------------
-  // PAYMENT
+  // PAYMENTS
   // --------------------------------------------------
 
   void addPayment({
@@ -283,89 +392,64 @@ class CommitteeController extends GetxController {
     payments.add(payment);
 
     payments.refresh();
+    _saveActiveCommittee();
   }
 
-  // --------------------------------------------------
-  // MARK PAYMENT RECEIVED
-  // --------------------------------------------------
-
   void markPaymentReceived(int index) {
-    if (index < 0 || index >= payments.length) {
-      return;
-    }
+    if (index < 0 || index >= payments.length) return;
 
     payments[index]['status'] = 'Received';
-
-    payments[index]['paymentDate'] =
-        DateTime.now();
-
+    payments[index]['paymentDate'] = DateTime.now();
     payments[index]['note'] =
         'Monthly contribution received.';
-
-    payments.refresh();
 
     _updateMemberPaymentStatus(
       payments[index]['memberName'],
       'Received',
     );
-  }
-
-  // --------------------------------------------------
-  // MARK PAYMENT PENDING
-  // --------------------------------------------------
-
-  void markPaymentPending(int index) {
-    if (index < 0 || index >= payments.length) {
-      return;
-    }
-
-    payments[index]['status'] = 'Pending';
-
-    payments[index]['note'] =
-        'Payment is still pending.';
-
-    payments[index].remove('paymentDate');
 
     payments.refresh();
+    _saveActiveCommittee();
+  }
+
+  void markPaymentPending(int index) {
+    if (index < 0 || index >= payments.length) return;
+
+    payments[index]['status'] = 'Pending';
+    payments[index]['note'] =
+        'Payment is still pending.';
+    payments[index].remove('paymentDate');
 
     _updateMemberPaymentStatus(
       payments[index]['memberName'],
       'Pending',
     );
-  }
-
-  // --------------------------------------------------
-  // MARK PAYMENT OVERDUE
-  // --------------------------------------------------
-
-  void markPaymentOverdue(int index) {
-    if (index < 0 || index >= payments.length) {
-      return;
-    }
-
-    payments[index]['status'] = 'Overdue';
-
-    payments[index]['note'] =
-        'Payment due date has passed.';
 
     payments.refresh();
+    _saveActiveCommittee();
+  }
+
+  void markPaymentOverdue(int index) {
+    if (index < 0 || index >= payments.length) return;
+
+    payments[index]['status'] = 'Overdue';
+    payments[index]['note'] =
+        'Payment due date has passed.';
 
     _updateMemberPaymentStatus(
       payments[index]['memberName'],
       'Overdue',
     );
-  }
 
-  // --------------------------------------------------
-  // UPDATE MEMBER PAYMENT STATUS
-  // --------------------------------------------------
+    payments.refresh();
+    _saveActiveCommittee();
+  }
 
   void _updateMemberPaymentStatus(
     dynamic memberName,
     String status,
   ) {
-    final String name =
-        memberName?.toString() ?? '';
+    final String name = memberName?.toString() ?? '';
 
     for (int i = 0; i < members.length; i++) {
       if (members[i]['name']?.toString() == name) {
@@ -380,25 +464,13 @@ class CommitteeController extends GetxController {
   // COMMITTEE CALCULATIONS
   // --------------------------------------------------
 
-  // Monthly contribution of one member × total members.
-  double get totalPool {
-    return monthlyContribution.value *
-        totalMembers.value;
-  }
+  double get totalPool =>
+      monthlyContribution.value * totalMembers.value;
 
-  // Same as Total Committee Amount.
-  double get monthlyCommitteeAmount {
-    return totalPool;
-  }
-
-  // --------------------------------------------------
-  // DURATION IN MONTHS
-  // --------------------------------------------------
+  double get monthlyCommitteeAmount => totalPool;
 
   double get durationInMonths {
-    if (duration.value <= 0) {
-      return 0;
-    }
+    if (duration.value <= 0) return 0;
 
     switch (durationUnit.value.toLowerCase()) {
       case 'year':
@@ -420,25 +492,12 @@ class CommitteeController extends GetxController {
     }
   }
 
-  // --------------------------------------------------
-  // TOTAL AMOUNT FOR COMPLETE DURATION
-  // --------------------------------------------------
-
-  double get totalDurationAmount {
-    return totalPool * durationInMonths;
-  }
+  double get totalDurationAmount =>
+      totalPool * durationInMonths;
 
   // --------------------------------------------------
   // RECEIVING SCHEDULE
   // --------------------------------------------------
-
-  // Schedule is generated only when:
-  // 1. Committee exists
-  // 2. Real members have been added
-  // 3. Duration exists
-  // 4. Start date exists
-  //
-  // No dummy members are used here.
 
   List<Map<String, dynamic>> get receivingSchedule {
     final List<Map<String, dynamic>> result = [];
@@ -450,14 +509,25 @@ class CommitteeController extends GetxController {
       return result;
     }
 
-    final int months =
-        durationInMonths.ceil();
+    final int months = durationInMonths.ceil();
 
     for (int i = 0; i < months; i++) {
+      final DateTime firstDay = startDate.value!;
+
+      // Clamp the day to the last day of the target month.
+      final DateTime targetMonth =
+          DateTime(firstDay.year, firstDay.month + i, 1);
+
+      final int lastDay = DateTime(
+        targetMonth.year,
+        targetMonth.month + 1,
+        0,
+      ).day;
+
       final DateTime receivingDate = DateTime(
-        startDate.value!.year,
-        startDate.value!.month + i,
-        startDate.value!.day,
+        targetMonth.year,
+        targetMonth.month,
+        firstDay.day > lastDay ? lastDay : firstDay.day,
       );
 
       final Map<String, dynamic> member =
@@ -467,8 +537,7 @@ class CommitteeController extends GetxController {
         'month': receivingDate.month,
         'year': receivingDate.year,
         'date': receivingDate,
-        'memberName':
-            member['name']?.toString() ?? 'Member',
+        'memberName': member['name']?.toString() ?? 'Member',
         'amount': totalPool,
         'status': 'Upcoming',
       });
@@ -477,42 +546,62 @@ class CommitteeController extends GetxController {
     return result;
   }
 
-  // --------------------------------------------------
-  // UPDATE RECEIVING SCHEDULE STATUS
-  // --------------------------------------------------
-
-  void updateReceivingStatus(
-    int index,
-    String status,
-  ) {
-    // The schedule is generated dynamically,
-    // so its permanent status is not stored here.
-    //
-    // This method is kept so existing code can call
-    // it without breaking.
+  void updateReceivingStatus(int index, String status) {
+    // Kept for compatibility with existing screens.
+    // Receiving schedule statuses are not persisted yet.
   }
 
   // --------------------------------------------------
-  // CLEAR COMMITTEE
+  // EDIT CURRENT COMMITTEE
+  // --------------------------------------------------
+
+  void updateCurrentCommittee({
+    required String name,
+    required double contribution,
+    required int memberCount,
+    required int committeeDuration,
+    required String unit,
+    required DateTime committeeStartDate,
+    required DateTime committeeEndingDate,
+  }) {
+    committeeName.value = name.trim();
+    monthlyContribution.value = contribution;
+    totalMembers.value = memberCount;
+    duration.value = committeeDuration;
+    durationUnit.value = unit;
+    startDate.value = committeeStartDate;
+    endingDate.value = committeeEndingDate;
+
+    members.refresh();
+    payments.refresh();
+    _saveActiveCommittee();
+  }
+
+  // --------------------------------------------------
+  // CLEAR SELECTED COMMITTEE
+  // Other committees remain untouched.
   // --------------------------------------------------
 
   void clearCommittee() {
+    final String? id = activeCommitteeId.value;
+
+    if (id != null) {
+      committees.removeWhere(
+        (committee) => committee['id'] == id,
+      );
+      committees.refresh();
+    }
+
+    activeCommitteeId.value = null;
     committeeName.value = '';
-
-    monthlyContribution.value = 0.0;
-
+    monthlyContribution.value = 0;
     totalMembers.value = 0;
-
     duration.value = 0;
-
     durationUnit.value = 'Months';
-
     startDate.value = null;
-
     endingDate.value = null;
 
     members.clear();
-
     payments.clear();
 
     members.refresh();

@@ -20,7 +20,6 @@ class _PaymentTrackingViewState
   @override
   void initState() {
     super.initState();
-
     _createPaymentRecordsForMembers();
   }
 
@@ -35,11 +34,8 @@ class _PaymentTrackingViewState
       final String memberName =
           member['name']?.toString().trim() ?? '';
 
-      if (memberName.isEmpty) {
-        continue;
-      }
+      if (memberName.isEmpty) continue;
 
-      // Do not create duplicate payment records.
       final bool alreadyExists =
           committeeController.payments.any(
         (payment) =>
@@ -47,9 +43,7 @@ class _PaymentTrackingViewState
             memberName,
       );
 
-      if (alreadyExists) {
-        continue;
-      }
+      if (alreadyExists) continue;
 
       final double contribution =
           member['contribution'] is num
@@ -61,8 +55,7 @@ class _PaymentTrackingViewState
                         '',
                   ) ??
                   committeeController
-                      .monthlyContribution
-                      .value;
+                      .monthlyContribution.value;
 
       committeeController.addPayment(
         memberName: memberName,
@@ -82,19 +75,13 @@ class _PaymentTrackingViewState
 
   String _formatAmount(double amount) {
     final int roundedAmount = amount.round();
-
-    final String value =
-        roundedAmount.toString();
-
-    final StringBuffer result =
-        StringBuffer();
+    final String value = roundedAmount.toString();
+    final StringBuffer result = StringBuffer();
 
     for (int i = 0; i < value.length; i++) {
-      if (i > 0 &&
-          (value.length - i) % 3 == 0) {
+      if (i > 0 && (value.length - i) % 3 == 0) {
         result.write(',');
       }
-
       result.write(value[i]);
     }
 
@@ -131,18 +118,14 @@ class _PaymentTrackingViewState
   double _getPaymentAmount(
     Map<String, dynamic> payment,
   ) {
-    final dynamic amount =
-        payment['amount'];
+    final dynamic amount = payment['amount'];
 
     if (amount is num) {
       return amount.toDouble();
     }
 
     return double.tryParse(
-          amount
-                  ?.toString()
-                  .replaceAll(',', '') ??
-              '',
+          amount?.toString().replaceAll(',', '') ?? '',
         ) ??
         0;
   }
@@ -152,45 +135,30 @@ class _PaymentTrackingViewState
   // --------------------------------------------------
 
   int get receivedCount {
-    return committeeController.payments
-        .where(
-          (payment) {
-            final String status =
-                (payment['status'] ?? '')
-                    .toString()
-                    .toLowerCase();
+    return committeeController.payments.where((payment) {
+      final String status =
+          (payment['status'] ?? '').toString().toLowerCase();
 
-            return status == 'received' ||
-                status == 'paid';
-          },
-        )
-        .length;
+      return status == 'received' || status == 'paid';
+    }).length;
   }
 
   int get pendingCount {
-    return committeeController.payments
-        .where(
-          (payment) {
-            return (payment['status'] ?? '')
-                    .toString()
-                    .toLowerCase() ==
-                'pending';
-          },
-        )
-        .length;
+    return committeeController.payments.where((payment) {
+      return (payment['status'] ?? '')
+              .toString()
+              .toLowerCase() ==
+          'pending';
+    }).length;
   }
 
   int get overdueCount {
-    return committeeController.payments
-        .where(
-          (payment) {
-            return (payment['status'] ?? '')
-                    .toString()
-                    .toLowerCase() ==
-                'overdue';
-          },
-        )
-        .length;
+    return committeeController.payments.where((payment) {
+      return (payment['status'] ?? '')
+              .toString()
+              .toLowerCase() ==
+          'overdue';
+    }).length;
   }
 
   // --------------------------------------------------
@@ -199,47 +167,48 @@ class _PaymentTrackingViewState
 
   void _changeStatus(int index) {
     if (index < 0 ||
-        index >=
-            committeeController.payments.length) {
+        index >= committeeController.payments.length) {
       return;
     }
 
     final String currentStatus =
-        committeeController
-                .payments[index]['status']
+        committeeController.payments[index]['status']
                 ?.toString() ??
             'Pending';
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final bool isDark =
-            Theme.of(sheetContext).brightness ==
-                Brightness.dark;
+            Theme.of(sheetContext).brightness == Brightness.dark;
 
-        final Color backgroundColor =
-            isDark
-                ? const Color(0xFF0A0A0A)
-                : Colors.white;
+        final Color backgroundColor = isDark
+            ? const Color(0xFF202124)
+            : Colors.white;
 
         final Color textColor =
-            isDark
-                ? Colors.white
-                : Colors.black87;
+            isDark ? const Color(0xFFF5F5F5) : const Color(0xFF252B35);
 
         final Color secondaryColor =
-            isDark
-                ? Colors.white60
-                : Colors.black54;
+            isDark ? const Color(0xFFBDBDBD) : const Color(0xFF626B78);
+
+        final Color borderColor =
+            isDark ? const Color(0xFF383838) : const Color(0xFFDDE1E7);
 
         return Container(
-          color: backgroundColor,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(22),
+            ),
+            border: Border.all(color: borderColor),
+          ),
           padding: const EdgeInsets.all(20),
           child: SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Change Payment Status',
@@ -261,25 +230,32 @@ class _PaymentTrackingViewState
                 _statusOption(
                   context: sheetContext,
                   title: 'Received',
-                  icon:
-                      Icons.check_circle_outline_rounded,
-                  color: Colors.green,
+                  icon: Icons.check_circle_outline_rounded,
+                  color: isDark
+                      ? const Color(0xFF65D6A0)
+                      : const Color(0xFF27845D),
                   index: index,
+                  textColor: textColor,
                 ),
                 _statusOption(
                   context: sheetContext,
                   title: 'Pending',
                   icon: Icons.pending_outlined,
-                  color: Colors.orange,
+                  color: isDark
+                      ? const Color(0xFFFFCA70)
+                      : const Color(0xFFB7791F),
                   index: index,
+                  textColor: textColor,
                 ),
                 _statusOption(
                   context: sheetContext,
                   title: 'Overdue',
-                  icon:
-                      Icons.warning_amber_rounded,
-                  color: Colors.red,
+                  icon: Icons.warning_amber_rounded,
+                  color: isDark
+                      ? const Color(0xFFFF8585)
+                      : const Color(0xFFC43D45),
                   index: index,
+                  textColor: textColor,
                 ),
               ],
             ),
@@ -299,31 +275,28 @@ class _PaymentTrackingViewState
     required IconData icon,
     required Color color,
     required int index,
+    required Color textColor,
   }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        icon,
-        color: color,
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(color: textColor),
       ),
-      title: Text(title),
       onTap: () {
         if (index < 0 ||
-            index >=
-                committeeController.payments.length) {
+            index >= committeeController.payments.length) {
           Navigator.pop(context);
           return;
         }
 
         if (title == 'Received') {
-          committeeController
-              .markPaymentReceived(index);
+          committeeController.markPaymentReceived(index);
         } else if (title == 'Pending') {
-          committeeController
-              .markPaymentPending(index);
+          committeeController.markPaymentPending(index);
         } else if (title == 'Overdue') {
-          committeeController
-              .markPaymentOverdue(index);
+          committeeController.markPaymentOverdue(index);
         }
 
         if (mounted) {
@@ -332,12 +305,9 @@ class _PaymentTrackingViewState
 
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(this.context)
-            .showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Payment marked as $title.',
-            ),
+            content: Text('Payment marked as $title.'),
           ),
         );
       },
@@ -351,28 +321,27 @@ class _PaymentTrackingViewState
   @override
   Widget build(BuildContext context) {
     final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
+        Theme.of(context).brightness == Brightness.dark;
 
-    final Color backgroundColor =
-        isDark
-            ? Colors.black
-            : const Color(0xFFF5F5F5);
+    final Color backgroundColor = isDark
+        ? Colors.black
+        : const Color(0xFFF5F6F8);
 
-    final Color cardColor =
-        isDark
-            ? const Color(0xFF0A0A0A)
-            : Colors.white;
+    final Color cardColor = isDark
+        ? const Color(0xFF202124)
+        : Colors.white;
 
-    final Color primaryTextColor =
-        isDark
-            ? Colors.white
-            : Colors.black87;
+    final Color primaryTextColor = isDark
+        ? const Color(0xFFF5F5F5)
+        : const Color(0xFF252B35);
 
-    final Color secondaryTextColor =
-        isDark
-            ? Colors.white60
-            : Colors.black54;
+    final Color secondaryTextColor = isDark
+        ? const Color(0xFFBDBDBD)
+        : const Color(0xFF626B78);
+
+    final Color borderColor = isDark
+        ? const Color(0xFF383838)
+        : const Color(0xFFDDE1E7);
 
     final List<Map<String, dynamic>> payments =
         committeeController.payments;
@@ -383,45 +352,34 @@ class _PaymentTrackingViewState
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.payments_rounded,
-            ),
+            Icon(Icons.payments_rounded),
             SizedBox(width: 8),
             Text(
               'Payment Tracking',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
         centerTitle: true,
-        backgroundColor:
-            isDark
-                ? Colors.black
-                : Colors.white,
-        foregroundColor:
-            primaryTextColor,
+        backgroundColor: backgroundColor,
+        foregroundColor: primaryTextColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSummary(
                 isDark: isDark,
                 cardColor: cardColor,
-                primaryTextColor:
-                    primaryTextColor,
-                secondaryTextColor:
-                    secondaryTextColor,
+                borderColor: borderColor,
+                primaryTextColor: primaryTextColor,
+                secondaryTextColor: secondaryTextColor,
               ),
-
               const SizedBox(height: 20),
-
               Text(
                 'Payment Records',
                 style: TextStyle(
@@ -430,82 +388,60 @@ class _PaymentTrackingViewState
                   color: primaryTextColor,
                 ),
               ),
-
               const SizedBox(height: 12),
-
               if (payments.isEmpty)
                 _buildEmptyState(
-                  secondaryTextColor:
-                      secondaryTextColor,
+                  secondaryTextColor: secondaryTextColor,
                 )
               else
                 ...List.generate(
                   payments.length,
                   (index) {
-                    final payment =
-                        payments[index];
-
+                    final payment = payments[index];
                     final double amount =
-                        _getPaymentAmount(
-                      payment,
-                    );
+                        _getPaymentAmount(payment);
 
                     final DateTime? paymentDate =
-                        payment['paymentDate']
-                                is DateTime
-                            ? payment[
-                                    'paymentDate']
-                                as DateTime
+                        payment['paymentDate'] is DateTime
+                            ? payment['paymentDate'] as DateTime
                             : null;
 
-                    final String dateText =
-                        paymentDate != null
-                            ? _formatDate(
-                                paymentDate,
-                              )
-                            : 'Date not added';
+                    final String dateText = paymentDate != null
+                        ? _formatDate(paymentDate)
+                        : 'Date not added';
 
-                    return InkWell(
-                      onTap: () =>
-                          _changeStatus(index),
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderColor),
                       ),
-                      child: PaymentCard(
-                        memberName:
-                            payment[
-                                        'memberName']
-                                    ?.toString() ??
-                                'Member Name',
-                        amount:
-                            _formatAmount(
-                          amount,
+                      child: InkWell(
+                        onTap: () => _changeStatus(index),
+                        borderRadius: BorderRadius.circular(16),
+                        child: PaymentCard(
+                          memberName:
+                              payment['memberName']?.toString() ??
+                                  'Member Name',
+                          amount: _formatAmount(amount),
+                          paymentDate: dateText,
+                          status:
+                              payment['status']?.toString() ??
+                                  'Pending',
+                          note: payment['note']?.toString(),
                         ),
-                        paymentDate:
-                            dateText,
-                        status:
-                            payment[
-                                        'status']
-                                    ?.toString() ??
-                                'Pending',
-                        note:
-                            payment['note']
-                                ?.toString(),
                       ),
                     );
                   },
                 ),
-
               const SizedBox(height: 12),
-
               Text(
                 'Tap any payment record to change its status.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color:
-                      secondaryTextColor,
+                  color: secondaryTextColor,
                 ),
               ),
             ],
@@ -522,6 +458,7 @@ class _PaymentTrackingViewState
   Widget _buildSummary({
     required bool isDark,
     required Color cardColor,
+    required Color borderColor,
     required Color primaryTextColor,
     required Color secondaryTextColor,
   }) {
@@ -530,17 +467,11 @@ class _PaymentTrackingViewState
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark
-              ? Colors.white10
-              : Colors.black12,
-        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Payment Summary',
@@ -556,45 +487,39 @@ class _PaymentTrackingViewState
               Expanded(
                 child: _summaryItem(
                   title: 'Received',
-                  value:
-                      '$receivedCount',
-                  icon:
-                      Icons.check_circle_outline_rounded,
-                  color: Colors.green,
-                  primaryTextColor:
-                      primaryTextColor,
-                  secondaryTextColor:
-                      secondaryTextColor,
+                  value: '$receivedCount',
+                  icon: Icons.check_circle_outline_rounded,
+                  color: isDark
+                      ? const Color(0xFF65D6A0)
+                      : const Color(0xFF27845D),
+                  primaryTextColor: primaryTextColor,
+                  secondaryTextColor: secondaryTextColor,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
                   title: 'Pending',
-                  value:
-                      '$pendingCount',
-                  icon:
-                      Icons.pending_outlined,
-                  color: Colors.orange,
-                  primaryTextColor:
-                      primaryTextColor,
-                  secondaryTextColor:
-                      secondaryTextColor,
+                  value: '$pendingCount',
+                  icon: Icons.pending_outlined,
+                  color: isDark
+                      ? const Color(0xFFFFCA70)
+                      : const Color(0xFFB7791F),
+                  primaryTextColor: primaryTextColor,
+                  secondaryTextColor: secondaryTextColor,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
                   title: 'Overdue',
-                  value:
-                      '$overdueCount',
-                  icon:
-                      Icons.warning_amber_rounded,
-                  color: Colors.red,
-                  primaryTextColor:
-                      primaryTextColor,
-                  secondaryTextColor:
-                      secondaryTextColor,
+                  value: '$overdueCount',
+                  icon: Icons.warning_amber_rounded,
+                  color: isDark
+                      ? const Color(0xFFFF8585)
+                      : const Color(0xFFC43D45),
+                  primaryTextColor: primaryTextColor,
+                  secondaryTextColor: secondaryTextColor,
                 ),
               ),
             ],
@@ -618,11 +543,7 @@ class _PaymentTrackingViewState
   }) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: color,
-          size: 23,
-        ),
+        Icon(icon, color: color, size: 23),
         const SizedBox(height: 7),
         Text(
           value,
@@ -654,8 +575,7 @@ class _PaymentTrackingViewState
   }) {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 35,
       ),
