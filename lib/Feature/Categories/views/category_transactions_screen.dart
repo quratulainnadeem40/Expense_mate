@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class CategoryTransactionsScreen extends StatelessWidget {
+class CategoryTransactionsScreen extends StatefulWidget {
   final String categoryId;
   final String categoryName;
 
@@ -12,16 +11,42 @@ class CategoryTransactionsScreen extends StatelessWidget {
     required this.categoryName,
   });
 
+  @override
+  State<CategoryTransactionsScreen> createState() =>
+      _CategoryTransactionsScreenState();
+}
+
+class _CategoryTransactionsScreenState
+    extends State<CategoryTransactionsScreen> {
+  late Future<List<Map<String, dynamic>>> _transactionsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionsFuture = _loadTransactions();
+  }
+
+  String _normalizeName(String? name) {
+    return (name ?? '')
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  double _parseAmount(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
   String _formatAmount(double amount) {
-    final int roundedAmount = amount.round();
-    final String formatted = roundedAmount.toString();
-    final StringBuffer buffer = StringBuffer();
+    final roundedAmount = amount.round();
+    final formatted = roundedAmount.toString();
+    final buffer = StringBuffer();
 
     for (int i = 0; i < formatted.length; i++) {
       if (i > 0 && (formatted.length - i) % 3 == 0) {
         buffer.write(',');
       }
-
       buffer.write(formatted[i]);
     }
 
@@ -29,34 +54,224 @@ class CategoryTransactionsScreen extends StatelessWidget {
   }
 
   Future<List<Map<String, dynamic>>> _loadTransactions() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
 
-    if (user == null) {
-      return [];
+    if (user == null) return [];
+
+    // Load all categories for this user so duplicate names
+    // with different IDs can be handled correctly.
+    final categoryResponse = await client
+        .from('categories')
+        .select('id, name, type')
+        .eq('user_id', user.id);
+
+    final matchingCategoryIds = <String>{widget.categoryId};
+
+    for (final item in categoryResponse) {
+      final name = item['name']?.toString();
+
+      if (_normalizeName(name) ==
+          _normalizeName(widget.categoryName)) {
+        final id = item['id']?.toString();
+
+        if (id != null && id.isNotEmpty) {
+          matchingCategoryIds.add(id);
+        }
+      }
     }
 
-    final response = await Supabase.instance.client
-        .from('transactions')
-        .select()
-        .eq('user_id', user.id)
-        .eq('category_id', categoryId)
-        .order('transaction_date', ascending: false);
+    // Query each matching ID separately to avoid relying on
+    // backend-specific filtering behavior for a list of IDs.
+    final results = <Map<String, dynamic>>[];
+    final seenTransactionIds = <String>{};
 
-    return List<Map<String, dynamic>>.from(response);
+    for (final id in matchingCategoryIds) {
+      final response = await client
+          .from('transactions')
+          .select()
+          .eq('user_id', user.id)
+          .eq('category_id', id)
+          .order('transaction_date', ascending: false);
+
+      for (final row in response) {
+        final transaction = Map<String, dynamic>.from(row);
+        final transactionId = transaction['id']?.toString();
+
+        if (transactionId == null ||
+            seenTransactionIds.add(transactionId)) {
+          results.add(transaction);
+        }
+      }
+    }
+
+    results.sort((a, b) {
+      final dateA = DateTime.tryParse(
+            a['transaction_date']?.toString() ?? '',
+          ) ??
+          DateTime(1970);
+
+      final dateB = DateTime.tryParse(
+            b['transaction_date']?.toString() ?? '',
+          ) ??
+          DateTime(1970);
+
+      return dateB.compareTo(dateA);
+    });
+
+    return results;
+  }
+
+  Widget _buildTransactionSection({
+    required BuildContext context,
+    required String title,
+    required List<Map<String, dynamic>> transactions,
+    required bool isIncome,
+    required bool isDark,
+  }) {
+    final total = transactions.fold<double>(
+      0,
+      (sum, transaction) =>
+          sum + _parseAmount(transaction['amount']),
+    );
+
+    final sectionColor =
+        isIncome ? Colors.green : Colors.red;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isIncome
+                        ? Icons.arrow_downward
+                        : Icons.arrow_upward,
+                    color: sectionColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Total: ${_formatAmount(total)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: sectionColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${transactions.length} Transactions',
+                style: TextStyle(
+                  color: isDark
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (transactions.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 8,
+              right: 8,
+              bottom: 20,
+            ),
+            child: Text(
+              'No ${title.toLowerCase()} transactions found.',
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          )
+        else
+          ...transactions.map((transaction) {
+            final amount = _parseAmount(transaction['amount']);
+            final transactionTitle =
+                transaction['title']?.toString() ??
+                    widget.categoryName;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 15,
+              ),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E1E1E)
+                    : Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isIncome
+                        ? Icons.arrow_downward
+                        : Icons.arrow_upward,
+                    color: sectionColor,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      transactionTitle,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _formatAmount(amount),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: sectionColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
+    final isDark =
         Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(categoryName),
+        title: Text(widget.categoryName),
         centerTitle: true,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _loadTransactions(),
+        future: _transactionsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -66,183 +281,80 @@ class CategoryTransactionsScreen extends StatelessWidget {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'Unable to load transactions.',
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Unable to load transactions.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                 ),
               ),
             );
           }
 
-          final transactions = snapshot.data ?? [];
+          final allTransactions = snapshot.data ?? [];
 
-          double totalAmount = 0;
+          final incomeTransactions = allTransactions.where((transaction) {
+            final type = transaction['type']
+                ?.toString()
+                .trim()
+                .toLowerCase();
 
-          for (final transaction in transactions) {
-            final amount = transaction['amount'];
+            return type == 'income';
+          }).toList();
 
-            if (amount is num) {
-              totalAmount += amount.toDouble();
-            } else {
-              totalAmount +=
-                  double.tryParse(amount?.toString() ?? '') ?? 0;
-            }
-          }
+          final expenseTransactions =
+              allTransactions.where((transaction) {
+            final type = transaction['type']
+                ?.toString()
+                .trim()
+                .toLowerCase();
 
-          return Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 16,
-                ),
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      categoryName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            isDark ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Total Amount',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark
-                            ? Colors.grey[400]
-                            : Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _formatAmount(totalAmount),
-                      style: const TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${transactions.length} Transactions',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            return type != 'income';
+          }).toList();
 
-              Expanded(
-                child: transactions.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No transactions found in this category.',
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        itemCount: transactions.length,
-                        itemBuilder: (context, index) {
-                          final transaction =
-                              transactions[index];
+        
+final showIncome = incomeTransactions.isNotEmpty;
+final showExpense = expenseTransactions.isNotEmpty;
 
-                          final amountValue =
-                              transaction['amount'];
+if (!showIncome && !showExpense) {
+  return const Center(
+    child: Text('No transactions found in this category.'),
+  );
+}
 
-                          final double amount =
-                              amountValue is num
-                                  ? amountValue.toDouble()
-                                  : double.tryParse(
-                                        amountValue?.toString() ??
-                                            '',
-                                      ) ??
-                                      0;
+return ListView(
+  padding: const EdgeInsets.all(16),
+  children: [
+    if (showIncome)
+      _buildTransactionSection(
+        context: context,
+        title: 'Income',
+        transactions: incomeTransactions,
+        isIncome: true,
+        isDark: isDark,
+      ),
 
-                          final String title =
-                              transaction['title']
-                                      ?.toString() ??
-                                  categoryName;
+    if (showIncome && showExpense)
+      const SizedBox(height: 12),
 
-                          final String type =
-                              transaction['type']
-                                      ?.toString() ??
-                                  'expense';
+    if (showExpense)
+      _buildTransactionSection(
+        context: context,
+        title: 'Expense',
+        transactions: expenseTransactions,
+        isIncome: false,
+        isDark: isDark,
+      ),
+  ],
+);
 
-                          return Container(
-                            margin: const EdgeInsets.only(
-                              bottom: 10,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 15,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF0A0A0A)
-                                  : Theme.of(context).cardColor,
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  type == 'income'
-                                      ? Icons.arrow_downward
-                                      : Icons.arrow_upward,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight:
-                                          FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  _formatAmount(amount),
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
+
         },
       ),
     );
   }
 }
-
 

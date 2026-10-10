@@ -37,7 +37,8 @@ class _TransactionsViewState extends State<TransactionsView>
   final RxString searchQuery = ''.obs;
 late final TransactionsController transactionsController;
   late final RxBool isSearchFocused = false.obs;
-
+// Transaction Filter
+final RxString selectedFilter = 'All'.obs;
   final TextEditingController _searchController =
       TextEditingController();
 
@@ -153,7 +154,22 @@ void initState() {
 
     return category?.name ?? categoryId;
   }
+// ==========================================================
+// TRANSACTION FILTER LOGIC
+// ==========================================================
 
+bool _matchesSelectedFilter(TransactionModel transaction) {
+  switch (selectedFilter.value) {
+    case 'Income':
+      return transaction.isIncome;
+
+    case 'Expense':
+      return !transaction.isIncome;
+
+    default:
+      return true;
+  }
+}
   // ==========================================================
   // DATE FORMAT
   // ==========================================================
@@ -370,21 +386,31 @@ void _selectAllVisibleTransactions() {
 
   final visibleTransactions =
       transactionsController.transactions.where((tx) {
-    if (query.isEmpty) {
-      return true;
+    // Apply Income / Expense filter first.
+    if (!_matchesSelectedFilter(tx)) {
+      return false;
     }
 
-    final categoryName = tx.isIncome
-        ? 'income'
-        : _getCategoryName(
-            tx.categoryId,
-            customCategory: tx.customCategoryName,
-          ).toLowerCase();
+    // Apply search filter.
+    if (query.isNotEmpty) {
+      final categoryName = tx.isIncome
+          ? 'income'
+          : _getCategoryName(
+              tx.categoryId,
+              customCategory: tx.customCategoryName,
+            ).toLowerCase();
 
-    final title = tx.title.toLowerCase();
+      final title = tx.title.toLowerCase();
 
-    return title.contains(query) ||
-        categoryName.contains(query);
+      final matchesSearch =
+          title.contains(query) || categoryName.contains(query);
+
+      if (!matchesSearch) {
+        return false;
+      }
+    }
+
+    return true;
   }).toList();
 
   final visibleIds =
@@ -395,9 +421,8 @@ void _selectAllVisibleTransactions() {
   }
 
   setState(() {
-    final allSelected = visibleIds.every(
-      selectedTransactionIds.contains,
-    );
+    final allSelected =
+        visibleIds.every(selectedTransactionIds.contains);
 
     if (allSelected) {
       selectedTransactionIds.removeWhere(
@@ -799,81 +824,104 @@ void _selectAllVisibleTransactions() {
                   ),
                 ),
 
+// ==================================================
+// TRANSACTION FILTER
+// ==================================================
+
+Obx(
+  () {
+    final filters = ['All', 'Income', 'Expense'];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      child: Row(
+        children: filters.map((filter) {
+          final isSelected =
+              selectedFilter.value == filter;
+
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+              ),
+              child: ChoiceChip(
+                label: Text(filter),
+                selected: isSelected,
+                showCheckmark: false,
+                onSelected: (_) {
+                  selectedFilter.value = filter;
+                },
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  },
+),
                 // ==================================================
                 // TRANSACTION LIST
                 // ==================================================
 
-                Expanded(
-                  child: Obx(() {
-                    final query =
-                        searchQuery.value
-                            .toLowerCase();
+               Expanded(
+  child: Obx(() {
+    final query = searchQuery.value.toLowerCase().trim();
 
-                    final list =
-                        transactionsController
-                            .transactions
-                            .where((tx) {
-                      if (query.isEmpty) {
-                        return true;
-                      }
+    final list = transactionsController.transactions.where((tx) {
+      // 1. Apply Income / Expense filter.
+      if (!_matchesSelectedFilter(tx)) {
+        return false;
+      }
 
-                      final categoryName =
-                          tx.isIncome
-                              ? 'income'
-                              : _getCategoryName(
-                                  tx.categoryId,
-                                  customCategory:
-                                      tx.customCategoryName,
-                                ).toLowerCase();
+      // 2. Apply search filter.
+      if (query.isEmpty) {
+        return true;
+      }
 
-                      final title =
-                          tx.title.toLowerCase();
+      final categoryName = tx.isIncome
+          ? 'income'
+          : _getCategoryName(
+              tx.categoryId,
+              customCategory: tx.customCategoryName,
+            ).toLowerCase();
 
-                      return title.contains(query) ||
-                          categoryName.contains(
-                            query,
-                          );
-                    }).toList();
+      final title = tx.title.toLowerCase();
 
-                    if (list.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .center,
-                          children: [
-                            Icon(
-                              Icons
-                                  .receipt_long_outlined,
-                              size: 48,
-                              color: isDarkMode
-                                  ? Colors
-                                      .grey
-                                      .shade600
-                                  : Colors
-                                      .grey
-                                      .shade400,
-                            ),
-                            const SizedBox(
-                              height: 8,
-                            ),
-                            Text(
-                              'No transactions found.',
-                              style: TextStyle(
-                                color: isDarkMode
-                                    ? Colors
-                                        .grey
-                                        .shade400
-                                    : Colors
-                                        .grey
-                                        .shade600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+      return title.contains(query) ||
+          categoryName.contains(query);
+    }).toList();
+
+    if (list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 48,
+              color: isDarkMode
+                  ? Colors.grey.shade600
+                  : Colors.grey.shade400,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No transactions found.',
+              style: TextStyle(
+                color: isDarkMode
+                    ? Colors.grey.shade400
+                    : Colors.grey.shade600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Keep your existing ListView.builder code here.
 
                     return ListView.builder(
                       padding:
