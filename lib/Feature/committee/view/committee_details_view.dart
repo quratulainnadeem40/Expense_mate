@@ -5,8 +5,13 @@ import '../controller/committe_controller.dart';
 
 class CommitteeDetailsView extends StatefulWidget {
   final bool membersOnly;
+  final String? committeeId;
 
-  const CommitteeDetailsView({super.key, this.membersOnly = false});
+  const CommitteeDetailsView({
+    super.key,
+    this.membersOnly = false,
+    this.committeeId,
+  });
 
   @override
   State<CommitteeDetailsView> createState() => _CommitteeDetailsViewState();
@@ -1206,6 +1211,98 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     );
   }
 
+  Future<void> _openCommitteeMembers(String committeeId) async {
+    final String? previousCommitteeId =
+        committeeController.activeCommitteeId.value;
+
+    if (!committeeController.selectCommittee(committeeId)) return;
+
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CommitteeDetailsView(membersOnly: true, committeeId: committeeId),
+      ),
+    );
+
+    if (!mounted) return;
+    if (previousCommitteeId != null && previousCommitteeId != committeeId) {
+      committeeController.selectCommittee(previousCommitteeId);
+    }
+  }
+
+  Widget _buildCommitteePicker() {
+    return Obx(() {
+      final committees = committeeController.committees.toList();
+
+      if (committees.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'Add a committee first to manage its members.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: secondaryText),
+            ),
+          ),
+        );
+      }
+
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'Select a committee',
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
+              color: primaryText,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...committees.map((committee) {
+            final String id = committee['id']?.toString() ?? '';
+            final List<dynamic> members = committee['members'] is List
+                ? committee['members'] as List<dynamic>
+                : const [];
+            final int memberCount =
+                int.tryParse((committee['memberCount'] ?? 0).toString()) ?? 0;
+
+            return Card(
+              color: cardBackground,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: outlineColor),
+              ),
+              margin: const EdgeInsets.only(bottom: 10),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: greenBackground,
+                  foregroundColor: greenText,
+                  child: const Icon(Icons.groups_rounded),
+                ),
+                title: Text(
+                  committee['name']?.toString() ?? 'Committee',
+                  style: TextStyle(
+                    color: primaryText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  '${members.length} / $memberCount members added',
+                  style: TextStyle(color: secondaryText),
+                ),
+                trailing: Icon(Icons.chevron_right_rounded, color: greenText),
+                onTap: id.isEmpty ? null : () => _openCommitteeMembers(id),
+              ),
+            );
+          }),
+        ],
+      );
+    });
+  }
+
   // --------------------------------------------------
   // BUILD
   // --------------------------------------------------
@@ -1225,85 +1322,89 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         ),
         centerTitle: true,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: greenAccent,
-        foregroundColor: Colors.white,
-        onPressed: _showMemberDialog,
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add Member'),
-      ),
-      body: Obx(() {
-        final members = committeeController.members;
+      floatingActionButton: widget.membersOnly && widget.committeeId == null
+          ? null
+          : FloatingActionButton.extended(
+              backgroundColor: greenAccent,
+              foregroundColor: Colors.white,
+              onPressed: _showMemberDialog,
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Text('Add Member'),
+            ),
+      body: widget.membersOnly && widget.committeeId == null
+          ? _buildCommitteePicker()
+          : Obx(() {
+              final members = committeeController.members;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!widget.membersOnly) ...[
-                Row(
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        committeeController.committeeName.value.isEmpty
-                            ? 'Committee'
-                            : committeeController.committeeName.value,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: primaryText,
+                    if (!widget.membersOnly) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              committeeController.committeeName.value.isEmpty
+                                  ? 'Committee'
+                                  : committeeController.committeeName.value,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: primaryText,
+                              ),
+                            ),
+                          ),
+                          TextButton.icon(
+                            style: TextButton.styleFrom(
+                              foregroundColor: primaryAccent,
+                            ),
+                            onPressed: _showEditCommitteeDialog,
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            label: const Text('Edit'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Start Date: ${_formatDate(committeeController.startDate.value)}',
+                        style: TextStyle(fontSize: 12, color: secondaryText),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Ending Date: ${_formatDate(committeeController.endingDate.value)}',
+                        style: TextStyle(fontSize: 12, color: secondaryText),
+                      ),
+                      const SizedBox(height: 22),
+                      _buildCommitteeSummary(),
+                      const SizedBox(height: 22),
+                      _buildPaymentSummary(),
+                      const SizedBox(height: 24),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(child: _buildSectionTitle('Members')),
+                        Text(
+                          '${members.length} / '
+                          '${committeeController.totalMembers.value} Added',
+                          style: TextStyle(fontSize: 12, color: secondaryText),
                         ),
-                      ),
+                      ],
                     ),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: primaryAccent,
+                    const SizedBox(height: 12),
+                    if (members.isEmpty)
+                      _buildEmptyState()
+                    else
+                      ...List.generate(
+                        members.length,
+                        (index) => _buildMemberCard(members[index], index),
                       ),
-                      onPressed: _showEditCommitteeDialog,
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Edit'),
-                    ),
+                    const SizedBox(height: 100),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'Start Date: ${_formatDate(committeeController.startDate.value)}',
-                  style: TextStyle(fontSize: 12, color: secondaryText),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Ending Date: ${_formatDate(committeeController.endingDate.value)}',
-                  style: TextStyle(fontSize: 12, color: secondaryText),
-                ),
-                const SizedBox(height: 22),
-                _buildCommitteeSummary(),
-                const SizedBox(height: 22),
-                _buildPaymentSummary(),
-                const SizedBox(height: 24),
-              ],
-              Row(
-                children: [
-                  Expanded(child: _buildSectionTitle('Members')),
-                  Text(
-                    '${members.length} / '
-                    '${committeeController.totalMembers.value} Added',
-                    style: TextStyle(fontSize: 12, color: secondaryText),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (members.isEmpty)
-                _buildEmptyState()
-              else
-                ...List.generate(
-                  members.length,
-                  (index) => _buildMemberCard(members[index], index),
-                ),
-              const SizedBox(height: 100),
-            ],
-          ),
-        );
-      }),
+              );
+            }),
     );
   }
 }
