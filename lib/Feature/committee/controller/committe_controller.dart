@@ -1,9 +1,22 @@
 
+import 'dart:convert';
+
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../../Core/constants/app_keys.dart';
 
 class CommitteeController extends GetxController {
   static final CommitteeController instance =
       CommitteeController();
+
+  CommitteeController() {
+    _loadCommittees();
+  }
+
+  Box get _storage => Hive.box(AppKeys.committeesBox);
+
+  static const String _committeesKey = 'saved_committees';
 
   // --------------------------------------------------
   // ALL COMMITTEES
@@ -35,6 +48,67 @@ class CommitteeController extends GetxController {
 
   bool get hasCommittee =>
       committeeName.value.trim().isNotEmpty;
+
+  void _loadCommittees() {
+    final String? stored = _storage.get(_committeesKey) as String?;
+    if (stored == null || stored.isEmpty) return;
+
+    final List<dynamic> decoded = jsonDecode(stored) as List<dynamic>;
+    committees.assignAll(
+      decoded.map((item) {
+        final Map<String, dynamic> committee =
+            Map<String, dynamic>.from(item as Map);
+        committee['startDate'] = _parseDate(committee['startDate']);
+        committee['endingDate'] = _parseDate(committee['endingDate']);
+
+        final dynamic savedPayments = committee['payments'];
+        if (savedPayments is List) {
+          committee['payments'] = savedPayments.map((payment) {
+            final Map<String, dynamic> restored =
+                Map<String, dynamic>.from(payment as Map);
+            restored['paymentDate'] =
+                _parseDate(restored['paymentDate']);
+            return restored;
+          }).toList();
+        }
+
+        return committee;
+      }).toList(),
+    );
+
+    if (committees.isNotEmpty) {
+      final String? activeId =
+          _storage.get('active_committee_id') as String?;
+      final Map<String, dynamic>? activeCommittee =
+          committees.firstWhereOrNull(
+        (committee) => committee['id'] == activeId,
+      );
+      _loadCommittee(activeCommittee ?? committees.first);
+    }
+  }
+
+  void _persistCommittees() {
+    _storage.put(
+      _committeesKey,
+      jsonEncode(
+        committees.map((committee) => _encodeValue(committee)).toList(),
+      ),
+    );
+    _storage.put('active_committee_id', activeCommitteeId.value);
+  }
+
+  dynamic _encodeValue(dynamic value) {
+    if (value is DateTime) return value.toIso8601String();
+    if (value is Map) {
+      return value.map(
+        (key, item) => MapEntry(key.toString(), _encodeValue(item)),
+      );
+    }
+    if (value is Iterable) {
+      return value.map(_encodeValue).toList();
+    }
+    return value;
+  }
 
   // --------------------------------------------------
   // HELPERS
@@ -96,6 +170,7 @@ class CommitteeController extends GetxController {
     }
 
     committees.refresh();
+    _persistCommittees();
   }
 
   // --------------------------------------------------
@@ -135,6 +210,7 @@ class CommitteeController extends GetxController {
 
     // Open the newly created committee as active.
     _loadCommittee(newCommittee);
+    _persistCommittees();
 
     return id;
   }
@@ -606,5 +682,6 @@ class CommitteeController extends GetxController {
 
     members.refresh();
     payments.refresh();
+    _persistCommittees();
   }
 }

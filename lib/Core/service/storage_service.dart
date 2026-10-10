@@ -14,5 +14,6 @@ class StorageService {
     await Hive.openBox(AppKeys.settingsBox);
     await Hive.openBox(AppKeys.budgetBox);
     await Hive.openBox(AppKeys.udhaarBox);
+    await Hive.openBox(AppKeys.committeesBox);
   }
 }

@@ -1,7 +1,8 @@
-
 import 'package:expense_mate/Feature/committee/view/committe_history_view.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controller/committe_controller.dart';
 import 'add_committee_view.dart';
 import 'committee_details_view.dart';
 import 'monthly_schedule_view.dart';
@@ -16,7 +17,7 @@ class CommitteeView extends StatefulWidget {
 }
 
 class _CommitteeViewState extends State<CommitteeView> {
-  Map<String, dynamic>? committeeData;
+  final CommitteeController committeeController = CommitteeController.instance;
 
   // Theme-aware neutral colors
   static const Color lightBackground = Color(0xFFF5F6F8);
@@ -35,60 +36,40 @@ class _CommitteeViewState extends State<CommitteeView> {
   static const Color lightGreen = Color(0xFFE1F3EA);
   static const Color darkGreen = Color(0xFF29483B);
 
-  bool get isDark =>
-      Theme.of(context).brightness == Brightness.dark;
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
-  Color get pageColor =>
-      isDark ? darkBackground : lightBackground;
+  Color get pageColor => isDark ? darkBackground : lightBackground;
 
-  Color get appBarColor =>
-      isDark ? darkBackground : lightCard;
+  Color get appBarColor => isDark ? darkBackground : lightCard;
 
-  Color get appBarTextColor =>
-      isDark ? darkText : lightText;
+  Color get appBarTextColor => isDark ? darkText : lightText;
 
-  Color get cardColor =>
-      isDark ? darkCard : lightCard;
+  Color get cardColor => isDark ? darkCard : lightCard;
 
-  Color get headingColor =>
-      isDark ? darkText : lightText;
+  Color get headingColor => isDark ? darkText : lightText;
 
-  Color get mainTextColor =>
-      isDark ? darkText : lightText;
+  Color get mainTextColor => isDark ? darkText : lightText;
 
-  Color get secondaryColor =>
-      isDark ? darkSecondary : lightSecondary;
+  Color get secondaryColor => isDark ? darkSecondary : lightSecondary;
 
-  Color get borderColor =>
-      isDark ? darkBorder : lightBorder;
+  Color get borderColor => isDark ? darkBorder : lightBorder;
 
-  Color get greenBackground =>
-      isDark ? darkGreen : lightGreen;
+  Color get greenBackground => isDark ? darkGreen : lightGreen;
 
-  Color get greenText =>
-      isDark ? const Color(0xFF9DE0BC) : greenAccent;
+  Color get greenText => isDark ? const Color(0xFF9DE0BC) : greenAccent;
 
-  void _openAddCommittee() async {
-    final result = await Navigator.push(
+  void _openAddCommittee() {
+    Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddCommitteeView(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddCommitteeView()),
     );
-
-    if (result != null && result is Map<String, dynamic>) {
-      setState(() {
-        committeeData = result;
-      });
-    }
   }
 
   void _openMembers() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            const CommitteeDetailsView(membersOnly: true),
+        builder: (context) => const CommitteeDetailsView(membersOnly: true),
       ),
     );
   }
@@ -96,23 +77,19 @@ class _CommitteeViewState extends State<CommitteeView> {
   void _openCommitteeDetails() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CommitteeDetailsView(),
-      ),
+      MaterialPageRoute(builder: (context) => const CommitteeDetailsView()),
     );
   }
 
   void _openPaymentTracking() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const PaymentTrackingView(),
-      ),
+      MaterialPageRoute(builder: (context) => const PaymentTrackingView()),
     );
   }
 
   void _openMonthlySchedule() {
-    if (committeeData == null) {
+    if (!committeeController.hasCommittee) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: cardColor,
@@ -125,43 +102,27 @@ class _CommitteeViewState extends State<CommitteeView> {
       return;
     }
 
-    final double monthlyContribution = double.tryParse(
-          committeeData!['contribution']
-                  ?.toString()
-                  .replaceAll(',', '') ??
-              '0',
-        ) ??
-        0;
-
-    final int totalMembers = int.tryParse(
-          committeeData!['members']?.toString() ?? '0',
-        ) ??
-        0;
-
-    final int durationMonths = int.tryParse(
-          committeeData!['duration']?.toString() ?? '0',
-        ) ??
-        0;
-
-    DateTime startDate;
-
-    final dynamic savedStartDate = committeeData!['startDate'];
-
-    if (savedStartDate is DateTime) {
-      startDate = savedStartDate;
-    } else {
-      startDate =
-          DateTime.tryParse(savedStartDate?.toString() ?? '') ??
-              DateTime.now();
+    final DateTime? startDate = committeeController.startDate.value;
+    if (startDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: cardColor,
+          content: Text(
+            'Please add a committee first.',
+            style: TextStyle(color: mainTextColor),
+          ),
+        ),
+      );
+      return;
     }
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => MonthlyScheduleView(
-          monthlyContribution: monthlyContribution,
-          totalMembers: totalMembers,
-          durationMonths: durationMonths,
+          monthlyContribution: committeeController.monthlyContribution.value,
+          totalMembers: committeeController.totalMembers.value,
+          durationMonths: committeeController.durationInMonths.ceil(),
           startDate: startDate,
         ),
       ),
@@ -171,18 +132,14 @@ class _CommitteeViewState extends State<CommitteeView> {
   void _openReminders() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CommitteeRemindersView(),
-      ),
+      MaterialPageRoute(builder: (context) => const CommitteeRemindersView()),
     );
   }
 
   void _openHistory() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => CommitteeHistoryView(),
-      ),
+      MaterialPageRoute(builder: (context) => CommitteeHistoryView()),
     );
   }
 
@@ -249,85 +206,96 @@ class _CommitteeViewState extends State<CommitteeView> {
               ),
             ),
             const SizedBox(height: 12),
-            if (committeeData == null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  border: Border.all(color: borderColor),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: isDark ? 0.20 : 0.04,
+            Obx(() {
+              final committees = committeeController.committees.toList();
+
+              if (committees.isEmpty) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    border: Border.all(color: borderColor),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.20 : 0.04,
+                        ),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.groups_rounded,
-                      size: 45,
-                      color: greenText,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'No committee added yet.',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: mainTextColor,
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.groups_rounded, size: 45, color: greenText),
+                      const SizedBox(height: 10),
+                      Text(
+                        'No committee added yet.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: mainTextColor,
+                        ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Create your first committee to get started.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: secondaryColor),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                children: committees.map((committee) {
+                  return Card(
+                    color: cardColor,
+                    elevation: 2,
+                    shadowColor: Colors.black.withValues(
+                      alpha: isDark ? 0.20 : 0.06,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Create your first committee to get started.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: secondaryColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: borderColor),
                     ),
-                  ],
-                ),
-              )
-            else
-              Card(
-                color: cardColor,
-                elevation: 2,
-                shadowColor: Colors.black.withValues(
-                  alpha: isDark ? 0.20 : 0.06,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: borderColor),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: greenBackground,
-                    foregroundColor: greenText,
-                    child: const Icon(Icons.groups_rounded),
-                  ),
-                  title: Text(
-                    committeeData?['name']?.toString() ??
-                        'Committee',
-                    style: TextStyle(
-                      color: mainTextColor,
-                      fontWeight: FontWeight.w600,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: greenBackground,
+                        foregroundColor: greenText,
+                        child: const Icon(Icons.groups_rounded),
+                      ),
+                      title: Text(
+                        committee['name']?.toString() ?? 'Committee',
+                        style: TextStyle(
+                          color: mainTextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'PKR ${committee['contribution'] ?? '0'} monthly',
+                        style: TextStyle(color: secondaryColor),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 18,
+                        color: greenText,
+                      ),
+                      onTap: () {
+                        final String? id = committee['id']?.toString();
+                        if (id != null) {
+                          committeeController.selectCommittee(id);
+                        }
+                        _openCommitteeDetails();
+                      },
                     ),
-                  ),
-                  subtitle: Text(
-                    'PKR ${committeeData?['contribution'] ?? '0'} monthly',
-                    style: TextStyle(color: secondaryColor),
-                  ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 18,
-                    color: greenText,
-                  ),
-                  onTap: _openCommitteeDetails,
-                ),
-              ),
+                  );
+                }).toList(),
+              );
+            }),
             const SizedBox(height: 28),
             Text(
               'Committee Features',
@@ -341,8 +309,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             _buildFeatureCard(
               icon: '👥',
               title: 'Members',
-              description:
-                  'Manage committee members and their details.',
+              description: 'Manage committee members and their details.',
               onTap: _openMembers,
               iconBackground: isDark
                   ? const Color(0xFF263746)
@@ -363,8 +330,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             _buildFeatureCard(
               icon: '📅',
               title: 'Monthly Schedule',
-              description:
-                  'Manage monthly schedule and receiving order.',
+              description: 'Manage monthly schedule and receiving order.',
               onTap: _openMonthlySchedule,
               iconBackground: isDark
                   ? const Color(0xFF393020)
@@ -376,8 +342,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             _buildFeatureCard(
               icon: '🔔',
               title: 'Reminders & Notifications',
-              description:
-                  'Manage payment due dates and monthly reminders.',
+              description: 'Manage payment due dates and monthly reminders.',
               onTap: _openReminders,
               iconBackground: isDark
                   ? const Color(0xFF332941)
@@ -389,8 +354,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             _buildFeatureCard(
               icon: '🕘',
               title: 'Committee History',
-              description:
-                  'View completed committees and payment history.',
+              description: 'View completed committees and payment history.',
               onTap: _openHistory,
               iconBackground: isDark
                   ? const Color(0xFF40292A)
@@ -416,9 +380,7 @@ class _CommitteeViewState extends State<CommitteeView> {
     return Card(
       color: cardColor,
       elevation: 2,
-      shadowColor: Colors.black.withValues(
-        alpha: isDark ? 0.20 : 0.05,
-      ),
+      shadowColor: Colors.black.withValues(alpha: isDark ? 0.20 : 0.05),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: borderColor),
@@ -433,22 +395,13 @@ class _CommitteeViewState extends State<CommitteeView> {
             color: iconBackground,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Text(
-            icon,
-            style: const TextStyle(fontSize: 28),
-          ),
+          child: Text(icon, style: const TextStyle(fontSize: 28)),
         ),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: mainTextColor,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, color: mainTextColor),
         ),
-        subtitle: Text(
-          description,
-          style: TextStyle(color: secondaryColor),
-        ),
+        subtitle: Text(description, style: TextStyle(color: secondaryColor)),
         trailing: Icon(
           Icons.arrow_forward_ios_rounded,
           size: 18,

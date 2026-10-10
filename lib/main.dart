@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,11 +16,12 @@ import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
+import 'package:expense_mate/Feature/committee/controller/committe_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-   // 1. Local Database Initialization
+  // 1. Local Database Initialization
   RepositoryProvider.instance.database;
 
   // 2. Existing Hive Storage Initialization
@@ -32,11 +32,7 @@ void main() async {
     url: 'https://epjzyrjxrhbfdyrbdsli.supabase.co',
     publishableKey: 'sb_publishable_2VnrpBbdOhiJpqw74rhufg_rp8GgJ_p',
   );
-  Get.put(
-  SyncManager(),
-  permanent: true,
-);
- 
+  Get.put(SyncManager(), permanent: true);
 
   // 4. Notification Service
   final notificationService = NotificationService();
@@ -45,26 +41,19 @@ void main() async {
   Get.put(notificationService, permanent: true);
 
   // 5. Global State Controllers Injection
-  final settingsController =
-      Get.put(SettingsController(), permanent: true);
+  final settingsController = Get.put(SettingsController(), permanent: true);
 
   Get.put(ReportController(), permanent: true);
   Get.put(TransactionsController(), permanent: true);
+  Get.put(CommitteeController.instance, permanent: true);
 
-  runApp(
-    ExpenseMateApp(
-      settingsController: settingsController,
-    ),
-  );
+  runApp(ExpenseMateApp(settingsController: settingsController));
 }
 
 class ExpenseMateApp extends StatelessWidget {
   final SettingsController settingsController;
 
-  const ExpenseMateApp({
-    super.key,
-    required this.settingsController,
-  });
+  const ExpenseMateApp({super.key, required this.settingsController});
 
   @override
   Widget build(BuildContext context) {
