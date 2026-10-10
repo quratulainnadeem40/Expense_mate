@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,20 +6,14 @@ import '../controller/committe_controller.dart';
 class CommitteeDetailsView extends StatefulWidget {
   final bool membersOnly;
 
-  const CommitteeDetailsView({
-    super.key,
-    this.membersOnly = false,
-  });
+  const CommitteeDetailsView({super.key, this.membersOnly = false});
 
   @override
-  State<CommitteeDetailsView> createState() =>
-      _CommitteeDetailsViewState();
+  State<CommitteeDetailsView> createState() => _CommitteeDetailsViewState();
 }
 
-class _CommitteeDetailsViewState
-    extends State<CommitteeDetailsView> {
-  final CommitteeController committeeController =
-      CommitteeController.instance;
+class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
+  final CommitteeController committeeController = CommitteeController.instance;
 
   // --------------------------------------------------
   // THEME COLORS
@@ -50,52 +43,39 @@ class _CommitteeDetailsViewState
   static const Color lightPurple = Color(0xFFF0E9FA);
   static const Color darkPurple = Color(0xFF302640);
 
-  bool get isDark =>
-      Theme.of(context).brightness == Brightness.dark;
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
-  Color get screenBackground =>
-      isDark ? darkBackground : lightBackground;
+  Color get screenBackground => isDark ? darkBackground : lightBackground;
 
-  Color get cardBackground =>
-      isDark ? darkCard : lightCard;
+  Color get cardBackground => isDark ? darkCard : lightCard;
 
-  Color get primaryText =>
-      isDark ? darkText : lightText;
+  Color get primaryText => isDark ? darkText : lightText;
 
-  Color get secondaryText =>
-      isDark ? darkSecondary : lightSecondary;
+  Color get secondaryText => isDark ? darkSecondary : lightSecondary;
 
-  Color get outlineColor =>
-      isDark ? darkBorder : lightBorder;
+  Color get outlineColor => isDark ? darkBorder : lightBorder;
 
-  Color get greenBackground =>
-      isDark ? darkGreen : lightGreen;
+  Color get greenBackground => isDark ? darkGreen : lightGreen;
 
-  Color get amberBackground =>
-      isDark ? darkAmber : lightAmber;
+  Color get amberBackground => isDark ? darkAmber : lightAmber;
 
-  Color get purpleBackground =>
-      isDark ? darkPurple : lightPurple;
+  Color get purpleBackground => isDark ? darkPurple : lightPurple;
 
-  Color get greenText =>
-      isDark ? const Color(0xFF7DD6A8) : greenAccent;
+  Color get greenText => isDark ? const Color(0xFF7DD6A8) : greenAccent;
 
-  Color get amberText =>
-      isDark ? const Color(0xFFFFD180) : amberAccent;
+  Color get amberText => isDark ? const Color(0xFFFFD180) : amberAccent;
 
-  Color get purpleText =>
-      isDark ? const Color(0xFFC7A7F4) : purpleAccent;
+  Color get purpleText => isDark ? const Color(0xFFC7A7F4) : purpleAccent;
 
-  Color get primaryAccent =>
-      isDark ? const Color(0xFF7DD6A8) : greenAccent;
+  Color get primaryAccent => isDark ? const Color(0xFF7DD6A8) : greenAccent;
 
   ThemeData get dialogTheme {
     return Theme.of(context).copyWith(
       colorScheme: Theme.of(context).colorScheme.copyWith(
-            primary: primaryAccent,
-            surface: cardBackground,
-            onSurface: primaryText,
-          ),
+        primary: primaryAccent,
+        surface: cardBackground,
+        onSurface: primaryText,
+      ),
       scaffoldBackgroundColor: screenBackground,
       dialogTheme: DialogThemeData(
         backgroundColor: cardBackground,
@@ -116,10 +96,7 @@ class _CommitteeDetailsViewState
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: primaryAccent,
-            width: 1.6,
-          ),
+          borderSide: BorderSide(color: primaryAccent, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -127,10 +104,7 @@ class _CommitteeDetailsViewState
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Colors.red,
-            width: 1.6,
-          ),
+          borderSide: const BorderSide(color: Colors.red, width: 1.6),
         ),
       ),
     );
@@ -146,8 +120,7 @@ class _CommitteeDetailsViewState
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 
-  String _formatAmount(double amount) =>
-      'PKR ${amount.toStringAsFixed(0)}';
+  String _formatAmount(double amount) => 'PKR ${amount.toStringAsFixed(0)}';
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'Not Set';
@@ -172,8 +145,7 @@ class _CommitteeDetailsViewState
       return startDate.add(Duration(days: duration * 7));
     }
 
-    if (normalizedUnit == 'month' ||
-        normalizedUnit == 'months') {
+    if (normalizedUnit == 'month' || normalizedUnit == 'months') {
       final int totalMonths =
           startDate.year * 12 + startDate.month - 1 + duration;
       final int year = totalMonths ~/ 12;
@@ -189,8 +161,7 @@ class _CommitteeDetailsViewState
 
     if (normalizedUnit == 'year' || normalizedUnit == 'years') {
       final int year = startDate.year + duration;
-      final int lastDay =
-          DateTime(year, startDate.month + 1, 0).day;
+      final int lastDay = DateTime(year, startDate.month + 1, 0).day;
 
       return DateTime(
         year,
@@ -202,25 +173,19 @@ class _CommitteeDetailsViewState
     return startDate.add(Duration(days: duration * 30));
   }
 
-  double get _totalPayment =>
-      committeeController.totalDurationAmount;
+  double get _totalPayment => committeeController.totalDurationAmount;
 
   double get _receivedPayment {
-    return committeeController.payments.fold<double>(
-      0,
-      (total, payment) {
-        if ((payment['status']?.toString().toLowerCase() ?? '') ==
-            'received') {
-          return total + _toDouble(payment['amount']);
-        }
-        return total;
-      },
-    );
+    return committeeController.payments.fold<double>(0, (total, payment) {
+      if ((payment['status']?.toString().toLowerCase() ?? '') == 'received') {
+        return total + _toDouble(payment['amount']);
+      }
+      return total;
+    });
   }
 
   double get _remainingPayment =>
-      (_totalPayment - _receivedPayment)
-          .clamp(0.0, double.infinity);
+      (_totalPayment - _receivedPayment).clamp(0.0, double.infinity);
 
   // --------------------------------------------------
   // SUMMARY CARD
@@ -246,26 +211,13 @@ class _CommitteeDetailsViewState
         ),
         margin: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                icon,
-                size: 23,
-                color: accent,
-              ),
+              Icon(icon, size: 23, color: accent),
               const SizedBox(height: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: secondaryText,
-                ),
-              ),
+              Text(title, style: TextStyle(fontSize: 12, color: secondaryText)),
               const SizedBox(height: 6),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -344,7 +296,8 @@ class _CommitteeDetailsViewState
             _buildSummaryCard(
               icon: Icons.calendar_month_outlined,
               title: 'Duration',
-              value: '${committeeController.duration.value} '
+              value:
+                  '${committeeController.duration.value} '
                   '${committeeController.durationUnit.value}',
               accentColor: amberText,
               cardColor: amberBackground,
@@ -402,33 +355,23 @@ class _CommitteeDetailsViewState
   // --------------------------------------------------
 
   Future<void> _showEditCommitteeDialog() async {
-    final TextEditingController nameController =
-        TextEditingController(
+    final TextEditingController nameController = TextEditingController(
       text: committeeController.committeeName.value,
     );
 
-    final TextEditingController contributionController =
-        TextEditingController(
-      text: committeeController.monthlyContribution.value
-          .toStringAsFixed(0),
+    final TextEditingController contributionController = TextEditingController(
+      text: committeeController.monthlyContribution.value.toStringAsFixed(0),
     );
 
-    final TextEditingController membersController =
-        TextEditingController(
+    final TextEditingController membersController = TextEditingController(
       text: committeeController.totalMembers.value.toString(),
     );
 
-    final TextEditingController durationController =
-        TextEditingController(
+    final TextEditingController durationController = TextEditingController(
       text: committeeController.duration.value.toString(),
     );
 
-    final List<String> units = [
-      'Months',
-      'Years',
-      'Weeks',
-      'Days',
-    ];
+    final List<String> units = ['Months', 'Years', 'Weeks', 'Days'];
 
     String selectedUnit = units.firstWhere(
       (unit) =>
@@ -440,8 +383,7 @@ class _CommitteeDetailsViewState
     DateTime selectedStartDate =
         committeeController.startDate.value ?? DateTime.now();
 
-    final GlobalKey<FormState> editFormKey =
-        GlobalKey<FormState>();
+    final GlobalKey<FormState> editFormKey = GlobalKey<FormState>();
 
     bool didSaveChanges = false;
 
@@ -458,9 +400,7 @@ class _CommitteeDetailsViewState
 
                 final DateTime endingDate = _calculateEndingDate(
                   startDate: selectedStartDate,
-                  duration: selectedDuration > 0
-                      ? selectedDuration
-                      : 1,
+                  duration: selectedDuration > 0 ? selectedDuration : 1,
                   unit: selectedUnit,
                 );
 
@@ -477,16 +417,14 @@ class _CommitteeDetailsViewState
                         children: [
                           TextFormField(
                             controller: nameController,
-                            textCapitalization:
-                                TextCapitalization.words,
+                            textCapitalization: TextCapitalization.words,
                             style: TextStyle(color: primaryText),
                             decoration: const InputDecoration(
                               labelText: 'Committee Name',
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null ||
-                                  value.trim().isEmpty) {
+                              if (value == null || value.trim().isEmpty) {
                                 return 'Please enter committee name';
                               }
                               return null;
@@ -495,8 +433,7 @@ class _CommitteeDetailsViewState
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: contributionController,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             style: TextStyle(color: primaryText),
@@ -506,8 +443,9 @@ class _CommitteeDetailsViewState
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              final double? amount =
-                                  double.tryParse(value?.trim() ?? '');
+                              final double? amount = double.tryParse(
+                                value?.trim() ?? '',
+                              );
 
                               if (amount == null || amount <= 0) {
                                 return 'Enter a valid contribution';
@@ -526,15 +464,15 @@ class _CommitteeDetailsViewState
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              final int? count =
-                                  int.tryParse(value?.trim() ?? '');
+                              final int? count = int.tryParse(
+                                value?.trim() ?? '',
+                              );
 
                               if (count == null || count <= 0) {
                                 return 'Enter a valid member quantity';
                               }
 
-                              if (count <
-                                  committeeController.members.length) {
+                              if (count < committeeController.members.length) {
                                 return 'Cannot be less than members already added';
                               }
 
@@ -558,8 +496,9 @@ class _CommitteeDetailsViewState
                                     setDialogState(() {});
                                   },
                                   validator: (value) {
-                                    final int? number =
-                                        int.tryParse(value?.trim() ?? '');
+                                    final int? number = int.tryParse(
+                                      value?.trim() ?? '',
+                                    );
 
                                     if (number == null || number <= 0) {
                                       return 'Enter duration';
@@ -576,9 +515,7 @@ class _CommitteeDetailsViewState
                                   value: selectedUnit,
                                   isExpanded: true,
                                   dropdownColor: cardBackground,
-                                  style: TextStyle(
-                                    color: primaryText,
-                                  ),
+                                  style: TextStyle(color: primaryText),
                                   decoration: const InputDecoration(
                                     labelText: 'Unit',
                                     border: OutlineInputBorder(),
@@ -588,9 +525,7 @@ class _CommitteeDetailsViewState
                                       value: unit,
                                       child: Text(
                                         unit,
-                                        style: TextStyle(
-                                          color: primaryText,
-                                        ),
+                                        style: TextStyle(color: primaryText),
                                       ),
                                     );
                                   }).toList(),
@@ -626,8 +561,7 @@ class _CommitteeDetailsViewState
                                 style: TextStyle(color: primaryText),
                               ),
                               onPressed: () async {
-                                final DateTime? picked =
-                                    await showDatePicker(
+                                final DateTime? picked = await showDatePicker(
                                   context: dialogContext,
                                   initialDate: selectedStartDate,
                                   firstDate: DateTime(2000),
@@ -635,20 +569,19 @@ class _CommitteeDetailsViewState
                                   builder: (context, child) {
                                     return Theme(
                                       data: dialogTheme.copyWith(
-                                        colorScheme: dialogTheme
-                                            .colorScheme.copyWith(
-                                          primary: primaryAccent,
-                                          surface: cardBackground,
-                                          onSurface: primaryText,
-                                        ),
+                                        colorScheme: dialogTheme.colorScheme
+                                            .copyWith(
+                                              primary: primaryAccent,
+                                              surface: cardBackground,
+                                              onSurface: primaryText,
+                                            ),
                                       ),
                                       child: child!,
                                     );
                                   },
                                 );
 
-                                if (picked != null &&
-                                    dialogContext.mounted) {
+                                if (picked != null && dialogContext.mounted) {
                                   setDialogState(() {
                                     selectedStartDate = picked;
                                   });
@@ -661,9 +594,7 @@ class _CommitteeDetailsViewState
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Ending Date: ${_formatDate(endingDate)}',
-                              style: TextStyle(
-                                color: secondaryText,
-                              ),
+                              style: TextStyle(color: secondaryText),
                             ),
                           ),
                         ],
@@ -690,22 +621,24 @@ class _CommitteeDetailsViewState
                           return;
                         }
 
-                        final int duration =
-                            int.parse(durationController.text.trim());
+                        final int duration = int.parse(
+                          durationController.text.trim(),
+                        );
 
                         final double contribution = double.parse(
                           contributionController.text.trim(),
                         );
 
-                        final int memberCount =
-                            int.parse(membersController.text.trim());
+                        final int memberCount = int.parse(
+                          membersController.text.trim(),
+                        );
 
                         final DateTime calculatedEndingDate =
                             _calculateEndingDate(
-                          startDate: selectedStartDate,
-                          duration: duration,
-                          unit: selectedUnit,
-                        );
+                              startDate: selectedStartDate,
+                              duration: duration,
+                              unit: selectedUnit,
+                            );
 
                         committeeController.updateCurrentCommittee(
                           name: nameController.text.trim(),
@@ -733,9 +666,7 @@ class _CommitteeDetailsViewState
     } finally {
       // Wait until the dialog's closing transition has finished.
       // This prevents TextFormField from accessing disposed controllers.
-      await Future<void>.delayed(
-        const Duration(milliseconds: 300),
-      );
+      await Future<void>.delayed(const Duration(milliseconds: 300));
 
       nameController.dispose();
       contributionController.dispose();
@@ -749,9 +680,7 @@ class _CommitteeDetailsViewState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: greenAccent,
-          content: const Text(
-            'Committee updated successfully.',
-          ),
+          content: const Text('Committee updated successfully.'),
         ),
       );
     }
@@ -767,24 +696,20 @@ class _CommitteeDetailsViewState
     int? editIndex,
   }) {
     final String newName = name.trim().toLowerCase();
-    final String newFatherHusband =
-        fatherHusbandName.trim().toLowerCase();
+    final String newFatherHusband = fatherHusbandName.trim().toLowerCase();
 
-    for (int i = 0;
-        i < committeeController.members.length;
-        i++) {
+    for (int i = 0; i < committeeController.members.length; i++) {
       if (editIndex != null && i == editIndex) continue;
 
-      final Map<String, dynamic> member =
-          committeeController.members[i];
+      final Map<String, dynamic> member = committeeController.members[i];
 
-      final String existingName =
-          (member['name'] ?? '').toString().trim().toLowerCase();
+      final String existingName = (member['name'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
 
       final String existingFatherHusband =
-          (member['fatherHusbandName'] ??
-                  member['fatherName'] ??
-                  '')
+          (member['fatherHusbandName'] ?? member['fatherName'] ?? '')
               .toString()
               .trim()
               .toLowerCase();
@@ -829,30 +754,26 @@ class _CommitteeDetailsViewState
       existingMember = committeeController.members[editIndex];
     }
 
-    final TextEditingController nameController =
-        TextEditingController(
+    final TextEditingController nameController = TextEditingController(
       text: existingMember?['name']?.toString() ?? '',
     );
 
-    final TextEditingController fatherHusbandController =
-        TextEditingController(
-      text: (existingMember?['fatherHusbandName'] ??
-              existingMember?['fatherName'] ??
-              '')
-          .toString(),
+    final TextEditingController fatherHusbandController = TextEditingController(
+      text:
+          (existingMember?['fatherHusbandName'] ??
+                  existingMember?['fatherName'] ??
+                  '')
+              .toString(),
     );
 
-    final TextEditingController phoneController =
-        TextEditingController(
+    final TextEditingController phoneController = TextEditingController(
       text: existingMember?['phone']?.toString() ?? '',
     );
 
-    final TextEditingController contributionController =
-        TextEditingController(
+    final TextEditingController contributionController = TextEditingController(
       text: existingMember == null
           ? ''
-          : _toDouble(existingMember['contribution'])
-              .toStringAsFixed(0),
+          : _toDouble(existingMember['contribution']).toStringAsFixed(0),
     );
 
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -917,8 +838,7 @@ class _CommitteeDetailsViewState
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: contributionController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(
+                      keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
                       style: TextStyle(color: primaryText),
@@ -932,8 +852,7 @@ class _CommitteeDetailsViewState
                           return 'Please enter contribution';
                         }
 
-                        final double? amount =
-                            double.tryParse(value.trim());
+                        final double? amount = double.tryParse(value.trim());
 
                         if (amount == null || amount <= 0) {
                           return 'Enter a valid amount';
@@ -949,10 +868,7 @@ class _CommitteeDetailsViewState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: secondaryText),
-                ),
+                child: Text('Cancel', style: TextStyle(color: secondaryText)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -963,8 +879,8 @@ class _CommitteeDetailsViewState
                   if (!formKey.currentState!.validate()) return;
 
                   final String name = nameController.text.trim();
-                  final String fatherHusbandName =
-                      fatherHusbandController.text.trim();
+                  final String fatherHusbandName = fatherHusbandController.text
+                      .trim();
                   final String phone = phoneController.text.trim();
                   final double contribution = double.parse(
                     contributionController.text.trim(),
@@ -986,8 +902,7 @@ class _CommitteeDetailsViewState
                   }
 
                   if (isEdit && editIndex != null) {
-                    final bool updated =
-                        committeeController.updateMember(
+                    final bool updated = committeeController.updateMember(
                       index: editIndex,
                       name: name,
                       fatherName: fatherHusbandName,
@@ -1003,9 +918,7 @@ class _CommitteeDetailsViewState
                     ScaffoldMessenger.of(this.context).showSnackBar(
                       SnackBar(
                         backgroundColor: greenAccent,
-                        content: const Text(
-                          'Member updated successfully.',
-                        ),
+                        content: const Text('Member updated successfully.'),
                       ),
                     );
                     return;
@@ -1017,8 +930,7 @@ class _CommitteeDetailsViewState
                       committeeController.members.length + 1;
 
                   if (selectedMembers <= 0 ||
-                      committeeController.members.length >=
-                          selectedMembers) {
+                      committeeController.members.length >= selectedMembers) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -1078,8 +990,7 @@ class _CommitteeDetailsViewState
     }
 
     final String name =
-        committeeController.members[index]['name']?.toString() ??
-            'Member';
+        committeeController.members[index]['name']?.toString() ?? 'Member';
 
     showDialog(
       context: context,
@@ -1087,10 +998,7 @@ class _CommitteeDetailsViewState
         return Theme(
           data: dialogTheme,
           child: AlertDialog(
-            title: Text(
-              'Delete Member',
-              style: TextStyle(color: primaryText),
-            ),
+            title: Text('Delete Member', style: TextStyle(color: primaryText)),
             content: Text(
               'Are you sure you want to delete $name?',
               style: TextStyle(color: primaryText),
@@ -1098,10 +1006,7 @@ class _CommitteeDetailsViewState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: secondaryText),
-                ),
+                child: Text('Cancel', style: TextStyle(color: secondaryText)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -1116,9 +1021,7 @@ class _CommitteeDetailsViewState
                   ScaffoldMessenger.of(this.context).showSnackBar(
                     SnackBar(
                       backgroundColor: greenAccent,
-                      content: const Text(
-                        'Member deleted successfully.',
-                      ),
+                      content: const Text('Member deleted successfully.'),
                     ),
                   );
                 },
@@ -1135,23 +1038,15 @@ class _CommitteeDetailsViewState
   // MEMBER CARD
   // --------------------------------------------------
 
-  Widget _buildMemberCard(
-    Map<String, dynamic> member,
-    int index,
-  ) {
+  Widget _buildMemberCard(Map<String, dynamic> member, int index) {
     final String name = member['name']?.toString() ?? 'Member';
 
     final String fatherHusband =
-        (member['fatherHusbandName'] ??
-                member['fatherName'] ??
-                '')
-            .toString();
+        (member['fatherHusbandName'] ?? member['fatherName'] ?? '').toString();
 
     final String phone = member['phone']?.toString() ?? '';
-    final double contribution =
-        _toDouble(member['contribution']);
-    final String status =
-        member['paymentStatus']?.toString() ?? 'Pending';
+    final double contribution = _toDouble(member['contribution']);
+    final String status = member['paymentStatus']?.toString() ?? 'Pending';
 
     final bool received = status.toLowerCase() == 'received';
 
@@ -1173,9 +1068,7 @@ class _CommitteeDetailsViewState
                 CircleAvatar(
                   backgroundColor: greenBackground,
                   foregroundColor: greenText,
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : 'M',
-                  ),
+                  child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'M'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1195,10 +1088,7 @@ class _CommitteeDetailsViewState
                         fatherHusband.isEmpty
                             ? 'Father/Husband: Not Added'
                             : 'Father/Husband: $fatherHusband',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: secondaryText,
-                        ),
+                        style: TextStyle(fontSize: 12, color: secondaryText),
                       ),
                     ],
                   ),
@@ -1216,10 +1106,7 @@ class _CommitteeDetailsViewState
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'edit',
-                      child: Text(
-                        'Edit',
-                        style: TextStyle(color: primaryText),
-                      ),
+                      child: Text('Edit', style: TextStyle(color: primaryText)),
                     ),
                     PopupMenuItem(
                       value: 'delete',
@@ -1238,10 +1125,7 @@ class _CommitteeDetailsViewState
                 Expanded(
                   child: Text(
                     phone.isEmpty ? 'Phone: Not Added' : 'Phone: $phone',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryText,
-                    ),
+                    style: TextStyle(fontSize: 12, color: secondaryText),
                   ),
                 ),
                 Expanded(
@@ -1286,44 +1170,37 @@ class _CommitteeDetailsViewState
   }
 
   Widget _buildEmptyState() {
-    return Card(
-      color: cardBackground,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: outlineColor),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 35,
+    return SizedBox(
+      width: double.infinity,
+      child: Card(
+        color: cardBackground,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: outlineColor),
         ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: 52,
-              color: secondaryText,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No Members Added',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: primaryText,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
+          child: Column(
+            children: [
+              Icon(Icons.people_outline, size: 52, color: secondaryText),
+              const SizedBox(height: 12),
+              Text(
+                'No Members Added',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: primaryText,
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Tap "Add Member" to add committee members.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: secondaryText,
+              const SizedBox(height: 6),
+              Text(
+                'Tap "Add Member" to add committee members.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: secondaryText),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1344,10 +1221,7 @@ class _CommitteeDetailsViewState
         elevation: 0,
         title: Text(
           widget.membersOnly ? 'Members' : 'Digital Committee',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: primaryText,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: primaryText),
         ),
         centerTitle: true,
       ),
@@ -1386,10 +1260,7 @@ class _CommitteeDetailsViewState
                         foregroundColor: primaryAccent,
                       ),
                       onPressed: _showEditCommitteeDialog,
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        size: 18,
-                      ),
+                      icon: const Icon(Icons.edit_outlined, size: 18),
                       label: const Text('Edit'),
                     ),
                   ],
@@ -1397,18 +1268,12 @@ class _CommitteeDetailsViewState
                 const SizedBox(height: 10),
                 Text(
                   'Start Date: ${_formatDate(committeeController.startDate.value)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryText,
-                  ),
+                  style: TextStyle(fontSize: 12, color: secondaryText),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Ending Date: ${_formatDate(committeeController.endingDate.value)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryText,
-                  ),
+                  style: TextStyle(fontSize: 12, color: secondaryText),
                 ),
                 const SizedBox(height: 22),
                 _buildCommitteeSummary(),
@@ -1418,16 +1283,11 @@ class _CommitteeDetailsViewState
               ],
               Row(
                 children: [
-                  Expanded(
-                    child: _buildSectionTitle('Members'),
-                  ),
+                  Expanded(child: _buildSectionTitle('Members')),
                   Text(
                     '${members.length} / '
                     '${committeeController.totalMembers.value} Added',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryText,
-                    ),
+                    style: TextStyle(fontSize: 12, color: secondaryText),
                   ),
                 ],
               ),
@@ -1437,10 +1297,7 @@ class _CommitteeDetailsViewState
               else
                 ...List.generate(
                   members.length,
-                  (index) => _buildMemberCard(
-                    members[index],
-                    index,
-                  ),
+                  (index) => _buildMemberCard(members[index], index),
                 ),
               const SizedBox(height: 100),
             ],
