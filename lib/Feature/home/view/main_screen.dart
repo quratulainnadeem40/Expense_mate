@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/widgets/coach_mark.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -17,8 +18,26 @@ import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import '../controller/home_controller.dart';
 import 'home_screen.dart';
 
-class MainScreen extends StatelessWidget {
-  const MainScreen({Key? key}) : super(key: key);
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // First run only. The tour measures its targets, so it has to wait
+    // until the shell and the home screen are actually on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      CoachMarkController.instance.start(context, expenseMateTour());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +113,7 @@ class MainScreen extends StatelessWidget {
             controller.currentIndex.value == 2;
 
         return SizedBox(
+          key: TourKeys.addButton,
           width: 54,
           height: 54,
           child: FloatingActionButton(
@@ -163,6 +183,7 @@ class MainScreen extends StatelessWidget {
                     _buildNavItem(
                       icon: Icons.swap_horiz_rounded,
                       label: 'Transactions',
+                      tourKey: TourKeys.transactionsTab,
                       index: 1,
                       controller: controller,
                       context: context,
@@ -188,6 +209,7 @@ class MainScreen extends StatelessWidget {
                     _buildNavItem(
                       icon: Icons.category_rounded,
                       label: 'Categories',
+                      tourKey: TourKeys.categoriesTab,
                       index: 2,
                       controller: controller,
                       context: context,
@@ -196,6 +218,7 @@ class MainScreen extends StatelessWidget {
                     _buildNavItem(
                       icon: Icons.bar_chart_rounded,
                       label: 'Reports',
+                      tourKey: TourKeys.reportsTab,
                       index: 3,
                       controller: controller,
                       context: context,
@@ -222,6 +245,8 @@ class MainScreen extends StatelessWidget {
     required HomeController controller,
     required BuildContext context,
     required Color activeColor,
+    // Used by the guided tour to point at this tab.
+    Key? tourKey,
   }) {
     final isDark =
         Theme.of(context).brightness == Brightness.dark;
@@ -236,6 +261,7 @@ class MainScreen extends StatelessWidget {
           controller.currentIndex.value == index;
 
       return InkWell(
+        key: tourKey,
         onTap: () {
           controller.changePage(index);
         },

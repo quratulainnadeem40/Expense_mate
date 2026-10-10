@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 
+import '../controller/committe_controller.dart';
 import '../widgets/schedule_card.dart';
 
 class MonthlyScheduleView extends StatefulWidget {
@@ -24,12 +24,8 @@ class MonthlyScheduleView extends StatefulWidget {
 
 class _MonthlyScheduleViewState
     extends State<MonthlyScheduleView> {
-  final List<String> members = [
-    'Fatima',
-    'Maryam',
-    'Sheeza',
-    'Zara',
-  ];
+  final CommitteeController committeeController =
+      CommitteeController.instance;
 
   late List<Map<String, String>> schedule;
 
@@ -42,7 +38,99 @@ class _MonthlyScheduleViewState
   List<Map<String, String>> _createSchedule() {
     final List<Map<String, String>> result = [];
 
-    final int numberOfMonths = widget.durationMonths;
+    final List<Map<String, dynamic>> actualMembers =
+        committeeController.members.toList();
+
+    final List<String> memberNames = actualMembers
+        .map(
+          (member) =>
+              member['name']?.toString().trim() ?? '',
+        )
+        .where((name) => name.isNotEmpty)
+        .toList();
+
+    if (memberNames.isEmpty) {
+      return result;
+    }
+
+    final double committeeAmount =
+        committeeController.totalPool > 0
+            ? committeeController.totalPool
+            : widget.monthlyContribution *
+                widget.totalMembers;
+
+    /*
+      Special case:
+
+      If the committee duration is 1 month and there are
+      multiple members, each member receives the committee
+      amount on a different date in the same month.
+
+      Example:
+      3 members:
+      Member 1 -> 10th
+      Member 2 -> 20th
+      Member 3 -> 30th
+    */
+    if (widget.durationMonths == 1 &&
+        memberNames.length > 1) {
+      final List<int> receivingDays =
+          _createReceivingDays(
+        memberNames.length,
+        widget.startDate,
+      );
+
+      for (int i = 0; i < memberNames.length; i++) {
+        final DateTime receivingDate = DateTime(
+          widget.startDate.year,
+          widget.startDate.month,
+          receivingDays[i],
+        );
+
+        final String monthName =
+            _monthName(receivingDate.month);
+
+        result.add({
+          'month':
+              '$monthName ${receivingDate.year}',
+          'memberName': memberNames[i],
+          'amount': _formatAmount(committeeAmount),
+          'dueDate':
+              '${receivingDate.day} $monthName ${receivingDate.year}',
+          'status': 'Upcoming',
+        });
+      }
+
+      return result;
+    }
+
+    /*
+      Normal case:
+
+      One member receives the committee amount each month.
+
+      Example:
+      3 members + 3 months
+
+      Month 1 -> Member 1
+      Month 2 -> Member 2
+      Month 3 -> Member 3
+
+      If duration is longer:
+
+      3 members + 6 months
+
+      Month 1 -> Member 1
+      Month 2 -> Member 2
+      Month 3 -> Member 3
+      Month 4 -> Member 1
+      Month 5 -> Member 2
+      Month 6 -> Member 3
+    */
+    final int numberOfMonths =
+        widget.durationMonths > 0
+            ? widget.durationMonths
+            : committeeController.durationInMonths.ceil();
 
     for (int i = 0; i < numberOfMonths; i++) {
       final DateTime monthDate = DateTime(
@@ -51,27 +139,99 @@ class _MonthlyScheduleViewState
         widget.startDate.day,
       );
 
-      final String monthName = _monthName(monthDate.month);
+      final String monthName =
+          _monthName(monthDate.month);
 
       final String memberName =
-          members[i % members.length];
-
-      final String amount =
-          'PKR ${widget.monthlyContribution.toStringAsFixed(0)}';
+          memberNames[i % memberNames.length];
 
       final String dueDate =
           '${monthDate.day} $monthName ${monthDate.year}';
 
       result.add({
-        'month': '$monthName ${monthDate.year}',
+        'month':
+            '$monthName ${monthDate.year}',
         'memberName': memberName,
-        'amount': amount,
+        'amount': _formatAmount(committeeAmount),
         'dueDate': dueDate,
         'status': 'Upcoming',
       });
     }
 
     return result;
+  }
+
+  List<int> _createReceivingDays(
+    int memberCount,
+    DateTime startDate,
+  ) {
+    final int daysInMonth = DateTime(
+      startDate.year,
+      startDate.month + 1,
+      0,
+    ).day;
+
+    if (memberCount == 1) {
+      return [
+        startDate.day.clamp(1, daysInMonth),
+      ];
+    }
+
+    /*
+      For 3 members this gives:
+      10, 20, 30
+
+      For other member counts, dates are distributed
+      across the month as evenly as possible.
+    */
+    final List<int> days = [];
+
+    for (int i = 1; i <= memberCount; i++) {
+      int day =
+          ((daysInMonth * i) / memberCount).round();
+
+      if (day < 1) {
+        day = 1;
+      }
+
+      if (day > daysInMonth) {
+        day = daysInMonth;
+      }
+
+      if (days.isNotEmpty &&
+          day <= days.last) {
+        day = days.last + 1;
+
+        if (day > daysInMonth) {
+          day = daysInMonth;
+        }
+      }
+
+      days.add(day);
+    }
+
+    return days;
+  }
+
+  String _formatAmount(double amount) {
+    final int roundedAmount = amount.round();
+
+    final String value =
+        roundedAmount.toString();
+
+    final StringBuffer result =
+        StringBuffer();
+
+    for (int i = 0; i < value.length; i++) {
+      if (i > 0 &&
+          (value.length - i) % 3 == 0) {
+        result.write(',');
+      }
+
+      result.write(value[i]);
+    }
+
+    return 'PKR $result';
   }
 
   String _monthName(int month) {
@@ -93,312 +253,76 @@ class _MonthlyScheduleViewState
     return months[month - 1];
   }
 
-  void _changeReceivingMember(int index) {
-    final String currentMember =
-        schedule[index]['memberName'] ?? members.first;
-
-    final TextEditingController nameController =
-        TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        final bool isDark =
-            Theme.of(sheetContext).brightness ==
-                Brightness.dark;
-
-        final Color backgroundColor =
-            isDark ? const Color(0xFF0A0A0A) : Colors.white;
-
-        final Color primaryTextColor =
-            isDark ? Colors.white : Colors.black87;
-
-        final Color secondaryTextColor =
-            isDark ? Colors.white60 : Colors.black54;
-
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              color: backgroundColor,
-              padding: const EdgeInsets.all(20),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Select Receiving Member',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: primaryTextColor,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      schedule[index]['month'] ?? 'Month',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: secondaryTextColor,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    ...List.generate(
-                      members.length,
-                      (memberIndex) {
-                        final String member =
-                            members[memberIndex];
-
-                        final bool isSelected =
-                            member == currentMember;
-
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-
-                          leading: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 24,
-                                child: Text(
-                                  '${memberIndex + 1}.',
-                                  style: TextStyle(
-                                    color: primaryTextColor,
-                                    fontWeight:
-                                        FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.person_rounded,
-                                color: primaryTextColor,
-                              ),
-                            ],
-                          ),
-
-                          title: Text(
-                            member,
-                            style: TextStyle(
-                              color: primaryTextColor,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                          ),
-
-                          trailing: isSelected
-                              ? Icon(
-                                  Icons.check_circle_rounded,
-                                  color: primaryTextColor,
-                                )
-                              : null,
-
-                          onTap: () {
-                            setState(() {
-                              schedule[index]['memberName'] =
-                                  member;
-                            });
-
-                            Navigator.pop(sheetContext);
-
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${schedule[index]['month']} receiving member changed to $member.',
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-
-                    const Divider(),
-
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-
-                      leading: Container(
-                        width: 30,
-                        height: 30,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: secondaryTextColor,
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '+',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: primaryTextColor,
-                          ),
-                        ),
-                      ),
-
-                      title: Text(
-                        'Add a Name',
-                        style: TextStyle(
-                          color: primaryTextColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-
-                      subtitle: Text(
-                        'Enter another receiving member',
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontSize: 12,
-                        ),
-                      ),
-
-                      onTap: () async {
-                        nameController.clear();
-
-                        final String? newName =
-                            await showDialog<String>(
-                          context: sheetContext,
-                          builder: (dialogContext) {
-                            return AlertDialog(
-                              title: const Text(
-                                'Add a Name',
-                              ),
-                              content: TextField(
-                                controller:
-                                    nameController,
-                                autofocus: true,
-                                textCapitalization:
-                                    TextCapitalization.words,
-                                decoration:
-                                    const InputDecoration(
-                                  hintText:
-                                      'Enter member name',
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(
-                                      dialogContext,
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Cancel',
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    final String name =
-                                        nameController.text
-                                            .trim();
-
-                                    if (name.isNotEmpty) {
-                                      Navigator.pop(
-                                        dialogContext,
-                                        name,
-                                      );
-                                    }
-                                  },
-                                  child: const Text(
-                                    'Add',
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        if (newName != null &&
-                            newName.isNotEmpty) {
-                          setState(() {
-                            if (!members.contains(newName)) {
-                              members.add(newName);
-                            }
-
-                            schedule[index]['memberName'] =
-                                newName;
-                          });
-
-                          Navigator.pop(sheetContext);
-
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${schedule[index]['month']} receiving member changed to $newName.',
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    ).whenComplete(() {
-      nameController.dispose();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+        Theme.of(context).brightness ==
+            Brightness.dark;
 
     final Color backgroundColor =
-        isDark ? Colors.black : const Color(0xFFF5F5F5);
+        isDark
+            ? Colors.black
+            : const Color(0xFFF5F5F5);
 
     final Color cardColor =
-        isDark ? const Color(0xFF0A0A0A) : Colors.white;
+        isDark
+            ? const Color(0xFF0A0A0A)
+            : Colors.white;
 
     final Color primaryTextColor =
-        isDark ? Colors.white : Colors.black87;
+        isDark
+            ? Colors.white
+            : Colors.black87;
 
     final Color secondaryTextColor =
-        isDark ? Colors.white60 : Colors.black54;
+        isDark
+            ? Colors.white60
+            : Colors.black54;
 
     final Color borderColor =
-        isDark ? Colors.white10 : Colors.black12;
+        isDark
+            ? Colors.white10
+            : Colors.black12;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Monthly Schedule',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_month_rounded,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Monthly Schedule',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         backgroundColor:
-            isDark ? Colors.black : Colors.white,
-        foregroundColor: primaryTextColor,
+            isDark
+                ? Colors.black
+                : Colors.white,
+        foregroundColor:
+            primaryTextColor,
         elevation: 0,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding:
+              const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(18),
+                padding:
+                    const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius:
@@ -414,48 +338,63 @@ class _MonthlyScheduleViewState
                     Row(
                       children: [
                         Icon(
-                          Icons.calendar_month_rounded,
+                          Icons
+                              .calendar_month_rounded,
                           size: 28,
-                          color: primaryTextColor,
+                          color:
+                              primaryTextColor,
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(
+                          width: 10,
+                        ),
                         Expanded(
                           child: Text(
                             'Receiving Order',
                             style: TextStyle(
                               fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                              color: primaryTextColor,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color:
+                                  primaryTextColor,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(
+                      height: 10,
+                    ),
                     Text(
-                      'Each month, one member receives the committee amount according to the receiving order.',
+                      'Each member receives the committee amount automatically according to the receiving order.',
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.5,
-                        color: secondaryTextColor,
+                        color:
+                            secondaryTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(
+                height: 22,
+              ),
 
               Text(
                 'Monthly Schedule',
                 style: TextStyle(
                   fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
+                  fontWeight:
+                      FontWeight.bold,
+                  color:
+                      primaryTextColor,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: 12,
+              ),
 
               if (schedule.isEmpty)
                 _buildEmptyState(
@@ -470,34 +409,36 @@ class _MonthlyScheduleViewState
                 ...List.generate(
                   schedule.length,
                   (index) {
-                    final item = schedule[index];
+                    final Map<String, String>
+                        item = schedule[index];
 
-                    return GestureDetector(
-                      onTap: () {
-                        _changeReceivingMember(index);
-                      },
-                      child: ScheduleCard(
-                        title:
-                            '${index + 1}. ${item['month'] ?? 'Month'}',
-                        dueDate:
-                            '${item['memberName'] ?? 'Member'} • ${item['dueDate'] ?? 'Date'}',
-                        amount:
-                            item['amount'] ?? 'PKR 0',
-                        status:
-                            item['status'] ?? 'Upcoming',
-                      ),
+                    return ScheduleCard(
+                      title:
+                          '${index + 1}. ${item['month'] ?? 'Month'}',
+                      dueDate:
+                          '${item['memberName'] ?? 'Member'} • ${item['dueDate'] ?? 'Date'}',
+                      amount:
+                          item['amount'] ??
+                              'PKR 0',
+                      status:
+                          item['status'] ??
+                              'Upcoming',
                     );
                   },
                 ),
 
-              const SizedBox(height: 8),
+              const SizedBox(
+                height: 8,
+              ),
 
               Text(
-                'Tap a month to change its receiving member.',
-                textAlign: TextAlign.center,
+                'Receiving order is automatically generated from the committee members.',
+                textAlign:
+                    TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: secondaryTextColor,
+                  color:
+                      secondaryTextColor,
                 ),
               ),
             ],
@@ -515,13 +456,15 @@ class _MonthlyScheduleViewState
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 20,
         vertical: 35,
       ),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+            BorderRadius.circular(18),
         border: Border.all(
           color: borderColor,
         ),
@@ -529,26 +472,36 @@ class _MonthlyScheduleViewState
       child: Column(
         children: [
           Icon(
-            Icons.calendar_month_outlined,
+            Icons
+                .calendar_month_outlined,
             size: 55,
-            color: secondaryTextColor,
+            color:
+                secondaryTextColor,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
           Text(
             'No Schedule Available',
             style: TextStyle(
               fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: primaryTextColor,
+              fontWeight:
+                  FontWeight.bold,
+              color:
+                  primaryTextColor,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(
+            height: 7,
+          ),
           Text(
-            'Monthly receiving schedule will appear here.',
-            textAlign: TextAlign.center,
+            'Add committee members first to generate the receiving schedule.',
+            textAlign:
+                TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: secondaryTextColor,
+              color:
+                  secondaryTextColor,
             ),
           ),
         ],
@@ -556,4 +509,3 @@ class _MonthlyScheduleViewState
     );
   }
 }
-

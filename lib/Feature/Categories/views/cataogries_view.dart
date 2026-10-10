@@ -318,8 +318,24 @@ class _CategoriesViewState extends State<CategoriesView> {
   ///
   /// The Add Category dialog already shows emoji, so the list has to
   /// match or the icon changes the moment a category is saved.
-  String _getEmoji(String iconName) {
-    switch (iconName.toLowerCase().trim()) {
+  /// Emoji for a category.
+  ///
+  /// [iconName] is whatever is stored in the record, which is not always
+  /// one of the names below - a synced row can carry anything. When it
+  /// is not recognised the category's own name is tried, so Bills and
+  /// Health do not fall through to the generic box.
+  String _getEmoji(String iconName, [String categoryName = '']) {
+    final byIcon = _emojiForKey(iconName);
+    if (byIcon != null) return byIcon;
+
+    final byName = _emojiForKey(categoryName);
+    if (byName != null) return byName;
+
+    return '\u{1F4E6}';
+  }
+
+  String? _emojiForKey(String key) {
+    switch (key.toLowerCase().trim()) {
       case 'food':
       case 'food & dining':
       case 'restaurant':
@@ -426,8 +442,10 @@ class _CategoriesViewState extends State<CategoriesView> {
         return '\u{1F516}';
 
       case 'other':
-      default:
         return '\u{1F4E6}';
+
+      default:
+        return null;
     }
   }
 
@@ -730,6 +748,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                 () => CategoryTransactionsScreen(
                                   categoryId: category.id,
                                   categoryName: category.name,
+                                  categoryType: category.type,
                                 ),
                               );
                             }
@@ -764,7 +783,7 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                                   alignment: Alignment.center,
                                   child: Text(
-                                    _getEmoji(category.icon),
+                                    _getEmoji(category.icon, category.name),
                                     style: const TextStyle(fontSize: 23),
                                   ),
                                 ),

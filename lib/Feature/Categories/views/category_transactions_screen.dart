@@ -4,11 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class CategoryTransactionsScreen extends StatefulWidget {
   final String categoryId;
   final String categoryName;
+  final String categoryType;
 
   const CategoryTransactionsScreen({
     super.key,
     required this.categoryId,
     required this.categoryName,
+    required this.categoryType,
   });
 
   @override
@@ -274,9 +276,7 @@ class _CategoryTransactionsScreenState
         future: _transactionsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
