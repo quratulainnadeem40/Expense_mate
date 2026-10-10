@@ -136,6 +136,37 @@ class UdhaarController extends GetxController {
     }).toList();
   }
 
+  /// How many people sit under each filter, for the chip labels.
+  int countFor(UdhaarFilter value) {
+    final all = people;
+
+    switch (value) {
+      case UdhaarFilter.toReceive:
+        return all.where((p) => !p.isClear && p.theyOweYou).length;
+      case UdhaarFilter.toPay:
+        return all.where((p) => !p.isClear && !p.theyOweYou).length;
+      case UdhaarFilter.settled:
+        return all.where((p) => p.isClear).length;
+      case UdhaarFilter.all:
+        return all.length;
+    }
+  }
+
+  /// Names already on record, for the suggestions in the add sheet.
+  List<String> get knownNames =>
+      people.map((p) => p.name).where((n) => n.isNotEmpty).toList();
+
+  /// Last phone saved for a person, so it is not typed again.
+  String phoneFor(String personName) {
+    final key = personName.trim().toLowerCase();
+
+    for (final person in people) {
+      if (person.name.trim().toLowerCase() == key) return person.phone;
+    }
+
+    return '';
+  }
+
   List<UdhaarEntry> entriesFor(String personName) {
     final key = personName.trim().toLowerCase();
 
