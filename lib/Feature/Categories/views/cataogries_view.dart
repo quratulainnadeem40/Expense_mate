@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
+import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
@@ -1124,6 +1126,24 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                                       _buildDrawerOption(
                                         context: context,
+                                        icon: Icons
+                                            .account_balance_wallet_rounded,
+                                        iconColor:
+                                            const Color(0xFF3A5BA0),
+                                        emoji: '🧮',
+                                        title: 'Udhaar',
+                                        subtitle:
+                                            'Money you lent out and money you owe',
+                                        onTap: () => _closeDrawerAndNavigate(
+                                          () => UdhaarView(),
+                                          binding: UdhaarBinding(),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      _buildDrawerOption(
+                                        context: context,
                                         icon: Icons.person_rounded,
                                         iconColor: const Color(0xFFF2C14E),
                                         title: 'Profile',
@@ -1366,6 +1386,19 @@ class _CategoriesViewState extends State<CategoriesView> {
                         subtitle: 'Manage your committee and member payments',
                         onTap: () =>
                             _closeDrawerAndNavigate(() => CommitteeView()),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFF3A5BA0),
+                        emoji: '🧮',
+                        title: 'Udhaar',
+                        subtitle: 'Money you lent out and money you owe',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => UdhaarView(),
+                          binding: UdhaarBinding(),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       _buildDrawerOption(

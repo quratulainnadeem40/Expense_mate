@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
+import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
@@ -259,6 +261,21 @@ class ReportView extends StatelessWidget {
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(() => const CommitteeView());
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDrawerOption(
+                          context: context,
+                          icon: Icons.account_balance_wallet_rounded,
+                          iconColor: const Color(0xFF3A5BA0),
+                          title: 'Udhaar',
+                          subtitle: 'Money you lent out and money you owe',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Get.to(
+                              () => UdhaarView(),
+                              binding: UdhaarBinding(),
+                            );
                           },
                         ),
                         const SizedBox(height: 12),

@@ -341,7 +341,7 @@ class HomeScreen extends StatelessWidget {
                           title: 'Udhaar',
                           subtitle: 'Money you lent out and money you owe',
                           onTap: () => _closeDrawerAndNavigate(
-                            () => const UdhaarView(),
+                            () => UdhaarView(),
                             binding: UdhaarBinding(),
                           ),
                         ),

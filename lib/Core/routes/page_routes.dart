@@ -45,7 +45,7 @@ class AppPages {
   static final pages = [
     GetPage(
       name: AppRoutes.udhaar,
-      page: () => const UdhaarView(),
+      page: () => UdhaarView(),
       binding: UdhaarBinding(),
     ),
 
