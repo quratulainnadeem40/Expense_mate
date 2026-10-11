@@ -31,18 +31,23 @@ class ExpenseController extends GetxController {
   late CategoriesController categoriesController;
   late WalletsController walletsController;
 
-  List<dynamic> get expenseCategories {
-    return categoriesController.categoryList
-        .where((category) => category.type == 'expense')
-        .toList();
-  }
+  /// Categories available for Expense transactions.
+List<CategoryModel> get expenseCategories {
+  return categoriesController.categoryList.where((category) {
+    final type = category.type.trim().toLowerCase();
 
-  List<dynamic> get incomeCategories {
-    return categoriesController.categoryList
-        .where((category) => category.type == 'income')
-        .toList();
-  }
+    return type == 'expense' || type == 'both';
+  }).toList();
+}
 
+/// Categories available for Income transactions.
+List<CategoryModel> get incomeCategories {
+  return categoriesController.categoryList.where((category) {
+    final type = category.type.trim().toLowerCase();
+
+    return type == 'income' || type == 'both';
+  }).toList();
+}
   @override
   void onInit() {
     super.onInit();
@@ -95,44 +100,65 @@ class ExpenseController extends GetxController {
   /// This is what makes a typed-in category show up on the Categories
   /// screen and in the dropdown next time, instead of being stranded
   /// inside one transaction.
-  Future<String> _resolveCategoryId(String name, String type) async {
-    final normalized = name.trim().toLowerCase();
+ Future<String> _resolveCategoryId(String name, String type) async {
+  final normalizedName = name.trim().toLowerCase();
+  final normalizedType = type.trim().toLowerCase();
 
-    CategoryModel? match;
-    for (final category in categoriesController.categoryList) {
-      if (category.name.trim().toLowerCase() == normalized) {
-        match = category;
-        break;
-      }
-    }
-
-    // A default category such as Food is stored as default_food until
-    // someone actually uses it, so treat that as a real match too.
-    if (match != null && !match.id.startsWith('default_')) {
-      return match.id;
-    }
-
-    await categoriesController.addCategory(
-      CategoryModel(
-        id: '',
-        name: name.trim(),
-        icon: _iconNameFor(name),
-        colorValue: 0xFF2E7D32,
-        isDefault: false,
-        type: type,
-      ),
-      closeDialog: false,
-    );
-
-    for (final category in categoriesController.categoryList) {
-      if (category.name.trim().toLowerCase() == normalized &&
-          !category.id.startsWith('default_')) {
-        return category.id;
-      }
-    }
-
+  if (normalizedName.isEmpty) {
     return '';
   }
+
+  // Search by BOTH category name and transaction type.
+  CategoryModel? match;
+
+  for (final category in categoriesController.categoryList) {
+    final existingName = category.name.trim().toLowerCase();
+    final existingType = category.type.trim().toLowerCase();
+
+    if (existingName != normalizedName) {
+      continue;
+    }
+
+    if (existingType == normalizedType) {
+      match = category;
+      break;
+    }
+
+    if (existingType == 'both') {
+      match ??= category;
+    }
+  }
+
+  // Reuse an existing category of the correct type.
+  if (match != null && !match.id.startsWith('default_')) {
+    return match.id;
+  }
+
+  // Create a real category if only a virtual default exists
+  // or no category with this name/type exists.
+  await categoriesController.addCategory(
+    CategoryModel(
+      id: '',
+      name: name.trim(),
+      icon: _iconNameFor(name),
+      colorValue: 0xFF2E7D32,
+      isDefault: false,
+      type: normalizedType,
+    ),
+    closeDialog: false,
+  );
+
+  // Reload the current in-memory list after insertion.
+  for (final category in categoriesController.categoryList) {
+    if (category.name.trim().toLowerCase() == normalizedName &&
+        category.type.trim().toLowerCase() == normalizedType &&
+        !category.id.startsWith('default_')) {
+      return category.id;
+    }
+  }
+
+  return '';
+}
 
   /// Picks a sensible icon from the name, so a new category does not all
   /// land on the generic box.
