@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:get/get.dart';
@@ -55,12 +54,8 @@ class CommitteeController extends GetxController {
     return username.trim().toLowerCase();
   }
 
-  bool isUsernameTaken(
-    String username, {
-    int? excludingMemberIndex,
-  }) {
-    final String normalizedUsername =
-        _normaliseUsername(username);
+  bool isUsernameTaken(String username, {int? excludingMemberIndex}) {
+    final String normalizedUsername = _normaliseUsername(username);
 
     if (normalizedUsername.isEmpty) {
       return false;
@@ -68,8 +63,7 @@ class CommitteeController extends GetxController {
 
     // Check current committee members.
     for (final entry in members.asMap().entries) {
-      if (excludingMemberIndex != null &&
-          entry.key == excludingMemberIndex) {
+      if (excludingMemberIndex != null && entry.key == excludingMemberIndex) {
         continue;
       }
 
@@ -85,8 +79,7 @@ class CommitteeController extends GetxController {
 
     // Check members saved in other committees.
     for (final committee in committees) {
-      final String committeeId =
-          committee['id']?.toString() ?? '';
+      final String committeeId = committee['id']?.toString() ?? '';
 
       if (activeCommitteeId.value != null &&
           committeeId == activeCommitteeId.value) {
@@ -137,44 +130,37 @@ class CommitteeController extends GetxController {
 
     committees.assignAll(
       decodedValue.map((item) {
-        final Map<String, dynamic> committee =
-            Map<String, dynamic>.from(item as Map);
+        final Map<String, dynamic> committee = Map<String, dynamic>.from(
+          item as Map,
+        );
 
-        committee['startDate'] =
-            _parseDate(committee['startDate']);
+        committee['startDate'] = _parseDate(committee['startDate']);
 
-        committee['endingDate'] =
-            _parseDate(committee['endingDate']);
+        committee['endingDate'] = _parseDate(committee['endingDate']);
 
         final dynamic savedPayments = committee['payments'];
 
         if (savedPayments is List) {
           committee['payments'] = savedPayments.map((payment) {
-            final Map<String, dynamic> restored =
-                Map<String, dynamic>.from(payment as Map);
+            final Map<String, dynamic> restored = Map<String, dynamic>.from(
+              payment as Map,
+            );
 
-            restored['paymentDate'] =
-                _parseDate(restored['paymentDate']);
+            restored['paymentDate'] = _parseDate(restored['paymentDate']);
 
             return restored;
           }).toList();
         }
 
         // Restore saved spinner selections.
-        final dynamic savedSelections =
-            committee['receivingSelections'];
+        final dynamic savedSelections = committee['receivingSelections'];
 
         if (savedSelections is Map) {
-          committee['receivingSelections'] =
-              savedSelections.map(
-            (key, value) => MapEntry(
-              key.toString(),
-              value.toString(),
-            ),
+          committee['receivingSelections'] = savedSelections.map(
+            (key, value) => MapEntry(key.toString(), value.toString()),
           );
         } else {
-          committee['receivingSelections'] =
-              <String, String>{};
+          committee['receivingSelections'] = <String, String>{};
         }
 
         return committee;
@@ -182,15 +168,12 @@ class CommitteeController extends GetxController {
     );
 
     if (committees.isNotEmpty) {
-      final dynamic savedActiveId =
-          _storage.get('active_committee_id');
+      final dynamic savedActiveId = _storage.get('active_committee_id');
 
       final String? activeId = savedActiveId?.toString();
 
-      final Map<String, dynamic>? activeCommittee =
-          committees.firstWhereOrNull(
-        (committee) =>
-            committee['id']?.toString() == activeId,
+      final Map<String, dynamic>? activeCommittee = committees.firstWhereOrNull(
+        (committee) => committee['id']?.toString() == activeId,
       );
 
       _loadCommittee(activeCommittee ?? committees.first);
@@ -204,15 +187,10 @@ class CommitteeController extends GetxController {
   void _persistCommittees() {
     _storage.put(
       _committeesKey,
-      jsonEncode(
-        committees.map(_encodeValue).toList(),
-      ),
+      jsonEncode(committees.map(_encodeValue).toList()),
     );
 
-    _storage.put(
-      'active_committee_id',
-      activeCommitteeId.value,
-    );
+    _storage.put('active_committee_id', activeCommitteeId.value);
   }
 
   dynamic _encodeValue(dynamic value) {
@@ -222,10 +200,7 @@ class CommitteeController extends GetxController {
 
     if (value is Map) {
       return value.map(
-        (key, item) => MapEntry(
-          key.toString(),
-          _encodeValue(item),
-        ),
+        (key, item) => MapEntry(key.toString(), _encodeValue(item)),
       );
     }
 
@@ -244,9 +219,7 @@ class CommitteeController extends GetxController {
     return '${DateTime.now().microsecondsSinceEpoch}_${_nextId++}';
   }
 
-  Map<String, dynamic> _copyMap(
-    Map<String, dynamic> source,
-  ) {
+  Map<String, dynamic> _copyMap(Map<String, dynamic> source) {
     return Map<String, dynamic>.from(source);
   }
 
@@ -267,14 +240,9 @@ class CommitteeController extends GetxController {
       'unit': durationUnit.value,
       'startDate': startDate.value,
       'endingDate': endingDate.value,
-      'members': members
-          .map((member) => _copyMap(member))
-          .toList(),
-      'payments': payments
-          .map((payment) => _copyMap(payment))
-          .toList(),
-      'receivingSelections':
-          Map<String, String>.from(receivingSelections),
+      'members': members.map((member) => _copyMap(member)).toList(),
+      'payments': payments.map((payment) => _copyMap(payment)).toList(),
+      'receivingSelections': Map<String, String>.from(receivingSelections),
     };
   }
 
@@ -289,8 +257,7 @@ class CommitteeController extends GetxController {
       (committee) => committee['id']?.toString() == id,
     );
 
-    final Map<String, dynamic> snapshot =
-        _currentCommitteeSnapshot();
+    final Map<String, dynamic> snapshot = _currentCommitteeSnapshot();
 
     if (index == -1) {
       committees.add(snapshot);
@@ -360,72 +327,57 @@ class CommitteeController extends GetxController {
   }
 
   void _loadCommittee(Map<String, dynamic> committee) {
-    activeCommitteeId.value =
-        committee['id']?.toString();
+    activeCommitteeId.value = committee['id']?.toString();
 
-    committeeName.value =
-        committee['name']?.toString() ?? '';
+    committeeName.value = committee['name']?.toString() ?? '';
 
-    monthlyContribution.value = double.tryParse(
-          committee['contribution']?.toString() ?? '0',
-        ) ??
-        0;
+    monthlyContribution.value =
+        double.tryParse(committee['contribution']?.toString() ?? '0') ?? 0;
 
-    totalMembers.value = int.tryParse(
-          (committee['memberCount'] ??
-                  committee['membersCount'] ??
-                  '0')
+    totalMembers.value =
+        int.tryParse(
+          (committee['memberCount'] ?? committee['membersCount'] ?? '0')
               .toString(),
         ) ??
         0;
 
-    duration.value = int.tryParse(
-          committee['duration']?.toString() ?? '0',
-        ) ??
-        0;
+    duration.value =
+        int.tryParse(committee['duration']?.toString() ?? '0') ?? 0;
 
     durationUnit.value =
         committee['unit']?.toString() ??
-            committee['durationUnit']?.toString() ??
-            'Months';
+        committee['durationUnit']?.toString() ??
+        'Months';
 
     startDate.value = _parseDate(committee['startDate']);
     endingDate.value = _parseDate(committee['endingDate']);
 
     final dynamic savedMembers = committee['members'];
     final dynamic savedPayments = committee['payments'];
-    final dynamic savedSelections =
-        committee['receivingSelections'];
+    final dynamic savedSelections = committee['receivingSelections'];
 
     members.assignAll(
       savedMembers is List
           ? savedMembers
-              .whereType<Map>()
-              .map(
-                (item) => Map<String, dynamic>.from(item),
-              )
-              .toList()
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList()
           : <Map<String, dynamic>>[],
     );
 
     payments.assignAll(
       savedPayments is List
           ? savedPayments
-              .whereType<Map>()
-              .map(
-                (item) => Map<String, dynamic>.from(item),
-              )
-              .toList()
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList()
           : <Map<String, dynamic>>[],
     );
 
     receivingSelections.assignAll(
       savedSelections is Map
           ? savedSelections.map(
-              (key, value) => MapEntry(
-                key.toString(),
-                value.toString(),
-              ),
+              (key, value) => MapEntry(key.toString(), value.toString()),
             )
           : <String, String>{},
     );
@@ -448,8 +400,7 @@ class CommitteeController extends GetxController {
   }) {
     if (!hasCommittee) return false;
 
-    if (totalMembers.value > 0 &&
-        members.length >= totalMembers.value) {
+    if (totalMembers.value > 0 && members.length >= totalMembers.value) {
       return false;
     }
 
@@ -468,20 +419,15 @@ class CommitteeController extends GetxController {
     }
 
     final bool alreadyExists = members.any((member) {
-      final String existingName =
-          member['name']?.toString().trim() ?? '';
+      final String existingName = member['name']?.toString().trim() ?? '';
 
       final String existingFatherName =
-          (member['fatherHusbandName'] ??
-                  member['fatherName'] ??
-                  '')
+          (member['fatherHusbandName'] ?? member['fatherName'] ?? '')
               .toString()
               .trim();
 
-      return existingName.toLowerCase() ==
-              memberName.toLowerCase() &&
-          existingFatherName.toLowerCase() ==
-              fatherHusbandName.toLowerCase();
+      return existingName.toLowerCase() == memberName.toLowerCase() &&
+          existingFatherName.toLowerCase() == fatherHusbandName.toLowerCase();
     });
 
     if (alreadyExists) return false;
@@ -524,8 +470,7 @@ class CommitteeController extends GetxController {
     final String fatherHusbandName = fatherName.trim();
 
     final String memberUsername =
-        (username ?? oldMember['username']?.toString() ?? '')
-            .trim();
+        (username ?? oldMember['username']?.toString() ?? '').trim();
 
     if (memberName.isEmpty ||
         fatherHusbandName.isEmpty ||
@@ -533,33 +478,24 @@ class CommitteeController extends GetxController {
       return false;
     }
 
-    if (isUsernameTaken(
-      memberUsername,
-      excludingMemberIndex: index,
-    )) {
+    if (isUsernameTaken(memberUsername, excludingMemberIndex: index)) {
       return false;
     }
 
-    final bool alreadyExists =
-        members.asMap().entries.any((entry) {
+    final bool alreadyExists = members.asMap().entries.any((entry) {
       if (entry.key == index) return false;
 
       final Map<String, dynamic> member = entry.value;
 
-      final String existingName =
-          member['name']?.toString().trim() ?? '';
+      final String existingName = member['name']?.toString().trim() ?? '';
 
       final String existingFatherName =
-          (member['fatherHusbandName'] ??
-                  member['fatherName'] ??
-                  '')
+          (member['fatherHusbandName'] ?? member['fatherName'] ?? '')
               .toString()
               .trim();
 
-      return existingName.toLowerCase() ==
-              memberName.toLowerCase() &&
-          existingFatherName.toLowerCase() ==
-              fatherHusbandName.toLowerCase();
+      return existingName.toLowerCase() == memberName.toLowerCase() &&
+          existingFatherName.toLowerCase() == fatherHusbandName.toLowerCase();
     });
 
     if (alreadyExists) return false;
@@ -572,8 +508,7 @@ class CommitteeController extends GetxController {
       'fatherHusbandName': fatherHusbandName,
       'phone': phone.trim(),
       'contribution': contribution,
-      'paymentStatus':
-          oldMember['paymentStatus'] ?? 'Pending',
+      'paymentStatus': oldMember['paymentStatus'] ?? 'Pending',
     };
 
     members.refresh();
@@ -589,20 +524,16 @@ class CommitteeController extends GetxController {
   void deleteMember(int index) {
     if (index < 0 || index >= members.length) return;
 
-    final String deletedName =
-        members[index]['name']?.toString() ?? '';
+    final String deletedName = members[index]['name']?.toString() ?? '';
 
     members.removeAt(index);
 
     payments.removeWhere(
-      (payment) =>
-          payment['memberName']?.toString() == deletedName,
+      (payment) => payment['memberName']?.toString() == deletedName,
     );
 
     // Remove saved selections for the deleted member.
-    receivingSelections.removeWhere(
-      (key, value) => value == deletedName,
-    );
+    receivingSelections.removeWhere((key, value) => value == deletedName);
 
     members.refresh();
     payments.refresh();
@@ -647,13 +578,51 @@ class CommitteeController extends GetxController {
 
     payments[index]['status'] = 'Received';
     payments[index]['paymentDate'] = DateTime.now();
-    payments[index]['note'] =
-        'Monthly contribution received.';
+    payments[index]['note'] = 'Monthly contribution received.';
 
-    _updateMemberPaymentStatus(
-      payments[index]['memberName'],
-      'Received',
-    );
+    _updateMemberPaymentStatus(payments[index]['memberName'], 'Received');
+
+    payments.refresh();
+    _saveActiveCommittee();
+  }
+
+  void updatePaymentsStatus(Iterable<int> indices, String status) {
+    final String normalizedStatus = status.toLowerCase();
+    if (!{'received', 'pending', 'overdue'}.contains(normalizedStatus)) {
+      return;
+    }
+
+    final String savedStatus = switch (normalizedStatus) {
+      'received' => 'Received',
+      'pending' => 'Pending',
+      'overdue' => 'Overdue',
+      _ => status,
+    };
+    final Set<int> validIndices = indices
+        .where((index) => index >= 0 && index < payments.length)
+        .toSet();
+    if (validIndices.isEmpty) return;
+
+    for (final int index in validIndices) {
+      final Map<String, dynamic> payment = payments[index];
+      payment['status'] = savedStatus;
+
+      switch (normalizedStatus) {
+        case 'received':
+          payment['paymentDate'] = DateTime.now();
+          payment['note'] = 'Monthly contribution received.';
+          break;
+        case 'pending':
+          payment.remove('paymentDate');
+          payment['note'] = 'Payment is still pending.';
+          break;
+        case 'overdue':
+          payment['note'] = 'Payment due date has passed.';
+          break;
+      }
+
+      _updateMemberPaymentStatus(payment['memberName'], savedStatus);
+    }
 
     payments.refresh();
     _saveActiveCommittee();
@@ -663,14 +632,10 @@ class CommitteeController extends GetxController {
     if (index < 0 || index >= payments.length) return;
 
     payments[index]['status'] = 'Pending';
-    payments[index]['note'] =
-        'Payment is still pending.';
+    payments[index]['note'] = 'Payment is still pending.';
     payments[index].remove('paymentDate');
 
-    _updateMemberPaymentStatus(
-      payments[index]['memberName'],
-      'Pending',
-    );
+    _updateMemberPaymentStatus(payments[index]['memberName'], 'Pending');
 
     payments.refresh();
     _saveActiveCommittee();
@@ -680,22 +645,15 @@ class CommitteeController extends GetxController {
     if (index < 0 || index >= payments.length) return;
 
     payments[index]['status'] = 'Overdue';
-    payments[index]['note'] =
-        'Payment due date has passed.';
+    payments[index]['note'] = 'Payment due date has passed.';
 
-    _updateMemberPaymentStatus(
-      payments[index]['memberName'],
-      'Overdue',
-    );
+    _updateMemberPaymentStatus(payments[index]['memberName'], 'Overdue');
 
     payments.refresh();
     _saveActiveCommittee();
   }
 
-  void _updateMemberPaymentStatus(
-    dynamic memberName,
-    String status,
-  ) {
+  void _updateMemberPaymentStatus(dynamic memberName, String status) {
     final String name = memberName?.toString() ?? '';
 
     for (int i = 0; i < members.length; i++) {
@@ -711,8 +669,7 @@ class CommitteeController extends GetxController {
   // COMMITTEE CALCULATIONS
   // --------------------------------------------------
 
-  double get totalPool =>
-      monthlyContribution.value * totalMembers.value;
+  double get totalPool => monthlyContribution.value * totalMembers.value;
 
   double get monthlyCommitteeAmount => totalPool;
 
@@ -739,8 +696,10 @@ class CommitteeController extends GetxController {
     }
   }
 
-  double get totalDurationAmount =>
-      totalPool * durationInMonths;
+  double get totalDurationAmount {
+    if (duration.value <= 0) return 0;
+    return totalPool * duration.value;
+  }
 
   // --------------------------------------------------
   // RECEIVING SCHEDULE
@@ -776,33 +735,25 @@ class CommitteeController extends GetxController {
       final DateTime receivingDate = DateTime(
         targetMonth.year,
         targetMonth.month,
-        firstDay.day > lastDay
-            ? lastDay
-            : firstDay.day,
+        firstDay.day > lastDay ? lastDay : firstDay.day,
       );
 
       final String defaultMember =
-          members[i % members.length]['name']
-              ?.toString() ??
-          'Member';
+          members[i % members.length]['name']?.toString() ?? 'Member';
 
-      final String? savedMember =
-          getReceivingSelection(receivingDate);
+      final String? savedMember = getReceivingSelection(receivingDate);
 
-      final bool savedMemberExists = savedMember != null &&
+      final bool savedMemberExists =
+          savedMember != null &&
           members.any(
-            (member) =>
-                member['name']?.toString().trim() ==
-                savedMember,
+            (member) => member['name']?.toString().trim() == savedMember,
           );
 
       result.add({
         'month': receivingDate.month,
         'year': receivingDate.year,
         'date': receivingDate,
-        'memberName': savedMemberExists
-            ? savedMember
-            : defaultMember,
+        'memberName': savedMemberExists ? savedMember : defaultMember,
         'amount': totalPool,
         'status': 'Upcoming',
       });
@@ -820,8 +771,7 @@ class CommitteeController extends GetxController {
   // --------------------------------------------------
 
   String receivingMonthKey(DateTime date) {
-    final String month =
-        date.month.toString().padLeft(2, '0');
+    final String month = date.month.toString().padLeft(2, '0');
 
     return '${date.year}-$month';
   }
@@ -839,8 +789,7 @@ class CommitteeController extends GetxController {
     if (name.isEmpty) return;
 
     final bool memberExists = members.any(
-      (member) =>
-          (member['name']?.toString().trim() ?? '') == name,
+      (member) => (member['name']?.toString().trim() ?? '') == name,
     );
 
     if (!memberExists) return;
@@ -849,6 +798,42 @@ class CommitteeController extends GetxController {
     receivingSelections.refresh();
 
     _saveActiveCommittee();
+  }
+
+  void saveReceivingSelectionForCommittee({
+    required String committeeId,
+    required DateTime date,
+    required String memberName,
+  }) {
+    final String name = memberName.trim();
+    final Map<String, dynamic>? committee = committees.firstWhereOrNull(
+      (item) => item['id']?.toString() == committeeId,
+    );
+    if (name.isEmpty || committee == null) return;
+
+    final dynamic savedMembers = committee['members'];
+    final bool memberExists = savedMembers is List &&
+        savedMembers.whereType<Map>().any(
+          (member) => member['name']?.toString().trim() == name,
+        );
+    if (!memberExists) return;
+
+    final dynamic savedSelections = committee['receivingSelections'];
+    final Map<String, String> selections = savedSelections is Map
+        ? savedSelections.map(
+            (key, value) => MapEntry(key.toString(), value.toString()),
+          )
+        : <String, String>{};
+    selections[receivingMonthKey(date)] = name;
+    committee['receivingSelections'] = selections;
+    committees.refresh();
+
+    if (activeCommitteeId.value == committeeId) {
+      receivingSelections.assignAll(selections);
+      _saveActiveCommittee();
+    } else {
+      _persistCommittees();
+    }
   }
 
   // --------------------------------------------------
@@ -886,9 +871,7 @@ class CommitteeController extends GetxController {
     final String? id = activeCommitteeId.value;
 
     if (id != null) {
-      committees.removeWhere(
-        (committee) => committee['id']?.toString() == id,
-      );
+      committees.removeWhere((committee) => committee['id']?.toString() == id);
       committees.refresh();
     }
 

@@ -345,7 +345,12 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   double get totalDurationAmount {
-    return monthlyCommitteeAmount * durationInMonths;
+    final int duration =
+        int.tryParse(durationController.text.trim()) ?? 0;
+
+    if (duration <= 0) return 0;
+
+    return monthlyCommitteeAmount * duration;
   }
 
   String _formatAmount(double amount) {

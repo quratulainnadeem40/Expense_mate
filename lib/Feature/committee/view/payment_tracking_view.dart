@@ -15,6 +15,9 @@ class PaymentTrackingView extends StatefulWidget {
 
 class _PaymentTrackingViewState extends State<PaymentTrackingView> {
   final CommitteeController committeeController = CommitteeController.instance;
+  final Set<int> _selectedPaymentIndices = <int>{};
+  bool _isBulkSelectionMode = false;
+  String _bulkPaymentStatus = 'Received';
 
   @override
   void initState() {
@@ -209,6 +212,54 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
     }
 
     return double.tryParse(amount?.toString().replaceAll(',', '') ?? '') ?? 0;
+  }
+
+  void _toggleBulkSelectionMode() {
+    setState(() {
+      _isBulkSelectionMode = !_isBulkSelectionMode;
+      _selectedPaymentIndices.clear();
+    });
+  }
+
+  void _togglePaymentSelection(int index, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedPaymentIndices.add(index);
+      } else {
+        _selectedPaymentIndices.remove(index);
+      }
+    });
+  }
+
+  void _toggleSelectAllPayments(bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedPaymentIndices
+          ..clear()
+          ..addAll(
+            List<int>.generate(committeeController.payments.length, (i) => i),
+          );
+      } else {
+        _selectedPaymentIndices.clear();
+      }
+    });
+  }
+
+  void _applyBulkPaymentStatus() {
+    final int count = _selectedPaymentIndices.length;
+    if (count == 0) return;
+
+    final String status = _bulkPaymentStatus;
+    committeeController.updatePaymentsStatus(_selectedPaymentIndices, status);
+
+    setState(() {
+      _selectedPaymentIndices.clear();
+      _isBulkSelectionMode = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$count payments marked as $status.')),
+    );
   }
 
   // --------------------------------------------------
@@ -424,6 +475,21 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
         foregroundColor: primaryTextColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        actions: widget.committeeId != null && payments.isNotEmpty
+            ? [
+                IconButton(
+                  tooltip: _isBulkSelectionMode
+                      ? 'Cancel selection'
+                      : 'Select payments',
+                  onPressed: _toggleBulkSelectionMode,
+                  icon: Icon(
+                    _isBulkSelectionMode
+                        ? Icons.close_rounded
+                        : Icons.checklist_rounded,
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: SafeArea(
         child: widget.committeeId == null
@@ -464,6 +530,78 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (_isBulkSelectionMode && payments.isNotEmpty) ...[
+                      CheckboxListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                        ),
+                        title: const Text('Select all members'),
+                        subtitle: Text(
+                          '${_selectedPaymentIndices.length} of '
+                          '${payments.length} selected',
+                        ),
+                        value: _selectedPaymentIndices.isEmpty
+                            ? false
+                            : _selectedPaymentIndices.length == payments.length
+                            ? true
+                            : null,
+                        tristate: true,
+                        onChanged: (selected) {
+                          _toggleSelectAllPayments(selected ?? false);
+                        },
+                      ),
+                      DropdownButtonFormField<String>(
+                        initialValue: _bulkPaymentStatus,
+                        decoration: const InputDecoration(
+                          labelText: 'Bulk payment status',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Received',
+                            child: Text('Received'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Pending',
+                            child: Text('Pending'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Overdue',
+                            child: Text('Overdue'),
+                          ),
+                        ],
+                        onChanged: (status) {
+                          if (status == null) return;
+                          setState(() => _bulkPaymentStatus = status);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _selectedPaymentIndices.isEmpty
+                              ? null
+                              : _applyBulkPaymentStatus,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF27845D),
+                          ),
+                          icon: Icon(switch (_bulkPaymentStatus) {
+                            'Received' => Icons.check_circle_outline_rounded,
+                            'Pending' => Icons.pending_outlined,
+                            _ => Icons.warning_amber_rounded,
+                          }),
+                          label: Text(
+                            'Mark ${_selectedPaymentIndices.length} as '
+                            '$_bulkPaymentStatus',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (payments.isEmpty)
                       _buildEmptyState(secondaryTextColor: secondaryTextColor)
                     else
@@ -480,35 +618,67 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                             ? _formatDate(paymentDate)
                             : 'Date not added';
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: borderColor),
-                          ),
-                          child: InkWell(
-                            onTap: () => _changeStatus(index),
-                            borderRadius: BorderRadius.circular(16),
-                            child: PaymentCard(
-                              memberName:
-                                  payment['memberName']?.toString() ??
-                                  'Member Name',
-                              amount: _formatAmount(amount),
-                              paymentDate: dateText,
-                              status:
-                                  payment['status']?.toString() ?? 'Pending',
-                              note: payment['note']?.toString(),
-                            ),
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              if (_isBulkSelectionMode)
+                                Checkbox(
+                                  value: _selectedPaymentIndices.contains(
+                                    index,
+                                  ),
+                                  onChanged: (selected) {
+                                    _togglePaymentSelection(
+                                      index,
+                                      selected ?? false,
+                                    );
+                                  },
+                                ),
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: cardColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: borderColor),
+                                  ),
+                                  child: InkWell(
+                                    onTap: _isBulkSelectionMode
+                                        ? () => _togglePaymentSelection(
+                                            index,
+                                            !_selectedPaymentIndices.contains(
+                                              index,
+                                            ),
+                                          )
+                                        : () => _changeStatus(index),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: PaymentCard(
+                                      memberName:
+                                          payment['memberName']?.toString() ??
+                                          'Member Name',
+                                      amount: _formatAmount(amount),
+                                      paymentDate: dateText,
+                                      status:
+                                          payment['status']?.toString() ??
+                                          'Pending',
+                                      note: payment['note']?.toString(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }),
                     const SizedBox(height: 12),
-                    Text(
-                      'Tap any payment record to change its status.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: secondaryTextColor),
-                    ),
+                    if (!_isBulkSelectionMode)
+                      Text(
+                        'Tap any payment record to change its status.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: secondaryTextColor,
+                        ),
+                      ),
                   ],
                 ),
               ),

@@ -25,292 +25,30 @@ class MonthlyScheduleView extends StatefulWidget {
 }
 
 class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
-  final CommitteeController committeeController = CommitteeController.instance;
+  final CommitteeController _committeeController = CommitteeController.instance;
 
-  static const Color primaryBlue = Color(0xFF173B67);
-  static const Color backgroundBlue = Color(0xFFF4F7FC);
-  static const Color softBlue = Color(0xFFE8F3FF);
-  static const Color borderBlue = Color(0xFFDCE5F0);
-  static const Color textColor = Color(0xFF243449);
-
-  final Random _random = Random();
-
-  late FixedExtentScrollController _wheelController;
-
-  int _selectedMonthIndex = 0;
-  bool _isSpinning = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _wheelController = FixedExtentScrollController(initialItem: 0);
-  }
-
-  @override
-  void dispose() {
-    _wheelController.dispose();
-    super.dispose();
-  }
-
-  // --------------------------------------------------
-  // FORMAT HELPERS
-  // --------------------------------------------------
-
-  String _monthName(int month) {
-    const List<String> months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-
-    return months[month - 1];
-  }
-
-  String _formatAmount(double amount) {
-    final int roundedAmount = amount.round();
-    final String value = roundedAmount.toString();
-    final StringBuffer result = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 && (value.length - i) % 3 == 0) {
-        result.write(',');
-      }
-
-      result.write(value[i]);
-    }
-
-    return 'PKR $result';
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day} ${_monthName(date.month)} ${date.year}';
-  }
-
-  DateTime _dateForScheduleIndex(int index) {
-    final DateTime start = committeeController.startDate.value!;
-
-    final DateTime firstDay = DateTime(start.year, start.month + index, 1);
-
-    final int lastDay = DateTime(firstDay.year, firstDay.month + 1, 0).day;
-
-    final int day = start.day > lastDay ? lastDay : start.day;
-
-    return DateTime(firstDay.year, firstDay.month, day);
-  }
-
-  // --------------------------------------------------
-  // ACTUAL COMMITTEE MEMBERS
-  // --------------------------------------------------
-
-  List<Map<String, dynamic>> _getActualMembers() {
-    return committeeController.members
-        .where((member) => (member['name']?.toString().trim() ?? '').isNotEmpty)
-        .map((member) => Map<String, dynamic>.from(member))
-        .toList();
-  }
-
-  // --------------------------------------------------
-  // CREATE SCHEDULE
-  // --------------------------------------------------
-
-  List<Map<String, dynamic>> _createSchedule() {
-    final List<Map<String, dynamic>> result = [];
-
-    final List<Map<String, dynamic>> actualMembers = _getActualMembers();
-
-    final DateTime? start = committeeController.startDate.value;
-
-    final int months = committeeController.durationInMonths.ceil();
-
-    if (actualMembers.isEmpty || start == null || months <= 0) {
-      return result;
-    }
-
-    final double amount = committeeController.totalPool;
-
-    for (int i = 0; i < months; i++) {
-      final DateTime receivingDate = _dateForScheduleIndex(i);
-
-      // Original added order is used unless a spinner
-      // result has been saved for this particular month.
-      final String defaultMember =
-          actualMembers[i % actualMembers.length]['name'].toString().trim();
-
-      final String? savedMember = committeeController.getReceivingSelection(
-        receivingDate,
-      );
-
-      final bool savedMemberExists =
-          savedMember != null &&
-          actualMembers.any(
-            (member) => member['name']?.toString().trim() == savedMember,
-          );
-
-      final String receivingMember = savedMemberExists
-          ? savedMember
-          : defaultMember;
-
-      result.add({
-        'month':
-            '${_monthName(receivingDate.month)} '
-            '${receivingDate.year}',
-        'memberName': receivingMember,
-        'amount': amount,
-        'formattedAmount': _formatAmount(amount),
-        'date': receivingDate,
-        'dueDate': _formatDate(receivingDate),
-        'status': 'Upcoming',
-      });
-    }
-
-    return result;
-  }
-
-  // --------------------------------------------------
-  // SELECT MONTH
-  // --------------------------------------------------
-
-  void _selectMonth(int? index, List<Map<String, dynamic>> schedule) {
-    if (index == null || index < 0 || index >= schedule.length) {
-      return;
-    }
-
-    if (_isSpinning) return;
-
-    setState(() {
-      _selectedMonthIndex = index;
-    });
-
-    final List<Map<String, dynamic>> actualMembers = _getActualMembers();
-
-    if (actualMembers.isEmpty || !_wheelController.hasClients) {
-      return;
-    }
-
-    final String selectedName = schedule[index]['memberName'].toString();
-
-    final int foundIndex = actualMembers.indexWhere(
-      (member) => member['name']?.toString().trim() == selectedName,
-    );
-
-    if (foundIndex >= 0) {
-      _wheelController.jumpToItem(foundIndex);
-    }
-  }
-
-  // --------------------------------------------------
-  // SPIN AND SAVE RESULT
-  // --------------------------------------------------
-
-  Future<void> _spinForReceiving(List<Map<String, dynamic>> schedule) async {
-    final List<Map<String, dynamic>> actualMembers = _getActualMembers();
-
-    if (_isSpinning) return;
-
-    if (actualMembers.isEmpty) {
-      Get.snackbar(
-        'No Members',
-        'Add committee members before spinning.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    if (schedule.isEmpty || _selectedMonthIndex >= schedule.length) {
-      Get.snackbar(
-        'No Schedule',
-        'The committee schedule is not available yet.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    if (!_wheelController.hasClients) {
-      Get.snackbar(
-        'Please Wait',
-        'The spinner is not ready yet.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    setState(() {
-      _isSpinning = true;
-    });
-
-    try {
-      // Select one of the real committee members.
-      final int targetIndex = _random.nextInt(actualMembers.length);
-
-      await _wheelController.animateToItem(
-        targetIndex,
-        duration: const Duration(seconds: 3),
-        curve: Curves.easeOutCubic,
-      );
-
-      if (!mounted) return;
-
-      final DateTime receivingDate =
-          schedule[_selectedMonthIndex]['date'] as DateTime;
-
-      final String winner = actualMembers[targetIndex]['name']
-          .toString()
-          .trim();
-
-      committeeController.saveReceivingSelection(
-        date: receivingDate,
-        memberName: winner,
-      );
-
-      Get.snackbar(
-        'Receiving Member Selected',
-        '$winner will receive the committee amount for '
-            '${_monthName(receivingDate.month)} '
-            '${receivingDate.year}.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: primaryBlue,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(12),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSpinning = false;
-        });
-      }
-    }
-  }
-
-  // --------------------------------------------------
-  // BUILD
-  // --------------------------------------------------
+  static const Color _primaryBlue = Color(0xFF173B67);
+  static const Color _backgroundBlue = Color(0xFFF4F7FC);
+  static const Color _softBlue = Color(0xFFE8F3FF);
+  static const Color _borderBlue = Color(0xFFDCE5F0);
+  static const Color _textColor = Color(0xFF243449);
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-
     final Color backgroundColor = isDark
         ? const Color(0xFF121212)
-        : backgroundBlue;
+        : _backgroundBlue;
     final Color cardColor = theme.colorScheme.surface;
-    final Color primaryTextColor = isDark ? Colors.white : textColor;
+    final Color primaryTextColor = isDark ? Colors.white : _textColor;
     final Color secondaryTextColor = theme.colorScheme.onSurfaceVariant;
-    final Color borderColor = isDark ? const Color(0xFF3A3A3A) : borderBlue;
-    final Color accentColor = isDark ? const Color(0xFF80CBC4) : primaryBlue;
+    final Color borderColor = isDark ? const Color(0xFF3A3A3A) : _borderBlue;
+    final Color accentColor = isDark ? const Color(0xFF80CBC4) : _primaryBlue;
     final Color iconBackgroundColor = isDark
         ? const Color(0xFF333333)
-        : softBlue;
+        : _softBlue;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -336,450 +74,650 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
       ),
       body: SafeArea(
         child: Obx(() {
-          final List<Map<String, dynamic>> schedule = _createSchedule();
+          final List<Map<String, dynamic>> committees = _committeeController
+              .committees
+              .map((committee) => Map<String, dynamic>.from(committee))
+              .toList();
 
-          final List<Map<String, dynamic>> actualMembers = _getActualMembers();
-
-          if (_selectedMonthIndex >= schedule.length) {
-            _selectedMonthIndex = 0;
+          if (committees.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Add a committee to see its monthly schedule.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ),
+            );
           }
 
-          final Map<String, dynamic>? selectedSchedule = schedule.isEmpty
-              ? null
-              : schedule[_selectedMonthIndex];
-
-          return SingleChildScrollView(
+          return ListView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // HEADER
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: borderColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: isDark ? 0.16 : 0.035,
-                        ),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.16 : 0.035,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: iconBackgroundColor,
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Icon(
+                        Icons.calendar_month_rounded,
+                        size: 28,
+                        color: accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: iconBackgroundColor,
-                              borderRadius: BorderRadius.circular(13),
-                            ),
-                            child: Icon(
-                              Icons.calendar_month_rounded,
-                              size: 28,
-                              color: accentColor,
+                          Text(
+                            'Receiving Order',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: primaryTextColor,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Receiving Order',
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                                color: primaryTextColor,
-                              ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Open a committee to view its schedule and '
+                            'select a receiving member.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              height: 1.45,
+                              color: secondaryTextColor,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'View the committee schedule and spin '
-                        'to select a receiving member for a '
-                        'particular month.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.5,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 22),
-                Text(
-                  'Next Receiver',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: primaryTextColor,
-                  ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'Committees',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: primaryTextColor,
                 ),
-
-                const SizedBox(height: 12),
-
-                // SPINNER CARD
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: borderColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: isDark ? 0.16 : 0.035,
-                        ),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Select Receiving Month',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: primaryTextColor,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      DropdownButtonFormField<int>(
-                        initialValue: schedule.isEmpty
-                            ? null
-                            : _selectedMonthIndex,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: iconBackgroundColor,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor),
-                          ),
-                        ),
-                        hint: const Text('No month available'),
-                        items: List.generate(
-                          schedule.length,
-                          (index) => DropdownMenuItem<int>(
-                            value: index,
-                            child: Text(
-                              schedule[index]['month'].toString(),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        onChanged: _isSpinning
-                            ? null
-                            : (index) => _selectMonth(index, schedule),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      Container(
-                        height: 180,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: iconBackgroundColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: accentColor.withValues(alpha: 0.45),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: actualMembers.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Text(
-                                    'Add committee members to use '
-                                    'the receiving spinner.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: secondaryTextColor),
-                                  ),
-                                ),
-                              )
-                            : Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  IgnorePointer(
-                                    child: Container(
-                                      height: 58,
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: accentColor,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  ListWheelScrollView.useDelegate(
-                                    controller: _wheelController,
-                                    itemExtent: 58,
-                                    physics: _isSpinning
-                                        ? const NeverScrollableScrollPhysics()
-                                        : const FixedExtentScrollPhysics(),
-                                    perspective: 0.003,
-                                    diameterRatio: 1.7,
-                                    childDelegate:
-                                        ListWheelChildBuilderDelegate(
-                                          childCount: actualMembers.length,
-                                          builder: (context, index) {
-                                            if (index < 0 ||
-                                                index >= actualMembers.length) {
-                                              return null;
-                                            }
-
-                                            final String name =
-                                                actualMembers[index]['name']
-                                                    .toString();
-
-                                            return Center(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 24,
-                                                    ),
-                                                child: Text(
-                                                  name,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize: 17,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: primaryTextColor,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                  ),
-                                ],
-                              ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              _isSpinning ||
-                                  actualMembers.isEmpty ||
-                                  schedule.isEmpty
-                              ? null
-                              : () => _spinForReceiving(schedule),
-                          icon: _isSpinning
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.casino_rounded),
-                          label: Text(_isSpinning ? 'Spinning...' : 'Spin'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      if (selectedSchedule != null)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF303030)
-                                : const Color(0xFFF8FAFD),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: borderColor),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Selected Receiving Member',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: secondaryTextColor,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                selectedSchedule['memberName'].toString(),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: accentColor,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                selectedSchedule['month'].toString(),
-                                style: TextStyle(color: secondaryTextColor),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                selectedSchedule['formattedAmount'].toString(),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryTextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Text(
-                  'Monthly Schedule',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: primaryTextColor,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                if (schedule.isEmpty)
-                  _buildEmptyState(
-                    isDark: isDark,
+              ),
+              const SizedBox(height: 12),
+              ...committees.map((committee) {
+                final String id = committee['id']?.toString() ?? '';
+                return Padding(
+                  key: ValueKey<String>('schedule-card-$id'),
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _CommitteeScheduleCard(
+                    committee: committee,
+                    controller: _committeeController,
                     cardColor: cardColor,
                     primaryTextColor: primaryTextColor,
                     secondaryTextColor: secondaryTextColor,
                     borderColor: borderColor,
                     accentColor: accentColor,
                     iconBackgroundColor: iconBackgroundColor,
-                  )
-                else
-                  ...List.generate(schedule.length, (index) {
-                    final Map<String, dynamic> item = schedule[index];
-
-                    return ScheduleCard(
-                      title: '${index + 1}. ${item['month']}',
-                      dueDate: '${item['memberName']} • ${item['dueDate']}',
-                      amount: item['formattedAmount'].toString(),
-                      status: item['status'].toString(),
-                    );
-                  }),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'The schedule uses the active committee’s '
-                  'saved members, start date, duration and '
-                  'saved spinner selections.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: secondaryTextColor),
-                ),
-              ],
-            ),
+                  ),
+                );
+              }),
+            ],
           );
         }),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState({
-    required bool isDark,
-    required Color cardColor,
-    required Color primaryTextColor,
-    required Color secondaryTextColor,
-    required Color borderColor,
-    required Color accentColor,
-    required Color iconBackgroundColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.035),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+class _CommitteeScheduleCard extends StatefulWidget {
+  const _CommitteeScheduleCard({
+    required this.committee,
+    required this.controller,
+    required this.cardColor,
+    required this.primaryTextColor,
+    required this.secondaryTextColor,
+    required this.borderColor,
+    required this.accentColor,
+    required this.iconBackgroundColor,
+  });
+
+  final Map<String, dynamic> committee;
+  final CommitteeController controller;
+  final Color cardColor;
+  final Color primaryTextColor;
+  final Color secondaryTextColor;
+  final Color borderColor;
+  final Color accentColor;
+  final Color iconBackgroundColor;
+
+  @override
+  State<_CommitteeScheduleCard> createState() => _CommitteeScheduleCardState();
+}
+
+class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
+  final Random _random = Random();
+  late FixedExtentScrollController _wheelController;
+  int _selectedMonthIndex = 0;
+  bool _isSpinning = false;
+  final Map<String, String> _selectionOverrides = <String, String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    final List<Map<String, dynamic>> members = _members;
+    final List<Map<String, dynamic>> schedule = _createSchedule();
+    final String? selectedName = schedule.isEmpty
+        ? null
+        : schedule.first['memberName']?.toString();
+    final int selectedMemberIndex = members.indexWhere(
+      (member) => member['name']?.toString().trim() == selectedName,
+    );
+    _wheelController = FixedExtentScrollController(
+      initialItem: selectedMemberIndex < 0 ? 0 : selectedMemberIndex,
+    );
+  }
+
+  @override
+  void dispose() {
+    _wheelController.dispose();
+    super.dispose();
+  }
+
+  String get _committeeId => widget.committee['id']?.toString() ?? '';
+
+  String get _committeeName {
+    final String name = widget.committee['name']?.toString().trim() ?? '';
+    return name.isEmpty ? 'Committee' : name;
+  }
+
+  List<Map<String, dynamic>> get _members {
+    final dynamic savedMembers = widget.committee['members'];
+    if (savedMembers is! List) return [];
+
+    return savedMembers
+        .whereType<Map>()
+        .map((member) => Map<String, dynamic>.from(member))
+        .where(
+          (member) =>
+              member['name']?.toString().trim().isNotEmpty == true ||
+              member['username']?.toString().trim().isNotEmpty == true,
+        )
+        .toList();
+  }
+
+  String _memberName(Map<String, dynamic> member) =>
+      member['name']?.toString().trim() ?? '';
+
+  String _memberUsername(Map<String, dynamic> member) {
+    final String username = member['username']?.toString().trim() ?? '';
+    if (username.isNotEmpty) {
+      return username.startsWith('@') ? username : '@$username';
+    }
+    return _memberName(member);
+  }
+
+  List<Map<String, dynamic>> _createSchedule() {
+    final List<Map<String, dynamic>> members = _members;
+    final DateTime? startDate = _parseDate(widget.committee['startDate']);
+    if (members.isEmpty || startDate == null) return [];
+
+    final int duration = _integer(
+      widget.committee['duration'] ?? widget.committee['durationMonths'],
+    );
+    final String unit =
+        (widget.committee['unit'] ?? widget.committee['durationUnit'] ?? '')
+            .toString()
+            .toLowerCase();
+    final double durationMonths = switch (unit) {
+      'year' || 'years' => duration * 12.0,
+      'week' || 'weeks' => duration / 4.345,
+      'day' || 'days' => duration / 30.0,
+      _ => duration.toDouble(),
+    };
+    if (durationMonths <= 0) return [];
+
+    final int rounds = durationMonths.ceil();
+    final int memberCount = _integer(
+      widget.committee['memberCount'] ?? widget.committee['membersCount'],
+      members.length,
+    );
+    final double monthlyContribution = _number(
+      widget.committee['contribution'] ??
+          widget.committee['monthlyContribution'],
+    );
+    final double pool = monthlyContribution * memberCount;
+
+    return List<Map<String, dynamic>>.generate(rounds, (index) {
+      final DateTime date = _addMonthsClamped(startDate, index);
+      final String? savedName = _selectionFor(date);
+      final Map<String, dynamic> defaultMember =
+          members[index % members.length];
+      final Map<String, dynamic> savedMember = savedName == null
+          ? defaultMember
+          : members.firstWhere(
+              (member) =>
+                  _memberName(member) == savedName ||
+                  _memberUsername(member) == savedName ||
+                  _memberUsername(member).replaceFirst('@', '') == savedName,
+              orElse: () => defaultMember,
+            );
+
+      return {
+        'month': '${_monthName(date.month)} ${date.year}',
+        'memberName': _memberName(savedMember),
+        'memberUsername': _memberUsername(savedMember),
+        'amount': pool,
+        'formattedAmount': _formatAmount(pool),
+        'date': date,
+        'dueDate': _formatDate(date),
+        'status': 'Upcoming',
+      };
+    });
+  }
+
+  String? _selectionFor(DateTime date) {
+    final String key = _monthKey(date);
+    final String? override = _selectionOverrides[key];
+    if (override != null) return override;
+
+    final dynamic rawSelections = widget.committee['receivingSelections'];
+    if (rawSelections is! Map) return null;
+    return rawSelections[key]?.toString();
+  }
+
+  String _monthKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}';
+
+  void _selectMonth(int? index, List<Map<String, dynamic>> schedule) {
+    if (index == null || index < 0 || index >= schedule.length || _isSpinning) {
+      return;
+    }
+
+    setState(() => _selectedMonthIndex = index);
+    final List<Map<String, dynamic>> members = _members;
+    final String selectedName = schedule[index]['memberName'].toString();
+    final int memberIndex = members.indexWhere(
+      (member) => member['name']?.toString().trim() == selectedName,
+    );
+    if (memberIndex >= 0 && _wheelController.hasClients) {
+      _wheelController.jumpToItem(memberIndex);
+    }
+  }
+
+  Future<void> _spinForReceiving(List<Map<String, dynamic>> schedule) async {
+    final List<Map<String, dynamic>> members = _members;
+    if (_isSpinning || members.isEmpty || schedule.isEmpty) return;
+    if (!_wheelController.hasClients) return;
+
+    setState(() => _isSpinning = true);
+    try {
+      final int winnerIndex = _random.nextInt(members.length);
+      final int currentItem = _wheelController.selectedItem;
+      final int stepsToWinner =
+          (winnerIndex - currentItem % members.length + members.length) %
+          members.length;
+      final int targetItem = currentItem + members.length + stepsToWinner;
+      await _wheelController.animateToItem(
+        targetItem,
+        duration: const Duration(milliseconds: 1300),
+        curve: Curves.easeOutQuart,
+      );
+      if (!mounted) return;
+
+      final DateTime date = schedule[_selectedMonthIndex]['date'] as DateTime;
+      final Map<String, dynamic> winningMember = members[winnerIndex];
+      final String winner = _memberName(winningMember);
+      final String username = _memberUsername(winningMember);
+      _selectionOverrides[_monthKey(date)] = winner;
+      widget.controller.saveReceivingSelectionForCommittee(
+        committeeId: _committeeId,
+        date: date,
+        memberName: winner,
+      );
+      setState(() {});
+
+      Get.snackbar(
+        'Receiving Member Selected',
+        '$username will receive the committee amount for '
+            '${_monthName(date.month)} ${date.year}.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: widget.accentColor,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+      );
+    } finally {
+      if (mounted) setState(() => _isSpinning = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final List<Map<String, dynamic>> schedule = _createSchedule();
+    final List<Map<String, dynamic>> members = _members;
+    if (_selectedMonthIndex >= schedule.length) {
+      _selectedMonthIndex = 0;
+    }
+    final Map<String, dynamic>? selectedSchedule = schedule.isEmpty
+        ? null
+        : schedule[_selectedMonthIndex];
+
+    return Card(
+      margin: EdgeInsets.zero,
+      color: widget.cardColor,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: widget.borderColor),
       ),
-      child: Column(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: PageStorageKey<String>('committee-schedule-$_committeeId'),
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.primaryContainer,
+          foregroundColor: theme.colorScheme.onPrimaryContainer,
+          child: const Icon(Icons.groups_rounded),
+        ),
+        title: Text(
+          _committeeName,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: widget.primaryTextColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        subtitle: Text(
+          '${members.length} ${members.length == 1 ? 'member' : 'members'}'
+          ' · ${schedule.length} ${schedule.length == 1 ? 'round' : 'rounds'}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: widget.secondaryTextColor,
+          ),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: iconBackgroundColor,
-              shape: BoxShape.circle,
+          if (schedule.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                members.isEmpty
+                    ? 'Add committee members to create its receiving order.'
+                    : 'Set the committee start date and duration to create '
+                          'its schedule.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: widget.secondaryTextColor,
+                ),
+              ),
+            )
+          else ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Select Receiving Month',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: widget.primaryTextColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            child: Icon(
-              Icons.calendar_month_outlined,
-              size: 42,
-              color: accentColor,
+            const SizedBox(height: 8),
+            DropdownButtonFormField<int>(
+              initialValue: _selectedMonthIndex,
+              isExpanded: true,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: widget.iconBackgroundColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: widget.borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: widget.borderColor),
+                ),
+              ),
+              items: List<DropdownMenuItem<int>>.generate(
+                schedule.length,
+                (index) => DropdownMenuItem<int>(
+                  value: index,
+                  child: Text(
+                    schedule[index]['month'].toString(),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              onChanged: _isSpinning
+                  ? null
+                  : (index) => _selectMonth(index, schedule),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No Schedule Available',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: primaryTextColor,
+            const SizedBox(height: 14),
+            Container(
+              height: 180,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: widget.iconBackgroundColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: widget.accentColor.withValues(alpha: 0.45),
+                  width: 1.5,
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  IgnorePointer(
+                    child: Container(
+                      height: 58,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: widget.accentColor, width: 2),
+                      ),
+                    ),
+                  ),
+                  ListWheelScrollView.useDelegate(
+                    key: PageStorageKey<String>(
+                      'committee-schedule-wheel-$_committeeId',
+                    ),
+                    controller: _wheelController,
+                    itemExtent: 58,
+                    physics: _isSpinning
+                        ? const NeverScrollableScrollPhysics()
+                        : const FixedExtentScrollPhysics(),
+                    perspective: 0.003,
+                    diameterRatio: 1.7,
+                    childDelegate: ListWheelChildLoopingListDelegate(
+                      children: members
+                          .map(
+                            (member) => Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                child: Text(
+                                  _memberUsername(member),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: widget.primaryTextColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            'Add committee members and ensure the committee '
-            'start date and duration are set to generate the '
-            'receiving schedule.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: secondaryTextColor),
-          ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isSpinning
+                    ? null
+                    : () => _spinForReceiving(schedule),
+                icon: _isSpinning
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.casino_rounded),
+                label: Text(_isSpinning ? 'Spinning...' : 'Spin'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.accentColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            if (selectedSchedule != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF303030)
+                      : const Color(0xFFF8FAFD),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: widget.borderColor),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${selectedSchedule['memberUsername']} is set to '
+                      'receive the committee for '
+                      '${selectedSchedule['month']}.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: widget.accentColor,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      selectedSchedule['formattedAmount'].toString(),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: widget.primaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 18),
+            Text(
+              'Monthly Schedule',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: widget.primaryTextColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...List<Widget>.generate(schedule.length, (index) {
+              final Map<String, dynamic> item = schedule[index];
+              return ScheduleCard(
+                title: '${index + 1}. ${item['month']}',
+                dueDate: '${item['memberUsername']} • ${item['dueDate']}',
+                amount: item['formattedAmount'].toString(),
+                status: item['status'].toString(),
+              );
+            }),
+          ],
         ],
       ),
     );
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value is DateTime) return value;
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
+  int _integer(dynamic value, [int fallback = 0]) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  double _number(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
+  }
+
+  DateTime _addMonthsClamped(DateTime date, int months) {
+    final DateTime firstDay = DateTime(date.year, date.month + months, 1);
+    final int lastDay = DateTime(firstDay.year, firstDay.month + 1, 0).day;
+    return DateTime(
+      firstDay.year,
+      firstDay.month,
+      date.day > lastDay ? lastDay : date.day,
+    );
+  }
+
+  String _monthName(int month) {
+    const List<String> months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day} ${_monthName(date.month)} ${date.year}';
+
+  String _formatAmount(double amount) {
+    final String value = amount.round().toString();
+    final StringBuffer result = StringBuffer();
+    for (int index = 0; index < value.length; index++) {
+      if (index > 0 && (value.length - index) % 3 == 0) {
+        result.write(',');
+      }
+      result.write(value[index]);
+    }
+    return 'PKR $result';
   }
 }

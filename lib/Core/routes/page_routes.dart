@@ -44,6 +44,12 @@ import 'app_routes.dart';
 class AppPages {
   static final pages = [
     GetPage(
+      name: '/',
+      page: () => const SplashView(),
+      binding: SplashBinding(),
+    ),
+
+    GetPage(
       name: AppRoutes.udhaar,
       page: () => UdhaarView(),
       binding: UdhaarBinding(),
