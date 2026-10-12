@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
+import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
@@ -2123,6 +2125,30 @@ Obx(
                             _closeDrawerAndNavigate(
                           () =>
                               CommitteeView(),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
+                      _buildDrawerOption(
+                        context: context,
+                        icon: Icons
+                            .account_balance_wallet_rounded,
+                        iconColor:
+                            const Color(
+                          0xFF3A5BA0,
+                        ),
+                        emoji: '🧮',
+                        title: 'Udhaar',
+                        subtitle:
+                            'Money you lent out and money you owe',
+                        onTap: () =>
+                            _closeDrawerAndNavigate(
+                          () => UdhaarView(),
+                          binding:
+                              UdhaarBinding(),
                         ),
                       ),
 
