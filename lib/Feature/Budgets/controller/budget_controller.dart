@@ -470,6 +470,24 @@ class BudgetController extends GetxController {
     return _resolvedCategoryLimit(category);
   }
 
+
+List<CategoryModel> get expenseBudgetCategories {
+  return categoriesController.categoryList.where((category) {
+    if (category.id.startsWith('default_') &&
+        category.linkedIds.isEmpty) {
+      return true;
+    }
+
+    final linkedIds = category.linkedIds.isEmpty
+        ? <String>{category.id}
+        : category.linkedIds.toSet();
+
+    return linkedIds.any(
+      (id) =>
+          categoriesController.originalCategoryTypes[id] == 'expense',
+    );
+  }).toList();
+}
   // ================================================================
   // INIT
   // ================================================================
@@ -697,26 +715,19 @@ class BudgetController extends GetxController {
       // ------------------------------------------------------------
       // CATEGORY BUDGETS
       // ------------------------------------------------------------
+for (final category in expenseBudgetCategories) {
+  final amount = _resolvedCategoryLimit(category);
 
-      for (final category
-          in categoriesController.categoryList) {
-        final amount =
-            _resolvedCategoryLimit(category);
+  if (amount <= 0) {
+    continue;
+  }
 
-        // No need to create zero-value database
-        // records for categories that have never
-        // received a budget.
-        if (amount <= 0) {
-          continue;
-        }
-
-        await _saveCategoryBudgetToDatabase(
-          userId: userId,
-          category: category,
-          amount: amount,
-        );
-      }
-
+  await _saveCategoryBudgetToDatabase(
+    userId: userId,
+    category: category,
+    amount: amount,
+  );
+}
       // ------------------------------------------------------------
       // ASK SYNCMANAGER TO PROCESS QUEUE
       // ------------------------------------------------------------
@@ -1211,76 +1222,62 @@ if (amount > 9999999999.99) {
   // ================================================================
 
   void calculateBudgets() {
-    final categories =
-        categoriesController.categoryList;
+  final categories = expenseBudgetCategories;
 
-    final transactionsList =
-        transactionsController.transactions;
+  final transactionsList =
+      transactionsController.transactions;
 
-    if (categories.isEmpty &&
-        budgetList.isNotEmpty) {
-      return;
-    }
+  final cycleStart = cycleStartDate;
 
-    final cycleStart =
-        cycleStartDate;
+  final List<BudgetModel> tempList = categories.map((cat) {
+  final spent = transactionsList
+    .where((t) {
+      if (t.transactionDate.isBefore(cycleStartDate)) {
+        return false;
+      }
 
-    final List<BudgetModel> tempList =
-        categories.map((cat) {
-      final spent = transactionsList
-          .where(
-            (t) {
-              if (t.transactionDate
-                  .isBefore(cycleStart)) {
-                return false;
-              }
+      // Income never contributes to budget spending.
+      if (t.isIncome) {
+        return false;
+      }
 
-              final matchesCategoryId =
-                  t.categoryId.isNotEmpty &&
-                      t.categoryId == cat.id;
-
-              final matchesLegacyName =
-                  _normalizeName(t.category) ==
-                  _normalizeName(cat.name);
-
-              return !t.isIncome &&
-                  (matchesCategoryId ||
-                      matchesLegacyName);
-            },
-          )
-          .fold(
-            0.0,
-            (sum, t) =>
-                sum + t.amount,
+      final matchesCategoryId =
+          t.categoryId.isNotEmpty &&
+          (
+            t.categoryId == cat.id ||
+            cat.linkedIds.contains(t.categoryId)
           );
 
-      final limit =
-          getCategoryLimit(cat);
+      final matchesLegacyName =
+          t.categoryId.isEmpty &&
+          _normalizeName(t.category) ==
+              _normalizeName(cat.name);
 
-      return BudgetModel(
-        id: cat.id,
-        categoryName: cat.name,
-        allocatedAmount: limit,
-        spentAmount: spent,
-      );
-    }).toList();
-
-    budgetList.assignAll(
-      tempList,
+      return matchesCategoryId || matchesLegacyName;
+    })
+    .fold<double>(
+      0.0,
+      (sum, t) => sum + t.amount,
     );
-  }
+    final limit = getCategoryLimit(cat);
 
+    return BudgetModel(
+      id: cat.id,
+      categoryName: cat.name,
+      allocatedAmount: limit,
+      spentAmount: spent,
+    );
+  }).toList();
+
+  budgetList.assignAll(tempList);
+}
   double get totalAllocated =>
-      customTotalBudget.value ??
-      categoriesController.categoryList
-          .fold(
-        0.0,
-        (sum, category) =>
-            sum +
-            _resolvedCategoryLimit(
-              category,
-            ),
-      );
+    customTotalBudget.value ??
+    expenseBudgetCategories.fold<double>(
+      0.0,
+      (sum, category) =>
+          sum + _resolvedCategoryLimit(category),
+    );
 
   double get totalSpent =>
       budgetList
@@ -1326,18 +1323,13 @@ if (amount > 9999999999.99) {
     performReset();
   }
 
-  double get currentCategoryAllocationTotal {
-    return categoriesController
-        .categoryList
-        .fold(
-      0.0,
-      (sum, category) =>
-          sum +
-          _resolvedCategoryLimit(
-            category,
-          ),
-    );
-  }
+ double get currentCategoryAllocationTotal {
+  return expenseBudgetCategories.fold<double>(
+    0.0,
+    (sum, category) =>
+        sum + _resolvedCategoryLimit(category),
+  );
+}
 
   double projectedAllocationAfterUpdate(
     String categoryName,
@@ -1348,15 +1340,12 @@ if (amount > 9999999999.99) {
             .trim()
             .toLowerCase();
 
-    final existingCategory =
-        categoriesController.categoryList
-            .firstWhereOrNull(
-      (category) =>
-          category.name
-                  .trim()
-                  .toLowerCase() ==
-              normalizedName,
-    );
+   final existingCategory =
+    expenseBudgetCategories.firstWhereOrNull(
+  (category) =>
+      _normalizeName(category.name) ==
+      _normalizeName(categoryName),
+);
 
     final previousLimit =
         existingCategory != null
@@ -1396,17 +1385,12 @@ if (amount > 9999999999.99) {
     String categoryName,
     double newLimit,
   ) {
-    final matchedCategory =
-        categoriesController.categoryList
-            .firstWhereOrNull(
-      (category) =>
-          _normalizeName(
-            category.name,
-          ) ==
-          _normalizeName(
-            categoryName,
-          ),
-    );
+   final matchedCategory =
+    expenseBudgetCategories.firstWhereOrNull(
+  (category) =>
+      _normalizeName(category.name) ==
+      _normalizeName(categoryName),
+);
 
     if (matchedCategory != null) {
       customLimits[
@@ -1430,6 +1414,15 @@ if (amount > 9999999999.99) {
       _syncCurrentBudgetsToDatabase(),
     );
   }
+
+bool _isExpenseBudgetCategory(CategoryModel category) {
+  final type = category.type.trim().toLowerCase();
+
+  // "both" allows a category that exists as both
+  // Expense and Income, while excluding Income-only.
+  return type == 'expense' || type == 'both';
+}
+
 
   // ================================================================
   // SET TOTAL BUDGET
