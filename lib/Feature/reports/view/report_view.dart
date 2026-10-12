@@ -268,6 +268,7 @@ class ReportView extends StatelessWidget {
                           context: context,
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
+                          emoji: '🧮',
                           title: 'Udhaar',
                           subtitle: 'Money you lent out and money you owe',
                           onTap: () {
