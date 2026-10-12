@@ -463,7 +463,9 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                       const SizedBox(height: 8),
 
                       DropdownButtonFormField<int>(
-                        value: schedule.isEmpty ? null : _selectedMonthIndex,
+                        initialValue: schedule.isEmpty
+                            ? null
+                            : _selectedMonthIndex,
                         isExpanded: true,
                         decoration: InputDecoration(
                           filled: true,
