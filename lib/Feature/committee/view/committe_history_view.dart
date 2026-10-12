@@ -65,7 +65,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
               if (_committeeController.committees.isEmpty) {
                 return Center(
                   child: Text(
-                    'Abhi koi committee nahi hai',
+                    'No committees available yet.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: secondaryTextColor,
                     ),
@@ -76,7 +76,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
               if (committees.isEmpty) {
                 return Center(
                   child: Text(
-                    'Is category mein koi committee nahi hai',
+                    'No committees in this category.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: secondaryTextColor,
                     ),
@@ -150,6 +150,11 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
         ? theme.colorScheme.surfaceContainerHighest
         : (isDark ? const Color(0xFF263D32) : const Color(0xFFDDF5E5));
 
+    final List<_CommitteeMemberWithDate> orderedMembers = _orderedMembers(
+      members,
+      memberReceiveDates,
+    );
+
     return Card(
       margin: EdgeInsets.zero,
       color: cardColor,
@@ -160,44 +165,55 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
         side: BorderSide(color: borderColor),
       ),
       clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        key: PageStorageKey<String>(
-          'committee-history-${committee['id'] ?? committeeName}',
-        ),
-        tilePadding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                committeeName,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) => _CommitteeHistoryDetailView(
+                committeeName: committeeName,
+                completed: completed,
+                members: orderedMembers,
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: statusBackground,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                completed ? 'Completed' : 'Active',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: statusColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 14),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      committeeName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBackground,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      completed ? 'Completed' : 'Active',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right_rounded, color: secondaryTextColor),
+                ],
+              ),
+              const SizedBox(height: 14),
               _summaryLine(
                 context,
                 'Total amount',
@@ -219,18 +235,12 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
                 _formatDate(startDate) ?? '—',
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '$completedRounds/$roundCount rounds complete',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: secondaryTextColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                '$completedRounds/$roundCount rounds complete',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: secondaryTextColor,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 7),
               LinearProgressIndicator(
@@ -243,27 +253,6 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
             ],
           ),
         ),
-        children: [
-          if (members.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'Abhi koi member nahi hai',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: secondaryTextColor,
-                ),
-              ),
-            )
-          else
-            ..._orderedMembers(members, memberReceiveDates).map(
-              (entry) => _buildMemberRow(
-                context,
-                entry.member,
-                entry.receiveDate,
-                secondaryTextColor,
-              ),
-            ),
-        ],
       ),
     );
   }
@@ -283,64 +272,6 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
         SizedBox(width: 142, child: Text(label, style: labelStyle)),
         Expanded(child: Text(value, style: valueStyle)),
       ],
-    );
-  }
-
-  Widget _buildMemberRow(
-    BuildContext context,
-    Map<String, dynamic> member,
-    DateTime? receiveDate,
-    Color secondaryTextColor,
-  ) {
-    final ThemeData theme = Theme.of(context);
-    final bool received = receiveDate != null;
-    final Color receivedColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF81C784)
-        : const Color(0xFF218653);
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  member['name']?.toString() ?? '',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  member['phone']?.toString() ?? '',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: secondaryTextColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          if (received)
-            Padding(
-              padding: const EdgeInsets.only(right: 5),
-              child: Icon(
-                Icons.check_circle_rounded,
-                size: 17,
-                color: receivedColor,
-              ),
-            ),
-          Text(
-            received ? _formatDate(receiveDate)! : 'Abhi nahi mili',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: received ? receivedColor : secondaryTextColor,
-              fontWeight: received ? FontWeight.w500 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -509,4 +440,117 @@ class _CommitteeMemberWithDate {
   final Map<String, dynamic> member;
   final DateTime? receiveDate;
   final int originalIndex;
+}
+
+class _CommitteeHistoryDetailView extends StatelessWidget {
+  const _CommitteeHistoryDetailView({
+    required this.committeeName,
+    required this.completed,
+    required this.members,
+  });
+
+  final String committeeName;
+  final bool completed;
+  final List<_CommitteeMemberWithDate> members;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color secondaryText = theme.colorScheme.onSurfaceVariant;
+    final Color receivedColor = theme.brightness == Brightness.dark
+        ? const Color(0xFF81C784)
+        : const Color(0xFF218653);
+
+    return Scaffold(
+      appBar: AppBar(title: Text('$committeeName History'), centerTitle: true),
+      body: members.isEmpty
+          ? Center(
+              child: Text(
+                'No members have been added to this committee yet.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: secondaryText,
+                ),
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: members.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final _CommitteeMemberWithDate entry = members[index];
+                final bool received = entry.receiveDate != null;
+                return Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                entry.member['name']?.toString() ?? '',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                entry.member['phone']?.toString() ?? '',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: secondaryText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        if (received)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 5),
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              size: 17,
+                              color: receivedColor,
+                            ),
+                          ),
+                        Text(
+                          received
+                              ? _formatHistoryDate(entry.receiveDate!)
+                              : 'Not received yet',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: received ? receivedColor : secondaryText,
+                            fontWeight: received
+                                ? FontWeight.w500
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+String _formatHistoryDate(DateTime date) {
+  const List<String> months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${date.day.toString().padLeft(2, '0')} '
+      '${months[date.month - 1]} ${date.year}';
 }

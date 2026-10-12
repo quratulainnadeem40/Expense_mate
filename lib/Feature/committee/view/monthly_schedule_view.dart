@@ -448,26 +448,29 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     final double pool = monthlyContribution * memberCount;
 
     return List<Map<String, dynamic>>.generate(rounds, (index) {
-      final DateTime date = _addMonthsClamped(startDate, index);
+      final DateTime date = _addMonthsClamped(startDate, index + 1);
       final String? savedName = _selectionFor(date);
       final Map<String, dynamic> defaultMember =
           members[index % members.length];
-      final Map<String, dynamic> savedMember = savedName == null
-          ? defaultMember
-          : members.firstWhere(
-              (member) =>
-                  _memberName(member) == savedName ||
-                  _memberUsername(member) == savedName ||
-                  _memberUsername(member).replaceFirst('@', '') == savedName,
-              orElse: () => defaultMember,
-            );
+      Map<String, dynamic>? savedMember;
+      if (savedName != null) {
+        for (final Map<String, dynamic> member in members) {
+          if (_memberName(member) == savedName ||
+              _memberUsername(member) == savedName ||
+              _memberUsername(member).replaceFirst('@', '') == savedName) {
+            savedMember = member;
+            break;
+          }
+        }
+      }
+      final Map<String, dynamic> receivingMember = savedMember ?? defaultMember;
 
       return {
         'round': index + 1,
-        'isAllocated': savedName != null,
+        'isAllocated': savedMember != null,
         'month': '${_monthName(date.month)} ${date.year}',
-        'memberName': _memberName(savedMember),
-        'memberUsername': _memberUsername(savedMember),
+        'memberName': _memberName(receivingMember),
+        'memberUsername': _memberUsername(receivingMember),
         'amount': pool,
         'formattedAmount': _formatAmount(pool),
         'date': date,
@@ -490,35 +493,46 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
   String _monthKey(DateTime date) =>
       '${date.year}-${date.month.toString().padLeft(2, '0')}';
 
+  List<Map<String, dynamic>> _availableMembers(
+    List<Map<String, dynamic>> schedule,
+  ) {
+    final Set<String> allocatedNames = schedule
+        .where((round) => round['isAllocated'] == true)
+        .map((round) => round['memberName'].toString())
+        .toSet();
+    return _members
+        .where((member) => !allocatedNames.contains(_memberName(member)))
+        .toList();
+  }
+
   void _selectMonth(int? index, List<Map<String, dynamic>> schedule) {
     if (index == null || index < 0 || index >= schedule.length || _isSpinning) {
       return;
     }
-
     setState(() => _selectedMonthIndex = index);
-    final List<Map<String, dynamic>> members = _members;
-    final String selectedName = schedule[index]['memberName'].toString();
-    final int memberIndex = members.indexWhere(
-      (member) => member['name']?.toString().trim() == selectedName,
-    );
-    if (memberIndex >= 0 && _wheelController.hasClients) {
-      _wheelController.jumpToItem(memberIndex);
+    setState(() => _selectedMonthIndex = index);
+    if (_wheelController.hasClients) {
+      _wheelController.jumpToItem(0);
     }
   }
 
   Future<void> _allocateBySequence(List<Map<String, dynamic>> schedule) async {
     if (_isSpinning || schedule.isEmpty) return;
-    final List<Map<String, dynamic>> members = _members;
+    if (schedule[_selectedMonthIndex]['isAllocated'] == true) return;
+    final List<Map<String, dynamic>> members = _availableMembers(schedule);
     if (members.isEmpty || !_wheelController.hasClients) return;
 
-    final int winnerIndex = _selectedMonthIndex % members.length;
-    await _animateToMember(winnerIndex, members.length);
+    await _animateToMember(0, members.length);
     if (!mounted) return;
-    _saveReceivingMember(schedule, members[winnerIndex]);
+    _saveReceivingMember(schedule, members.first);
   }
 
   Future<void> _spinForReceiving(List<Map<String, dynamic>> schedule) async {
-    final List<Map<String, dynamic>> members = _members;
+    if (_selectedMonthIndex >= schedule.length ||
+        schedule[_selectedMonthIndex]['isAllocated'] == true) {
+      return;
+    }
+    final List<Map<String, dynamic>> members = _availableMembers(schedule);
     if (_isSpinning || members.isEmpty || schedule.isEmpty) return;
     if (!_wheelController.hasClients) return;
 
@@ -582,10 +596,18 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
         _allocationMode == _AllocationMode.spin
         ? schedule.where((item) => item['isAllocated'] == true).toList()
         : schedule;
-    final List<Map<String, dynamic>> members = _members;
     if (_selectedMonthIndex >= schedule.length) {
       _selectedMonthIndex = 0;
     }
+    final List<Map<String, dynamic>> members = _members;
+    final List<Map<String, dynamic>> availableMembers = _availableMembers(
+      schedule,
+    );
+    final bool selectedRoundAllocated =
+        schedule.isNotEmpty &&
+        schedule[_selectedMonthIndex]['isAllocated'] == true;
+    final bool canAllocate =
+        availableMembers.isNotEmpty && !selectedRoundAllocated;
     final Map<String, dynamic>? selectedSchedule = schedule.isEmpty
         ? null
         : schedule[_selectedMonthIndex];
@@ -766,40 +788,56 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                       ),
                     ),
                   ),
-                  ListWheelScrollView.useDelegate(
-                    key: PageStorageKey<String>(
-                      'committee-schedule-wheel-$_committeeId',
-                    ),
-                    controller: _wheelController,
-                    itemExtent: 58,
-                    physics: _isSpinning
-                        ? const NeverScrollableScrollPhysics()
-                        : const FixedExtentScrollPhysics(),
-                    perspective: 0.003,
-                    diameterRatio: 1.7,
-                    childDelegate: ListWheelChildLoopingListDelegate(
-                      children: members
-                          .map(
-                            (member) => Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                ),
-                                child: Text(
-                                  _memberUsername(member),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: widget.primaryTextColor,
+                  if (availableMembers.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          'All members have already received the committee.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: widget.secondaryTextColor,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ListWheelScrollView.useDelegate(
+                      key: PageStorageKey<String>(
+                        'committee-schedule-wheel-$_committeeId-'
+                        '${availableMembers.map(_memberName).join('-')}',
+                      ),
+                      controller: _wheelController,
+                      itemExtent: 58,
+                      physics: _isSpinning
+                          ? const NeverScrollableScrollPhysics()
+                          : const FixedExtentScrollPhysics(),
+                      perspective: 0.003,
+                      diameterRatio: 1.7,
+                      childDelegate: ListWheelChildLoopingListDelegate(
+                        children: availableMembers
+                            .map(
+                              (member) => Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
+                                  child: Text(
+                                    _memberUsername(member),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: widget.primaryTextColor,
+                                        ),
                                   ),
                                 ),
                               ),
-                            ),
-                          )
-                          .toList(),
+                            )
+                            .toList(),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -807,7 +845,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isSpinning
+                onPressed: _isSpinning || !canAllocate
                     ? null
                     : () => _allocationMode == _AllocationMode.sequence
                           ? _allocateBySequence(schedule)
@@ -832,7 +870,13 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                             ? 'Allocating...'
                             : 'Spinning...'
                       : _allocationMode == _AllocationMode.sequence
-                      ? 'Allocate by added order'
+                      ? selectedRoundAllocated
+                            ? 'Already allocated'
+                            : 'Allocate by added order'
+                      : selectedRoundAllocated
+                      ? 'Already allocated'
+                      : availableMembers.isEmpty
+                      ? 'All members allocated'
                       : 'Spin & allocate',
                 ),
                 style: ElevatedButton.styleFrom(
