@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:expense_mate/Core/Database/repository_provider.dart';
@@ -40,16 +39,11 @@ class CategoriesController extends GetxController {
   // ==========================================================
 
   static String _normalizeCategoryName(String? name) {
-    return (name ?? '')
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    return (name ?? '').trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   static bool isProtectedCategoryName(String? name) {
-    return protectedCategoryOrder.contains(
-      _normalizeCategoryName(name),
-    );
+    return protectedCategoryOrder.contains(_normalizeCategoryName(name));
   }
 
   String _generateUuid() {
@@ -94,84 +88,77 @@ class CategoriesController extends GetxController {
   // FIND CATEGORY BY NAME
   // ==========================================================
 
-Future<CategoryModel?> findCategoryByName(
-  String name, {
-  String? type,
-}) async {
-  final normalizedName = _normalizeCategoryName(name);
+  Future<CategoryModel?> findCategoryByName(String name, {String? type}) async {
+    final normalizedName = _normalizeCategoryName(name);
 
-  if (normalizedName.isEmpty) return null;
+    if (normalizedName.isEmpty) return null;
 
-  final normalizedType = type?.trim().toLowerCase();
+    final normalizedType = type?.trim().toLowerCase();
 
-  bool matchesType(CategoryModel category) {
-    if (normalizedType == null || normalizedType == 'both') {
-      return true;
+    bool matchesType(CategoryModel category) {
+      if (normalizedType == null || normalizedType == 'both') {
+        return true;
+      }
+
+      final categoryType = category.type.trim().toLowerCase();
+
+      // Grouped categories are usable for both transaction types.
+      return categoryType == normalizedType || categoryType == 'both';
     }
 
-    final categoryType = category.type.trim().toLowerCase();
+    // First search the visible, grouped categories.
+    final visibleMatch = categoryList.firstWhereOrNull(
+      (category) =>
+          _normalizeCategoryName(category.name) == normalizedName &&
+          matchesType(category),
+    );
 
-    // Grouped categories are usable for both transaction types.
-    return categoryType == normalizedType ||
-        categoryType == 'both';
+    if (visibleMatch != null) {
+      return visibleMatch;
+    }
+
+    final user = currentUser;
+    if (user == null) return null;
+
+    final localCategories = await _repositories.categories.getCategories(
+      user.id,
+    );
+
+    final matches = localCategories.where((category) {
+      return _normalizeCategoryName(category.name) == normalizedName &&
+          (normalizedType == null ||
+              normalizedType == 'both' ||
+              category.type.trim().toLowerCase() == normalizedType);
+    }).toList();
+
+    if (matches.isEmpty) return null;
+
+    final first = matches.first;
+
+    final linkedIds = matches
+        .map((category) => category.id)
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return CategoryModel(
+      id: first.id,
+      name: first.name,
+      icon: first.icon ?? 'category',
+      colorValue: _parseColor(first.color),
+      isDefault: isProtectedCategoryName(first.name),
+      type: matches.map((c) => c.type.toLowerCase()).toSet().length > 1
+          ? 'both'
+          : first.type,
+      linkedIds: linkedIds.isEmpty ? [first.id] : linkedIds,
+    );
   }
-
-  // First search the visible, grouped categories.
-  final visibleMatch = categoryList.firstWhereOrNull(
-    (category) =>
-        _normalizeCategoryName(category.name) == normalizedName &&
-        matchesType(category),
-  );
-
-  if (visibleMatch != null) {
-    return visibleMatch;
-  }
-
-  final user = currentUser;
-  if (user == null) return null;
-
-  final localCategories =
-      await _repositories.categories.getCategories(user.id);
-
-  final matches = localCategories.where((category) {
-    return _normalizeCategoryName(category.name) == normalizedName &&
-        (normalizedType == null ||
-            normalizedType == 'both' ||
-            category.type.trim().toLowerCase() == normalizedType);
-  }).toList();
-
-  if (matches.isEmpty) return null;
-
-  final first = matches.first;
-
-  final linkedIds = matches
-      .map((category) => category.id)
-      .where((id) => id.isNotEmpty)
-      .toSet()
-      .toList();
-
-  return CategoryModel(
-    id: first.id,
-    name: first.name,
-    icon: first.icon ?? 'category',
-    colorValue: _parseColor(first.color),
-    isDefault: isProtectedCategoryName(first.name),
-    type: matches.map((c) => c.type.toLowerCase()).toSet().length > 1
-        ? 'both'
-        : first.type,
-    linkedIds: linkedIds.isEmpty ? [first.id] : linkedIds,
-  );
-}
-
 
   // ==========================================================
   // CATEGORY ORDER
   // ==========================================================
 
-  static int compareCategoryOrder(
-    CategoryModel a,
-    CategoryModel b,
-  ) {
+  static int compareCategoryOrder(CategoryModel a, CategoryModel b) {
     final aProtected = isProtectedCategoryName(a.name);
     final bProtected = isProtectedCategoryName(b.name);
 
@@ -195,18 +182,14 @@ Future<CategoryModel?> findCategoryByName(
       return aIndex.compareTo(bIndex);
     }
 
-    return a.name.toLowerCase().compareTo(
-          b.name.toLowerCase(),
-        );
+    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
   }
 
   static List<String> filterDeletableCategoryIds(
     List<String> ids,
     Set<String> idsInUseByTransactions,
   ) {
-    return ids
-        .where((id) => !idsInUseByTransactions.contains(id))
-        .toList();
+    return ids.where((id) => !idsInUseByTransactions.contains(id)).toList();
   }
 
   // ==========================================================
@@ -226,9 +209,7 @@ Future<CategoryModel?> findCategoryByName(
       final name = (item['name']?.toString() ?? '').trim();
       final normalizedName = _normalizeCategoryName(name);
 
-      final type = (item['type']?.toString() ?? 'expense')
-          .trim()
-          .toLowerCase();
+      final type = (item['type']?.toString() ?? 'expense').trim().toLowerCase();
 
       if (normalizedName.isEmpty) {
         continue;
@@ -246,15 +227,14 @@ Future<CategoryModel?> findCategoryByName(
 
         category['name'] = name;
         category['type'] = 'both';
-        category['ids'] = <String>[
-          if (id.isNotEmpty) id,
-        ];
+        category['ids'] = <String>[if (id.isNotEmpty) id];
 
         grouped[normalizedName] = category;
       } else {
-        final ids = List<String>.from(
-          existing['ids'] as List<String>,
-        );
+        final dynamic existingIds = existing['ids'];
+        final ids = existingIds is List
+            ? existingIds.map((value) => value.toString()).toList()
+            : <String>[];
 
         if (id.isNotEmpty && !ids.contains(id)) {
           ids.add(id);
@@ -275,8 +255,7 @@ Future<CategoryModel?> findCategoryByName(
         }
 
         existing['isDefault'] =
-            existing['isDefault'] == true ||
-            item['isDefault'] == true;
+            existing['isDefault'] == true || item['isDefault'] == true;
       }
     }
 
@@ -296,11 +275,9 @@ Future<CategoryModel?> findCategoryByName(
     }
 
     customItems.sort((a, b) {
-      return (a['name']?.toString() ?? '')
-          .toLowerCase()
-          .compareTo(
-            (b['name']?.toString() ?? '').toLowerCase(),
-          );
+      return (a['name']?.toString() ?? '').toLowerCase().compareTo(
+        (b['name']?.toString() ?? '').toLowerCase(),
+      );
     });
 
     final ordered = <Map<String, dynamic>>[];
@@ -309,8 +286,7 @@ Future<CategoryModel?> findCategoryByName(
     for (final categoryName in protectedCategoryOrder) {
       final matches = protectedItems.where(
         (item) =>
-            _normalizeCategoryName(item['name']?.toString()) ==
-            categoryName,
+            _normalizeCategoryName(item['name']?.toString()) == categoryName,
       );
 
       if (matches.isNotEmpty) {
@@ -350,8 +326,7 @@ Future<CategoryModel?> findCategoryByName(
           return '';
         }
 
-        return categoryName[0].toUpperCase() +
-            categoryName.substring(1);
+        return categoryName[0].toUpperCase() + categoryName.substring(1);
     }
   }
 
@@ -432,12 +407,13 @@ Future<CategoryModel?> findCategoryByName(
   // ==========================================================
 
   Future<void> _loadFromLocal(String userId) async {
-    final localCategories =
-        await _repositories.categories.getCategories(userId);
-        originalCategoryTypes.assignAll({
-  for (final category in localCategories)
-    category.id: category.type.trim().toLowerCase(),
-});
+    final localCategories = await _repositories.categories.getCategories(
+      userId,
+    );
+    originalCategoryTypes.assignAll({
+      for (final category in localCategories)
+        category.id: category.type.trim().toLowerCase(),
+    });
 
     debugPrint('===== LOCAL CATEGORIES =====');
 
@@ -452,21 +428,22 @@ Future<CategoryModel?> findCategoryByName(
 
     debugPrint('============================');
 
-    final localTransactions =
-        await _repositories.transactions.getTransactions(userId);
+    final localTransactions = await _repositories.transactions.getTransactions(
+      userId,
+    );
 
-        debugPrint('===== TRANSACTION COUNT DEBUG =====');
+    debugPrint('===== TRANSACTION COUNT DEBUG =====');
 
-for (final transaction in localTransactions) {
-  debugPrint(
-    'TRANSACTION => '
-    'id=${transaction.id}, '
-    'categoryId=${transaction.categoryId}, '
-    'type=${transaction.type}',
-  );
-}
+    for (final transaction in localTransactions) {
+      debugPrint(
+        'TRANSACTION => '
+        'id=${transaction.id}, '
+        'categoryId=${transaction.categoryId}, '
+        'type=${transaction.type}',
+      );
+    }
 
-debugPrint('===================================');
+    debugPrint('===================================');
 
     final rawCategories = <Map<String, dynamic>>[];
 
@@ -491,8 +468,7 @@ debugPrint('===================================');
       final rawName = item['name']?.toString() ?? '';
       final normalizedName = _normalizeCategoryName(rawName);
 
-      final categoryId =
-          item['id']?.toString() ?? 'default_$normalizedName';
+      final categoryId = item['id']?.toString() ?? 'default_$normalizedName';
 
       final linkedIds = (item['ids'] as List<dynamic>? ?? [])
           .map((id) => id.toString())
@@ -500,47 +476,42 @@ debugPrint('===================================');
           .toSet()
           .toList();
 
-      if (linkedIds.isEmpty &&
-          !categoryId.startsWith('default_')) {
+      if (linkedIds.isEmpty && !categoryId.startsWith('default_')) {
         linkedIds.add(categoryId);
       }
 
       int count = 0;
 
-final linkedIdSet = linkedIds.toSet();
+      final linkedIdSet = linkedIds.toSet();
 
-for (final transaction in localTransactions) {
-  final transactionCategoryId =
-      transaction.categoryId?.trim();
+      for (final transaction in localTransactions) {
+        final transactionCategoryId = transaction.categoryId?.trim();
 
-  if (transactionCategoryId == null ||
-      transactionCategoryId.isEmpty) {
-    continue;
-  }
+        if (transactionCategoryId == null || transactionCategoryId.isEmpty) {
+          continue;
+        }
 
-  // Count transactions linked to this visible category.
-  if (linkedIdSet.contains(transactionCategoryId)) {
-    count++;
-    continue;
-  }
+        // Count transactions linked to this visible category.
+        if (linkedIdSet.contains(transactionCategoryId)) {
+          count++;
+          continue;
+        }
 
-  // Fallback for transactions linked to another local category
-  // with the same normalized name.
-  final matchingLocalCategory =
-      localCategories.firstWhereOrNull(
-    (localCategory) =>
-        localCategory.id == transactionCategoryId,
-  );
+        // Fallback for transactions linked to another local category
+        // with the same normalized name.
+        final matchingLocalCategory = localCategories.firstWhereOrNull(
+          (localCategory) => localCategory.id == transactionCategoryId,
+        );
 
-  if (matchingLocalCategory != null &&
-      _normalizeCategoryName(matchingLocalCategory.name) ==
-          normalizedName) {
-    count++;
-  }
-}
+        if (matchingLocalCategory != null &&
+            _normalizeCategoryName(matchingLocalCategory.name) ==
+                normalizedName) {
+          count++;
+        }
+      }
 
-countsMap[categoryId] = count;
-totalsMap[categoryId] = 0.0;
+      countsMap[categoryId] = count;
+      totalsMap[categoryId] = 0.0;
 
       categories.add(
         CategoryModel(
@@ -550,9 +521,7 @@ totalsMap[categoryId] = 0.0;
           colorValue: _parseColor(item['color']),
           isDefault: isProtectedCategoryName(rawName),
           type: 'both',
-          linkedIds: linkedIds.isEmpty
-              ? [categoryId]
-              : linkedIds,
+          linkedIds: linkedIds.isEmpty ? [categoryId] : linkedIds,
         ),
       );
     }
@@ -564,22 +533,20 @@ totalsMap[categoryId] = 0.0;
     categoryList.assignAll(categories);
     debugPrint('===== VISIBLE CATEGORY DEBUG =====');
 
-for (final category in categoryList) {
-  debugPrint(
-    'name=${category.name}, '
-    'id=${category.id}, '
-    'type=${category.type}, '
-    'linkedIds=${category.linkedIds}',
-  );
-}
+    for (final category in categoryList) {
+      debugPrint(
+        'name=${category.name}, '
+        'id=${category.id}, '
+        'type=${category.type}, '
+        'linkedIds=${category.linkedIds}',
+      );
+    }
 
-debugPrint('==================================');
+    debugPrint('==================================');
 
     if (!_backfilledCustomCategories) {
       _backfilledCustomCategories = true;
-      unawaited(
-        _createMissingCustomCategories(localTransactions),
-      );
+      unawaited(_createMissingCustomCategories(localTransactions));
     }
   }
 
@@ -629,16 +596,14 @@ debugPrint('==================================');
 
     final normalizedType = category.type.trim().toLowerCase();
 
-    if (normalizedType != 'income' &&
-        normalizedType != 'expense') {
+    if (normalizedType != 'income' && normalizedType != 'expense') {
       _showError('Invalid category type.');
       return;
     }
 
     try {
       // Same name means the same visible category, regardless of type.
-     final existingCategory =
-    await findCategoryByName(trimmedName);
+      final existingCategory = await findCategoryByName(trimmedName);
 
       if (existingCategory != null) {
         if (closeDialog && (Get.isDialogOpen ?? false)) {
@@ -649,12 +614,12 @@ debugPrint('==================================');
 
       // Check local storage as well, including categories that might
       // not yet be reflected in the visible list.
-      final localCategories =
-          await _repositories.categories.getCategories(user.id);
+      final localCategories = await _repositories.categories.getCategories(
+        user.id,
+      );
 
       final localDuplicate = localCategories.firstWhereOrNull(
-        (item) =>
-            _normalizeCategoryName(item.name) == normalizedName,
+        (item) => _normalizeCategoryName(item.name) == normalizedName,
       );
 
       if (localDuplicate != null) {
@@ -668,11 +633,9 @@ debugPrint('==================================');
 
       final oldId = category.id.trim();
 
-      final categoryId =
-          _isValidUuid(oldId) ? oldId : _generateUuid();
+      final categoryId = _isValidUuid(oldId) ? oldId : _generateUuid();
 
-      final colorHex =
-          category.colorValue.toRadixString(16).padLeft(8, '0');
+      final colorHex = category.colorValue.toRadixString(16).padLeft(8, '0');
 
       // Local-first creation. Repository handles persistence and queueing.
       await _repositories.categorySync.createCategory(
@@ -751,13 +714,12 @@ debugPrint('==================================');
         idsToDelete.addAll(category.linkedIds);
       }
 
-      final localTransactions =
-          await _repositories.transactions.getTransactions(user.id);
+      final localTransactions = await _repositories.transactions
+          .getTransactions(user.id);
 
       final transactionsToDelete = localTransactions.where((transaction) {
         final categoryId = transaction.categoryId;
-        return categoryId != null &&
-            idsToDelete.contains(categoryId);
+        return categoryId != null && idsToDelete.contains(categoryId);
       }).toList();
 
       for (final transaction in transactionsToDelete) {
@@ -827,4 +789,3 @@ debugPrint('==================================');
     debugPrint('CategoriesController: $message');
   }
 }
-
