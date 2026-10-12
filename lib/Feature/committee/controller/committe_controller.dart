@@ -36,6 +36,7 @@ class CommitteeController extends GetxController {
   final durationUnit = 'Months'.obs;
   final startDate = Rxn<DateTime>();
   final endingDate = Rxn<DateTime>();
+  final allocationMode = 'sequence'.obs;
 
   final members = <Map<String, dynamic>>[].obs;
   final payments = <Map<String, dynamic>>[].obs;
@@ -240,6 +241,7 @@ class CommitteeController extends GetxController {
       'unit': durationUnit.value,
       'startDate': startDate.value,
       'endingDate': endingDate.value,
+      'allocationMode': allocationMode.value,
       'members': members.map((member) => _copyMap(member)).toList(),
       'payments': payments.map((payment) => _copyMap(payment)).toList(),
       'receivingSelections': Map<String, String>.from(receivingSelections),
@@ -295,6 +297,7 @@ class CommitteeController extends GetxController {
       'unit': unit,
       'startDate': committeeStartDate,
       'endingDate': committeeEndingDate,
+      'allocationMode': 'sequence',
       'members': <Map<String, dynamic>>[],
       'payments': <Map<String, dynamic>>[],
       'receivingSelections': <String, String>{},
@@ -351,6 +354,10 @@ class CommitteeController extends GetxController {
 
     startDate.value = _parseDate(committee['startDate']);
     endingDate.value = _parseDate(committee['endingDate']);
+    final String savedAllocationMode =
+        committee['allocationMode']?.toString() ?? 'sequence';
+    allocationMode.value =
+        savedAllocationMode == 'spin' ? 'spin' : 'sequence';
 
     final dynamic savedMembers = committee['members'];
     final dynamic savedPayments = committee['payments'];
@@ -832,6 +839,27 @@ class CommitteeController extends GetxController {
       receivingSelections.assignAll(selections);
       _saveActiveCommittee();
     } else {
+      _persistCommittees();
+    }
+  }
+
+  void setCommitteeAllocationMode({
+    required String committeeId,
+    required String mode,
+  }) {
+    if (mode != 'sequence' && mode != 'spin') return;
+
+    final Map<String, dynamic>? committee = committees.firstWhereOrNull(
+      (item) => item['id']?.toString() == committeeId,
+    );
+    if (committee == null) return;
+
+    committee['allocationMode'] = mode;
+    if (activeCommitteeId.value == committeeId) {
+      allocationMode.value = mode;
+      _saveActiveCommittee();
+    } else {
+      committees.refresh();
       _persistCommittees();
     }
   }

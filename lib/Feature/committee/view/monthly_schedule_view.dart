@@ -33,6 +33,11 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
   static const Color _borderBlue = Color(0xFFDCE5F0);
   static const Color _textColor = Color(0xFF243449);
 
+  int _integer(dynamic value, [int fallback = 0]) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -167,18 +172,88 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
               const SizedBox(height: 12),
               ...committees.map((committee) {
                 final String id = committee['id']?.toString() ?? '';
+                final String name =
+                    committee['name']?.toString().trim().isNotEmpty == true
+                    ? committee['name'].toString().trim()
+                    : 'Committee';
+                final List<dynamic> members = committee['members'] is List
+                    ? committee['members'] as List<dynamic>
+                    : const <dynamic>[];
+                final int duration = _integer(
+                  committee['duration'] ?? committee['durationMonths'],
+                );
+                final String unit =
+                    (committee['unit'] ?? committee['durationUnit'] ?? 'months')
+                        .toString()
+                        .toLowerCase();
+                final double durationMonths = switch (unit) {
+                  'year' || 'years' => duration * 12.0,
+                  'week' || 'weeks' => duration / 4.345,
+                  'day' || 'days' => duration / 30.0,
+                  _ => duration.toDouble(),
+                };
+                final int rounds = durationMonths > 0
+                    ? durationMonths.ceil()
+                    : 0;
                 return Padding(
                   key: ValueKey<String>('schedule-card-$id'),
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _CommitteeScheduleCard(
-                    committee: committee,
-                    controller: _committeeController,
-                    cardColor: cardColor,
-                    primaryTextColor: primaryTextColor,
-                    secondaryTextColor: secondaryTextColor,
-                    borderColor: borderColor,
-                    accentColor: accentColor,
-                    iconBackgroundColor: iconBackgroundColor,
+                  child: Card(
+                    margin: EdgeInsets.zero,
+                    color: cardColor,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: borderColor),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        foregroundColor: theme.colorScheme.onPrimaryContainer,
+                        child: const Icon(Icons.groups_rounded),
+                      ),
+                      title: Text(
+                        name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: primaryTextColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${members.length} ${members.length == 1 ? 'member' : 'members'}'
+                        ' · $rounds ${rounds == 1 ? 'round' : 'rounds'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: secondaryTextColor,
+                      ),
+                      onTap: id.isEmpty
+                          ? null
+                          : () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => _CommitteeScheduleDetailView(
+                                    committee: committee,
+                                    controller: _committeeController,
+                                    cardColor: cardColor,
+                                    primaryTextColor: primaryTextColor,
+                                    secondaryTextColor: secondaryTextColor,
+                                    borderColor: borderColor,
+                                    accentColor: accentColor,
+                                    iconBackgroundColor: iconBackgroundColor,
+                                  ),
+                                ),
+                              );
+                            },
+                    ),
                   ),
                 );
               }),
@@ -190,8 +265,8 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
   }
 }
 
-class _CommitteeScheduleCard extends StatefulWidget {
-  const _CommitteeScheduleCard({
+class _CommitteeScheduleDetailView extends StatelessWidget {
+  const _CommitteeScheduleDetailView({
     required this.committee,
     required this.controller,
     required this.cardColor,
@@ -212,19 +287,83 @@ class _CommitteeScheduleCard extends StatefulWidget {
   final Color iconBackgroundColor;
 
   @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          committee['name']?.toString().trim().isNotEmpty == true
+              ? committee['name'].toString().trim()
+              : 'Committee Schedule',
+        ),
+        foregroundColor: primaryTextColor,
+        backgroundColor: cardColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _CommitteeScheduleCard(
+            committee: committee,
+            controller: controller,
+            cardColor: cardColor,
+            primaryTextColor: primaryTextColor,
+            secondaryTextColor: secondaryTextColor,
+            borderColor: borderColor,
+            accentColor: accentColor,
+            iconBackgroundColor: iconBackgroundColor,
+            expandedPage: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommitteeScheduleCard extends StatefulWidget {
+  const _CommitteeScheduleCard({
+    required this.committee,
+    required this.controller,
+    required this.cardColor,
+    required this.primaryTextColor,
+    required this.secondaryTextColor,
+    required this.borderColor,
+    required this.accentColor,
+    required this.iconBackgroundColor,
+    this.expandedPage = false,
+  });
+
+  final Map<String, dynamic> committee;
+  final CommitteeController controller;
+  final Color cardColor;
+  final Color primaryTextColor;
+  final Color secondaryTextColor;
+  final Color borderColor;
+  final Color accentColor;
+  final Color iconBackgroundColor;
+  final bool expandedPage;
+
+  @override
   State<_CommitteeScheduleCard> createState() => _CommitteeScheduleCardState();
 }
+
+enum _AllocationMode { sequence, spin }
 
 class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
   final Random _random = Random();
   late FixedExtentScrollController _wheelController;
   int _selectedMonthIndex = 0;
   bool _isSpinning = false;
+  _AllocationMode _allocationMode = _AllocationMode.sequence;
   final Map<String, String> _selectionOverrides = <String, String>{};
 
   @override
   void initState() {
     super.initState();
+    _allocationMode = widget.committee['allocationMode'] == 'spin'
+        ? _AllocationMode.spin
+        : _AllocationMode.sequence;
     final List<Map<String, dynamic>> members = _members;
     final List<Map<String, dynamic>> schedule = _createSchedule();
     final String? selectedName = schedule.isEmpty
@@ -324,6 +463,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             );
 
       return {
+        'round': index + 1,
+        'isAllocated': savedName != null,
         'month': '${_monthName(date.month)} ${date.year}',
         'memberName': _memberName(savedMember),
         'memberUsername': _memberUsername(savedMember),
@@ -365,50 +506,71 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     }
   }
 
+  Future<void> _allocateBySequence(List<Map<String, dynamic>> schedule) async {
+    if (_isSpinning || schedule.isEmpty) return;
+    final List<Map<String, dynamic>> members = _members;
+    if (members.isEmpty || !_wheelController.hasClients) return;
+
+    final int winnerIndex = _selectedMonthIndex % members.length;
+    await _animateToMember(winnerIndex, members.length);
+    if (!mounted) return;
+    _saveReceivingMember(schedule, members[winnerIndex]);
+  }
+
   Future<void> _spinForReceiving(List<Map<String, dynamic>> schedule) async {
     final List<Map<String, dynamic>> members = _members;
     if (_isSpinning || members.isEmpty || schedule.isEmpty) return;
     if (!_wheelController.hasClients) return;
 
+    final int winnerIndex = _random.nextInt(members.length);
+    await _animateToMember(winnerIndex, members.length);
+    if (!mounted) return;
+    _saveReceivingMember(schedule, members[winnerIndex]);
+  }
+
+  Future<void> _animateToMember(int winnerIndex, int memberCount) async {
     setState(() => _isSpinning = true);
     try {
-      final int winnerIndex = _random.nextInt(members.length);
       final int currentItem = _wheelController.selectedItem;
       final int stepsToWinner =
-          (winnerIndex - currentItem % members.length + members.length) %
-          members.length;
-      final int targetItem = currentItem + members.length + stepsToWinner;
+          (winnerIndex - currentItem % memberCount + memberCount) % memberCount;
       await _wheelController.animateToItem(
-        targetItem,
-        duration: const Duration(milliseconds: 1300),
+        currentItem + memberCount + stepsToWinner,
+        duration: Duration(
+          milliseconds: _allocationMode == _AllocationMode.sequence
+              ? 750
+              : 1300,
+        ),
         curve: Curves.easeOutQuart,
-      );
-      if (!mounted) return;
-
-      final DateTime date = schedule[_selectedMonthIndex]['date'] as DateTime;
-      final Map<String, dynamic> winningMember = members[winnerIndex];
-      final String winner = _memberName(winningMember);
-      final String username = _memberUsername(winningMember);
-      _selectionOverrides[_monthKey(date)] = winner;
-      widget.controller.saveReceivingSelectionForCommittee(
-        committeeId: _committeeId,
-        date: date,
-        memberName: winner,
-      );
-      setState(() {});
-
-      Get.snackbar(
-        'Receiving Member Selected',
-        '$username will receive the committee amount for '
-            '${_monthName(date.month)} ${date.year}.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: widget.accentColor,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(12),
       );
     } finally {
       if (mounted) setState(() => _isSpinning = false);
     }
+  }
+
+  void _saveReceivingMember(
+    List<Map<String, dynamic>> schedule,
+    Map<String, dynamic> member,
+  ) {
+    final DateTime date = schedule[_selectedMonthIndex]['date'] as DateTime;
+    final String name = _memberName(member);
+    _selectionOverrides[_monthKey(date)] = name;
+    widget.controller.saveReceivingSelectionForCommittee(
+      committeeId: _committeeId,
+      date: date,
+      memberName: name,
+    );
+    setState(() {});
+
+    Get.snackbar(
+      'Committee Allocated',
+      '${_memberUsername(member)} is allocated to receive the committee for '
+          '${_monthName(date.month)} ${date.year}.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: widget.accentColor,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(12),
+    );
   }
 
   @override
@@ -416,6 +578,10 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     final ThemeData theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final List<Map<String, dynamic>> schedule = _createSchedule();
+    final List<Map<String, dynamic>> displayedSchedule =
+        _allocationMode == _AllocationMode.spin
+        ? schedule.where((item) => item['isAllocated'] == true).toList()
+        : schedule;
     final List<Map<String, dynamic>> members = _members;
     if (_selectedMonthIndex >= schedule.length) {
       _selectedMonthIndex = 0;
@@ -436,6 +602,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         key: PageStorageKey<String>('committee-schedule-$_committeeId'),
+        initiallyExpanded: widget.expandedPage,
+        trailing: widget.expandedPage ? const SizedBox.shrink() : null,
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.primaryContainer,
           foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -512,6 +680,67 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                   ? null
                   : (index) => _selectMonth(index, schedule),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Allocation method',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: widget.primaryTextColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<_AllocationMode>(
+              segments: const [
+                ButtonSegment<_AllocationMode>(
+                  value: _AllocationMode.sequence,
+                  icon: Icon(Icons.format_list_numbered_rounded),
+                  label: Text('Added order'),
+                ),
+                ButtonSegment<_AllocationMode>(
+                  value: _AllocationMode.spin,
+                  icon: Icon(Icons.casino_outlined),
+                  label: Text('Spin & win'),
+                ),
+              ],
+              selected: <_AllocationMode>{_allocationMode},
+              onSelectionChanged: _isSpinning
+                  ? null
+                  : (selection) {
+                      final _AllocationMode mode = selection.first;
+                      setState(() => _allocationMode = mode);
+                      widget.controller.setCommitteeAllocationMode(
+                        committeeId: _committeeId,
+                        mode: mode == _AllocationMode.sequence
+                            ? 'sequence'
+                            : 'spin',
+                      );
+                    },
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+                  (states) => states.contains(WidgetState.selected)
+                      ? Colors.white
+                      : widget.primaryTextColor,
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+                  (states) => states.contains(WidgetState.selected)
+                      ? widget.accentColor
+                      : widget.cardColor,
+                ),
+                side: WidgetStatePropertyAll<BorderSide>(
+                  BorderSide(color: widget.borderColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _allocationMode == _AllocationMode.sequence
+                  ? 'Allocate each round in the order members were added.'
+                  : 'Spin the wheel to randomly choose this round’s recipient.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: widget.secondaryTextColor,
+              ),
+            ),
             const SizedBox(height: 14),
             Container(
               height: 180,
@@ -580,7 +809,9 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
               child: ElevatedButton.icon(
                 onPressed: _isSpinning
                     ? null
-                    : () => _spinForReceiving(schedule),
+                    : () => _allocationMode == _AllocationMode.sequence
+                          ? _allocateBySequence(schedule)
+                          : _spinForReceiving(schedule),
                 icon: _isSpinning
                     ? const SizedBox(
                         width: 18,
@@ -590,8 +821,20 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.casino_rounded),
-                label: Text(_isSpinning ? 'Spinning...' : 'Spin'),
+                    : Icon(
+                        _allocationMode == _AllocationMode.sequence
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.casino_rounded,
+                      ),
+                label: Text(
+                  _isSpinning
+                      ? _allocationMode == _AllocationMode.sequence
+                            ? 'Allocating...'
+                            : 'Spinning...'
+                      : _allocationMode == _AllocationMode.sequence
+                      ? 'Allocate by added order'
+                      : 'Spin & allocate',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.accentColor,
                   foregroundColor: Colors.white,
@@ -617,9 +860,13 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                 child: Column(
                   children: [
                     Text(
-                      '${selectedSchedule['memberUsername']} is set to '
-                      'receive the committee for '
-                      '${selectedSchedule['month']}.',
+                      _allocationMode == _AllocationMode.spin &&
+                              selectedSchedule['isAllocated'] != true
+                          ? 'Spin & allocate a recipient for '
+                                '${selectedSchedule['month']}.'
+                          : '${selectedSchedule['memberUsername']} is set to '
+                                'receive the committee for '
+                                '${selectedSchedule['month']}.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -640,22 +887,35 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             ],
             const SizedBox(height: 18),
             Text(
-              'Monthly Schedule',
+              _allocationMode == _AllocationMode.spin
+                  ? 'Allocated Rounds'
+                  : 'Monthly Schedule',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: widget.primaryTextColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 10),
-            ...List<Widget>.generate(schedule.length, (index) {
-              final Map<String, dynamic> item = schedule[index];
-              return ScheduleCard(
-                title: '${index + 1}. ${item['month']}',
-                dueDate: '${item['memberUsername']} • ${item['dueDate']}',
-                amount: item['formattedAmount'].toString(),
-                status: item['status'].toString(),
-              );
-            }),
+            if (displayedSchedule.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No recipients have been allocated yet. Use Spin & allocate '
+                  'to choose the first recipient.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: widget.secondaryTextColor,
+                  ),
+                ),
+              )
+            else
+              ...displayedSchedule.map((item) {
+                return ScheduleCard(
+                  title: '${item['round']}. ${item['month']}',
+                  dueDate: '${item['memberUsername']} • ${item['dueDate']}',
+                  amount: item['formattedAmount'].toString(),
+                  status: item['status'].toString(),
+                );
+              }),
           ],
         ],
       ),
