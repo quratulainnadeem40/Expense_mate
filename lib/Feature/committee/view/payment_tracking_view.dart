@@ -20,7 +20,11 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
   void initState() {
     super.initState();
     if (widget.committeeId != null) {
-      _createPaymentRecordsForMembers();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _createPaymentRecordsForMembers();
+        setState(() {});
+      });
     }
   }
 
@@ -54,10 +58,6 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
         amount: contribution,
         status: 'Pending',
       );
-    }
-
-    if (mounted) {
-      setState(() {});
     }
   }
 

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,149 +19,348 @@ class MonthlyScheduleView extends StatefulWidget {
   });
 
   @override
-  State<MonthlyScheduleView> createState() =>
-      _MonthlyScheduleViewState();
+  State<MonthlyScheduleView> createState() => _MonthlyScheduleViewState();
 }
 
-class _MonthlyScheduleViewState
-    extends State<MonthlyScheduleView> {
-  final CommitteeController committeeController =
-      CommitteeController.instance;
-
+class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
   static const Color primaryBlue = Color(0xFF173B67);
   static const Color backgroundBlue = Color(0xFFF4F7FC);
   static const Color softBlue = Color(0xFFE8F3FF);
   static const Color borderBlue = Color(0xFFDCE5F0);
   static const Color textColor = Color(0xFF243449);
 
-  // --------------------------------------------------
-  // BUILD SCHEDULE FROM THE ACTIVE COMMITTEE
-  // --------------------------------------------------
+  List<Map<String, dynamic>> _membersFor(Map<String, dynamic> committee) {
+    final dynamic savedMembers = committee['members'];
+    if (savedMembers is! List) return [];
 
-  List<Map<String, String>> _createSchedule() {
-    final List<Map<String, String>> result = [];
+    return savedMembers
+        .whereType<Map>()
+        .map((member) => Map<String, dynamic>.from(member))
+        .where((member) => member['name']?.toString().trim().isNotEmpty == true)
+        .toList();
+  }
 
-    // Read the original members of the active committee.
-    final List<Map<String, dynamic>> actualMembers =
-        committeeController.members.toList();
+  List<Map<String, String>> _createSchedule(Map<String, dynamic> committee) {
+    final List<Map<String, dynamic>> members = _membersFor(committee);
+    final DateTime? startDate = _parseDate(committee['startDate']);
+    if (members.isEmpty || startDate == null) return [];
 
-    // Do not generate a schedule without actual members.
-    if (actualMembers.isEmpty) {
-      return result;
-    }
+    final int duration = _integer(committee['duration']);
+    final String unit = (committee['unit'] ?? committee['durationUnit'] ?? '')
+        .toString()
+        .toLowerCase();
+    final double durationMonths = switch (unit) {
+      'year' || 'years' => duration * 12.0,
+      'week' || 'weeks' => duration / 4.345,
+      'day' || 'days' => duration / 30,
+      _ => duration.toDouble(),
+    };
+    if (durationMonths <= 0) return [];
 
-    // Use the active committee's saved start date.
-    final DateTime? committeeStartDate =
-        committeeController.startDate.value;
+    final int rounds = durationMonths.ceil() < members.length
+        ? durationMonths.ceil()
+        : members.length;
+    final double contribution = _number(committee['contribution']);
+    final int memberCount = _integer(
+      committee['memberCount'] ?? committee['membersCount'],
+      members.length,
+    );
+    final double committeeAmount = contribution * memberCount;
+    final DateTime today = DateUtils.dateOnly(DateTime.now());
 
-    if (committeeStartDate == null) {
-      return result;
-    }
-
-    // Use the active committee's actual duration.
-    final int durationMonths =
-        committeeController.durationInMonths.ceil();
-
-    if (durationMonths <= 0) {
-      return result;
-    }
-
-    // Keep only actual members with valid names.
-    // Their existing order is preserved.
-    final List<Map<String, dynamic>> validMembers =
-        actualMembers.where((member) {
-      return (member['name']?.toString().trim() ?? '')
-          .isNotEmpty;
-    }).toList();
-
-    if (validMembers.isEmpty) {
-      return result;
-    }
-
-    // Never repeat a member to fill extra months.
-    // Each real member receives at most one schedule entry.
-    final int scheduleCount =
-        validMembers.length < durationMonths
-            ? validMembers.length
-            : durationMonths;
-
-    // Amount collected for the committee each month.
-    final double committeeAmount =
-        committeeController.totalPool;
-
-    for (int i = 0; i < scheduleCount; i++) {
-      // Calculate each month from the actual start date.
-      // Using day 1 first avoids invalid dates such as
-      // 31 February when moving between months.
-      final DateTime firstDayOfMonth = DateTime(
-        committeeStartDate.year,
-        committeeStartDate.month + i,
-        1,
-      );
-
-      final int lastDayOfMonth = DateTime(
-        firstDayOfMonth.year,
-        firstDayOfMonth.month + 1,
-        0,
-      ).day;
-
-      final int validDay =
-          committeeStartDate.day > lastDayOfMonth
-              ? lastDayOfMonth
-              : committeeStartDate.day;
-
-      final DateTime receivingDate = DateTime(
-        firstDayOfMonth.year,
-        firstDayOfMonth.month,
-        validDay,
-      );
-
-      // Use the member at this exact position.
-      // There is no modulo or repeated-member logic.
-      final Map<String, dynamic> member = validMembers[i];
-
-      final String memberName =
-          member['name'].toString().trim();
-
-      final String monthName =
-          _monthName(receivingDate.month);
-
-      result.add({
-        'month': '$monthName ${receivingDate.year}',
-        'memberName': memberName,
+    return List<Map<String, String>>.generate(rounds, (index) {
+      final DateTime receivingDate = _addMonthsClamped(startDate, index);
+      final Map<String, dynamic> member = members[index];
+      return {
+        'month': '${_monthName(receivingDate.month)} ${receivingDate.year}',
+        'memberName': member['name'].toString().trim(),
+        'dueDate': _formatDate(receivingDate),
         'amount': _formatAmount(committeeAmount),
-        'dueDate':
-            '${receivingDate.day} $monthName ${receivingDate.year}',
-        'status': 'Upcoming',
-      });
-    }
-
-    return result;
+        'status': DateUtils.dateOnly(receivingDate).isAfter(today)
+            ? 'Upcoming'
+            : 'Scheduled',
+      };
+    });
   }
 
-  // --------------------------------------------------
-  // FORMAT AMOUNT
-  // --------------------------------------------------
+  Widget _buildCommitteeCard({
+    required BuildContext context,
+    required Map<String, dynamic> committee,
+    required Color cardColor,
+    required Color primaryTextColor,
+    required Color secondaryTextColor,
+    required Color borderColor,
+    required Color accentColor,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    final List<Map<String, String>> schedule = _createSchedule(committee);
+    final String committeeName =
+        committee['name']?.toString().trim().isNotEmpty == true
+        ? committee['name'].toString().trim()
+        : 'Committee';
+    final List<Map<String, dynamic>> members = _membersFor(committee);
 
-  String _formatAmount(double amount) {
-    final int roundedAmount = amount.round();
-    final String value = roundedAmount.toString();
-    final StringBuffer result = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      if (i > 0 && (value.length - i) % 3 == 0) {
-        result.write(',');
-      }
-
-      result.write(value[i]);
-    }
-
-    return 'PKR $result';
+    return Card(
+      margin: EdgeInsets.zero,
+      color: cardColor,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: borderColor),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: PageStorageKey<String>(
+          'monthly-schedule-${committee['id'] ?? committeeName}',
+        ),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.primaryContainer,
+          foregroundColor: theme.colorScheme.onPrimaryContainer,
+          child: const Icon(Icons.groups_rounded),
+        ),
+        title: Text(
+          committeeName,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: primaryTextColor,
+          ),
+        ),
+        subtitle: Text(
+          '${members.length} ${members.length == 1 ? 'member' : 'members'}'
+          ' · ${schedule.length} ${schedule.length == 1 ? 'round' : 'rounds'}',
+          style: theme.textTheme.bodySmall?.copyWith(color: secondaryTextColor),
+        ),
+        children: [
+          if (schedule.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+              child: Text(
+                members.isEmpty
+                    ? 'Add members to see the receiving order.'
+                    : 'Set a start date and duration to create the schedule.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: secondaryTextColor,
+                ),
+              ),
+            )
+          else
+            ...List.generate(schedule.length, (index) {
+              final Map<String, String> item = schedule[index];
+              return ScheduleCard(
+                title: '${index + 1}. ${item['month']!}',
+                dueDate: '${item['memberName']!} • ${item['dueDate']!}',
+                amount: item['amount']!,
+                status: item['status']!,
+              );
+            }),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
   }
 
-  // --------------------------------------------------
-  // MONTH NAME
-  // --------------------------------------------------
+  Widget _buildScreen(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color backgroundColor = isDark
+        ? const Color(0xFF121212)
+        : backgroundBlue;
+    final Color cardColor = theme.colorScheme.surface;
+    final Color primaryTextColor = isDark ? Colors.white : textColor;
+    final Color secondaryTextColor = theme.colorScheme.onSurfaceVariant;
+    final Color borderColor = isDark ? const Color(0xFF3A3A3A) : borderBlue;
+    final Color accentColor = isDark ? const Color(0xFF80CBC4) : primaryBlue;
+    final Color iconBackgroundColor = isDark
+        ? const Color(0xFF333333)
+        : softBlue;
+    final CommitteeController controller = CommitteeController.instance;
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_month_rounded, color: accentColor),
+            const SizedBox(width: 8),
+            Text(
+              'Monthly Schedule',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: primaryTextColor,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
+        foregroundColor: primaryTextColor,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: SafeArea(
+        child: Obx(() {
+          final List<Map<String, dynamic>> committees = controller.committees
+              .map((committee) => Map<String, dynamic>.from(committee))
+              .toList();
+
+          if (committees.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Add a committee to see its monthly schedule.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.16 : 0.035,
+                      ),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: iconBackgroundColor,
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Icon(
+                        Icons.calendar_month_rounded,
+                        size: 28,
+                        color: accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Receiving Order',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: primaryTextColor,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Tap a committee to see who receives it in '
+                            'each numbered round.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              height: 1.45,
+                              color: secondaryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'Committees',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: primaryTextColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...committees.map(
+                (committee) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildCommitteeCard(
+                    context: context,
+                    committee: committee,
+                    cardColor: cardColor,
+                    primaryTextColor: primaryTextColor,
+                    secondaryTextColor: secondaryTextColor,
+                    borderColor: borderColor,
+                    accentColor: accentColor,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value is DateTime) return value;
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
+  int _integer(dynamic value, [int fallback = 0]) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  double _number(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
+  }
+
+  DateTime _addMonthsClamped(DateTime date, int months) {
+    final DateTime targetMonth = DateTime(date.year, date.month + months, 1);
+    final int lastDay = DateTime(
+      targetMonth.year,
+      targetMonth.month + 1,
+      0,
+    ).day;
+    return DateTime(
+      targetMonth.year,
+      targetMonth.month,
+      date.day > lastDay ? lastDay : date.day,
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const List<String> months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
 
   String _monthName(int month) {
     const List<String> months = [
@@ -179,275 +377,21 @@ class _MonthlyScheduleViewState
       'November',
       'December',
     ];
-
     return months[month - 1];
   }
 
-  // --------------------------------------------------
-  // BUILD
-  // --------------------------------------------------
+  String _formatAmount(double amount) {
+    final String value = amount.round().toString();
+    final StringBuffer formatted = StringBuffer('PKR ');
+    for (int index = 0; index < value.length; index++) {
+      if (index > 0 && (value.length - index) % 3 == 0) {
+        formatted.write(',');
+      }
+      formatted.write(value[index]);
+    }
+    return formatted.toString();
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
-
-    final Color backgroundColor = isDark
-        ? const Color(0xFF121212)
-        : backgroundBlue;
-
-    final Color cardColor = isDark
-        ? const Color(0xFF242424)
-        : Colors.white;
-
-    final Color appBarColor = isDark
-        ? const Color(0xFF1C1C1C)
-        : Colors.white;
-
-    final Color primaryTextColor =
-        isDark ? Colors.white : textColor;
-
-    final Color secondaryTextColor =
-        isDark ? Colors.white60 : const Color(0xFF718096);
-
-    final Color borderColor = isDark
-        ? const Color(0xFF3A3A3A)
-        : borderBlue;
-
-    final Color accentColor =
-        isDark ? const Color(0xFF80CBC4) : primaryBlue;
-
-    final Color iconBackgroundColor = isDark
-        ? const Color(0xFF333333)
-        : softBlue;
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.calendar_month_rounded,
-              color: accentColor,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Monthly Schedule',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: primaryTextColor,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        backgroundColor: appBarColor,
-        foregroundColor: primaryTextColor,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        // Obx keeps the schedule connected to the
-        // controller's reactive committee data.
-        child: Obx(() {
-          final List<Map<String, String>> schedule =
-              _createSchedule();
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: borderColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: isDark ? 0.16 : 0.035,
-                        ),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: iconBackgroundColor,
-                              borderRadius:
-                                  BorderRadius.circular(13),
-                            ),
-                            child: Icon(
-                              Icons.calendar_month_rounded,
-                              size: 28,
-                              color: accentColor,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Receiving Order',
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                                color: primaryTextColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Each actual committee member appears '
-                        'once in the receiving schedule, in the '
-                        'order they were added.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.5,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  'Monthly Schedule',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: primaryTextColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (schedule.isEmpty)
-                  _buildEmptyState(
-                    isDark: isDark,
-                    cardColor: cardColor,
-                    primaryTextColor: primaryTextColor,
-                    secondaryTextColor: secondaryTextColor,
-                    borderColor: borderColor,
-                    accentColor: accentColor,
-                    iconBackgroundColor: iconBackgroundColor,
-                  )
-                else
-                  ...List.generate(
-                    schedule.length,
-                    (index) {
-                      final Map<String, String> item =
-                          schedule[index];
-
-                      return ScheduleCard(
-                        title:
-                            '${index + 1}. ${item['month']!}',
-                        dueDate:
-                            '${item['memberName']!} • '
-                            '${item['dueDate']!}',
-                        amount: item['amount']!,
-                        status: item['status']!,
-                      );
-                    },
-                  ),
-                const SizedBox(height: 8),
-                Text(
-                  'The schedule uses the active committee’s '
-                  'saved members, start date and duration.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryTextColor,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  // --------------------------------------------------
-  // EMPTY STATE
-  // --------------------------------------------------
-
-  Widget _buildEmptyState({
-    required bool isDark,
-    required Color cardColor,
-    required Color primaryTextColor,
-    required Color secondaryTextColor,
-    required Color borderColor,
-    required Color accentColor,
-    required Color iconBackgroundColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 35,
-      ),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: isDark ? 0.16 : 0.035,
-            ),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: iconBackgroundColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.calendar_month_outlined,
-              size: 42,
-              color: accentColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No Schedule Available',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: primaryTextColor,
-            ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            'Add committee members and ensure the '
-            'committee start date and duration are set '
-            'to generate the receiving schedule.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: secondaryTextColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _buildScreen(context);
 }
