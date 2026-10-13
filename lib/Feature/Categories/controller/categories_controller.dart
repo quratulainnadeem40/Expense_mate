@@ -46,6 +46,26 @@ class CategoriesController extends GetxController {
     return protectedCategoryOrder.contains(_normalizeCategoryName(name));
   }
 
+  List<CategoryModel> categoriesForType(String type) {
+    final normalizedType = type.trim().toLowerCase();
+
+    return categoryList.where((category) {
+      final sourceTypes = category.linkedIds
+          .map((id) => originalCategoryTypes[id])
+          .whereType<String>()
+          .map((type) => type.trim().toLowerCase())
+          .toSet();
+
+      if (sourceTypes.isNotEmpty) {
+        return sourceTypes.contains(normalizedType) ||
+            sourceTypes.contains('both');
+      }
+
+      final categoryType = category.type.trim().toLowerCase();
+      return categoryType == normalizedType || categoryType == 'both';
+    }).toList();
+  }
+
   String _generateUuid() {
     return const Uuid().v4();
   }
@@ -192,6 +212,17 @@ class CategoriesController extends GetxController {
     return ids.where((id) => !idsInUseByTransactions.contains(id)).toList();
   }
 
+  static List<CategoryModel> filterResettableCategories(
+    List<CategoryModel> categories,
+    Set<String> categoryIdsInUse,
+  ) {
+    return categories.where((category) {
+      return !category.isDefault &&
+          !category.id.startsWith('default_') &&
+          category.linkedIds.every((id) => !categoryIdsInUse.contains(id));
+    }).toList();
+  }
+
   // ==========================================================
   // VISIBLE CATEGORIES
   // ==========================================================
@@ -220,16 +251,17 @@ class CategoriesController extends GetxController {
       }
 
       final id = item['id']?.toString() ?? '';
-      final existing = grouped[normalizedName];
+      final groupKey = '$normalizedName|$type';
+      final existing = grouped[groupKey];
 
       if (existing == null) {
         final category = Map<String, dynamic>.from(item);
 
         category['name'] = name;
-        category['type'] = 'both';
+        category['type'] = type;
         category['ids'] = <String>[if (id.isNotEmpty) id];
 
-        grouped[normalizedName] = category;
+        grouped[groupKey] = category;
       } else {
         final dynamic existingIds = existing['ids'];
         final ids = existingIds is List
@@ -241,7 +273,7 @@ class CategoriesController extends GetxController {
         }
 
         existing['ids'] = ids;
-        existing['type'] = 'both';
+        existing['type'] = type;
 
         // Prefer a real UUID over a virtual default ID.
         final existingId = existing['id']?.toString() ?? '';
@@ -289,8 +321,12 @@ class CategoriesController extends GetxController {
             _normalizeCategoryName(item['name']?.toString()) == categoryName,
       );
 
-      if (matches.isNotEmpty) {
-        ordered.addAll(matches);
+      final expenseMatches = matches.where(
+        (item) => item['type']?.toString().toLowerCase() == 'expense',
+      );
+
+      if (expenseMatches.isNotEmpty) {
+        ordered.addAll(expenseMatches);
       } else {
         ordered.add({
           'id': 'default_$categoryName',
@@ -298,10 +334,16 @@ class CategoriesController extends GetxController {
           'icon': categoryName,
           'color': _defaultColorValue(categoryName),
           'isDefault': true,
-          'type': 'both',
+          'type': 'expense',
           'ids': <String>[],
         });
       }
+
+      ordered.addAll(
+        matches.where(
+          (item) => item['type']?.toString().toLowerCase() == 'income',
+        ),
+      );
     }
 
     ordered.addAll(customItems);
@@ -505,7 +547,9 @@ class CategoriesController extends GetxController {
 
         if (matchingLocalCategory != null &&
             _normalizeCategoryName(matchingLocalCategory.name) ==
-                normalizedName) {
+                normalizedName &&
+            matchingLocalCategory.type.trim().toLowerCase() ==
+                item['type']?.toString().trim().toLowerCase()) {
           count++;
         }
       }
@@ -520,7 +564,7 @@ class CategoriesController extends GetxController {
           icon: item['icon']?.toString() ?? normalizedName,
           colorValue: _parseColor(item['color']),
           isDefault: isProtectedCategoryName(rawName),
-          type: 'both',
+          type: item['type']?.toString() ?? 'expense',
           linkedIds: linkedIds.isEmpty ? [categoryId] : linkedIds,
         ),
       );
@@ -760,6 +804,73 @@ class CategoriesController extends GetxController {
     } catch (e) {
       debugPrint('Unable to delete categories: $e');
       _showError('Unable to delete category.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<int?> resetUnusedCategories() async {
+    final user = currentUser;
+
+    if (user == null) {
+      _showError('Please login first.');
+      return null;
+    }
+
+    try {
+      isLoading.value = true;
+
+      final transactions = await _repositories.transactions.getTransactions(
+        user.id,
+      );
+      final categoryIdsInUse = transactions
+          .map((transaction) => transaction.categoryId?.trim() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
+      final categoriesToDelete = filterResettableCategories(
+        categoryList.toList(),
+        categoryIdsInUse,
+      );
+      if (categoriesToDelete.isEmpty) {
+        return 0;
+      }
+
+      final categoryIdsToDelete = categoriesToDelete
+          .expand((category) => category.linkedIds)
+          .where((id) => id.isNotEmpty && !id.startsWith('default_'))
+          .toSet();
+
+      for (final categoryId in categoryIdsToDelete) {
+        await _repositories.categorySync.deleteCategory(
+          userId: user.id,
+          id: categoryId,
+        );
+      }
+
+      final visibleIdsToDelete = categoriesToDelete
+          .map((category) => category.id)
+          .toSet();
+      categoryList.removeWhere(
+        (category) =>
+            visibleIdsToDelete.contains(category.id) ||
+            category.linkedIds.any(categoryIdsToDelete.contains),
+      );
+
+      for (final category in categoriesToDelete) {
+        categoryCounts.remove(category.id);
+        categoryTotals.remove(category.id);
+      }
+      categoryCounts.refresh();
+      categoryTotals.refresh();
+      categoryList.sort(compareCategoryOrder);
+
+      _syncInBackground();
+      return categoriesToDelete.length;
+    } catch (e) {
+      debugPrint('Unable to reset unused categories: $e');
+      _showError('Unable to reset categories.');
+      return null;
     } finally {
       isLoading.value = false;
     }

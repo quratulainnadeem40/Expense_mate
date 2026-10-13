@@ -122,11 +122,18 @@ Future<void> _loadData() async {
   /// an additional safeguard against duplicate dropdown entries.
  
 List<CategoryModel> _getUniqueCategories(
-  List<CategoryModel> categories,
-) {
+  List<CategoryModel> categories, {
+  required bool isIncome,
+}) {
   final Map<String, CategoryModel> grouped = {};
+  final transactionType = isIncome ? 'income' : 'expense';
 
   for (final category in categories) {
+    final categoryType = category.type.trim().toLowerCase();
+    if (categoryType != transactionType && categoryType != 'both') {
+      continue;
+    }
+
     final nameKey = _normalizeCategoryName(category.name);
 
     if (nameKey.isEmpty) continue;
@@ -145,7 +152,7 @@ List<CategoryModel> _getUniqueCategories(
         icon: category.icon,
         colorValue: category.colorValue,
         isDefault: category.isDefault,
-        type: 'both',
+        type: categoryType,
         linkedIds: ids,
       );
 
@@ -165,7 +172,7 @@ List<CategoryModel> _getUniqueCategories(
       icon: existing.icon,
       colorValue: existing.colorValue,
       isDefault: existing.isDefault || category.isDefault,
-      type: 'both',
+      type: categoryType,
       linkedIds: mergedIds,
     );
   }
@@ -580,7 +587,10 @@ List<CategoryModel> _getUniqueCategories(
 
               Obx(() {
                 final categories = _getUniqueCategories(
-                  _categoryController.categoryList.toList(),
+                  _categoryController.categoriesForType(
+                    _isIncome ? 'income' : 'expense',
+                  ),
+                  isIncome: _isIncome,
                 );
 
 debugPrint(

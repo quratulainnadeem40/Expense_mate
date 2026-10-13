@@ -153,6 +153,44 @@ class _CategoriesViewState extends State<CategoriesView> {
     await _showDeleteConfirmationDialog(idsToDelete);
   }
 
+  Future<void> _resetUnusedCategories() async {
+    if (controller.isLoading.value) return;
+
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Reset categories?'),
+        content: const Text(
+          'Custom categories with no linked transactions will be removed. '
+          'Default categories and categories used by transactions will stay. '
+          'Transactions will not be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final removedCount = await controller.resetUnusedCategories();
+    if (!mounted || removedCount == null) return;
+
+    Get.snackbar(
+      removedCount == 0 ? 'Nothing to reset' : 'Categories reset',
+      removedCount == 0
+          ? 'No unused custom categories were found.'
+          : '$removedCount unused categor${removedCount == 1 ? 'y' : 'ies'} removed. Transactions were kept.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   // ============================================================
   // USER NAME
   // ============================================================
@@ -645,6 +683,12 @@ class _CategoriesViewState extends State<CategoriesView> {
                       });
                     },
                     child: const Text('Select'),
+                  ),
+                  TextButton(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : _resetUnusedCategories,
+                    child: const Text('Reset'),
                   ),
                   IconButton(
                     tooltip: 'Open navigation menu',

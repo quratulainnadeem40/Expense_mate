@@ -32,22 +32,14 @@ class ExpenseController extends GetxController {
   late WalletsController walletsController;
 
   /// Categories available for Expense transactions.
-List<CategoryModel> get expenseCategories {
-  return categoriesController.categoryList.where((category) {
-    final type = category.type.trim().toLowerCase();
+  List<CategoryModel> get expenseCategories {
+    return categoriesController.categoriesForType('expense');
+  }
 
-    return type == 'expense' || type == 'both';
-  }).toList();
-}
-
-/// Categories available for Income transactions.
-List<CategoryModel> get incomeCategories {
-  return categoriesController.categoryList.where((category) {
-    final type = category.type.trim().toLowerCase();
-
-    return type == 'income' || type == 'both';
-  }).toList();
-}
+  /// Categories available for Income transactions.
+  List<CategoryModel> get incomeCategories {
+    return categoriesController.categoriesForType('income');
+  }
   @override
   void onInit() {
     super.onInit();
