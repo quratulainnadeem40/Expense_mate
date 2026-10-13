@@ -71,6 +71,10 @@ List<CategoryModel> get incomeCategories {
   }
 
   void toggleType(bool isExp) {
+    if (isExpense.value != isExp && !isEditMode.value) {
+      amountController.clear();
+    }
+
     isExpense.value = isExp;
 
     if (!isEditMode.value) {
