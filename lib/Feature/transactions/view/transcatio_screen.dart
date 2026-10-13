@@ -395,12 +395,10 @@ void _selectAllVisibleTransactions() {
 
     // Apply search filter.
     if (query.isNotEmpty) {
-      final categoryName = tx.isIncome
-          ? 'income'
-          : _getCategoryName(
-              tx.categoryId,
-              customCategory: tx.customCategoryName,
-            ).toLowerCase();
+      final categoryName = _getCategoryName(
+        tx.categoryId,
+        customCategory: tx.customCategoryName,
+      ).toLowerCase();
 
       final title = tx.title.toLowerCase();
 
@@ -883,12 +881,10 @@ Obx(
         return true;
       }
 
-      final categoryName = tx.isIncome
-          ? 'income'
-          : _getCategoryName(
-              tx.categoryId,
-              customCategory: tx.customCategoryName,
-            ).toLowerCase();
+      final categoryName = _getCategoryName(
+        tx.categoryId,
+        customCategory: tx.customCategoryName,
+      ).toLowerCase();
 
       final title = tx.title.toLowerCase();
 
@@ -948,17 +944,10 @@ Obx(
                           transaction.id,
                         );
 
-                        // Income has no category.
-                        final String categoryName =
-                            isIncome
-                                ? 'Income'
-                                : _getCategoryName(
-                                    transaction
-                                        .categoryId,
-                                    customCategory:
-                                        transaction
-                                            .customCategoryName,
-                                  );
+                        final String categoryName = _getCategoryName(
+                          transaction.categoryId,
+                          customCategory: transaction.customCategoryName,
+                        );
 
                         final String displayTitle =
                             transaction.title
