@@ -922,11 +922,11 @@ Obx(
     // Keep your existing ListView.builder code here.
 
                     return ListView.builder(
-                      padding:
-                          const EdgeInsets
-                              .symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        112 + MediaQuery.of(context).viewPadding.bottom,
                       ),
                       itemCount: list.length,
                       itemBuilder:
