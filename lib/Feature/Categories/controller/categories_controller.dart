@@ -25,6 +25,7 @@ class CategoriesController extends GetxController {
   final categoryList = <CategoryModel>[].obs;
   final categoryCounts = <String, int>{}.obs;
   final categoryTotals = <String, double>{}.obs;
+  final originalCategoryTypes = <String, String>{}.obs;
 
   final isLoading = false.obs;
 
@@ -433,6 +434,10 @@ Future<CategoryModel?> findCategoryByName(
   Future<void> _loadFromLocal(String userId) async {
     final localCategories =
         await _repositories.categories.getCategories(userId);
+        originalCategoryTypes.assignAll({
+  for (final category in localCategories)
+    category.id: category.type.trim().toLowerCase(),
+});
 
     debugPrint('===== LOCAL CATEGORIES =====');
 
@@ -632,8 +637,8 @@ debugPrint('==================================');
 
     try {
       // Same name means the same visible category, regardless of type.
-      final existingCategory =
-          await findCategoryByName(trimmedName);
+     final existingCategory =
+    await findCategoryByName(trimmedName);
 
       if (existingCategory != null) {
         if (closeDialog && (Get.isDialogOpen ?? false)) {
