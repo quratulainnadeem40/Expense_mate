@@ -1,4 +1,4 @@
- import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -222,4 +222,59 @@ void main() {
       expect(visible.map((category) => category.name), ['Freelance']);
     },
   );
+
+  test('category cycle honors selected start and end dates', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 10, 14),
+      startDay: 20,
+    );
+
+    expect(period.start, DateTime(2026, 9, 20));
+    expect(period.end, DateTime(2026, 10, 19));
+  });
+
+  test('manual category reset starts a new cycle immediately', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 10, 14, 18),
+      startDay: 20,
+      manualResetDate: DateTime(2026, 10, 14, 16),
+    );
+
+    expect(period.start, DateTime(2026, 10, 14));
+    expect(period.end, DateTime(2026, 10, 19));
+  });
+
+  test('manual category cycle does not roll over on the monthly start day', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 1),
+      startDay: 20,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14),
+    );
+
+    expect(period.start, DateTime(2026, 10, 14));
+    expect(period.end, DateTime(2026, 11, 1));
+  });
+
+  test('automatic category cycle rolls over on the selected day', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 20),
+      startDay: 20,
+      automatic: true,
+      manualResetDate: DateTime(2026, 10, 14),
+    );
+
+    expect(period.start, DateTime(2026, 11, 20));
+    expect(period.end, DateTime(2026, 12, 19));
+  });
+
+  test('category cycle clamps start dates to the last day of short months', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 2, 27),
+      startDay: 31,
+    );
+
+    expect(period.start, DateTime(2026, 1, 31));
+    expect(period.end, DateTime(2026, 2, 27));
+  });
 }

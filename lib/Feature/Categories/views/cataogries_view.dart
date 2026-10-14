@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -9,7 +11,6 @@ import 'package:expense_mate/Feature/Categories/controller/categories_controller
 import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
 import 'package:expense_mate/Feature/Categories/views/category_history_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
-import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
 import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
@@ -44,26 +45,24 @@ class _CategoriesViewState extends State<CategoriesView>
   final Set<String> selectedCategoryIds = {};
   bool isSelectionMode = false;
   bool _isShowingCycleSetup = false;
-
-  BudgetController get _budgetController {
-    if (Get.isRegistered<BudgetController>()) {
-      return Get.find<BudgetController>();
-    }
-
-    return Get.put(BudgetController(), permanent: true);
-  }
+  Timer? _cycleRefreshTimer;
 
   int get _monthStartDay {
-    if (Get.isRegistered<BudgetController>()) {
-      return Get.find<BudgetController>().monthStartDay.value;
-    }
-
-    final storedStartDay = Hive.box(
-      AppKeys.budgetBox,
-    ).get(AppKeys.budgetMonthStartDayKey);
+    final box = Hive.box(AppKeys.budgetBox);
+    final storedStartDay =
+        box.get(AppKeys.categoryCycleStartDayKey) ??
+        box.get(AppKeys.budgetMonthStartDayKey);
     return storedStartDay is int && storedStartDay >= 1 && storedStartDay <= 31
         ? storedStartDay
         : 1;
+  }
+
+  bool get _isCategoryCycleAutomatic {
+    final box = Hive.box(AppKeys.budgetBox);
+    final storedMode =
+        box.get(AppKeys.categoryCycleAutomaticResetKey) ??
+        box.get(AppKeys.budgetResetModeKey);
+    return storedMode is bool ? storedMode : true;
   }
 
   @override
@@ -73,12 +72,14 @@ class _CategoriesViewState extends State<CategoriesView>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.fetchCategories();
+      _scheduleCycleRefresh();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _cycleRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -86,35 +87,58 @@ class _CategoriesViewState extends State<CategoriesView>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       setState(() {});
+      _scheduleCycleRefresh();
     }
   }
 
-  int _clampDay(int year, int month, int day) {
-    final lastDay = DateTime(year, month + 1, 0).day;
-    return day > lastDay ? lastDay : day;
+  void _scheduleCycleRefresh() {
+    _cycleRefreshTimer?.cancel();
+    final nextCycleStart = _periodEnd.add(const Duration(days: 1));
+    final delay = nextCycleStart.difference(DateTime.now());
+    _cycleRefreshTimer = Timer(delay.isNegative ? Duration.zero : delay, () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleCycleRefresh();
+    });
   }
 
-  DateTime _cycleStartForMonth(DateTime month) {
-    return DateTime(
-      month.year,
-      month.month,
-      _clampDay(month.year, month.month, _monthStartDay),
+  DateTime? get _manualCategoryCycleResetDate {
+    final savedDate = Hive.box(
+      AppKeys.budgetBox,
+    ).get(AppKeys.categoryCycleManualResetKey);
+    if (savedDate is! String) return null;
+    return DateTime.tryParse(savedDate);
+  }
+
+  ({DateTime start, DateTime end}) _categoryCyclePeriod({int? startDay}) {
+    return CategoriesController.categoryCyclePeriod(
+      now: DateTime.now(),
+      startDay: startDay ?? _monthStartDay,
+      automatic: _isCategoryCycleAutomatic,
+      manualResetDate: _manualCategoryCycleResetDate,
     );
   }
 
-  DateTime get _periodStart {
-    final now = DateTime.now();
-    final thisMonth = DateTime(now.year, now.month);
-    final thisMonthStart = _cycleStartForMonth(thisMonth);
-    return now.isBefore(thisMonthStart)
-        ? _cycleStartForMonth(DateTime(now.year, now.month - 1))
-        : thisMonthStart;
+  ({DateTime start, DateTime end}) _previewCategoryCyclePeriod({
+    required int startDay,
+    required bool automatic,
+  }) {
+    return CategoriesController.categoryCyclePeriod(
+      now: DateTime.now(),
+      startDay: startDay,
+      automatic: automatic,
+      manualResetDate: automatic
+          ? _manualCategoryCycleResetDate
+          : DateTime.now(),
+    );
   }
 
-  DateTime get _periodEnd {
-    final nextMonth = DateTime(_periodStart.year, _periodStart.month + 1);
-    return _cycleStartForMonth(nextMonth).subtract(const Duration(days: 1));
-  }
+  DateTime get _periodStart => _categoryCyclePeriod().start;
+
+  DateTime get _periodEnd => _categoryCyclePeriod().end;
+
+  String _formatCycleDate(DateTime date) =>
+      DateFormat('d MMM yyyy').format(date);
 
   String _formatCategoryAmount(double amount) {
     return 'PKR ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
@@ -292,14 +316,105 @@ class _CategoriesViewState extends State<CategoriesView>
     Get.to(() => const CategoryHistoryScreen());
   }
 
+  bool get _hasTransactionsToConfirm {
+    return _transactionsController.transactions.isNotEmpty;
+  }
+
+  Future<bool> _confirmCategoryCycleChange({
+    required BuildContext context,
+    required int startDay,
+    required bool automatic,
+    required bool isDark,
+  }) async {
+    if (!_hasTransactionsToConfirm) return true;
+
+    final period = _previewCategoryCyclePeriod(
+      startDay: startDay,
+      automatic: automatic,
+    );
+    final startDate = automatic ? period.start : DateTime.now();
+    final endDate = period.end;
+
+    final message = automatic
+        ? 'Transactions are present. Category totals will be tracked from '
+              '${_formatCycleDate(startDate)} to ${_formatCycleDate(endDate)} '
+              'and will start a new cycle automatically on day $startDay. '
+              'Your transactions and history will not be deleted.'
+        : 'This will start a new category tracking cycle today, '
+              '${_formatCycleDate(startDate)}. Current category totals will '
+              'start from zero. Transactions and reports history will remain '
+              'available and nothing will be deleted.';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          automatic ? 'Confirm category cycle' : 'Reset category totals?',
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(automatic ? 'Confirm' : 'Reset totals'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed == true;
+  }
+
+  Future<void> _saveCategoryCycle({
+    required BuildContext sheetContext,
+    required int day,
+    required bool automatic,
+    required bool isDark,
+  }) async {
+    final confirmed = await _confirmCategoryCycleChange(
+      context: sheetContext,
+      startDay: day,
+      automatic: automatic,
+      isDark: isDark,
+    );
+    if (!confirmed || !mounted) return;
+
+    if (!automatic) {
+      await Hive.box(AppKeys.budgetBox).put(
+        AppKeys.categoryCycleManualResetKey,
+        DateTime.now().toIso8601String(),
+      );
+    }
+
+    final box = Hive.box(AppKeys.budgetBox);
+    await box.put(AppKeys.categoryCycleStartDayKey, day);
+    await box.put(AppKeys.categoryCycleAutomaticResetKey, automatic);
+
+    if (sheetContext.mounted) {
+      Navigator.pop(sheetContext);
+    }
+    if (mounted) {
+      setState(() {});
+      _scheduleCycleRefresh();
+    }
+  }
+
   Future<void> _showCycleSetupSheet() async {
     if (_isShowingCycleSetup || !mounted) return;
     _isShowingCycleSetup = true;
 
-    final budgetController = _budgetController;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    var day = budgetController.monthStartDay.value;
-    var automatic = budgetController.isAutomaticReset.value;
+    var day = _monthStartDay;
+    var automatic = _isCategoryCycleAutomatic;
 
     try {
       await showModalBottomSheet<void>(
@@ -307,207 +422,237 @@ class _CategoriesViewState extends State<CategoriesView>
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (sheetContext) => StatefulBuilder(
-          builder: (context, setSheetState) => Container(
-            margin: const EdgeInsets.only(top: 18),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141414) : Colors.white,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
+          builder: (context, setSheetState) {
+            final previewPeriod = _previewCategoryCyclePeriod(
+              startDay: day,
+              automatic: automatic,
+            );
+
+            return Container(
+              margin: const EdgeInsets.only(top: 18),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141414) : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
-            ),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 52,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white24 : Colors.black12,
-                            borderRadius: BorderRadius.circular(20),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 52,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Set Up Your Category Cycle',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1E1E1E),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Set Up Your Category Cycle',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E1E1E),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Choose when your monthly category tracking period should start.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                        const SizedBox(height: 6),
+                        Text(
+                          'Choose when your monthly category tracking period should start.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 22),
-                      Text(
-                        'Cycle Start Day',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1F2937),
+                        const SizedBox(height: 22),
+                        Text(
+                          'Cycle Start Day',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: List.generate(31, (index) {
-                          final value = index + 1;
-                          final active = value == day;
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(31, (index) {
+                            final value = index + 1;
+                            final active = value == day;
 
-                          return MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: () => setSheetState(() => day = value),
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: active
-                                      ? const Color(0xFF4CAF50)
-                                      : (isDark
-                                            ? const Color(0xFF202020)
-                                            : const Color(0xFFF1F4F0)),
-                                  borderRadius: BorderRadius.circular(11),
-                                ),
-                                child: Text(
-                                  '$value',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: active
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    color: active
-                                        ? Colors.white
-                                        : (isDark
-                                              ? Colors.white70
-                                              : Colors.black87),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                      const SizedBox(height: 22),
-                      Text(
-                        'Budget Reset Mode',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1F2937),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF202020)
-                              : const Color(0xFFEAEFEA),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [true, false].map((auto) {
-                            final active = automatic == auto;
-                            return Expanded(
+                            return MouseRegion(
+                              cursor: SystemMouseCursors.click,
                               child: GestureDetector(
-                                onTap: () =>
-                                    setSheetState(() => automatic = auto),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 180),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
+                                onTap: () => setSheetState(() => day = value),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
                                     color: active
                                         ? const Color(0xFF4CAF50)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
+                                        : (isDark
+                                              ? const Color(0xFF202020)
+                                              : const Color(0xFFF1F4F0)),
+                                    borderRadius: BorderRadius.circular(11),
                                   ),
                                   child: Text(
-                                    auto ? 'Automatic' : 'Manual',
+                                    '$value',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      fontWeight: active
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                       color: active
                                           ? Colors.white
                                           : (isDark
                                                 ? Colors.white70
-                                                : Colors.black54),
+                                                : Colors.black87),
                                     ),
                                   ),
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                         ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        automatic
-                            ? 'Your category tracking cycle and budget will update automatically on the selected date every month.'
-                            : 'Category tracking follows this cycle; you can reset the budget manually whenever you want.',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          height: 1.5,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            budgetController.setMonthStartDay(day);
-                            budgetController.setAutomaticReset(automatic);
-                            budgetController.markCycleConfigured();
-                            Navigator.pop(sheetContext);
-                            if (mounted) setState(() {});
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
                           ),
-                          child: const Text(
-                            'Save Category Cycle',
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF202020)
+                                : const Color(0xFFF1F4F0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            'Cycle: ${_formatCycleDate(previewPeriod.start)} – '
+                            '${_formatCycleDate(previewPeriod.end)}',
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF344054),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 22),
+                        Text(
+                          'Category Reset Mode',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF202020)
+                                : const Color(0xFFEAEFEA),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [true, false].map((auto) {
+                              final active = automatic == auto;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setSheetState(() => automatic = auto),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: active
+                                          ? const Color(0xFF4CAF50)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      auto ? 'Automatic' : 'Manual',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: active
+                                            ? Colors.white
+                                            : (isDark
+                                                  ? Colors.white70
+                                                  : Colors.black54),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          automatic
+                              ? 'Category totals roll over automatically on day $day each month. Your transactions remain saved.'
+                              : 'Saving in Manual mode resets category totals from today. Transactions remain saved.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.5,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: () => _saveCategoryCycle(
+                              sheetContext: sheetContext,
+                              day: day,
+                              automatic: automatic,
+                              isDark: isDark,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              'Save Category Cycle',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       );
     } finally {
@@ -942,7 +1087,8 @@ class _CategoriesViewState extends State<CategoriesView>
               const SizedBox(height: 2),
 
               Text(
-                'Manage your expense categories',
+                '${_formatCycleDate(_periodStart)} – '
+                '${_formatCycleDate(_periodEnd)}',
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -1027,10 +1173,11 @@ class _CategoriesViewState extends State<CategoriesView>
                   );
                 }
 
-                final categories = CategoriesController.filterCategoriesForDisplay(
-                  categories: controller.categoryList,
-                  transactions: transactions,
-                );
+                final categories =
+                    CategoriesController.filterCategoriesForDisplay(
+                      categories: controller.categoryList,
+                      transactions: transactions,
+                    );
 
                 return Column(
                   children: [

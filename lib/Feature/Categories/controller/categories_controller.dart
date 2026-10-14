@@ -47,6 +47,67 @@ class CategoriesController extends GetxController {
     return protectedCategoryOrder.contains(_normalizeCategoryName(name));
   }
 
+  static ({DateTime start, DateTime end}) categoryCyclePeriod({
+    required DateTime now,
+    required int startDay,
+    bool automatic = true,
+    DateTime? manualResetDate,
+  }) {
+    final day = startDay.clamp(1, 31).toInt();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduledThisMonth = DateTime(
+      today.year,
+      today.month,
+      _clampDay(today.year, today.month, day),
+    );
+    var start = today.isBefore(scheduledThisMonth)
+        ? DateTime(today.year, today.month - 1, 1)
+        : DateTime(today.year, today.month, 1);
+    start = DateTime(
+      start.year,
+      start.month,
+      _clampDay(start.year, start.month, day),
+    );
+
+    if (manualResetDate != null) {
+      final manualStart = DateTime(
+        manualResetDate.year,
+        manualResetDate.month,
+        manualResetDate.day,
+      );
+      if (!manualStart.isAfter(today) &&
+          (!automatic || manualStart.isAfter(start))) {
+        start = manualStart;
+      }
+    }
+
+    var nextStart = DateTime(
+      start.year,
+      start.month,
+      _clampDay(start.year, start.month, day),
+    );
+    if (!nextStart.isAfter(start)) {
+      final nextMonth = DateTime(start.year, start.month + 1, 1);
+      nextStart = DateTime(
+        nextMonth.year,
+        nextMonth.month,
+        _clampDay(nextMonth.year, nextMonth.month, day),
+      );
+    }
+
+    return (
+      start: start,
+      end: automatic
+          ? nextStart.subtract(const Duration(days: 1))
+          : today,
+    );
+  }
+
+  static int _clampDay(int year, int month, int day) {
+    final lastDay = DateTime(year, month + 1, 0).day;
+    return day > lastDay ? lastDay : day;
+  }
+
   static List<CategoryModel> filterCategoriesForDisplay({
     required Iterable<CategoryModel> categories,
     required Iterable<TransactionModel> transactions,
