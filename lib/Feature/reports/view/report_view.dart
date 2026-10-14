@@ -306,7 +306,7 @@ class ReportView extends StatelessWidget {
       // ==========================================================
       appBar: AppBar(
         title: const Text('Reports'),
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
