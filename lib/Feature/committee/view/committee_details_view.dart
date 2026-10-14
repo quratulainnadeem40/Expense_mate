@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
@@ -779,6 +781,14 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           : _toDouble(existingMember['contribution']).toStringAsFixed(0),
     );
 
+    // Slot is empty for a new member.
+    // Existing members keep their saved slot value while editing.
+    final TextEditingController slotController = TextEditingController(
+      text: existingMember == null
+          ? ''
+          : existingMember['slot']?.toString() ?? '',
+    );
+
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
     showDialog<void>(
@@ -864,6 +874,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      inputFormatters: [
+                        IndianAmountFormatter(),
+                      ],
                       style: TextStyle(color: primaryText),
                       decoration: const InputDecoration(
                         labelText: 'Monthly Contribution',
@@ -875,10 +888,48 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                           return 'Please enter contribution';
                         }
 
-                        final double? amount = double.tryParse(value.trim());
+                        final double? amount = double.tryParse(
+                          value.trim().replaceAll(',', ''),
+                        );
 
                         if (amount == null || amount <= 0) {
                           return 'Enter a valid amount';
+                        }
+
+                        // Member contribution must match the committee's
+                        // monthly contribution exactly.
+                        final double requiredContribution =
+                            committeeController.monthlyContribution.value;
+
+                        if ((amount - requiredContribution).abs() > 0.009) {
+                          return 'Contribution must be ${_formatAmount(requiredContribution)}';
+                        }
+
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Slot field: no default value and no hint text.
+                    TextFormField(
+                      controller: slotController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: primaryText),
+                      decoration: const InputDecoration(
+                        labelText: 'Slot',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter slot';
+                        }
+
+                        final int? slot = int.tryParse(
+                          value.trim(),
+                        );
+
+                        if (slot == null || slot < 1) {
+                          return 'Enter at least 1 slot';
                         }
 
                         return null;
@@ -905,12 +956,34 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
 
                   final String name = nameController.text.trim();
                   final String username = usernameController.text.trim();
-                  final String fatherHusbandName = fatherHusbandController.text
-                      .trim();
+                  final String fatherHusbandName =
+                      fatherHusbandController.text.trim();
                   final String phone = phoneController.text.trim();
+
+                  // Remove display commas before converting to a number.
                   final double contribution = double.parse(
-                    contributionController.text.trim(),
+                    contributionController.text.trim().replaceAll(',', ''),
                   );
+
+                  final int slot = int.parse(
+                    slotController.text.trim(),
+                  );
+
+                  // Extra submit-time check to prevent an incorrect
+                  // contribution from being saved.
+                  final double requiredContribution =
+                      committeeController.monthlyContribution.value;
+
+                  if ((contribution - requiredContribution).abs() > 0.009) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Monthly contribution must be ${_formatAmount(requiredContribution)}.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
 
                   if (committeeController.isUsernameTaken(
                     username,
@@ -949,6 +1022,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       phone: phone,
                       contribution: contribution,
                       username: username,
+                      slot: slot,
                     );
 
                     if (!updated) {
@@ -999,6 +1073,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     phone: phone,
                     contribution: contribution,
                     username: username,
+                    slot: slot,
                   );
 
                   if (!added) {
@@ -1030,7 +1105,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         );
       },
     ).whenComplete(() async {
-      // FIX: Wait for the dialog closing animation before disposing
+      // Wait for the dialog closing animation before disposing
       // its TextEditingControllers.
       await Future<void>.delayed(const Duration(milliseconds: 300));
 
@@ -1039,6 +1114,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
       fatherHusbandController.dispose();
       phoneController.dispose();
       contributionController.dispose();
+      slotController.dispose();
     });
   }
 
@@ -1551,6 +1627,102 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                 ),
               );
             }),
+    );
+  }
+}
+
+// --------------------------------------------------
+// AUTOMATIC AMOUNT COMMA FORMATTER
+// --------------------------------------------------
+
+class IndianAmountFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final String rawText = newValue.text.replaceAll(',', '');
+
+    if (RegExp(r'[^0-9.]').hasMatch(rawText) ||
+        '.'.allMatches(rawText).length > 1) {
+      return oldValue;
+    }
+
+    if (rawText.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    final List<String> parts = rawText.split('.');
+    final String integerPart = parts[0];
+    final String? decimalPart = parts.length > 1 ? parts[1] : null;
+
+    String formattedInteger = integerPart;
+
+    if (integerPart.length > 3) {
+      final String lastThree = integerPart.substring(
+        integerPart.length - 3,
+      );
+
+      String remaining = integerPart.substring(
+        0,
+        integerPart.length - 3,
+      );
+
+      final List<String> groups = [];
+
+      while (remaining.length > 2) {
+        groups.insert(
+          0,
+          remaining.substring(remaining.length - 2),
+        );
+
+        remaining = remaining.substring(
+          0,
+          remaining.length - 2,
+        );
+      }
+
+      if (remaining.isNotEmpty) {
+        groups.insert(0, remaining);
+      }
+
+      formattedInteger = '${groups.join(',')},$lastThree';
+    }
+
+    String formattedText = formattedInteger;
+
+    if (decimalPart != null) {
+      formattedText += '.$decimalPart';
+    }
+
+    final int cursor = newValue.selection.baseOffset.clamp(
+      0,
+      newValue.text.length,
+    );
+
+    final int logicalCursor = newValue.text
+        .substring(0, cursor)
+        .replaceAll(',', '')
+        .length;
+
+    int newCursor = 0;
+    int logicalCount = 0;
+
+    while (newCursor < formattedText.length &&
+        logicalCount < logicalCursor) {
+      if (formattedText[newCursor] != ',') {
+        logicalCount++;
+      }
+      newCursor++;
+    }
+
+    return TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: newCursor),
+      composing: TextRange.empty,
     );
   }
 }
