@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/committee/view/committe_history_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -276,7 +277,7 @@ class _CommitteeViewState extends State<CommitteeView> {
                         ),
                       ),
                       subtitle: Text(
-                        'PKR ${committee['contribution'] ?? '0'} monthly',
+                        '${Formatters.code} ${committee['contribution'] ?? '0'} monthly',
                         style: TextStyle(color: secondaryColor),
                       ),
                       trailing: Icon(

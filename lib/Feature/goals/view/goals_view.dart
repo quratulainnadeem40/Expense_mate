@@ -279,7 +279,7 @@ class GoalsView extends GetView<GoalsController> {
                 _Field(
                   controller: controller.targetController,
                   hint: '0',
-                  prefix: 'Rs. ',
+                  prefix: '$goalCurrency ',
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -431,7 +431,7 @@ class GoalsView extends GetView<GoalsController> {
                 _Field(
                   controller: controller.savedController,
                   hint: '0',
-                  prefix: 'Rs. ',
+                  prefix: '$goalCurrency ',
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -558,9 +558,9 @@ class GoalsView extends GetView<GoalsController> {
                               Expanded(
                                 child: Text(
                                   isDeposit
-                                      ? '${goal.title} — Rs. '
+                                      ? '${goal.title} — $goalCurrency '
                                             '${formatMoney(goal.remaining)} still needed'
-                                      : '${goal.title} — Rs. '
+                                      : '${goal.title} — $goalCurrency '
                                             '${formatMoney(goal.savedAmount)} available',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -597,7 +597,7 @@ class GoalsView extends GetView<GoalsController> {
                 _Field(
                   controller: controller.amountController,
                   hint: '0',
-                  prefix: 'Rs. ',
+                  prefix: '$goalCurrency ',
                   autofocus: true,
                   fontSize: 22,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -719,7 +719,7 @@ class GoalsView extends GetView<GoalsController> {
           ),
         ),
         content: Text(
-          '"${goal.title}" and its saved amount of Rs. '
+          '"${goal.title}" and its saved amount of $goalCurrency '
           '${formatMoney(goal.savedAmount)} will be removed. '
           'This cannot be undone.',
           style: TextStyle(fontSize: 14, height: 1.5, color: theme.hintColor),
@@ -780,9 +780,11 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Total saved',
-            style: TextStyle(fontSize: 12.5, color: Colors.white70),
+          Text(
+            activeCount + completedCount == 1
+                ? 'Saved across 1 goal'
+                : 'Saved across ${activeCount + completedCount} goals',
+            style: const TextStyle(fontSize: 12.5, color: Colors.white70),
           ),
           const SizedBox(height: 6),
           Row(
@@ -790,7 +792,7 @@ class _SummaryCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  'Rs. ${formatMoney(saved)}',
+                  goalMoney(saved),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -805,7 +807,7 @@ class _SummaryCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    'of Rs. ${formatMoney(target)}',
+                    'of ${goalMoney(target)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 13, color: Colors.white70),
