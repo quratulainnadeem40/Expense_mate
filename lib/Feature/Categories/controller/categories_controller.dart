@@ -501,19 +501,32 @@ class CategoriesController extends GetxController {
     required Set<String> categoryIds,
     DateTime? periodStart,
     DateTime? periodEndExclusive,
+    DateTime? resetAt,
   }) {
     final normalizedIds = categoryIds
         .map((id) => id.trim().toLowerCase())
         .where((id) => id.isNotEmpty)
         .toSet();
     final totals = <String, double>{'income': 0, 'expense': 0};
+    final resetDay = resetAt == null
+        ? null
+        : DateTime(resetAt.year, resetAt.month, resetAt.day);
 
     for (final transaction in transactions) {
       final categoryId = transaction.categoryId.trim().toLowerCase();
       final type = transaction.type.trim().toLowerCase();
+      final transactionDay = DateTime(
+        transaction.transactionDate.year,
+        transaction.transactionDate.month,
+        transaction.transactionDate.day,
+      );
       if (!normalizedIds.contains(categoryId) ||
           !totals.containsKey(type) ||
           !transaction.amount.isFinite ||
+          (resetAt != null &&
+              (transactionDay.isBefore(resetDay!) ||
+                  (transactionDay == resetDay &&
+                      transaction.createdAt.isBefore(resetAt)))) ||
           (periodStart != null &&
               transaction.transactionDate.isBefore(periodStart)) ||
           (periodEndExclusive != null &&

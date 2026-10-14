@@ -79,16 +79,27 @@ class HomeScreen extends StatelessWidget {
     }
 
     if (!Get.isRegistered<CategoriesController>()) {
-      return categoryId;
+      return TransactionModel.fallbackCategoryLabel(
+        categoryId: categoryId,
+        customCategory: customCategory,
+      );
     }
 
     final categoriesController = Get.find<CategoriesController>();
 
     final category = categoriesController.categoryList.firstWhereOrNull(
-      (category) => category.id == categoryId,
+      (category) =>
+          category.id.trim().toLowerCase() == categoryId.trim().toLowerCase() ||
+          category.linkedIds.any(
+            (id) => id.trim().toLowerCase() == categoryId.trim().toLowerCase(),
+          ),
     );
 
-    return category?.name ?? categoryId;
+    return category?.name ??
+        TransactionModel.fallbackCategoryLabel(
+          categoryId: categoryId,
+          customCategory: customCategory,
+        );
   }
 
   // Guaranteed Drawer Close Helper Method

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -6,16 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/controller/expense_controller.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   final TransactionModel transaction;
 
-  const TransactionDetailsScreen({
-    super.key,
-    required this.transaction,
-  });
+  const TransactionDetailsScreen({super.key, required this.transaction});
 
   // ------------------------------------------------------------
   // DELETE
@@ -46,25 +43,18 @@ class TransactionDetailsScreen extends StatelessWidget {
 
     final expenseController = Get.find<ExpenseController>();
 
-    expenseController.amountController.text =
-        transaction.amount.toString();
+    expenseController.amountController.text = transaction.amount.toString();
 
     expenseController.noteController.text =
         transaction.note ?? transaction.title;
 
-    expenseController.isExpense.value =
-        transaction.type == 'expense';
+    expenseController.isExpense.value = transaction.type == 'expense';
 
-    expenseController.selectedCategoryId.value =
-        transaction.categoryId;
+    expenseController.selectedCategoryId.value = transaction.categoryId;
 
-    expenseController.selectedWalletId.value =
-        transaction.walletId;
+    expenseController.selectedWalletId.value = transaction.walletId;
 
-    Get.to(
-      () => const AddExpenseView(),
-      arguments: transaction,
-    );
+    Get.to(() => const AddExpenseView(), arguments: transaction);
   }
 
   // ------------------------------------------------------------
@@ -90,7 +80,6 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // ICON
               // ------------------------------------------------
-
               CircleAvatar(
                 radius: 35,
                 backgroundColor: transaction.isIncome
@@ -100,9 +89,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                   transaction.isIncome
                       ? Icons.arrow_downward
                       : Icons.shopping_bag,
-                  color: transaction.isIncome
-                      ? Colors.green
-                      : Colors.red,
+                  color: transaction.isIncome ? Colors.green : Colors.red,
                   size: 35,
                 ),
               ),
@@ -112,7 +99,6 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // TITLE
               // ------------------------------------------------
-
               Text(
                 transaction.title,
                 textAlign: TextAlign.center,
@@ -127,16 +113,13 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // AMOUNT
               // ------------------------------------------------
-
               Text(
                 '${transaction.isIncome ? '+' : '-'}'
                 '₨${transaction.amount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: transaction.isIncome
-                      ? Colors.green
-                      : Colors.red,
+                  color: transaction.isIncome ? Colors.green : Colors.red,
                 ),
               ),
 
@@ -145,15 +128,9 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // CATEGORY ID
               // ------------------------------------------------
-
               Text(
-                transaction.categoryId.isEmpty
-                    ? 'No category'
-                    : transaction.categoryId,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                _categoryName,
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
 
               const SizedBox(height: 30),
@@ -161,30 +138,23 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // DETAILS CARD
               // ------------------------------------------------
-
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey.withOpacity(0.2),
-                  ),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
                 ),
                 child: Column(
                   children: [
                     _buildDetailRow(
                       'Date',
-                      DateFormat('MMM dd, yyyy')
-                          .format(transaction.date),
+                      DateFormat('MMM dd, yyyy').format(transaction.date),
                     ),
 
                     const Divider(height: 24),
 
-                    _buildDetailRow(
-                      'Wallet',
-                      _walletName(),
-                    ),
+                    _buildDetailRow('Wallet', _walletName()),
 
                     const Divider(height: 24),
 
@@ -199,9 +169,7 @@ class TransactionDetailsScreen extends StatelessWidget {
 
                     _buildDetailRow(
                       'Status',
-                      transaction.isIncome
-                          ? 'Income'
-                          : 'Expense',
+                      transaction.isIncome ? 'Income' : 'Expense',
                       valueColor: transaction.isIncome
                           ? Colors.green
                           : Colors.red,
@@ -215,30 +183,21 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // ACTIONS
               // ------------------------------------------------
-
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton.filledTonal(
                     style: IconButton.styleFrom(
-                      backgroundColor:
-                          Colors.red.withOpacity(0.1),
+                      backgroundColor: Colors.red.withOpacity(0.1),
                     ),
                     onPressed: _deleteTransaction,
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.red,
-                    ),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
                   ),
 
                   FloatingActionButton.small(
                     onPressed: _onEditPressed,
                     backgroundColor: Colors.blue,
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.edit, color: Colors.white),
                   ),
                 ],
               ),
@@ -249,54 +208,52 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
+  String get _categoryName {
+    if (Get.isRegistered<CategoriesController>()) {
+      final categoriesController = Get.find<CategoriesController>();
+      final category = categoriesController.categoryList.firstWhereOrNull(
+        (category) => category.linkedIds.any(
+          (id) =>
+              id.trim().toLowerCase() ==
+              transaction.categoryId.trim().toLowerCase(),
+        ),
+      );
+      if (category != null) return category.name;
+    }
+    return transaction.displayCategoryFallback;
+  }
+
   // ------------------------------------------------------------
   // WALLET NAME
   // ------------------------------------------------------------
 
   String _walletName() {
     if (!Get.isRegistered<ExpenseController>()) {
-      return transaction.walletId.isEmpty
-          ? 'No wallet'
-          : transaction.walletId;
+      return transaction.walletId.isEmpty ? 'No wallet' : transaction.walletId;
     }
 
-    final expenseController =
-        Get.find<ExpenseController>();
+    final expenseController = Get.find<ExpenseController>();
 
-    final wallets =
-        expenseController.walletsController.wallets;
+    final wallets = expenseController.walletsController.wallets;
 
     final wallet = wallets.firstWhereOrNull(
       (wallet) => wallet.id == transaction.walletId,
     );
 
     return wallet?.name ??
-        (transaction.walletId.isEmpty
-            ? 'No wallet'
-            : transaction.walletId);
+        (transaction.walletId.isEmpty ? 'No wallet' : transaction.walletId);
   }
 
   // ------------------------------------------------------------
   // DETAIL ROW
   // ------------------------------------------------------------
 
-  Widget _buildDetailRow(
-    String title,
-    String value, {
-    Color? valueColor,
-  }) {
+  Widget _buildDetailRow(String title, String value, {Color? valueColor}) {
     return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-        ),
+        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
 
         const SizedBox(width: 20),
 

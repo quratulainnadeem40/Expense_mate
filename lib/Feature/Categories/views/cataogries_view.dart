@@ -9,7 +9,6 @@ import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
-import 'package:expense_mate/Feature/Categories/views/category_history_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
@@ -49,9 +48,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
   int get _monthStartDay {
     final box = Hive.box(AppKeys.budgetBox);
-    final storedStartDay =
-        box.get(AppKeys.categoryCycleStartDayKey) ??
-        box.get(AppKeys.budgetMonthStartDayKey);
+    final storedStartDay = box.get(AppKeys.categoryCycleStartDayKey);
     return storedStartDay is int && storedStartDay >= 1 && storedStartDay <= 31
         ? storedStartDay
         : 1;
@@ -127,9 +124,7 @@ class _CategoriesViewState extends State<CategoriesView>
       now: DateTime.now(),
       startDay: startDay,
       automatic: automatic,
-      manualResetDate: automatic
-          ? _manualCategoryCycleResetDate
-          : DateTime.now(),
+      manualResetDate: _manualCategoryCycleResetDate,
     );
   }
 
@@ -312,10 +307,6 @@ class _CategoriesViewState extends State<CategoriesView>
     await controller.fetchCategories();
   }
 
-  void _openCategoryHistory() {
-    Get.to(() => const CategoryHistoryScreen());
-  }
-
   bool get _hasTransactionsToConfirm {
     return _transactionsController.transactions.isNotEmpty;
   }
@@ -380,24 +371,49 @@ class _CategoriesViewState extends State<CategoriesView>
     required bool automatic,
     required bool isDark,
   }) async {
-    final confirmed = await _confirmCategoryCycleChange(
-      context: sheetContext,
-      startDay: day,
-      automatic: automatic,
-      isDark: isDark,
-    );
-    if (!confirmed || !mounted) return;
-
-    if (!automatic) {
-      await Hive.box(AppKeys.budgetBox).put(
-        AppKeys.categoryCycleManualResetKey,
-        DateTime.now().toIso8601String(),
+    if (automatic) {
+      final confirmed = await _confirmCategoryCycleChange(
+        context: sheetContext,
+        startDay: day,
+        automatic: true,
+        isDark: isDark,
       );
+      if (!confirmed || !mounted) return;
     }
 
     final box = Hive.box(AppKeys.budgetBox);
     await box.put(AppKeys.categoryCycleStartDayKey, day);
     await box.put(AppKeys.categoryCycleAutomaticResetKey, automatic);
+
+    if (sheetContext.mounted) {
+      Navigator.pop(sheetContext);
+    }
+    if (mounted) {
+      setState(() {});
+      _scheduleCycleRefresh();
+    }
+  }
+
+  Future<void> _resetCategoryTotals({
+    required BuildContext sheetContext,
+    required int day,
+    required bool isDark,
+  }) async {
+    final confirmed = await _confirmCategoryCycleChange(
+      context: sheetContext,
+      startDay: day,
+      automatic: false,
+      isDark: isDark,
+    );
+    if (!confirmed || !mounted) return;
+
+    final box = Hive.box(AppKeys.budgetBox);
+    await box.put(AppKeys.categoryCycleStartDayKey, day);
+    await box.put(AppKeys.categoryCycleAutomaticResetKey, false);
+    await box.put(
+      AppKeys.categoryCycleManualResetKey,
+      DateTime.now().toIso8601String(),
+    );
 
     if (sheetContext.mounted) {
       Navigator.pop(sheetContext);
@@ -444,15 +460,42 @@ class _CategoriesViewState extends State<CategoriesView>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(
-                          child: Container(
-                            width: 52,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.white24 : Colors.black12,
-                              borderRadius: BorderRadius.circular(20),
+                        Row(
+                          children: [
+                            const SizedBox(width: 48),
+                            Expanded(
+                              child: Center(
+                                child: Container(
+                                  width: 52,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.white24
+                                        : Colors.black12,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(
+                              width: 48,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: IconButton(
+                                  tooltip: 'Close',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () =>
+                                      Navigator.of(sheetContext).pop(),
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 20),
                         Text(
@@ -611,7 +654,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         Text(
                           automatic
                               ? 'Category totals roll over automatically on day $day each month. Your transactions remain saved.'
-                              : 'Saving in Manual mode resets category totals from today. Transactions remain saved.',
+                              : 'Reset category totals whenever you choose. Your transactions remain saved.',
                           style: TextStyle(
                             fontSize: 13.5,
                             height: 1.5,
@@ -619,6 +662,36 @@ class _CategoriesViewState extends State<CategoriesView>
                           ),
                         ),
                         const SizedBox(height: 24),
+                        if (!automatic) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: OutlinedButton(
+                              onPressed: () => _resetCategoryTotals(
+                                sheetContext: sheetContext,
+                                day: day,
+                                isDark: isDark,
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF4CAF50),
+                                side: const BorderSide(
+                                  color: Color(0xFF4CAF50),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                'Reset Category Totals',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         SizedBox(
                           width: double.infinity,
                           height: 52,
@@ -1124,11 +1197,6 @@ class _CategoriesViewState extends State<CategoriesView>
                     icon: const Icon(Icons.calendar_month_rounded),
                   ),
                   IconButton(
-                    tooltip: 'Category history',
-                    onPressed: _openCategoryHistory,
-                    icon: const Icon(Icons.history_rounded),
-                  ),
-                  IconButton(
                     tooltip: 'Open navigation menu',
                     icon: Icon(
                       Icons.menu_rounded,
@@ -1204,6 +1272,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                 periodEndExclusive: _periodEnd.add(
                                   const Duration(days: 1),
                                 ),
+                                resetAt: _isCategoryCycleAutomatic
+                                    ? null
+                                    : _manualCategoryCycleResetDate,
                               );
 
                           final bool isDefaultCategory = category.isDefault;
