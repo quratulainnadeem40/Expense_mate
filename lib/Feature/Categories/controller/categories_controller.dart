@@ -69,14 +69,51 @@ class CategoriesController extends GetxController {
       _clampDay(start.year, start.month, day),
     );
 
-    if (manualResetDate != null) {
+    var cycleStartDay = day;
+    if (manualResetDate != null && !automatic) {
+      cycleStartDay = manualResetDate.day.clamp(1, 31).toInt();
+      final candidateThisMonth = DateTime(
+        today.year,
+        today.month,
+        _clampDay(today.year, today.month, cycleStartDay),
+      );
+      final candidateThisMonthAt = DateTime(
+        candidateThisMonth.year,
+        candidateThisMonth.month,
+        candidateThisMonth.day,
+        manualResetDate.hour,
+        manualResetDate.minute,
+        manualResetDate.second,
+        manualResetDate.millisecond,
+        manualResetDate.microsecond,
+      );
+      start = now.isBefore(candidateThisMonthAt)
+          ? DateTime(
+              today.year,
+              today.month - 1,
+              _clampDay(
+                today.year,
+                today.month - 1,
+                cycleStartDay,
+              ),
+            )
+          : candidateThisMonth;
+
+      final firstManualStart = DateTime(
+        manualResetDate.year,
+        manualResetDate.month,
+        manualResetDate.day,
+      );
+      if (start.isBefore(firstManualStart)) {
+        start = firstManualStart;
+      }
+    } else if (manualResetDate != null) {
       final manualStart = DateTime(
         manualResetDate.year,
         manualResetDate.month,
         manualResetDate.day,
       );
-      if (!manualStart.isAfter(today) &&
-          (!automatic || manualStart.isAfter(start))) {
+      if (!manualStart.isAfter(today) && manualStart.isAfter(start)) {
         start = manualStart;
       }
     }
@@ -84,20 +121,20 @@ class CategoriesController extends GetxController {
     var nextStart = DateTime(
       start.year,
       start.month,
-      _clampDay(start.year, start.month, day),
+      _clampDay(start.year, start.month, cycleStartDay),
     );
     if (!nextStart.isAfter(start)) {
       final nextMonth = DateTime(start.year, start.month + 1, 1);
       nextStart = DateTime(
         nextMonth.year,
         nextMonth.month,
-        _clampDay(nextMonth.year, nextMonth.month, day),
+        _clampDay(nextMonth.year, nextMonth.month, cycleStartDay),
       );
     }
 
     return (
       start: start,
-      end: automatic
+      end: automatic || manualResetDate != null
           ? nextStart.subtract(const Duration(days: 1))
           : today,
     );

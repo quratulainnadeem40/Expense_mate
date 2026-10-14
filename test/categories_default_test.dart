@@ -280,14 +280,15 @@ void main() {
     final period = CategoriesController.categoryCyclePeriod(
       now: DateTime(2026, 10, 14, 18),
       startDay: 20,
+      automatic: false,
       manualResetDate: DateTime(2026, 10, 14, 16),
     );
 
     expect(period.start, DateTime(2026, 10, 14));
-    expect(period.end, DateTime(2026, 10, 19));
+    expect(period.end, DateTime(2026, 11, 13));
   });
 
-  test('manual category cycle does not roll over on the monthly start day', () {
+  test('manual cycle uses its reset day as the monthly cycle anchor', () {
     final period = CategoriesController.categoryCyclePeriod(
       now: DateTime(2026, 11, 1),
       startDay: 20,
@@ -296,7 +297,66 @@ void main() {
     );
 
     expect(period.start, DateTime(2026, 10, 14));
-    expect(period.end, DateTime(2026, 11, 1));
+    expect(period.end, DateTime(2026, 11, 13));
+  });
+
+  test('manual day 31 clamps to month end and continues on day 31', () {
+    final february = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 2, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 1, 31, 15),
+    );
+    final march = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 3, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 1, 31, 15),
+    );
+    final marchResetDay = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 3, 31, 16),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 1, 31, 15),
+    );
+
+    expect(february.start, DateTime(2026, 1, 31));
+    expect(february.end, DateTime(2026, 2, 27));
+    expect(march.start, DateTime(2026, 2, 28));
+    expect(march.end, DateTime(2026, 3, 30));
+    expect(marchResetDay.start, DateTime(2026, 3, 31));
+    expect(marchResetDay.end, DateTime(2026, 4, 29));
+  });
+
+  test('manual monthly rollover respects the original reset time', () {
+    final beforeResetTime = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 14, 14, 59),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14, 15),
+    );
+    final atResetTime = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 14, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14, 15),
+    );
+
+    expect(beforeResetTime.start, DateTime(2026, 10, 14));
+    expect(atResetTime.start, DateTime(2026, 11, 14));
+    expect(atResetTime.end, DateTime(2026, 12, 13));
+  });
+
+  test('manual day 31 reaches leap-year February last day', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2028, 2, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2028, 1, 31, 15),
+    );
+
+    expect(period.start, DateTime(2028, 1, 31));
+    expect(period.end, DateTime(2028, 2, 28));
   });
 
   test('automatic category cycle rolls over on the selected day', () {

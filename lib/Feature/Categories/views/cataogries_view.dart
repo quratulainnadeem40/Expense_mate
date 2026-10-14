@@ -90,7 +90,20 @@ class _CategoriesViewState extends State<CategoriesView>
 
   void _scheduleCycleRefresh() {
     _cycleRefreshTimer?.cancel();
-    final nextCycleStart = _periodEnd.add(const Duration(days: 1));
+    final nextCycleDate = _periodEnd.add(const Duration(days: 1));
+    final manualReset = _currentManualCycleBoundary;
+    final nextCycleStart = manualReset == null
+        ? nextCycleDate
+        : DateTime(
+            nextCycleDate.year,
+            nextCycleDate.month,
+            nextCycleDate.day,
+            manualReset.hour,
+            manualReset.minute,
+            manualReset.second,
+            manualReset.millisecond,
+            manualReset.microsecond,
+          );
     final delay = nextCycleStart.difference(DateTime.now());
     _cycleRefreshTimer = Timer(delay.isNegative ? Duration.zero : delay, () {
       if (!mounted) return;
@@ -131,6 +144,25 @@ class _CategoriesViewState extends State<CategoriesView>
   DateTime get _periodStart => _categoryCyclePeriod().start;
 
   DateTime get _periodEnd => _categoryCyclePeriod().end;
+
+  DateTime? get _currentManualCycleBoundary {
+    if (_isCategoryCycleAutomatic) return null;
+
+    final manualReset = _manualCategoryCycleResetDate;
+    if (manualReset == null) return null;
+
+    final cycleStart = _periodStart;
+    return DateTime(
+      cycleStart.year,
+      cycleStart.month,
+      cycleStart.day,
+      manualReset.hour,
+      manualReset.minute,
+      manualReset.second,
+      manualReset.millisecond,
+      manualReset.microsecond,
+    );
+  }
 
   String _formatCycleDate(DateTime date) =>
       DateFormat('d MMM yyyy').format(date);
@@ -1272,9 +1304,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                 periodEndExclusive: _periodEnd.add(
                                   const Duration(days: 1),
                                 ),
-                                resetAt: _isCategoryCycleAutomatic
-                                    ? null
-                                    : _manualCategoryCycleResetDate,
+                                resetAt: _currentManualCycleBoundary,
                               );
 
                           final bool isDefaultCategory = category.isDefault;
