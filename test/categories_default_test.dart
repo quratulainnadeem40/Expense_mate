@@ -1,5 +1,4 @@
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
-import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -48,44 +47,6 @@ void main() {
       );
 
       expect(safeIds, ['cat-1', 'cat-3']);
-    },
-  );
-
-  test(
-    'category reset preserves defaults and categories used by transactions',
-    () {
-      final resettable = CategoriesController.filterResettableCategories(
-        [
-          CategoryModel(
-            id: 'used-category',
-            name: 'Used',
-            icon: 'category',
-            colorValue: 0,
-            isDefault: false,
-            type: 'expense',
-            linkedIds: ['used-category', 'linked-used-category'],
-          ),
-          CategoryModel(
-            id: 'unused-category',
-            name: 'Unused',
-            icon: 'category',
-            colorValue: 0,
-            isDefault: false,
-            type: 'expense',
-          ),
-          CategoryModel(
-            id: 'default_food',
-            name: 'Food',
-            icon: 'food',
-            colorValue: 0,
-            isDefault: true,
-            type: 'expense',
-          ),
-        ],
-        {'linked-used-category'},
-      );
-
-      expect(resettable.map((category) => category.id), ['unused-category']);
     },
   );
 

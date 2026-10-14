@@ -212,17 +212,6 @@ class CategoriesController extends GetxController {
     return ids.where((id) => !idsInUseByTransactions.contains(id)).toList();
   }
 
-  static List<CategoryModel> filterResettableCategories(
-    List<CategoryModel> categories,
-    Set<String> categoryIdsInUse,
-  ) {
-    return categories.where((category) {
-      return !category.isDefault &&
-          !category.id.startsWith('default_') &&
-          category.linkedIds.every((id) => !categoryIdsInUse.contains(id));
-    }).toList();
-  }
-
   // ==========================================================
   // VISIBLE CATEGORIES
   // ==========================================================
@@ -804,73 +793,6 @@ class CategoriesController extends GetxController {
     } catch (e) {
       debugPrint('Unable to delete categories: $e');
       _showError('Unable to delete category.');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<int?> resetUnusedCategories() async {
-    final user = currentUser;
-
-    if (user == null) {
-      _showError('Please login first.');
-      return null;
-    }
-
-    try {
-      isLoading.value = true;
-
-      final transactions = await _repositories.transactions.getTransactions(
-        user.id,
-      );
-      final categoryIdsInUse = transactions
-          .map((transaction) => transaction.categoryId?.trim() ?? '')
-          .where((id) => id.isNotEmpty)
-          .toSet();
-
-      final categoriesToDelete = filterResettableCategories(
-        categoryList.toList(),
-        categoryIdsInUse,
-      );
-      if (categoriesToDelete.isEmpty) {
-        return 0;
-      }
-
-      final categoryIdsToDelete = categoriesToDelete
-          .expand((category) => category.linkedIds)
-          .where((id) => id.isNotEmpty && !id.startsWith('default_'))
-          .toSet();
-
-      for (final categoryId in categoryIdsToDelete) {
-        await _repositories.categorySync.deleteCategory(
-          userId: user.id,
-          id: categoryId,
-        );
-      }
-
-      final visibleIdsToDelete = categoriesToDelete
-          .map((category) => category.id)
-          .toSet();
-      categoryList.removeWhere(
-        (category) =>
-            visibleIdsToDelete.contains(category.id) ||
-            category.linkedIds.any(categoryIdsToDelete.contains),
-      );
-
-      for (final category in categoriesToDelete) {
-        categoryCounts.remove(category.id);
-        categoryTotals.remove(category.id);
-      }
-      categoryCounts.refresh();
-      categoryTotals.refresh();
-      categoryList.sort(compareCategoryOrder);
-
-      _syncInBackground();
-      return categoriesToDelete.length;
-    } catch (e) {
-      debugPrint('Unable to reset unused categories: $e');
-      _showError('Unable to reset categories.');
-      return null;
     } finally {
       isLoading.value = false;
     }

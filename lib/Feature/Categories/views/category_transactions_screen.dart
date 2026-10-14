@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -6,12 +5,16 @@ class CategoryTransactionsScreen extends StatefulWidget {
   final String categoryId;
   final String categoryName;
   final String categoryType;
+  final DateTime? periodStart;
+  final DateTime? periodEnd;
 
   const CategoryTransactionsScreen({
     super.key,
     required this.categoryId,
     required this.categoryName,
     required this.categoryType,
+    this.periodStart,
+    this.periodEnd,
   });
 
   @override
@@ -31,10 +34,7 @@ class _CategoryTransactionsScreenState
 
   // Normalize category names to match case-insensitively.
   String _normalizeName(String? name) {
-    return (name ?? '')
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    return (name ?? '').trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   double _parseAmount(dynamic value) {
@@ -69,6 +69,49 @@ class _CategoryTransactionsScreenState
     return 'expense';
   }
 
+  bool _isInSelectedPeriod(Map<String, dynamic> transaction) {
+    final start = widget.periodStart;
+    final end = widget.periodEnd;
+    if (start == null || end == null) return true;
+
+    final date = DateTime.tryParse(
+      transaction['transaction_date']?.toString() ??
+          transaction['date']?.toString() ??
+          '',
+    );
+    if (date == null) return false;
+
+    final endExclusive = DateTime(end.year, end.month, end.day + 1);
+    return !date.isBefore(start) && date.isBefore(endExclusive);
+  }
+
+  String _formatPeriod() {
+    final start = widget.periodStart;
+    final end = widget.periodEnd;
+    if (start == null || end == null) return '';
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final formattedStart = '${start.day} ${months[start.month - 1]}';
+    final formattedEnd = '${end.day} ${months[end.month - 1]}';
+
+    return start.year == end.year
+        ? '$formattedStart – $formattedEnd, ${end.year}'
+        : '$formattedStart, ${start.year} – $formattedEnd, ${end.year}';
+  }
+
   // Load transactions belonging to categories with the same name,
   // including both Income and Expense category IDs.
   Future<List<Map<String, dynamic>>> _loadTransactions() async {
@@ -79,8 +122,7 @@ class _CategoryTransactionsScreenState
       return [];
     }
 
-    final normalizedCategoryName =
-        _normalizeName(widget.categoryName);
+    final normalizedCategoryName = _normalizeName(widget.categoryName);
 
     // Start with the selected category ID.
     final matchingCategoryIds = <String>{widget.categoryId};
@@ -97,8 +139,7 @@ class _CategoryTransactionsScreenState
     for (final item in categoryResponse) {
       final categoryName = item['name']?.toString();
 
-      if (_normalizeName(categoryName) ==
-          normalizedCategoryName) {
+      if (_normalizeName(categoryName) == normalizedCategoryName) {
         final id = item['id']?.toString();
 
         if (id != null && id.isNotEmpty) {
@@ -134,14 +175,12 @@ class _CategoryTransactionsScreenState
 
     // Sort all transactions by date, newest first.
     results.sort((a, b) {
-      final dateA = DateTime.tryParse(
-            a['transaction_date']?.toString() ?? '',
-          ) ??
+      final dateA =
+          DateTime.tryParse(a['transaction_date']?.toString() ?? '') ??
           DateTime(1970);
 
-      final dateB = DateTime.tryParse(
-            b['transaction_date']?.toString() ?? '',
-          ) ??
+      final dateB =
+          DateTime.tryParse(b['transaction_date']?.toString() ?? '') ??
           DateTime(1970);
 
       return dateB.compareTo(dateA);
@@ -159,12 +198,10 @@ class _CategoryTransactionsScreenState
   }) {
     final total = transactions.fold<double>(
       0,
-      (sum, transaction) =>
-          sum + _parseAmount(transaction['amount']),
+      (sum, transaction) => sum + _parseAmount(transaction['amount']),
     );
 
-    final sectionColor =
-        isIncome ? Colors.green : Colors.red;
+    final sectionColor = isIncome ? Colors.green : Colors.red;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,9 +214,7 @@ class _CategoryTransactionsScreenState
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: sectionColor.withValues(alpha: 0.25),
-            ),
+            border: Border.all(color: sectionColor.withValues(alpha: 0.25)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,9 +228,7 @@ class _CategoryTransactionsScreenState
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      isIncome
-                          ? Icons.arrow_downward
-                          : Icons.arrow_upward,
+                      isIncome ? Icons.arrow_downward : Icons.arrow_upward,
                       color: sectionColor,
                     ),
                   ),
@@ -225,9 +258,7 @@ class _CategoryTransactionsScreenState
                 '${transactions.length == 1 ? 'Transaction' : 'Transactions'}',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark
-                      ? Colors.grey[400]
-                      : Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
@@ -240,8 +271,8 @@ class _CategoryTransactionsScreenState
 
           final transactionTitle =
               transaction['title']?.toString().trim().isNotEmpty == true
-                  ? transaction['title'].toString()
-                  : widget.categoryName;
+              ? transaction['title'].toString()
+              : widget.categoryName;
 
           final transactionDate = DateTime.tryParse(
             transaction['transaction_date']?.toString() ?? '',
@@ -250,24 +281,19 @@ class _CategoryTransactionsScreenState
           final formattedDate = transactionDate == null
               ? ''
               : '${transactionDate.day.toString().padLeft(2, '0')}/'
-                  '${transactionDate.month.toString().padLeft(2, '0')}/'
-                  '${transactionDate.year}';
+                    '${transactionDate.month.toString().padLeft(2, '0')}/'
+                    '${transactionDate.year}';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: isDark
                   ? const Color(0xFF1E1E1E)
                   : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark
-                    ? Colors.grey.shade800
-                    : Colors.grey.shade200,
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
               ),
             ),
             child: Row(
@@ -280,9 +306,7 @@ class _CategoryTransactionsScreenState
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    isIncome
-                        ? Icons.arrow_downward
-                        : Icons.arrow_upward,
+                    isIncome ? Icons.arrow_downward : Icons.arrow_upward,
                     color: sectionColor,
                     size: 22,
                   ),
@@ -308,9 +332,7 @@ class _CategoryTransactionsScreenState
                           formattedDate,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark
-                                ? Colors.grey[400]
-                                : Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -336,21 +358,28 @@ class _CategoryTransactionsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.categoryName),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(widget.categoryName),
+            if (widget.periodStart != null && widget.periodEnd != null)
+              Text(
+                _formatPeriod(),
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+          ],
+        ),
         centerTitle: true,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _transactionsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -361,26 +390,30 @@ class _CategoryTransactionsScreenState
                   'Unable to load transactions.\n'
                   '${snapshot.error}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 ),
               ),
             );
           }
 
-          final allTransactions = snapshot.data ?? [];
+          final allTransactions = (snapshot.data ?? [])
+              .where(_isInSelectedPeriod)
+              .toList();
 
           // Separate transactions according to their actual type.
-          final incomeTransactions = allTransactions.where(
-            (transaction) =>
-                _normalizeType(transaction['type']) == 'income',
-          ).toList();
+          final incomeTransactions = allTransactions
+              .where(
+                (transaction) =>
+                    _normalizeType(transaction['type']) == 'income',
+              )
+              .toList();
 
-          final expenseTransactions = allTransactions.where(
-            (transaction) =>
-                _normalizeType(transaction['type']) == 'expense',
-          ).toList();
+          final expenseTransactions = allTransactions
+              .where(
+                (transaction) =>
+                    _normalizeType(transaction['type']) == 'expense',
+              )
+              .toList();
 
           final showIncome = incomeTransactions.isNotEmpty;
           final showExpense = expenseTransactions.isNotEmpty;
@@ -395,19 +428,15 @@ class _CategoryTransactionsScreenState
                     Icon(
                       Icons.receipt_long_outlined,
                       size: 60,
-                      color: isDark
-                          ? Colors.grey[600]
-                          : Colors.grey[400],
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'No transactions found in this category.',
+                      'No transactions found for this category in the selected period.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDark
-                            ? Colors.grey[400]
-                            : Colors.grey[600],
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                   ],
@@ -438,8 +467,7 @@ class _CategoryTransactionsScreenState
                     isDark: isDark,
                   ),
 
-                if (showIncome && showExpense)
-                  const SizedBox(height: 16),
+                if (showIncome && showExpense) const SizedBox(height: 16),
 
                 if (showExpense)
                   _buildTransactionSection(
@@ -457,4 +485,3 @@ class _CategoryTransactionsScreenState
     );
   }
 }
-

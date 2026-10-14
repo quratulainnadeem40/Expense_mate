@@ -1,3 +1,4 @@
+import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -7,7 +8,11 @@ import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
+import 'package:expense_mate/Feature/Categories/views/category_history_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
+import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
+import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/committee/view/committee_view.dart';
@@ -18,6 +23,7 @@ import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesView extends StatefulWidget {
@@ -27,21 +33,101 @@ class CategoriesView extends StatefulWidget {
   State<CategoriesView> createState() => _CategoriesViewState();
 }
 
-class _CategoriesViewState extends State<CategoriesView> {
+class _CategoriesViewState extends State<CategoriesView>
+    with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final CategoriesController controller = Get.find<CategoriesController>();
+  final TransactionsController _transactionsController =
+      Get.find<TransactionsController>();
   final RxBool isDrawerOpen = false.obs;
 
   final Set<String> selectedCategoryIds = {};
   bool isSelectionMode = false;
+  bool _isShowingCycleSetup = false;
+
+  BudgetController get _budgetController {
+    if (Get.isRegistered<BudgetController>()) {
+      return Get.find<BudgetController>();
+    }
+
+    return Get.put(BudgetController(), permanent: true);
+  }
+
+  int get _monthStartDay {
+    if (Get.isRegistered<BudgetController>()) {
+      return Get.find<BudgetController>().monthStartDay.value;
+    }
+
+    final storedStartDay = Hive.box(
+      AppKeys.budgetBox,
+    ).get(AppKeys.budgetMonthStartDayKey);
+    return storedStartDay is int && storedStartDay >= 1 && storedStartDay <= 31
+        ? storedStartDay
+        : 1;
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.fetchCategories();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      setState(() {});
+    }
+  }
+
+  int _clampDay(int year, int month, int day) {
+    final lastDay = DateTime(year, month + 1, 0).day;
+    return day > lastDay ? lastDay : day;
+  }
+
+  DateTime _cycleStartForMonth(DateTime month) {
+    return DateTime(
+      month.year,
+      month.month,
+      _clampDay(month.year, month.month, _monthStartDay),
+    );
+  }
+
+  DateTime get _periodStart {
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+    final thisMonthStart = _cycleStartForMonth(thisMonth);
+    return now.isBefore(thisMonthStart)
+        ? _cycleStartForMonth(DateTime(now.year, now.month - 1))
+        : thisMonthStart;
+  }
+
+  DateTime get _periodEnd {
+    final nextMonth = DateTime(_periodStart.year, _periodStart.month + 1);
+    return _cycleStartForMonth(nextMonth).subtract(const Duration(days: 1));
+  }
+
+  int _getMonthlyTransactionCount(CategoryModel category) {
+    final categoryIds = <String>{category.id, ...category.linkedIds};
+    final periodStart = _periodStart;
+    final periodEndExclusive = _periodEnd.add(const Duration(days: 1));
+
+    return _transactionsController.transactions.where((transaction) {
+      final categoryId = transaction.categoryId.trim();
+      final transactionDate = transaction.transactionDate;
+      return categoryIds.contains(categoryId) &&
+          !transactionDate.isBefore(periodStart) &&
+          transactionDate.isBefore(periodEndExclusive);
+    }).length;
   }
 
   void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
@@ -153,44 +239,6 @@ class _CategoriesViewState extends State<CategoriesView> {
     await _showDeleteConfirmationDialog(idsToDelete);
   }
 
-  Future<void> _resetUnusedCategories() async {
-    if (controller.isLoading.value) return;
-
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Reset categories?'),
-        content: const Text(
-          'Custom categories with no linked transactions will be removed. '
-          'Default categories and categories used by transactions will stay. '
-          'Transactions will not be deleted.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    final removedCount = await controller.resetUnusedCategories();
-    if (!mounted || removedCount == null) return;
-
-    Get.snackbar(
-      removedCount == 0 ? 'Nothing to reset' : 'Categories reset',
-      removedCount == 0
-          ? 'No unused custom categories were found.'
-          : '$removedCount unused categor${removedCount == 1 ? 'y' : 'ies'} removed. Transactions were kept.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  }
-
   // ============================================================
   // USER NAME
   // ============================================================
@@ -225,6 +273,233 @@ class _CategoriesViewState extends State<CategoriesView> {
     await Get.dialog(const AddCategoryDialog(), barrierDismissible: false);
 
     await controller.fetchCategories();
+  }
+
+  void _openCategoryHistory() {
+    Get.to(() => const CategoryHistoryScreen());
+  }
+
+  Future<void> _showCycleSetupSheet() async {
+    if (_isShowingCycleSetup || !mounted) return;
+    _isShowingCycleSetup = true;
+
+    final budgetController = _budgetController;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    var day = budgetController.monthStartDay.value;
+    var automatic = budgetController.isAutomaticReset.value;
+
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (context, setSheetState) => Container(
+            margin: const EdgeInsets.only(top: 18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141414) : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 52,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Set Up Your Category Cycle',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1E1E1E),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Choose when your monthly category tracking period should start.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        'Cycle Start Day',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: List.generate(31, (index) {
+                          final value = index + 1;
+                          final active = value == day;
+
+                          return MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () => setSheetState(() => day = value),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: active
+                                      ? const Color(0xFF4CAF50)
+                                      : (isDark
+                                            ? const Color(0xFF202020)
+                                            : const Color(0xFFF1F4F0)),
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                child: Text(
+                                  '$value',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: active
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: active
+                                        ? Colors.white
+                                        : (isDark
+                                              ? Colors.white70
+                                              : Colors.black87),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        'Budget Reset Mode',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF202020)
+                              : const Color(0xFFEAEFEA),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [true, false].map((auto) {
+                            final active = automatic == auto;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () =>
+                                    setSheetState(() => automatic = auto),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: active
+                                        ? const Color(0xFF4CAF50)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    auto ? 'Automatic' : 'Manual',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: active
+                                          ? Colors.white
+                                          : (isDark
+                                                ? Colors.white70
+                                                : Colors.black54),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        automatic
+                            ? 'Your category tracking cycle and budget will update automatically on the selected date every month.'
+                            : 'Category tracking follows this cycle; you can reset the budget manually whenever you want.',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          height: 1.5,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            budgetController.setMonthStartDay(day);
+                            budgetController.setAutomaticReset(automatic);
+                            budgetController.markCycleConfigured();
+                            Navigator.pop(sheetContext);
+                            if (mounted) setState(() {});
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Save Category Cycle',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      _isShowingCycleSetup = false;
+    }
   }
 
   // ============================================================
@@ -684,11 +959,15 @@ class _CategoriesViewState extends State<CategoriesView> {
                     },
                     child: const Text('Select'),
                   ),
-                  TextButton(
-                    onPressed: controller.isLoading.value
-                        ? null
-                        : _resetUnusedCategories,
-                    child: const Text('Reset'),
+                  IconButton(
+                    tooltip: 'Category cycle settings',
+                    onPressed: _showCycleSetupSheet,
+                    icon: const Icon(Icons.calendar_month_rounded),
+                  ),
+                  IconButton(
+                    tooltip: 'Category history',
+                    onPressed: _openCategoryHistory,
+                    icon: const Icon(Icons.history_rounded),
                   ),
                   IconButton(
                     tooltip: 'Open navigation menu',
@@ -734,177 +1013,190 @@ class _CategoriesViewState extends State<CategoriesView> {
 
                 final categories = controller.categoryList.toList();
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(top: 12, bottom: 100),
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(top: 6, bottom: 100),
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
 
-                  itemCount: categories.length,
+                          final Color baseColor = _getCategoryColor(
+                            category.name,
+                            category.colorValue,
+                          );
 
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
+                          final int transactionCount =
+                              _getMonthlyTransactionCount(category);
 
-                    final Color baseColor = _getCategoryColor(
-                      category.name,
-                      category.colorValue,
-                    );
+                          final bool isDefaultCategory = category.isDefault;
 
-                    final int transactionCount = controller.getCategoryCount(
-                      category.id,
-                    );
+                          final bool isSelected = selectedCategoryIds.contains(
+                            category.id,
+                          );
 
-                    final bool isDefaultCategory = category.isDefault;
-
-                    final bool isSelected = selectedCategoryIds.contains(
-                      category.id,
-                    );
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-
-                        borderRadius: BorderRadius.circular(16),
-
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-
-                          onTap: () {
-                            _closeDrawerInstantly();
-
-                            if (isSelectionMode && !isDefaultCategory) {
-                              _toggleCategorySelection(category.id);
-                            } else if (!isSelectionMode || isDefaultCategory) {
-                              Get.to(
-                                () => CategoryTransactionsScreen(
-                                  categoryId: category.id,
-                                  categoryName: category.name,
-                                  categoryType: category.type,
-                                ),
-                              );
-                            }
-                          },
-
-                          onLongPress: () {
-                            if (!isDefaultCategory) {
-                              if (isSelectionMode) {
-                                _toggleCategorySelection(category.id);
-                              } else {
-                                _enterSelectionMode(category.id);
-                              }
-                            }
-                          },
-
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
                               horizontal: 16,
-                              vertical: 12,
+                              vertical: 6,
                             ),
 
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : Colors.white,
 
-                                  decoration: BoxDecoration(
-                                    color: baseColor.withOpacity(0.18),
-                                    shape: BoxShape.circle,
-                                  ),
+                              borderRadius: BorderRadius.circular(16),
 
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    _getEmoji(category.icon, category.name),
-                                    style: const TextStyle(fontSize: 23),
-                                  ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.02),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
+                              ],
+                            ),
 
-                                const SizedBox(width: 14),
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
 
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
 
-                                    children: [
-                                      Text(
-                                        category.name,
-                                        style: AppTextStyles.bodyLarge(isDark)
-                                            .copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
+                                onTap: () {
+                                  _closeDrawerInstantly();
+
+                                  if (isSelectionMode && !isDefaultCategory) {
+                                    _toggleCategorySelection(category.id);
+                                  } else if (!isSelectionMode ||
+                                      isDefaultCategory) {
+                                    Get.to(
+                                      () => CategoryTransactionsScreen(
+                                        categoryId: category.id,
+                                        categoryName: category.name,
+                                        categoryType: category.type,
+                                        periodStart: _periodStart,
+                                        periodEnd: _periodEnd,
                                       ),
+                                    );
+                                  }
+                                },
 
-                                      const SizedBox(height: 4),
+                                onLongPress: () {
+                                  if (!isDefaultCategory) {
+                                    if (isSelectionMode) {
+                                      _toggleCategorySelection(category.id);
+                                    } else {
+                                      _enterSelectionMode(category.id);
+                                    }
+                                  }
+                                },
 
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+
+                                  child: Row(
+                                    children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
-                                        ),
+                                        width: 48,
+                                        height: 48,
 
                                         decoration: BoxDecoration(
-                                          color: isDark
-                                              ? Colors.grey[800]
-                                              : const Color(0xFFF0F2F5),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
+                                          color: baseColor.withOpacity(0.18),
+                                          shape: BoxShape.circle,
                                         ),
 
+                                        alignment: Alignment.center,
                                         child: Text(
-                                          '$transactionCount transactions',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: isDark
-                                                ? Colors.grey[300]
-                                                : Colors.grey[600],
+                                          _getEmoji(
+                                            category.icon,
+                                            category.name,
                                           ),
+                                          style: const TextStyle(fontSize: 23),
                                         ),
                                       ),
+
+                                      const SizedBox(width: 14),
+
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+
+                                          children: [
+                                            Text(
+                                              category.name,
+                                              style:
+                                                  AppTextStyles.bodyLarge(
+                                                    isDark,
+                                                  ).copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                  ),
+                                            ),
+
+                                            const SizedBox(height: 4),
+
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? Colors.grey[800]
+                                                    : const Color(0xFFF0F2F5),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+
+                                              child: Text(
+                                                '$transactionCount transactions',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: isDark
+                                                      ? Colors.grey[300]
+                                                      : Colors.grey[600],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      if (isSelectionMode && !isDefaultCategory)
+                                        Icon(
+                                          isSelected
+                                              ? Icons.check_circle_rounded
+                                              : Icons.circle_outlined,
+                                          color: isSelected
+                                              ? const Color(0xFF2EA44F)
+                                              : Colors.grey[400],
+                                          size: 24,
+                                        )
+                                      else
+                                        Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: Colors.grey[400],
+                                          size: 22,
+                                        ),
                                     ],
                                   ),
                                 ),
-
-                                if (isSelectionMode && !isDefaultCategory)
-                                  Icon(
-                                    isSelected
-                                        ? Icons.check_circle_rounded
-                                        : Icons.circle_outlined,
-                                    color: isSelected
-                                        ? const Color(0xFF2EA44F)
-                                        : Colors.grey[400],
-                                    size: 24,
-                                  )
-                                else
-                                  Icon(
-                                    Icons.chevron_right_rounded,
-                                    color: Colors.grey[400],
-                                    size: 22,
-                                  ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 );
               }),
             ),
@@ -1172,8 +1464,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                                         context: context,
                                         icon: Icons
                                             .account_balance_wallet_rounded,
-                                        iconColor:
-                                            const Color(0xFF3A5BA0),
+                                        iconColor: const Color(0xFF3A5BA0),
                                         emoji: '🧮',
                                         title: 'Udhaar',
                                         subtitle:
