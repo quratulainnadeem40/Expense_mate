@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
+import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -44,6 +45,42 @@ class CategoriesController extends GetxController {
 
   static bool isProtectedCategoryName(String? name) {
     return protectedCategoryOrder.contains(_normalizeCategoryName(name));
+  }
+
+  static List<CategoryModel> filterCategoriesForDisplay({
+    required Iterable<CategoryModel> categories,
+    required Iterable<TransactionModel> transactions,
+  }) {
+    final transactionCategoryIds = <String>{};
+    final transactionCategoryNames = <String>{};
+
+    for (final transaction in transactions) {
+      final categoryId = transaction.categoryId.trim().toLowerCase();
+      if (categoryId.isNotEmpty) {
+        transactionCategoryIds.add(categoryId);
+      }
+
+      final customCategoryName = _normalizeCategoryName(
+        transaction.customCategoryName,
+      );
+      if (customCategoryName.isNotEmpty) {
+        transactionCategoryNames.add(customCategoryName);
+      }
+    }
+
+    return categories.where((category) {
+      if (isProtectedCategoryName(category.name)) {
+        return true;
+      }
+
+      final categoryName = _normalizeCategoryName(category.name);
+      final categoryIds = <String>{category.id, ...category.linkedIds}
+          .map((id) => id.trim().toLowerCase())
+          .where((id) => id.isNotEmpty);
+
+      return categoryIds.any(transactionCategoryIds.contains) ||
+          transactionCategoryNames.contains(categoryName);
+    }).toList();
   }
 
   List<CategoryModel> categoriesForType(String type) {
@@ -240,8 +277,7 @@ class CategoriesController extends GetxController {
       }
 
       final id = item['id']?.toString() ?? '';
-      final groupKey = '$normalizedName|$type';
-      final existing = grouped[groupKey];
+      final existing = grouped[normalizedName];
 
       if (existing == null) {
         final category = Map<String, dynamic>.from(item);
@@ -249,8 +285,9 @@ class CategoriesController extends GetxController {
         category['name'] = name;
         category['type'] = type;
         category['ids'] = <String>[if (id.isNotEmpty) id];
+        category['types'] = <String>[type];
 
-        grouped[groupKey] = category;
+        grouped[normalizedName] = category;
       } else {
         final dynamic existingIds = existing['ids'];
         final ids = existingIds is List
@@ -261,8 +298,17 @@ class CategoriesController extends GetxController {
           ids.add(id);
         }
 
+        final dynamic existingTypes = existing['types'];
+        final types = existingTypes is List
+            ? existingTypes.map((value) => value.toString()).toList()
+            : <String>[];
+        if (!types.contains(type)) {
+          types.add(type);
+        }
+
         existing['ids'] = ids;
-        existing['type'] = type;
+        existing['types'] = types;
+        existing['type'] = types.length > 1 ? 'both' : type;
 
         // Prefer a real UUID over a virtual default ID.
         final existingId = existing['id']?.toString() ?? '';
@@ -278,6 +324,43 @@ class CategoriesController extends GetxController {
         existing['isDefault'] =
             existing['isDefault'] == true || item['isDefault'] == true;
       }
+    }
+
+    for (final categoryName in protectedCategoryOrder) {
+      final existing = grouped[categoryName];
+      if (existing == null) {
+        grouped[categoryName] = {
+          'id': 'default_$categoryName',
+          'name': _defaultDisplayName(categoryName),
+          'icon': categoryName,
+          'color': _defaultColorValue(categoryName),
+          'isDefault': true,
+          'type': 'expense',
+          'ids': <String>[],
+          'types': <String>['expense'],
+        };
+        continue;
+      }
+
+      final ids = (existing['ids'] as List<dynamic>? ?? [])
+          .map((id) => id.toString())
+          .toList();
+      final types = (existing['types'] as List<dynamic>? ?? [])
+          .map((type) => type.toString())
+          .toList();
+
+      final defaultCategoryId = 'default_$categoryName';
+      if (!ids.contains(defaultCategoryId)) {
+        ids.add(defaultCategoryId);
+      }
+      if (!types.contains('expense')) {
+        types.add('expense');
+      }
+
+      existing['ids'] = ids.toSet().toList();
+      existing['types'] = types;
+      existing['type'] = types.length > 1 ? 'both' : types.first;
+      existing['isDefault'] = true;
     }
 
     final protectedItems = <Map<String, dynamic>>[];
@@ -301,40 +384,14 @@ class CategoriesController extends GetxController {
       );
     });
 
-    final ordered = <Map<String, dynamic>>[];
-
-    // Keep protected categories in the requested order.
-    for (final categoryName in protectedCategoryOrder) {
-      final matches = protectedItems.where(
-        (item) =>
-            _normalizeCategoryName(item['name']?.toString()) == categoryName,
-      );
-
-      final expenseMatches = matches.where(
-        (item) => item['type']?.toString().toLowerCase() == 'expense',
-      );
-
-      if (expenseMatches.isNotEmpty) {
-        ordered.addAll(expenseMatches);
-      } else {
-        ordered.add({
-          'id': 'default_$categoryName',
-          'name': _defaultDisplayName(categoryName),
-          'icon': categoryName,
-          'color': _defaultColorValue(categoryName),
-          'isDefault': true,
-          'type': 'expense',
-          'ids': <String>[],
-        });
-      }
-
-      ordered.addAll(
-        matches.where(
-          (item) => item['type']?.toString().toLowerCase() == 'income',
+    final ordered = <Map<String, dynamic>>[
+      for (final categoryName in protectedCategoryOrder)
+        ...protectedItems.where(
+          (item) =>
+              _normalizeCategoryName(item['name']?.toString()) ==
+              categoryName,
         ),
-      );
-    }
-
+    ];
     ordered.addAll(customItems);
 
     return ordered;
@@ -376,6 +433,37 @@ class CategoriesController extends GetxController {
       default:
         return 0xFF757575;
     }
+  }
+
+  static Map<String, double> calculateCategoryTotals({
+    required Iterable<TransactionModel> transactions,
+    required Set<String> categoryIds,
+    DateTime? periodStart,
+    DateTime? periodEndExclusive,
+  }) {
+    final normalizedIds = categoryIds
+        .map((id) => id.trim().toLowerCase())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    final totals = <String, double>{'income': 0, 'expense': 0};
+
+    for (final transaction in transactions) {
+      final categoryId = transaction.categoryId.trim().toLowerCase();
+      final type = transaction.type.trim().toLowerCase();
+      if (!normalizedIds.contains(categoryId) ||
+          !totals.containsKey(type) ||
+          !transaction.amount.isFinite ||
+          (periodStart != null &&
+              transaction.transactionDate.isBefore(periodStart)) ||
+          (periodEndExclusive != null &&
+              !transaction.transactionDate.isBefore(periodEndExclusive))) {
+        continue;
+      }
+
+      totals[type] = totals[type]! + transaction.amount;
+    }
+
+    return totals;
   }
 
   // ==========================================================
@@ -444,6 +532,8 @@ class CategoriesController extends GetxController {
     originalCategoryTypes.assignAll({
       for (final category in localCategories)
         category.id: category.type.trim().toLowerCase(),
+      for (final categoryName in protectedCategoryOrder)
+        'default_$categoryName': 'expense',
     });
 
     debugPrint('===== LOCAL CATEGORIES =====');
@@ -534,11 +624,16 @@ class CategoriesController extends GetxController {
           (localCategory) => localCategory.id == transactionCategoryId,
         );
 
+        final itemTypes = (item['types'] as List<dynamic>? ?? [
+          item['type']?.toString() ?? '',
+        ]).map((type) => type.toString().trim().toLowerCase()).toSet();
+
         if (matchingLocalCategory != null &&
             _normalizeCategoryName(matchingLocalCategory.name) ==
                 normalizedName &&
-            matchingLocalCategory.type.trim().toLowerCase() ==
-                item['type']?.toString().trim().toLowerCase()) {
+            itemTypes.contains(
+              matchingLocalCategory.type.trim().toLowerCase(),
+            )) {
           count++;
         }
       }
@@ -635,10 +730,14 @@ class CategoriesController extends GetxController {
     }
 
     try {
-      // Same name means the same visible category, regardless of type.
-      final existingCategory = await findCategoryByName(trimmedName);
+      // A category can have a separate persisted ID for each transaction type.
+      final existingCategory = await findCategoryByName(
+        trimmedName,
+        type: normalizedType,
+      );
 
       if (existingCategory != null) {
+        await _loadFromLocal(user.id);
         if (closeDialog && (Get.isDialogOpen ?? false)) {
           Get.back();
         }
@@ -652,7 +751,9 @@ class CategoriesController extends GetxController {
       );
 
       final localDuplicate = localCategories.firstWhereOrNull(
-        (item) => _normalizeCategoryName(item.name) == normalizedName,
+        (item) =>
+            _normalizeCategoryName(item.name) == normalizedName &&
+            item.type.trim().toLowerCase() == normalizedType,
       );
 
       if (localDuplicate != null) {

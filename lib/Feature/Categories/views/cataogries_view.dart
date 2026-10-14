@@ -1,4 +1,3 @@
-import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -24,6 +23,7 @@ import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesView extends StatefulWidget {
@@ -116,18 +116,31 @@ class _CategoriesViewState extends State<CategoriesView>
     return _cycleStartForMonth(nextMonth).subtract(const Duration(days: 1));
   }
 
-  int _getMonthlyTransactionCount(CategoryModel category) {
-    final categoryIds = <String>{category.id, ...category.linkedIds};
-    final periodStart = _periodStart;
-    final periodEndExclusive = _periodEnd.add(const Duration(days: 1));
+  String _formatCategoryAmount(double amount) {
+    return 'PKR ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
+  }
 
-    return _transactionsController.transactions.where((transaction) {
-      final categoryId = transaction.categoryId.trim();
-      final transactionDate = transaction.transactionDate;
-      return categoryIds.contains(categoryId) &&
-          !transactionDate.isBefore(periodStart) &&
-          transactionDate.isBefore(periodEndExclusive);
-    }).length;
+  Widget _buildCategoryAmount({
+    required String label,
+    required double amount,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.16 : 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$label: ${_formatCategoryAmount(amount)}',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
   }
 
   void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
@@ -1002,6 +1015,9 @@ class _CategoriesViewState extends State<CategoriesView>
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                final transactions = _transactionsController.transactions
+                    .toList();
+
                 if (controller.categoryList.isEmpty) {
                   return const Center(
                     child: Text(
@@ -1011,7 +1027,10 @@ class _CategoriesViewState extends State<CategoriesView>
                   );
                 }
 
-                final categories = controller.categoryList.toList();
+                final categories = CategoriesController.filterCategoriesForDisplay(
+                  categories: controller.categoryList,
+                  transactions: transactions,
+                );
 
                 return Column(
                   children: [
@@ -1027,8 +1046,18 @@ class _CategoriesViewState extends State<CategoriesView>
                             category.colorValue,
                           );
 
-                          final int transactionCount =
-                              _getMonthlyTransactionCount(category);
+                          final monthlyTotals =
+                              CategoriesController.calculateCategoryTotals(
+                                transactions: transactions,
+                                categoryIds: {
+                                  category.id,
+                                  ...category.linkedIds,
+                                },
+                                periodStart: _periodStart,
+                                periodEndExclusive: _periodEnd.add(
+                                  const Duration(days: 1),
+                                ),
+                              );
 
                           final bool isDefaultCategory = category.isDefault;
 
@@ -1142,30 +1171,30 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                             const SizedBox(height: 4),
 
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
+                                            const SizedBox(height: 6),
+                                            Wrap(
+                                              spacing: 6,
+                                              runSpacing: 4,
+                                              children: [
+                                                _buildCategoryAmount(
+                                                  label: 'Income',
+                                                  amount:
+                                                      monthlyTotals['income']!,
+                                                  color: const Color(
+                                                    0xFF2E9D59,
                                                   ),
-
-                                              decoration: BoxDecoration(
-                                                color: isDark
-                                                    ? Colors.grey[800]
-                                                    : const Color(0xFFF0F2F5),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-
-                                              child: Text(
-                                                '$transactionCount transactions',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: isDark
-                                                      ? Colors.grey[300]
-                                                      : Colors.grey[600],
+                                                  isDark: isDark,
                                                 ),
-                                              ),
+                                                _buildCategoryAmount(
+                                                  label: 'Expense',
+                                                  amount:
+                                                      monthlyTotals['expense']!,
+                                                  color: const Color(
+                                                    0xFFE25555,
+                                                  ),
+                                                  isDark: isDark,
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),

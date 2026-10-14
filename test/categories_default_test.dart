@@ -1,4 +1,6 @@
-import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+ import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
+import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -50,7 +52,7 @@ void main() {
     },
   );
 
-  test('category names are deduplicated without regard to case', () {
+  test('same category name is grouped across income and expense types', () {
     final visible = CategoriesController.filterVisibleCategories([
       {'id': 'fiverr-1', 'name': 'Fiverr', 'type': 'expense'},
       {'id': 'fiverr-2', 'name': '  fiverr  ', 'type': 'expense'},
@@ -64,10 +66,160 @@ void main() {
         )
         .toList();
 
-    expect(fiverrCategories, hasLength(2));
-    expect(fiverrCategories.map((category) => category['type']).toSet(), {
-      'expense',
-      'income',
-    });
+    expect(fiverrCategories, hasLength(1));
+    expect(fiverrCategories.single['type'], 'both');
+    expect(
+      fiverrCategories.single['ids'],
+      containsAll(['fiverr-1', 'fiverr-2', 'fiverr-income']),
+    );
   });
+
+  test('income counterpart joins its existing default category row', () {
+    final visible = CategoriesController.filterVisibleCategories([
+      {'id': 'food-income', 'name': ' Food ', 'type': 'income'},
+    ]);
+    final foodCategories = visible
+        .where(
+          (category) =>
+              (category['name'] as String).trim().toLowerCase() == 'food',
+        )
+        .toList();
+
+    expect(foodCategories, hasLength(1));
+    expect(foodCategories.single['type'], 'both');
+    expect(
+      foodCategories.single['ids'],
+      containsAll(['food-income', 'default_food']),
+    );
+  });
+
+  test('category totals separate income and expense across linked IDs', () {
+    final totals = CategoriesController.calculateCategoryTotals(
+      transactions: [
+        TransactionModel(
+          id: 'income',
+          categoryId: 'income-category',
+          title: 'Salary',
+          amount: 50000,
+          type: 'income',
+          transactionDate: DateTime(2026, 10, 14),
+        ),
+        TransactionModel(
+          id: 'expense',
+          categoryId: 'expense-category',
+          title: 'Purchase',
+          amount: 10000,
+          type: 'expense',
+          transactionDate: DateTime(2026, 10, 14),
+        ),
+        TransactionModel(
+          id: 'outside-period',
+          categoryId: 'income-category',
+          title: 'Previous cycle',
+          amount: 2500,
+          type: 'income',
+          transactionDate: DateTime(2026, 9, 19),
+        ),
+        TransactionModel(
+          id: 'other-category',
+          categoryId: 'other-category',
+          title: 'Unrelated',
+          amount: 3000,
+          type: 'expense',
+          transactionDate: DateTime(2026, 10, 14),
+        ),
+      ],
+      categoryIds: {'income-category', 'expense-category'},
+      periodStart: DateTime(2026, 9, 20),
+      periodEndExclusive: DateTime(2026, 10, 20),
+    );
+
+    expect(totals, {'income': 50000, 'expense': 10000});
+  });
+
+  test(
+    'category totals return zero for a transaction type without activity',
+    () {
+      final totals = CategoriesController.calculateCategoryTotals(
+        transactions: [
+          TransactionModel(
+            id: 'income',
+            categoryId: 'salary',
+            title: 'Salary',
+            amount: 50000,
+            type: 'income',
+            transactionDate: DateTime(2026, 10, 14),
+          ),
+        ],
+        categoryIds: {'salary'},
+      );
+
+      expect(totals['income'], 50000);
+      expect(totals['expense'], 0);
+    },
+  );
+
+  test(
+    'only default categories show until a custom category has a transaction',
+    () {
+      final categories = [
+        CategoryModel(
+          id: 'default_food',
+          name: 'Food',
+          icon: 'food',
+          colorValue: 0,
+          isDefault: true,
+          type: 'expense',
+        ),
+        CategoryModel(
+          id: 'custom-id',
+          name: 'Freelance',
+          icon: 'work',
+          colorValue: 0,
+          isDefault: false,
+          type: 'income',
+          linkedIds: ['custom-id'],
+        ),
+      ];
+
+      final visible = CategoriesController.filterCategoriesForDisplay(
+        categories: categories,
+        transactions: const [],
+      );
+
+      expect(visible.map((category) => category.name), ['Food']);
+    },
+  );
+
+  test(
+    'custom category appears when a transaction uses a linked category ID',
+    () {
+      final categories = [
+        CategoryModel(
+          id: 'income-category',
+          name: 'Freelance',
+          icon: 'work',
+          colorValue: 0,
+          isDefault: false,
+          type: 'income',
+          linkedIds: ['income-category', 'expense-category'],
+        ),
+      ];
+
+      final visible = CategoriesController.filterCategoriesForDisplay(
+        categories: categories,
+        transactions: [
+          TransactionModel(
+            id: 'transaction',
+            categoryId: 'expense-category',
+            title: 'Design work',
+            amount: 1500,
+            type: 'expense',
+          ),
+        ],
+      );
+
+      expect(visible.map((category) => category.name), ['Freelance']);
+    },
+  );
 }

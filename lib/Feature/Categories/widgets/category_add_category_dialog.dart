@@ -167,9 +167,10 @@ Future<void> _saveCategory() async {
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
-  // Check whether this category already exists, regardless of type.
+  // Keep category names unique within each transaction type.
   final existingCategory = await controller.findCategoryByName(
     normalizedName,
+    type: selectedType,
   );
 
   if (!mounted) return;
@@ -178,8 +179,8 @@ Future<void> _saveCategory() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '"${existingCategory.name}" already exists. '
-          'You can use the existing category for Income and Expense.',
+          '"${existingCategory.name}" already exists for '
+          '${selectedType == 'income' ? 'income' : 'expense'}.',
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -627,4 +628,3 @@ Future<void> _saveCategory() async {
     );
   }
 }
-
