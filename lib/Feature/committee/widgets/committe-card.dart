@@ -9,7 +9,7 @@ class CommitteeCard extends StatelessWidget {
   const CommitteeCard({
     super.key,
     this.committeeName = 'Digital Committee',
-    this.monthlyAmount = 'PKR 0',
+    this.monthlyAmount = '',
     this.members = '0 Members',
     this.status = 'Active',
   });

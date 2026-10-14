@@ -11,7 +11,7 @@ class ScheduleCard extends StatelessWidget {
     super.key,
     this.title = 'Monthly Payment',
     this.dueDate = 'Due Date',
-    this.amount = 'PKR 0',
+    this.amount = '',
     this.status = 'Upcoming',
   });
 

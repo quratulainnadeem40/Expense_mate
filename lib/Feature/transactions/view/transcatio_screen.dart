@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -534,7 +535,7 @@ class _TransactionsViewState extends State<TransactionsView>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'PKR ${safeIncome.toStringAsFixed(2)}',
+                                Formatters.money(safeIncome, decimals: 2),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -567,7 +568,7 @@ class _TransactionsViewState extends State<TransactionsView>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'PKR ${safeExpense.toStringAsFixed(2)}',
+                                Formatters.money(safeExpense, decimals: 2),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -922,7 +923,7 @@ class _TransactionsViewState extends State<TransactionsView>
                               // ====================================
                               trailing: _isSelectionMode
                                   ? Text(
-                                      "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
+                                      Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
                                       style:
                                           AppTextStyles.bodyMedium(
                                             isDarkMode,
@@ -937,7 +938,7 @@ class _TransactionsViewState extends State<TransactionsView>
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
+                                          Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
                                           style:
                                               AppTextStyles.bodyMedium(
                                                 isDarkMode,

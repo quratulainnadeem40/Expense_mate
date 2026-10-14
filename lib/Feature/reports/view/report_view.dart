@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'dart:math' as math;
@@ -43,7 +44,7 @@ class ReportView extends StatelessWidget {
   ];
 
   String _formatAmount(double amount) {
-    return 'PKR ${amount.toStringAsFixed(0)}';
+    return '\${Formatters.code} \${amount.toStringAsFixed(0)}';
   }
 
   @override
@@ -590,7 +591,7 @@ class ReportView extends StatelessWidget {
                                   ? _months[month - 1]
                                   : '';
                               return LineTooltipItem(
-                                '$monthName\nPKR ${spot.y}',
+                                '$monthName\n${Formatters.money(spot.y)}',
                                 const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -731,7 +732,7 @@ class ReportView extends StatelessWidget {
                                   ? _months[month - 1]
                                   : '';
                               return LineTooltipItem(
-                                '$monthName\nPKR ${spot.y}',
+                                '$monthName\n${Formatters.money(spot.y)}',
                                 const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -862,7 +863,7 @@ class ReportView extends StatelessWidget {
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             final label = group.x == 0 ? 'Income' : 'Expense';
                             return BarTooltipItem(
-                              '$label\nPKR ${rod.toY}',
+                              '$label\n${Formatters.money(rod.toY)}',
                               const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,

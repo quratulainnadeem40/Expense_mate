@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/budget_controller.dart';
@@ -25,7 +26,7 @@ class BudgetSummaryCard extends GetView<BudgetController> {
               ),
               const SizedBox(height: 8),
               Text(
-                'RS ${controller.totalSpent.toStringAsFixed(0)} / RS ${controller.totalAllocated.toStringAsFixed(0)}',
+                '\${Formatters.code} \${controller.totalSpent.toStringAsFixed(0)} / ${Formatters.code} ${controller.totalAllocated.toStringAsFixed(0)}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

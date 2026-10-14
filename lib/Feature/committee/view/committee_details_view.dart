@@ -1,4 +1,4 @@
-
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -124,7 +124,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 
-  String _formatAmount(double amount) => 'PKR ${amount.toStringAsFixed(0)}';
+  String _formatAmount(double amount) => Formatters.money(amount);
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'Not Set';
@@ -443,9 +443,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                               decimal: true,
                             ),
                             style: TextStyle(color: primaryText),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Monthly Contribution',
-                              prefixText: 'PKR ',
+                              prefixText: '${Formatters.code} ',
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
@@ -878,9 +878,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                         IndianAmountFormatter(),
                       ],
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Monthly Contribution',
-                        prefixText: 'PKR ',
+                        prefixText: '${Formatters.code} ',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {

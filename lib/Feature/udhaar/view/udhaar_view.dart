@@ -37,6 +37,10 @@ class UdhaarView extends GetView<UdhaarController> {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
 
+  /// "10 Oct" for the card rows, where the year only adds noise.
+  static String _shortDate(DateTime d) =>
+      '${d.day} ${_months[d.month - 1]}';
+
   static String _date(DateTime d) =>
       '${d.day} ${_months[d.month - 1]} ${d.year}';
 
@@ -155,7 +159,18 @@ class UdhaarView extends GetView<UdhaarController> {
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 3),
+
+          // Says which way the number leans, so the figure above does
+          // not have to be read together with the card colour.
+          Text(
+            '${positive ? 'in your favour' : 'you owe more'}'
+            ' · ${controller.people.length} '
+            '${controller.people.length == 1 ? 'person' : 'people'}',
+            style: const TextStyle(fontSize: 11.5, color: Colors.white70),
+          ),
+
+          const SizedBox(height: 15),
 
           Row(
             children: [
@@ -166,11 +181,7 @@ class UdhaarView extends GetView<UdhaarController> {
                   Icons.south_west_rounded,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 34,
-                color: Colors.white24,
-              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: _summaryCell(
                   'To pay',
@@ -186,8 +197,12 @@ class UdhaarView extends GetView<UdhaarController> {
   }
 
   Widget _summaryCell(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(13),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -394,10 +409,19 @@ class UdhaarView extends GetView<UdhaarController> {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(17),
         border: Border.all(
           color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
         ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -405,22 +429,35 @@ class UdhaarView extends GetView<UdhaarController> {
           tilePadding: const EdgeInsets.symmetric(horizontal: 14),
           childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
 
+          // A filled circle in the direction's colour. The old pale
+          // square said very little from a distance.
           leading: Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: accent.withOpacity(isDark ? 0.20 : 0.12),
-              borderRadius: BorderRadius.circular(12),
+              gradient: clear
+                  ? null
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: person.theyOweYou
+                          ? const [Color(0xFF4CC66A), Color(0xFF1F7A37)]
+                          : const [Color(0xFFF2706B), Color(0xFFC62828)],
+                    ),
+              color: clear
+                  ? (isDark ? Colors.white12 : Colors.black12)
+                  : null,
+              shape: BoxShape.circle,
             ),
             child: Text(
               person.name.isEmpty
                   ? '?'
                   : person.name.characters.first.toUpperCase(),
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: accent,
+                color: clear ? secondaryText : Colors.white,
               ),
             ),
           ),
@@ -436,9 +473,9 @@ class UdhaarView extends GetView<UdhaarController> {
 
           subtitle: Text(
             clear
-                ? 'Settled'
-                : '${person.openCount} open '
-                    '${person.openCount == 1 ? 'entry' : 'entries'}',
+                ? 'Settled · last ${_shortDate(person.lastActivity)}'
+                : '${person.openCount} open · '
+                    'last ${_shortDate(person.lastActivity)}',
             style: TextStyle(fontSize: 11.5, color: secondaryText),
           ),
 
@@ -449,16 +486,36 @@ class UdhaarView extends GetView<UdhaarController> {
               Text(
                 clear ? '—' : '$_symbol ${_money(person.net)}',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: accent,
                 ),
               ),
-              if (!clear)
-                Text(
-                  person.theyOweYou ? 'you get' : 'you give',
-                  style: TextStyle(fontSize: 10.5, color: secondaryText),
+
+              // A chip rather than faint grey text, which was easy to
+              // miss on the row that matters most.
+              if (!clear) ...[
+                const SizedBox(height: 3),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    person.theyOweYou ? 'YOU GET' : 'YOU GIVE',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                      color: accent,
+                    ),
+                  ),
                 ),
+              ],
             ],
           ),
 
@@ -560,12 +617,22 @@ class UdhaarView extends GetView<UdhaarController> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(
-            entry.isLent
-                ? Icons.south_west_rounded
-                : Icons.north_east_rounded,
-            size: 16,
-            color: entry.isSettled ? secondaryText : accent,
+          Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: (entry.isSettled ? secondaryText : accent)
+                  .withOpacity(isDark ? 0.20 : 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              entry.isLent
+                  ? Icons.south_west_rounded
+                  : Icons.north_east_rounded,
+              size: 14,
+              color: entry.isSettled ? secondaryText : accent,
+            ),
           ),
 
           const SizedBox(width: 10),

@@ -12,7 +12,7 @@ class MemberCard extends StatelessWidget {
     super.key,
     this.memberName = 'Member Name',
     this.phone = '',
-    this.contribution = 'PKR 0',
+    this.contribution = '',
     this.paymentStatus = 'Pending',
     this.onEdit,
     this.onDelete,

@@ -1,6 +1,9 @@
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
+import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
+import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -292,6 +295,13 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final walletsController = Get.isRegistered<WalletsController>()
+        ? Get.find<WalletsController>()
+        : Get.put(WalletsController());
+    final goalsController = Get.isRegistered<GoalsController>()
+        ? Get.find<GoalsController>()
+        : Get.put(GoalsController());
+    final transactionsController = Get.find<TransactionsController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -302,24 +312,25 @@ class SettingsView extends StatelessWidget {
           ).copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
-       
       ),
       body: Obx(
         () => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
           children: [
-            _buildProfileHeader(context, isDark),
+            _buildProfileHeader(
+              context,
+              isDark,
+              walletsController,
+              transactionsController,
+              goalsController,
+            ),
 
             const SizedBox(height: 28),
 
             // =====================================================
             // APPEARANCE
             // =====================================================
-            _SectionHeader(
-              title: 'Appearance',
-              isDark: isDark,
-              icon: Icons.palette_outlined,
-            ),
+            _SectionHeader(title: 'APPEARANCE', isDark: isDark),
 
             const SizedBox(height: 10),
 
@@ -336,6 +347,7 @@ class SettingsView extends StatelessWidget {
                         ? Icons.dark_mode_rounded
                         : Icons.light_mode_rounded,
                     isDark: isDark,
+                    color: AppColors.primary,
                   ),
                   title: Text(
                     'Dark Mode',
@@ -357,14 +369,7 @@ class SettingsView extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // =====================================================
-            // CURRENCY
-            // =====================================================
-            _SectionHeader(
-              title: 'Currency',
-              isDark: isDark,
-              icon: Icons.currency_exchange_rounded,
-            ),
+            _SectionHeader(title: 'MONEY', isDark: isDark),
 
             const SizedBox(height: 10),
 
@@ -379,6 +384,7 @@ class SettingsView extends StatelessWidget {
                   leading: _IconContainer(
                     icon: Icons.currency_exchange_rounded,
                     isDark: isDark,
+                    color: const Color(0xFF2979FF),
                   ),
                   title: Text(
                     'Default Currency',
@@ -415,19 +421,45 @@ class SettingsView extends StatelessWidget {
                     _showCurrencyListDialog(context);
                   },
                 ),
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  secondary: _IconContainer(
+                    icon: controller.hideAmounts.value
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    isDark: isDark,
+                    color: const Color(0xFFE0A000),
+                  ),
+                  title: Text(
+                    'Hide amounts',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    controller.hideAmounts.value
+                        ? 'Balances are hidden on the home screen'
+                        : 'Balances are visible on the home screen',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  value: controller.hideAmounts.value,
+                  onChanged: (_) => controller.toggleHideAmounts(),
+                ),
               ],
             ),
 
             const SizedBox(height: 24),
 
-            // =====================================================
-            // NOTIFICATIONS
-            // =====================================================
-            _SectionHeader(
-              title: 'Notifications',
-              isDark: isDark,
-              icon: Icons.notifications_outlined,
-            ),
+            _SectionHeader(title: 'ACCOUNT', isDark: isDark),
 
             const SizedBox(height: 10),
 
@@ -442,6 +474,7 @@ class SettingsView extends StatelessWidget {
                   secondary: _IconContainer(
                     icon: Icons.notifications_active_outlined,
                     isDark: isDark,
+                    color: const Color(0xFF2979FF),
                   ),
                   title: Text(
                     'Bill Notifications',
@@ -456,25 +489,12 @@ class SettingsView extends StatelessWidget {
                   value: controller.notificationsEnabled.value,
                   onChanged: controller.toggleNotifications,
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // =====================================================
-            // ACCOUNT
-            // =====================================================
-            _SectionHeader(
-              title: 'Account',
-              isDark: isDark,
-              icon: Icons.person_outline_rounded,
-            ),
-
-            const SizedBox(height: 10),
-
-            _SettingsCard(
-              isDark: isDark,
-              children: [
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -483,6 +503,9 @@ class SettingsView extends StatelessWidget {
                   leading: _IconContainer(
                     icon: Icons.logout_rounded,
                     isDark: isDark,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                   title: Text(
                     'Logout',
@@ -546,25 +569,12 @@ class SettingsView extends StatelessWidget {
                     _showDeleteAccountDialog(context);
                   },
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // =====================================================
-            // ABOUT
-            // =====================================================
-            _SectionHeader(
-              title: 'About',
-              isDark: isDark,
-              icon: Icons.info_outline_rounded,
-            ),
-
-            const SizedBox(height: 10),
-
-            _SettingsCard(
-              isDark: isDark,
-              children: [
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
                 ListTile(
                   onTap: () => Get.to(() => const AboutView()),
                   contentPadding: const EdgeInsets.symmetric(
@@ -574,6 +584,7 @@ class SettingsView extends StatelessWidget {
                   leading: _IconContainer(
                     icon: Icons.account_balance_wallet_rounded,
                     isDark: isDark,
+                    color: AppColors.primary,
                   ),
                   title: Text(
                     'ExpenseMate',
@@ -615,7 +626,13 @@ class SettingsView extends StatelessWidget {
   // PROFILE HEADER
   // =============================================================
 
-  Widget _buildProfileHeader(BuildContext context, bool isDark) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    bool isDark,
+    WalletsController walletsController,
+    TransactionsController transactionsController,
+    GoalsController goalsController,
+  ) {
     // IMPORTANT:
     // Use the controller's observable values here.
     // Do not read authUser directly for the displayed name/email.
@@ -628,176 +645,245 @@ class SettingsView extends StatelessWidget {
         : 'No email available';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.05),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2E7D32), Color(0xFF174D2A)],
         ),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
+            color: AppColors.primary.withValues(alpha: isDark ? 0.28 : 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Stack(
+      child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 50),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.25),
-                          width: 2,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppColors.primary,
-                        backgroundImage:
-                            controller.profilePictureUrl.value.isNotEmpty
-                            ? NetworkImage(controller.profilePictureUrl.value)
-                            : null,
-                        child: controller.profilePictureUrl.value.isEmpty
-                            ? Text(
-                                displayName.isNotEmpty
-                                    ? displayName[0].toUpperCase()
-                                    : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 29,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        width: 2,
                       ),
                     ),
-
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Material(
-                        color: AppColors.primary,
-                        shape: const CircleBorder(),
-                        elevation: 3,
-                        child: InkWell(
-                          onTap: controller.pickProfilePicture,
-                          customBorder: const CircleBorder(),
-                          child: Container(
-                            width: 31,
-                            height: 31,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : AppColors.surfaceLight,
-                                width: 2,
+                    child: CircleAvatar(
+                      radius: 37,
+                      backgroundColor: Colors.white.withValues(alpha: 0.16),
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
+                          ? NetworkImage(controller.profilePictureUrl.value)
+                          : null,
+                      child: controller.profilePictureUrl.value.isEmpty
+                          ? Text(
+                              displayName.isNotEmpty
+                                  ? displayName[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                              size: 15,
+                            )
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Material(
+                      color: Colors.white,
+                      shape: const CircleBorder(),
+                      elevation: 3,
+                      child: InkWell(
+                        onTap: controller.pickProfilePicture,
+                        customBorder: const CircleBorder(),
+                        child: Container(
+                          width: 29,
+                          height: 29,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF2E7D32),
+                              width: 2,
                             ),
                           ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Color(0xFF2E7D32),
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.headingMedium(isDark).copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      displayEmail,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium(
+                        isDark,
+                      ).copyWith(color: Colors.white.withValues(alpha: 0.82)),
+                    ),
+                    const SizedBox(height: 9),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'ExpenseMate Account',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              Material(
+                color: Colors.white.withValues(alpha: 0.14),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => _showEditProfileDialog(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildProfileStat(
+                  icon: Icons.account_balance_wallet_rounded,
+                  label: 'Wallets',
+                  count: () => walletsController.wallets.length,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildProfileStat(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Entries',
+                  count: () => transactionsController.transactions.length,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildProfileStat(
+                  icon: Icons.flag_rounded,
+                  label: 'Goals',
+                  count: () => goalsController.goals.length,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-                const SizedBox(width: 18),
-
+  Widget _buildProfileStat({
+    required IconData icon,
+    required String label,
+    required int Function() count,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 15,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.headingMedium(
-                          isDark,
-                        ).copyWith(fontWeight: FontWeight.bold),
-                      ),
-
-                      const SizedBox(height: 5),
-
-                      Text(
-                        displayEmail,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyMedium(isDark),
-                      ),
-
-                      const SizedBox(height: 9),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'ExpenseMate Account',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Material(
-              color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.09),
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => _showEditProfileDialog(context),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.16),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.edit_rounded,
-                    color: AppColors.primary,
-                    size: 18,
-                  ),
-                ),
+            const SizedBox(height: 7),
+            Text(
+              '${count()}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 19,
+                height: 1,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -910,7 +996,6 @@ class SettingsView extends StatelessWidget {
                 // =================================================
                 // PROFILE PICTURE
                 // =================================================
-
                 Obx(
                   () => Container(
                     padding: const EdgeInsets.all(4),
@@ -1388,33 +1473,21 @@ class SettingsView extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final bool isDark;
-  final IconData icon;
 
-  const _SectionHeader({
-    required this.title,
-    required this.isDark,
-    required this.icon,
-  });
+  const _SectionHeader({required this.title, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Icon(icon, size: 17, color: AppColors.primary),
-        ),
-        const SizedBox(width: 10),
         Text(
           title,
-          style: AppTextStyles.headingMedium(
-            isDark,
-          ).copyWith(fontWeight: FontWeight.bold),
+          style: AppTextStyles.caption(isDark).copyWith(
+            fontSize: 11,
+            letterSpacing: 1.25,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textSecondary(isDark),
+          ),
         ),
       ],
     );
@@ -1465,8 +1538,13 @@ class _SettingsCard extends StatelessWidget {
 class _IconContainer extends StatelessWidget {
   final IconData icon;
   final bool isDark;
+  final Color color;
 
-  const _IconContainer({required this.icon, required this.isDark});
+  const _IconContainer({
+    required this.icon,
+    required this.isDark,
+    this.color = AppColors.primary,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1474,10 +1552,10 @@ class _IconContainer extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(13),
       ),
-      child: Icon(icon, color: AppColors.primary),
+      child: Icon(icon, color: color),
     );
   }
 }

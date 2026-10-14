@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/budget_controller.dart';
@@ -355,7 +356,7 @@ class _BudgetViewState extends State<BudgetView> {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'This category would push your total monthly budget from RS ${monthlyLimit.toStringAsFixed(0)} to RS ${projectedTotal.toStringAsFixed(0)}.\n\nYou are over by RS ${amountOver.toStringAsFixed(0)}.',
+                  'This category would push your total monthly budget from ${Formatters.money(monthlyLimit)} to ${Formatters.money(projectedTotal)}.\n\nYou are over by ${Formatters.money(amountOver)}.',
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.5,
@@ -1203,7 +1204,7 @@ class _BudgetViewState extends State<BudgetView> {
                                           title: const Text('Reset Budget?'),
                                           content: Text(
                                             "This will reset your current "
-                                            "cycle's spent amount to Rs 0."
+                                            "cycle's spent amount to zero."
                                             "\n\nYour transactions will not "
                                             "be deleted.",
                                             style: TextStyle(
@@ -2160,7 +2161,7 @@ class _BudgetViewState extends State<BudgetView> {
                     const SizedBox(height: 4),
 
                     Text(
-                      'RS ${controller.totalSpent.toStringAsFixed(0)} / RS ${controller.totalAllocated.toStringAsFixed(0)}',
+                      '${Formatters.money(controller.totalSpent)} / ${Formatters.money(controller.totalAllocated)}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -2221,7 +2222,7 @@ class _BudgetViewState extends State<BudgetView> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Rs ${controller.overspentAmount.toStringAsFixed(0)} over budget',
+                                    '${Formatters.money(controller.overspentAmount)} over budget',
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       color: secondaryTextColor,
@@ -2559,7 +2560,7 @@ class _BudgetViewState extends State<BudgetView> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Spent: RS ${item.spentAmount.toStringAsFixed(0)} / RS ${item.allocatedAmount.toStringAsFixed(0)}',
+                                'Spent: ${Formatters.money(item.spentAmount)} / ${Formatters.money(item.allocatedAmount)}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: secondaryTextColor,
@@ -2569,7 +2570,7 @@ class _BudgetViewState extends State<BudgetView> {
                             if (item.allocatedAmount > 0 &&
                                 item.spentAmount > item.allocatedAmount)
                               Text(
-                                'Over by RS ${(item.spentAmount - item.allocatedAmount).toStringAsFixed(0)}',
+                                'Over by ${Formatters.money(item.spentAmount - item.allocatedAmount)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
@@ -2786,7 +2787,7 @@ class _HistSummary extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              'RS ${_histMoney(net)}',
+              Formatters.money(net),
               maxLines: 1,
               style: const TextStyle(
                 fontSize: 27,
@@ -2966,19 +2967,19 @@ class _HistCycleCardState extends State<_HistCycleCard> {
             children: [
               _HistFigure(
                 label: 'Limit',
-                value: 'RS ${_histMoney(cycle.totalLimit)}',
+                value: '\${Formatters.code} \${_histMoney(cycle.totalLimit)}',
                 colour: widget.primaryText,
                 secondary: widget.secondaryText,
               ),
               _HistFigure(
                 label: 'Spent',
-                value: 'RS ${_histMoney(cycle.totalSpent)}',
+                value: '\${Formatters.code} \${_histMoney(cycle.totalSpent)}',
                 colour: widget.primaryText,
                 secondary: widget.secondaryText,
               ),
               _HistFigure(
                 label: saved ? 'Saved' : 'Over by',
-                value: 'RS ${_histMoney(cycle.difference)}',
+                value: '\${Formatters.code} \${_histMoney(cycle.difference)}',
                 colour: accent,
                 secondary: widget.secondaryText,
               ),
@@ -3140,7 +3141,7 @@ class _HistCategoryRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'RS ${_histMoney(entry.spent)} / ${_histMoney(entry.limit)}',
+                '${Formatters.money(entry.spent)} / ${_histMoney(entry.limit)}',
                 style: TextStyle(fontSize: 12, color: secondaryText),
               ),
             ],

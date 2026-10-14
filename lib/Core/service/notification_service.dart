@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -236,7 +237,7 @@ class NotificationService {
       _budgetReminderId,
       'Budget Reset Reminder',
       'Your monthly budget will reset $whenText. '
-          'Budget: Rs ${budgetAmount.toStringAsFixed(0)} · '
+          'Budget: ${Formatters.money(budgetAmount)} · '
           'Spent: Rs ${spentAmount.toStringAsFixed(0)}',
       fireDate,
       details,

@@ -1,4 +1,4 @@
-
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -1135,7 +1135,6 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
 
       result.write(value[index]);
     }
-
-    return 'PKR $result';
+    return '${Formatters.code} $result';
   }
 }

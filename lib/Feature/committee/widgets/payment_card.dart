@@ -10,7 +10,7 @@ class PaymentCard extends StatelessWidget {
   const PaymentCard({
     super.key,
     this.memberName = 'Member Name',
-    this.amount = 'PKR 0',
+    this.amount = '',
     this.paymentDate = 'Date',
     this.status = 'Pending',
     this.note,

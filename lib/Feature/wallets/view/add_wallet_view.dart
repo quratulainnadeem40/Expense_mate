@@ -1,4 +1,5 @@
 
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -213,7 +214,7 @@ class _AddWalletViewState extends State<AddWalletView> {
                   items: [
                     const DropdownMenuItem<String>(
                       value: 'PKR',
-                      child: Text('PKR - Pakistani Rupee'),
+                      child: Text('Uses the app currency'),
                     ),
                     const DropdownMenuItem<String>(
                       value: 'USD',

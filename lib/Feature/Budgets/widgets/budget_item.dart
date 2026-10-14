@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import '../model/budget_model.dart';
 
@@ -21,7 +22,7 @@ class BudgetItem extends StatelessWidget {
               color: budget.progress > 0.85 ? Colors.red : Colors.blue,
             ),
             const SizedBox(height: 4),
-            Text('Spent: RS ${budget.spentAmount.toStringAsFixed(0)} / RS ${budget.allocatedAmount.toStringAsFixed(0)}'),
+            Text('Spent: ${Formatters.money(budget.spentAmount)} / ${Formatters.money(budget.allocatedAmount)}'),
           ],
         ),
       ),

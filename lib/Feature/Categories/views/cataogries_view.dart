@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -168,7 +169,7 @@ class _CategoriesViewState extends State<CategoriesView>
       DateFormat('d MMM yyyy').format(date);
 
   String _formatCategoryAmount(double amount) {
-    return 'PKR ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
+    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
   }
 
   Widget _buildCategoryAmount({

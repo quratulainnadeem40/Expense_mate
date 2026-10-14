@@ -1,4 +1,5 @@
 
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -354,7 +355,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   String _formatAmount(double amount) {
-    return 'PKR ${amount.toStringAsFixed(0)}';
+    return '\${Formatters.code} \${amount.toStringAsFixed(0)}';
   }
 
   String _formatDate(DateTime? date) {
@@ -554,7 +555,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               style: TextStyle(color: primaryText),
               decoration: _inputDecoration(
                 label: 'Monthly Contribution',
-                prefixText: 'PKR ',
+                prefixText: '${Formatters.code} ',
               ),
             ),
 
