@@ -207,8 +207,9 @@ class ReportController extends GetxController {
     final category =
         _categoriesController.categoryList.firstWhereOrNull(
       (item) {
-        return item.id.trim().toLowerCase() ==
-            categoryId.toLowerCase();
+        return item.linkedIds.any(
+          (id) => id.trim().toLowerCase() == categoryId.toLowerCase(),
+        );
       },
     );
 

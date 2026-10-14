@@ -17,7 +17,11 @@ class CategoryHistoryScreen extends StatelessWidget {
     }
 
     final category = categoriesController.categoryList.firstWhereOrNull(
-      (category) => category.linkedIds.contains(transaction.categoryId),
+      (category) => category.linkedIds.any(
+        (id) =>
+            id.trim().toLowerCase() ==
+            transaction.categoryId.trim().toLowerCase(),
+      ),
     );
     return category?.name ?? transaction.categoryId;
   }

@@ -72,7 +72,10 @@ class TransactionCard extends StatelessWidget {
     final categoriesController = Get.find<CategoriesController>();
 
     final category = categoriesController.categoryList.firstWhereOrNull(
-      (category) => category.id == transaction.categoryId,
+      (category) => category.linkedIds.any(
+        (id) =>
+            id.trim().toLowerCase() == transaction.categoryId.trim().toLowerCase(),
+      ),
     );
 
     return category?.name ?? transaction.categoryId;
