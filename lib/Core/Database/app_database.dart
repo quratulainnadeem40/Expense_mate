@@ -294,10 +294,16 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Version 3:
   /// Added LocalBudgets
+  ///
+  /// Version 4:
+  /// Added Udhaar and Committees
+  ///
+  /// Version 5:
+  /// Repair databases where the Udhaar table was not created in version 4
   /// ----------------------------------------------------------
 
  @override
-int get schemaVersion => 4;
+int get schemaVersion => 5;
 
 @override
 MigrationStrategy get migration {
@@ -320,6 +326,22 @@ MigrationStrategy get migration {
       if (from < 4) {
         await m.createTable(localUdhaarEntries);
         await m.createTable(localCommittees);
+      }
+
+      // Repair version 4 databases that were marked upgraded without
+      // successfully creating the Udhaar table.
+      if (from < 5) {
+        final udhaarTable = await customSelect(
+          "SELECT name FROM sqlite_master "
+          "WHERE type = 'table' AND name = ?",
+          variables: [
+            Variable.withString(localUdhaarEntries.actualTableName),
+          ],
+        ).get();
+
+        if (udhaarTable.isEmpty) {
+          await m.createTable(localUdhaarEntries);
+        }
       }
     },
   );

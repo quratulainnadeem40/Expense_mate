@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:expense_mate/Core/Database/app_database.dart';
@@ -7,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:expense_mate/Core/Database/app_database.dart';
 
 import '../../../Core/constants/app_keys.dart';
 import '../../../Core/Database/database_provider.dart';
@@ -29,6 +27,8 @@ class UdhaarController extends GetxController {
 
   late final UdhaarLocalRepository _local;
   late final SyncQueueRepository _queue;
+  Future<void> _loadFuture = Future<void>.value();
+  int _entriesRevision = 0;
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
@@ -43,7 +43,8 @@ class UdhaarController extends GetxController {
     _local = UdhaarLocalRepository(database);
     _queue = SyncQueueRepository(database);
 
-    unawaited(load());
+    _loadFuture = load();
+    unawaited(_loadFuture);
   }
 
   // ================================================================
@@ -90,7 +91,7 @@ class UdhaarController extends GetxController {
 
       // Refresh from Supabase and reload Drift afterward.
       // Do not block the initial UI on network access.
-      _refreshFromCloud();
+      unawaited(_refreshFromCloud());
     } catch (e, stackTrace) {
       // Keep the old data visible if local migration fails.
       debugPrint('Udhaar load failed: $e');
@@ -164,6 +165,7 @@ class UdhaarController extends GetxController {
 
   Future<void> _refreshFromCloud() async {
     if (_userId == null) return;
+    final revisionAtStart = _entriesRevision;
 
     try {
       if (Get.isRegistered<SyncManager>()) {
@@ -176,6 +178,8 @@ class UdhaarController extends GetxController {
       if (userId == null) return;
 
       final localEntries = await _local.getEntries(userId);
+
+      if (revisionAtStart != _entriesRevision) return;
 
       entries.assignAll(localEntries.map(_fromLocal).toList());
 
@@ -491,6 +495,8 @@ class UdhaarController extends GetxController {
     String phone = '',
     String note = '',
   }) async {
+    await _loadFuture;
+
     final entry = UdhaarEntry(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       personName: personName.trim(),
@@ -503,14 +509,23 @@ class UdhaarController extends GetxController {
 
     // Show the change immediately.
     entries.add(entry);
+    _entriesRevision++;
     _sort();
 
     try {
       await _persistEntry(entry, operation: 'insert');
-    } catch (e) {
+    } catch (e, stackTrace) {
       entries.removeWhere((item) => item.id == entry.id);
+      _entriesRevision++;
       _sort();
-      await _save();
+      try {
+        await _save();
+      } catch (saveError, saveStackTrace) {
+        debugPrint('Udhaar rollback save failed: $saveError');
+        debugPrint('$saveStackTrace');
+      }
+      debugPrint('Udhaar entry save failed: $e');
+      debugPrint('$stackTrace');
       rethrow;
     }
   }
@@ -527,12 +542,14 @@ class UdhaarController extends GetxController {
     final previous = entries[index];
 
     entries[index] = updated;
+    _entriesRevision++;
     _sort();
 
     try {
       await _persistEntry(updated, operation: 'update');
     } catch (e) {
       entries[indexWhere(updated.id)] = previous;
+      _entriesRevision++;
       _sort();
       await _save();
       rethrow;
@@ -559,6 +576,7 @@ class UdhaarController extends GetxController {
     );
 
     entries[index] = updated;
+    _entriesRevision++;
     _sort();
 
     try {
@@ -568,6 +586,7 @@ class UdhaarController extends GetxController {
       entries.removeWhere(
         (entry) => entry.id == updated.id && entry != current,
       );
+      _entriesRevision++;
       _sort();
       await _save();
       rethrow;
@@ -594,6 +613,9 @@ class UdhaarController extends GetxController {
       }
     }
 
+    if (updatedEntries.isNotEmpty) {
+      _entriesRevision++;
+    }
     _sort();
 
     try {
@@ -609,6 +631,7 @@ class UdhaarController extends GetxController {
         }
       }
 
+      _entriesRevision++;
       _sort();
       await _save();
       rethrow;
@@ -629,6 +652,7 @@ class UdhaarController extends GetxController {
 
     if (userId == null) {
       entries.removeAt(index);
+      _entriesRevision++;
       await _save();
       return;
     }
@@ -648,9 +672,16 @@ class UdhaarController extends GetxController {
     await _local.softDeleteEntry(id);
 
     entries.removeWhere((item) => item.id == id);
+    _entriesRevision++;
     await _save();
 
     _triggerSync();
+  }
+
+  Future<void> deleteEntries(Iterable<String> ids) async {
+    for (final id in ids.toSet()) {
+      await deleteEntry(id);
+    }
   }
 
   Future<void> deletePerson(String personName) async {
