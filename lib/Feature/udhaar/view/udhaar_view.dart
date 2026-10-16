@@ -1102,6 +1102,18 @@ class UdhaarView extends GetView<UdhaarController> {
     final error = RxnString();
     final isSaving = false.obs;
 
+    void changeDirection(bool value) {
+      if (isLent.value == value) return;
+
+      isLent.value = value;
+      nameController.clear();
+      amountController.clear();
+      phoneController.clear();
+      noteController.clear();
+      date.value = DateTime.now();
+      error.value = null;
+    }
+
     final fieldFill = isDark ? Colors.white10 : Colors.black.withOpacity(0.04);
     final primaryText = isDark ? Colors.white : const Color(0xFF1E1E1E);
     final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
@@ -1197,7 +1209,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           active: isLent.value,
                           colour: _green,
                           secondaryText: secondaryText,
-                          onTap: () => isLent.value = true,
+                          onTap: () => changeDirection(true),
                         ),
                         _directionTab(
                           label: 'I took',
@@ -1205,7 +1217,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           active: !isLent.value,
                           colour: _red,
                           secondaryText: secondaryText,
-                          onTap: () => isLent.value = false,
+                          onTap: () => changeDirection(false),
                         ),
                       ],
                     ),
@@ -1274,10 +1286,19 @@ class UdhaarView extends GetView<UdhaarController> {
                   ),
                   style: TextStyle(color: primaryText),
                   decoration: decoration('Amount').copyWith(
-                    prefixText: '$_symbol ',
-                    prefixStyle: TextStyle(
-                      color: primaryText,
-                      fontWeight: FontWeight.w600,
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(left: 14, right: 8),
+                      child: Text(
+                        _symbol,
+                        style: TextStyle(
+                          color: primaryText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 0,
+                      minHeight: 0,
                     ),
                   ),
                 ),
