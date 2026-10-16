@@ -577,6 +577,49 @@ class CategoriesController extends GetxController {
     return totals;
   }
 
+  static Map<String, int> calculateCategoryTransactionCounts({
+    required Iterable<TransactionModel> transactions,
+    required Set<String> categoryIds,
+    DateTime? periodStart,
+    DateTime? periodEndExclusive,
+    DateTime? resetAt,
+  }) {
+    final normalizedIds = categoryIds
+        .map((id) => id.trim().toLowerCase())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    final counts = <String, int>{'income': 0, 'expense': 0};
+    final resetDay = resetAt == null
+        ? null
+        : DateTime(resetAt.year, resetAt.month, resetAt.day);
+
+    for (final transaction in transactions) {
+      final categoryId = transaction.categoryId.trim().toLowerCase();
+      final type = transaction.type.trim().toLowerCase();
+      final transactionDay = DateTime(
+        transaction.transactionDate.year,
+        transaction.transactionDate.month,
+        transaction.transactionDate.day,
+      );
+      if (!normalizedIds.contains(categoryId) ||
+          !counts.containsKey(type) ||
+          (resetAt != null &&
+              (transactionDay.isBefore(resetDay!) ||
+                  (transactionDay == resetDay &&
+                      transaction.createdAt.isBefore(resetAt)))) ||
+          (periodStart != null &&
+              transaction.transactionDate.isBefore(periodStart)) ||
+          (periodEndExclusive != null &&
+              !transaction.transactionDate.isBefore(periodEndExclusive))) {
+        continue;
+      }
+
+      counts[type] = counts[type]! + 1;
+    }
+
+    return counts;
+  }
+
   // ==========================================================
   // INIT
   // ==========================================================

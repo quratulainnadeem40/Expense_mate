@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -168,13 +167,8 @@ class _CategoriesViewState extends State<CategoriesView>
   String _formatCycleDate(DateTime date) =>
       DateFormat('d MMM yyyy').format(date);
 
-  String _formatCategoryAmount(double amount) {
-    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
-  }
-
-  Widget _buildCategoryAmount({
+  Widget _buildCategoryType({
     required String label,
-    required double amount,
     required Color color,
     required bool isDark,
   }) {
@@ -185,7 +179,7 @@ class _CategoriesViewState extends State<CategoriesView>
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        '$label: ${_formatCategoryAmount(amount)}',
+        label,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -1294,8 +1288,8 @@ class _CategoriesViewState extends State<CategoriesView>
                             category.colorValue,
                           );
 
-                          final monthlyTotals =
-                              CategoriesController.calculateCategoryTotals(
+                          final transactionCounts =
+                              CategoriesController.calculateCategoryTransactionCounts(
                                 transactions: transactions,
                                 categoryIds: {
                                   category.id,
@@ -1425,24 +1419,24 @@ class _CategoriesViewState extends State<CategoriesView>
                                               spacing: 6,
                                               runSpacing: 4,
                                               children: [
-                                                _buildCategoryAmount(
-                                                  label: 'Income',
-                                                  amount:
-                                                      monthlyTotals['income']!,
-                                                  color: const Color(
-                                                    0xFF2E9D59,
+                                                if (transactionCounts['income']! >
+                                                    0)
+                                                  _buildCategoryType(
+                                                    label: 'Income',
+                                                    color: const Color(
+                                                      0xFF2E9D59,
+                                                    ),
+                                                    isDark: isDark,
                                                   ),
-                                                  isDark: isDark,
-                                                ),
-                                                _buildCategoryAmount(
-                                                  label: 'Expense',
-                                                  amount:
-                                                      monthlyTotals['expense']!,
-                                                  color: const Color(
-                                                    0xFFE25555,
+                                                if (transactionCounts['expense']! >
+                                                    0)
+                                                  _buildCategoryType(
+                                                    label: 'Expense',
+                                                    color: const Color(
+                                                      0xFFE25555,
+                                                    ),
+                                                    isDark: isDark,
                                                   ),
-                                                  isDark: isDark,
-                                                ),
                                               ],
                                             ),
                                           ],
