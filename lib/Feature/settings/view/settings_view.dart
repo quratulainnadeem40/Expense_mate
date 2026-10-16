@@ -2,6 +2,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
+import 'package:expense_mate/Feature/onboarding/controller/onboarding_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 import 'package:flutter/material.dart';
@@ -261,6 +262,65 @@ class SettingsView extends StatelessWidget {
     );
   }
 
+  Future<void> _showLanguageListDialog(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await Get.dialog<void>(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        title: Text(
+          'Select Language',
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
+        ),
+        content: SizedBox(
+          width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 390),
+            child: SingleChildScrollView(
+              child: Obx(
+                () => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: OnboardingController.languages.map((language) {
+                    final code = language.code.toLowerCase();
+                    final isSelected =
+                        controller.selectedLanguage.value == code;
+
+                    return ListTile(
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary(isDark),
+                      ),
+                      title: Text(language.nativeName),
+                      subtitle: Text(language.englishName),
+                      onTap: () async {
+                        await controller.changeLanguage(code);
+                        Get.back<void>();
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Get.back<void>(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _confirmDeleteCurrency(
     BuildContext context,
     String currency,
@@ -420,6 +480,63 @@ class SettingsView extends StatelessWidget {
                   onTap: () {
                     _showCurrencyListDialog(context);
                   },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.language_rounded,
+                    isDark: isDark,
+                    color: const Color(0xFF2979FF),
+                  ),
+                  title: Text(
+                    'Language',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Obx(() {
+                    final language = OnboardingController.languages
+                        .where(
+                          (item) =>
+                              item.code.toLowerCase() ==
+                              controller.selectedLanguage.value,
+                        )
+                        .firstOrNull;
+
+                    return Text(
+                      language?.nativeName ?? 'English',
+                      style: AppTextStyles.bodyMedium(isDark),
+                    );
+                  }),
+                  trailing: Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        controller.selectedLanguage.value.toUpperCase(),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  onTap: () => _showLanguageListDialog(context),
                 ),
                 Divider(
                   height: 1,

@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,30 +8,24 @@ class AddCommitteeView extends StatefulWidget {
   const AddCommitteeView({super.key});
 
   @override
-  State<AddCommitteeView> createState() =>
-      _AddCommitteeViewState();
+  State<AddCommitteeView> createState() => _AddCommitteeViewState();
 }
 
 class _AddCommitteeViewState extends State<AddCommitteeView> {
-  final TextEditingController nameController =
-      TextEditingController();
+  final TextEditingController nameController = TextEditingController();
 
-  final TextEditingController contributionController =
-      TextEditingController();
+  final TextEditingController contributionController = TextEditingController();
 
-  final TextEditingController membersController =
-      TextEditingController();
+  final TextEditingController membersController = TextEditingController();
 
-  final TextEditingController durationController =
-      TextEditingController();
+  final TextEditingController durationController = TextEditingController();
 
   DateTime? startDate;
   DateTime? endingDate;
 
   String durationUnit = 'Months';
 
-  final CommitteeController committeeController =
-      CommitteeController.instance;
+  final CommitteeController committeeController = CommitteeController.instance;
 
   // Theme-aware colors
   static const Color lightBackground = Color(0xFFF5F6F8);
@@ -55,23 +48,17 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   static const Color lightPurpleBackground = Color(0xFFF0E9FA);
   static const Color darkPurpleBackground = Color(0xFF302640);
 
-  bool get isDark =>
-      Theme.of(context).brightness == Brightness.dark;
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
-  Color get screenBackground =>
-      isDark ? darkBackground : lightBackground;
+  Color get screenBackground => isDark ? darkBackground : lightBackground;
 
-  Color get cardBackground =>
-      isDark ? darkCard : lightCard;
+  Color get cardBackground => isDark ? darkCard : lightCard;
 
-  Color get primaryText =>
-      isDark ? darkText : lightText;
+  Color get primaryText => isDark ? darkText : lightText;
 
-  Color get secondaryText =>
-      isDark ? darkSecondary : lightSecondary;
+  Color get secondaryText => isDark ? darkSecondary : lightSecondary;
 
-  Color get outlineColor =>
-      isDark ? darkBorder : lightBorder;
+  Color get outlineColor => isDark ? darkBorder : lightBorder;
 
   Color get summaryGreenBackground =>
       isDark ? darkGreenBackground : lightGreenBackground;
@@ -129,8 +116,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     final String formatted = _formatNumberWithCommas(digitsOnly);
 
     if (formatted != text) {
-      final int oldOffset =
-          contributionController.selection.baseOffset;
+      final int oldOffset = contributionController.selection.baseOffset;
 
       final int difference = formatted.length - text.length;
 
@@ -172,8 +158,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   double _parseContribution() {
-    final String value =
-        contributionController.text.replaceAll(',', '').trim();
+    final String value = contributionController.text.replaceAll(',', '').trim();
 
     return double.tryParse(value) ?? 0;
   }
@@ -188,8 +173,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       return;
     }
 
-    final int duration =
-        int.tryParse(durationController.text.trim()) ?? 0;
+    final int duration = int.tryParse(durationController.text.trim()) ?? 0;
 
     if (duration <= 0) {
       endingDate = null;
@@ -200,63 +184,42 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
     switch (durationUnit) {
       case 'Days':
-        calculatedDate = startDate!.add(
-          Duration(days: duration),
-        );
+        calculatedDate = startDate!.add(Duration(days: duration));
         break;
 
       case 'Weeks':
-        calculatedDate = startDate!.add(
-          Duration(days: duration * 7),
-        );
+        calculatedDate = startDate!.add(Duration(days: duration * 7));
         break;
 
       case 'Months':
-        final int targetYear = startDate!.year +
-            ((startDate!.month - 1 + duration) ~/ 12);
+        final int targetYear =
+            startDate!.year + ((startDate!.month - 1 + duration) ~/ 12);
 
-        final int targetMonth =
-            ((startDate!.month - 1 + duration) % 12) + 1;
+        final int targetMonth = ((startDate!.month - 1 + duration) % 12) + 1;
 
-        final int lastDay = DateTime(
-          targetYear,
-          targetMonth + 1,
-          0,
-        ).day;
+        final int lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
 
-        final int targetDay =
-            startDate!.day > lastDay ? lastDay : startDate!.day;
+        final int targetDay = startDate!.day > lastDay
+            ? lastDay
+            : startDate!.day;
 
-        calculatedDate = DateTime(
-          targetYear,
-          targetMonth,
-          targetDay,
-        );
+        calculatedDate = DateTime(targetYear, targetMonth, targetDay);
         break;
 
       case 'Years':
         final int targetYear = startDate!.year + duration;
 
-        final int lastDay = DateTime(
-          targetYear,
-          startDate!.month + 1,
-          0,
-        ).day;
+        final int lastDay = DateTime(targetYear, startDate!.month + 1, 0).day;
 
-        final int targetDay =
-            startDate!.day > lastDay ? lastDay : startDate!.day;
+        final int targetDay = startDate!.day > lastDay
+            ? lastDay
+            : startDate!.day;
 
-        calculatedDate = DateTime(
-          targetYear,
-          startDate!.month,
-          targetDay,
-        );
+        calculatedDate = DateTime(targetYear, startDate!.month, targetDay);
         break;
 
       default:
-        calculatedDate = startDate!.add(
-          Duration(days: duration),
-        );
+        calculatedDate = startDate!.add(Duration(days: duration));
     }
 
     endingDate = calculatedDate;
@@ -304,10 +267,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: greenAccent,
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -319,15 +279,13 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   double get monthlyCommitteeAmount {
     final double contribution = _parseContribution();
 
-    final int members =
-        int.tryParse(membersController.text.trim()) ?? 0;
+    final int members = int.tryParse(membersController.text.trim()) ?? 0;
 
     return contribution * members;
   }
 
   double get durationInMonths {
-    final int duration =
-        int.tryParse(durationController.text.trim()) ?? 0;
+    final int duration = int.tryParse(durationController.text.trim()) ?? 0;
 
     if (duration <= 0) return 0;
 
@@ -346,8 +304,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   double get totalDurationAmount {
-    final int duration =
-        int.tryParse(durationController.text.trim()) ?? 0;
+    final int duration = int.tryParse(durationController.text.trim()) ?? 0;
 
     if (duration <= 0) return 0;
 
@@ -355,7 +312,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   String _formatAmount(double amount) {
-    return '\${Formatters.code} \${amount.toStringAsFixed(0)}';
+    return '${Formatters.code} ${amount.toStringAsFixed(0)}';
   }
 
   String _formatDate(DateTime? date) {
@@ -400,46 +357,38 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     );
   }
 
-Widget _buildDateField({
-  required String label,
-  required DateTime? date,
-  required VoidCallback onTap,
-  bool readOnly = false,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: InkWell(
-      onTap: readOnly ? null : onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: InputDecorator(
-        decoration: _inputDecoration(
-          label: label,
-          suffixIcon: Icon(
-            readOnly
-                ? Icons.event_rounded
-                : Icons.calendar_month_rounded,
-            color: readOnly
-                ? purpleAccent
-                : (isDark
-                    ? const Color(0xFF7DD6A8)
-                    : greenAccent),
+  Widget _buildDateField({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    bool readOnly = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        onTap: readOnly ? null : onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: InputDecorator(
+          decoration: _inputDecoration(
+            label: label,
+            suffixIcon: Icon(
+              readOnly ? Icons.event_rounded : Icons.calendar_month_rounded,
+              color: readOnly
+                  ? purpleAccent
+                  : (isDark ? const Color(0xFF7DD6A8) : greenAccent),
+            ),
           ),
-        ),
-        child: Text(
-          _formatDate(date),
-          style: TextStyle(
-            color: date == null
-                ? secondaryText
-                : primaryText,
-            fontSize: 16,
+          child: Text(
+            _formatDate(date),
+            style: TextStyle(
+              color: date == null ? secondaryText : primaryText,
+              fontSize: 16,
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
-
+    );
+  }
 
   // --------------------------------------------------
   // SAVE COMMITTEE
@@ -448,8 +397,9 @@ Widget _buildDateField({
   void saveCommittee() {
     final String name = nameController.text.trim();
 
-    final String contributionText =
-        contributionController.text.replaceAll(',', '').trim();
+    final String contributionText = contributionController.text
+        .replaceAll(',', '')
+        .trim();
 
     final String membersText = membersController.text.trim();
     final String durationText = durationController.text.trim();
@@ -515,20 +465,17 @@ Widget _buildDateField({
       committeeEndingDate: endingDate!,
     );
 
-    Navigator.pop(
-      context,
-      {
-        'name': name,
-        'contribution': contribution,
-        'members': members,
-        'duration': duration,
-        'durationUnit': durationUnit,
-        'startDate': startDate,
-        'endingDate': endingDate,
-        'monthlyCommitteeAmount': monthlyCommitteeAmount,
-        'totalDurationAmount': totalDurationAmount,
-      },
-    );
+    Navigator.pop(context, {
+      'name': name,
+      'contribution': contribution,
+      'members': members,
+      'duration': duration,
+      'durationUnit': durationUnit,
+      'startDate': startDate,
+      'endingDate': endingDate,
+      'monthlyCommitteeAmount': monthlyCommitteeAmount,
+      'totalDurationAmount': totalDurationAmount,
+    });
   }
 
   @override
@@ -548,9 +495,7 @@ Widget _buildDateField({
             TextField(
               controller: nameController,
               style: TextStyle(color: primaryText),
-              decoration: _inputDecoration(
-                label: 'Committee Name',
-              ),
+              decoration: _inputDecoration(label: 'Committee Name'),
             ),
 
             const SizedBox(height: 16),
@@ -559,9 +504,7 @@ Widget _buildDateField({
               controller: contributionController,
               keyboardType: TextInputType.number,
               inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'[0-9,]'),
-                ),
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')),
               ],
               style: TextStyle(color: primaryText),
               decoration: _inputDecoration(
@@ -575,13 +518,9 @@ Widget _buildDateField({
             TextField(
               controller: membersController,
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: TextStyle(color: primaryText),
-              decoration: _inputDecoration(
-                label: 'Number of Members',
-              ),
+              decoration: _inputDecoration(label: 'Number of Members'),
             ),
 
             const SizedBox(height: 16),
@@ -593,9 +532,7 @@ Widget _buildDateField({
                 color: summaryGreenBackground,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDark
-                      ? darkBorder
-                      : const Color(0xFFB8E5CC),
+                  color: isDark ? darkBorder : const Color(0xFFB8E5CC),
                 ),
               ),
               child: Column(
@@ -606,9 +543,7 @@ Widget _buildDateField({
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? const Color(0xFF7DD6A8)
-                          : greenAccent,
+                      color: isDark ? const Color(0xFF7DD6A8) : greenAccent,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -617,9 +552,7 @@ Widget _buildDateField({
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? const Color(0xFF7DD6A8)
-                          : greenAccent,
+                      color: isDark ? const Color(0xFF7DD6A8) : greenAccent,
                     ),
                   ),
                 ],
@@ -635,13 +568,9 @@ Widget _buildDateField({
                   child: TextField(
                     controller: durationController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     style: TextStyle(color: primaryText),
-                    decoration: _inputDecoration(
-                      label: 'Duration',
-                    ),
+                    decoration: _inputDecoration(label: 'Duration'),
                   ),
                 ),
 
@@ -650,17 +579,12 @@ Widget _buildDateField({
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: durationUnit,
-                    decoration: _inputDecoration(
-                      label: 'Unit',
-                    ),
+                    decoration: _inputDecoration(label: 'Unit'),
                     dropdownColor: cardBackground,
                     iconEnabledColor: isDark
                         ? const Color(0xFF7DD6A8)
                         : greenAccent,
-                    style: TextStyle(
-                      color: primaryText,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: primaryText, fontSize: 16),
                     items: [
                       DropdownMenuItem(
                         value: 'Days',
@@ -713,9 +637,7 @@ Widget _buildDateField({
                 color: summaryPurpleBackground,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDark
-                      ? darkBorder
-                      : const Color(0xFFD9C8F0),
+                  color: isDark ? darkBorder : const Color(0xFFD9C8F0),
                 ),
               ),
               child: Column(
@@ -726,9 +648,7 @@ Widget _buildDateField({
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? const Color(0xFFC7A7F4)
-                          : purpleAccent,
+                      color: isDark ? const Color(0xFFC7A7F4) : purpleAccent,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -737,9 +657,7 @@ Widget _buildDateField({
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? const Color(0xFFC7A7F4)
-                          : purpleAccent,
+                      color: isDark ? const Color(0xFFC7A7F4) : purpleAccent,
                     ),
                   ),
                 ],
@@ -778,9 +696,7 @@ Widget _buildDateField({
                 onPressed: saveCommittee,
                 child: const Text(
                   'Save Committee',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ),

@@ -24,6 +24,7 @@ class SettingsController extends GetxController {
   /// are not sitting in plain view the first time the app opens.
   final hideAmounts = true.obs;
   final selectedCurrency = 'PKR'.obs;
+  final selectedLanguage = 'en'.obs;
   final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
 
@@ -706,6 +707,8 @@ class SettingsController extends GetxController {
     isDarkMode.value =
         settingsBox.get(AppKeys.isDarkModeKey, defaultValue: false) as bool;
 
+    selectedLanguage.value =
+        settingsBox.get('app_language', defaultValue: 'en') as String;
     await loadCurrencySettings();
 
     notificationsEnabled.value =
@@ -789,6 +792,15 @@ class SettingsController extends GetxController {
     await settingsBox.put('currency', code);
   }
 
+  Future<void> changeLanguage(String languageCode) async {
+    final code = languageCode.trim().toLowerCase();
+
+    if (code.isEmpty) return;
+
+    selectedLanguage.value = code;
+    await settingsBox.put('app_language', code);
+  }
+
   Future<void> addCustomCurrency(String currency) async {
     final code = currency.trim().toUpperCase();
 
@@ -861,7 +873,6 @@ class SettingsController extends GetxController {
   // ============================================================
   // RESET SETTINGS
   // ============================================================
-
 
   // ============================================================
   // LOGOUT

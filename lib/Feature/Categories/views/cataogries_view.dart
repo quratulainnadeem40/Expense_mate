@@ -46,6 +46,8 @@ class _CategoriesViewState extends State<CategoriesView>
   bool _isShowingCycleSetup = false;
   Timer? _cycleRefreshTimer;
 
+  static bool _cycleSetupOfferedThisSession = false;
+
   int get _monthStartDay {
     final box = Hive.box(AppKeys.budgetBox);
     final storedStartDay = box.get(AppKeys.categoryCycleStartDayKey);
@@ -68,8 +70,18 @@ class _CategoriesViewState extends State<CategoriesView>
     WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       controller.fetchCategories();
       _scheduleCycleRefresh();
+
+      final box = Hive.box(AppKeys.budgetBox);
+      final isCycleConfigured =
+          box.containsKey(AppKeys.categoryCycleStartDayKey) ||
+          box.containsKey(AppKeys.categoryCycleAutomaticResetKey);
+      if (!isCycleConfigured && !_cycleSetupOfferedThisSession) {
+        _cycleSetupOfferedThisSession = true;
+        _showCycleSetupSheet();
+      }
     });
   }
 
