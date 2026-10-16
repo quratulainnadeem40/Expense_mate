@@ -26,8 +26,7 @@ class MonthlyScheduleView extends StatefulWidget {
 }
 
 class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
-  final CommitteeController _committeeController =
-      CommitteeController.instance;
+  final CommitteeController _committeeController = CommitteeController.instance;
 
   static const Color _primaryBlue = Color(0xFF173B67);
   static const Color _backgroundBlue = Color(0xFFF4F7FC);
@@ -45,17 +44,17 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
     final ThemeData theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
 
-    final Color backgroundColor =
-        isDark ? const Color(0xFF121212) : _backgroundBlue;
+    final Color backgroundColor = isDark
+        ? const Color(0xFF121212)
+        : _backgroundBlue;
     final Color cardColor = theme.colorScheme.surface;
     final Color primaryTextColor = isDark ? Colors.white : _textColor;
     final Color secondaryTextColor = theme.colorScheme.onSurfaceVariant;
-    final Color borderColor =
-        isDark ? const Color(0xFF3A3A3A) : _borderBlue;
-    final Color accentColor =
-        isDark ? const Color(0xFF80CBC4) : _primaryBlue;
-    final Color iconBackgroundColor =
-        isDark ? const Color(0xFF333333) : _softBlue;
+    final Color borderColor = isDark ? const Color(0xFF3A3A3A) : _borderBlue;
+    final Color accentColor = isDark ? const Color(0xFF80CBC4) : _primaryBlue;
+    final Color iconBackgroundColor = isDark
+        ? const Color(0xFF333333)
+        : _softBlue;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -82,10 +81,10 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
       ),
       body: SafeArea(
         child: Obx(() {
-          final List<Map<String, dynamic>> committees =
-              _committeeController.committees
-                  .map((committee) => Map<String, dynamic>.from(committee))
-                  .toList();
+          final List<Map<String, dynamic>> committees = _committeeController
+              .committees
+              .map((committee) => Map<String, dynamic>.from(committee))
+              .toList();
 
           if (committees.isEmpty) {
             return Center(
@@ -178,8 +177,8 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
 
                 final String name =
                     committee['name']?.toString().trim().isNotEmpty == true
-                        ? committee['name'].toString().trim()
-                        : 'Committee';
+                    ? committee['name'].toString().trim()
+                    : 'Committee';
 
                 final List<dynamic> members = committee['members'] is List
                     ? committee['members'] as List<dynamic>
@@ -190,9 +189,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                 );
 
                 final String unit =
-                    (committee['unit'] ??
-                            committee['durationUnit'] ??
-                            'months')
+                    (committee['unit'] ?? committee['durationUnit'] ?? 'months')
                         .toString()
                         .toLowerCase();
 
@@ -203,8 +200,9 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                   _ => duration.toDouble(),
                 };
 
-                final int rounds =
-                    durationMonths > 0 ? durationMonths.ceil() : 0;
+                final int rounds = durationMonths > 0
+                    ? durationMonths.ceil()
+                    : 0;
 
                 return Padding(
                   key: ValueKey<String>('schedule-card-$id'),
@@ -225,8 +223,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                       ),
                       leading: CircleAvatar(
                         backgroundColor: theme.colorScheme.primaryContainer,
-                        foregroundColor:
-                            theme.colorScheme.onPrimaryContainer,
+                        foregroundColor: theme.colorScheme.onPrimaryContainer,
                         child: const Icon(Icons.groups_rounded),
                       ),
                       title: Text(
@@ -253,8 +250,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                           : () {
                               Navigator.of(context).push<void>(
                                 MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      _CommitteeScheduleDetailView(
+                                  builder: (_) => _CommitteeScheduleDetailView(
                                     committee: committee,
                                     controller: _committeeController,
                                     cardColor: cardColor,
@@ -359,8 +355,7 @@ class _CommitteeScheduleCard extends StatefulWidget {
   final bool expandedPage;
 
   @override
-  State<_CommitteeScheduleCard> createState() =>
-      _CommitteeScheduleCardState();
+  State<_CommitteeScheduleCard> createState() => _CommitteeScheduleCardState();
 }
 
 enum _AllocationMode { sequence, spin }
@@ -454,9 +449,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     );
 
     final String unit =
-        (widget.committee['unit'] ??
-                widget.committee['durationUnit'] ??
-                '')
+        (widget.committee['unit'] ?? widget.committee['durationUnit'] ?? '')
             .toString()
             .toLowerCase();
 
@@ -504,8 +497,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
         }
       }
 
-      final Map<String, dynamic> receivingMember =
-          savedMember ?? defaultMember;
+      final Map<String, dynamic> receivingMember = savedMember ?? defaultMember;
 
       return {
         'round': index + 1,
@@ -551,14 +543,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
         .toList();
   }
 
-  void _selectMonth(
-    int? index,
-    List<Map<String, dynamic>> schedule,
-  ) {
-    if (index == null ||
-        index < 0 ||
-        index >= schedule.length ||
-        _isSpinning) {
+  void _selectMonth(int? index, List<Map<String, dynamic>> schedule) {
+    if (index == null || index < 0 || index >= schedule.length || _isSpinning) {
       return;
     }
 
@@ -571,9 +557,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     }
   }
 
-  Future<void> _allocateBySequence(
-    List<Map<String, dynamic>> schedule,
-  ) async {
+  Future<void> _allocateBySequence(List<Map<String, dynamic>> schedule) async {
     if (_isSpinning || schedule.isEmpty) return;
 
     if (schedule[_selectedMonthIndex]['isAllocated'] == true) return;
@@ -589,9 +573,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     _saveReceivingMember(schedule, members.first);
   }
 
-  Future<void> _spinForReceiving(
-    List<Map<String, dynamic>> schedule,
-  ) async {
+  Future<void> _spinForReceiving(List<Map<String, dynamic>> schedule) async {
     if (schedule.isEmpty || _selectedMonthIndex >= schedule.length) return;
 
     if (schedule[_selectedMonthIndex]['isAllocated'] == true) return;
@@ -611,10 +593,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     _saveReceivingMember(schedule, members[winnerIndex]);
   }
 
-  Future<void> _animateToMember(
-    int winnerIndex,
-    int memberCount,
-  ) async {
+  Future<void> _animateToMember(int winnerIndex, int memberCount) async {
     setState(() {
       _isSpinning = true;
     });
@@ -623,17 +602,14 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
       final int currentItem = _wheelController.selectedItem;
 
       final int stepsToWinner =
-          (winnerIndex - currentItem % memberCount + memberCount) %
-              memberCount;
+          (winnerIndex - currentItem % memberCount + memberCount) % memberCount;
+      final bool isSpinMode = _allocationMode == _AllocationMode.spin;
+      final int fullRotations = isSpinMode ? 6 : 1;
 
       await _wheelController.animateToItem(
-        currentItem + memberCount + stepsToWinner,
-        duration: Duration(
-          milliseconds: _allocationMode == _AllocationMode.sequence
-              ? 750
-              : 1300,
-        ),
-        curve: Curves.easeOutQuart,
+        currentItem + memberCount * fullRotations + stepsToWinner,
+        duration: Duration(milliseconds: isSpinMode ? 5000 : 750),
+        curve: isSpinMode ? Curves.easeOutCubic : Curves.easeOutQuart,
       );
     } finally {
       if (mounted) {
@@ -648,8 +624,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     List<Map<String, dynamic>> schedule,
     Map<String, dynamic> member,
   ) {
-    final DateTime date =
-        schedule[_selectedMonthIndex]['date'] as DateTime;
+    final DateTime date = schedule[_selectedMonthIndex]['date'] as DateTime;
 
     final String name = _memberName(member);
 
@@ -683,8 +658,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
 
     final List<Map<String, dynamic>> displayedSchedule =
         _allocationMode == _AllocationMode.spin
-            ? schedule.where((item) => item['isAllocated'] == true).toList()
-            : schedule;
+        ? schedule.where((item) => item['isAllocated'] == true).toList()
+        : schedule;
 
     if (_selectedMonthIndex >= schedule.length) {
       _selectedMonthIndex = 0;
@@ -692,10 +667,12 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
 
     final List<Map<String, dynamic>> members = _members;
 
-    final List<Map<String, dynamic>> availableMembers =
-        _availableMembers(schedule);
+    final List<Map<String, dynamic>> availableMembers = _availableMembers(
+      schedule,
+    );
 
-    final bool selectedRoundAllocated = schedule.isNotEmpty &&
+    final bool selectedRoundAllocated =
+        schedule.isNotEmpty &&
         schedule[_selectedMonthIndex]['isAllocated'] == true;
 
     final bool canAllocate =
@@ -749,7 +726,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                 members.isEmpty
                     ? 'Add committee members to create its receiving order.'
                     : 'Set the committee start date and duration to create '
-                        'its schedule.',
+                          'its schedule.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: widget.secondaryTextColor,
                 ),
@@ -882,10 +859,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                       margin: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: widget.accentColor,
-                          width: 2,
-                        ),
+                        border: Border.all(color: widget.accentColor, width: 2),
                       ),
                     ),
                   ),
@@ -929,9 +903,9 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.titleMedium
                                         ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: widget.primaryTextColor,
-                                    ),
+                                          fontWeight: FontWeight.bold,
+                                          color: widget.primaryTextColor,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -949,8 +923,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                 onPressed: _isSpinning || !canAllocate
                     ? null
                     : () => _allocationMode == _AllocationMode.sequence
-                        ? _allocateBySequence(schedule)
-                        : _spinForReceiving(schedule),
+                          ? _allocateBySequence(schedule)
+                          : _spinForReceiving(schedule),
                 icon: _isSpinning
                     ? const SizedBox(
                         width: 18,
@@ -968,17 +942,17 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                 label: Text(
                   _isSpinning
                       ? _allocationMode == _AllocationMode.sequence
-                          ? 'Allocating...'
-                          : 'Spinning...'
+                            ? 'Allocating...'
+                            : 'Spinning...'
                       : _allocationMode == _AllocationMode.sequence
-                          ? selectedRoundAllocated
-                              ? 'Already allocated'
-                              : 'Allocate by added order'
-                          : selectedRoundAllocated
-                              ? 'Already allocated'
-                              : availableMembers.isEmpty
-                                  ? 'All members allocated'
-                                  : 'Spin & allocate',
+                      ? selectedRoundAllocated
+                            ? 'Already allocated'
+                            : 'Allocate by added order'
+                      : selectedRoundAllocated
+                      ? 'Already allocated'
+                      : availableMembers.isEmpty
+                      ? 'All members allocated'
+                      : 'Spin & allocate',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.accentColor,
@@ -1008,10 +982,10 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                       _allocationMode == _AllocationMode.spin &&
                               selectedSchedule['isAllocated'] != true
                           ? 'Spin & allocate a recipient for '
-                              '${selectedSchedule['month']}.'
+                                '${selectedSchedule['month']}.'
                           : '${selectedSchedule['memberUsername']} is set to '
-                              'receive the committee for '
-                              '${selectedSchedule['month']}.',
+                                'receive the committee for '
+                                '${selectedSchedule['month']}.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -1083,17 +1057,13 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
   double _number(dynamic value) {
     if (value is num) return value.toDouble();
 
-    return double.tryParse(
-          value?.toString().replaceAll(',', '') ?? '',
-        ) ??
-        0;
+    return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
   }
 
   DateTime _addMonthsClamped(DateTime date, int months) {
     final DateTime firstDay = DateTime(date.year, date.month + months, 1);
 
-    final int lastDay =
-        DateTime(firstDay.year, firstDay.month + 1, 0).day;
+    final int lastDay = DateTime(firstDay.year, firstDay.month + 1, 0).day;
 
     return DateTime(
       firstDay.year,
