@@ -19,6 +19,11 @@ import '../repositories/wallet_local_repository.dart';
 import '../remote/category_remote_repository.dart';
 import '../remote/transaction_remote_repository.dart';
 import '../remote/wallet_remote_repository.dart';
+import '../repositories/udhaar_local_repository.dart';
+import '../repositories/committee_local_repository.dart';
+
+import '../remote/udhaar_remote_repository.dart';
+import '../remote/committee_remote_repository.dart';
 
 class SyncManager extends GetxController {
   final SupabaseClient supabase;
@@ -33,6 +38,12 @@ class SyncManager extends GetxController {
   late final WalletRemoteRepository walletRemote;
   late final CategoryRemoteRepository categoryRemote;
   late final BudgetRemoteRepository budgetRemote;
+
+  late final UdhaarLocalRepository udhaarLocal;
+late final CommitteeLocalRepository committeeLocal;
+
+late final UdhaarRemoteRepository udhaarRemote;
+late final CommitteeRemoteRepository committeeRemote;
 
   bool _isSyncing = false;
 
@@ -72,11 +83,15 @@ class SyncManager extends GetxController {
     categoryLocal = CategoryLocalRepository(database);
     budgetLocal = BudgetLocalRepository(database);
     syncQueue = SyncQueueRepository(database);
+    udhaarLocal = UdhaarLocalRepository(database);
+committeeLocal = CommitteeLocalRepository(database);
 
     transactionRemote = TransactionRemoteRepository(supabase);
     walletRemote = WalletRemoteRepository(supabase);
     categoryRemote = CategoryRemoteRepository(supabase);
     budgetRemote = BudgetRemoteRepository(supabase);
+    udhaarRemote = UdhaarRemoteRepository(supabase);
+committeeRemote = CommitteeRemoteRepository(supabase);
   }
 
   // ==========================================================
@@ -334,12 +349,27 @@ Future<void> _syncPendingOperations(
         );
         break;
 
+
       case 'budgets':
         await _syncBudget(
           queueItem: queueItem,
           payload: _cleanBudgetPayload(payload),
         );
         break;
+
+        case 'udhaar_entries':
+  await _syncUdhaar(
+    queueItem: queueItem,
+    payload: payload,
+  );
+  break;
+
+case 'committees':
+  await _syncCommittee(
+    queueItem: queueItem,
+    payload: payload,
+  );
+  break;
 
       default:
         throw Exception(
@@ -643,6 +673,166 @@ Future<void> _syncPendingOperations(
   }
 
   // ==========================================================
+// UDHAAR SYNC
+// ==========================================================
+
+Future<void> _syncUdhaar({
+  required SyncQueueData queueItem,
+  required Map<String, dynamic> payload,
+}) async {
+  final userId = queueItem.userId;
+  final entryId = queueItem.recordId;
+
+  switch (queueItem.operation.toLowerCase()) {
+    case 'insert':
+    case 'create':
+      await udhaarRemote.insertEntry(
+        _cleanUdhaarPayload(payload),
+      );
+
+      await syncQueue.remove(queueItem.id);
+      break;
+
+    case 'update':
+      await udhaarRemote.updateEntry(
+        entryId: entryId,
+        userId: userId,
+        entry: _cleanUdhaarPayload(payload),
+      );
+
+      await syncQueue.remove(queueItem.id);
+      break;
+
+    case 'delete':
+      await udhaarRemote.deleteEntry(
+        entryId: entryId,
+        userId: userId,
+      );
+
+      await udhaarLocal.permanentDeleteEntry(entryId);
+
+      await syncQueue.remove(queueItem.id);
+      break;
+
+    default:
+      throw Exception(
+        'Unknown Udhaar operation: ${queueItem.operation}',
+      );
+  }
+}
+
+Map<String, dynamic> _cleanUdhaarPayload(
+  Map<String, dynamic> payload,
+) {
+  return {
+    'id': payload['id'],
+    'user_id': payload['user_id'],
+    'person_name': payload['person_name'],
+    'phone': payload['phone'] ?? '',
+    'amount': payload['amount'],
+    'is_lent': payload['is_lent'],
+    'entry_date': payload['entry_date'],
+    'note': payload['note'] ?? '',
+    'is_settled': payload['is_settled'] ?? false,
+    'settled_on': payload['settled_on'],
+    'created_at': payload['created_at'],
+    'updated_at': payload['updated_at'],
+  };
+}
+// ==========================================================
+// COMMITTEE SYNC
+// ==========================================================
+
+Future<void> _syncCommittee({
+  required SyncQueueData queueItem,
+  required Map<String, dynamic> payload,
+}) async {
+  final userId = queueItem.userId;
+  final committeeId = queueItem.recordId;
+
+  switch (queueItem.operation.toLowerCase()) {
+    case 'insert':
+    case 'create':
+      await committeeRemote.insertCommittee(
+        _cleanCommitteePayload(payload),
+      );
+
+      await syncQueue.remove(queueItem.id);
+      break;
+
+    case 'update':
+      await committeeRemote.updateCommittee(
+        committeeId: committeeId,
+        userId: userId,
+        committee: _cleanCommitteePayload(payload),
+      );
+
+      await syncQueue.remove(queueItem.id);
+      break;
+
+    case 'delete':
+      await committeeRemote.deleteCommittee(
+        committeeId: committeeId,
+        userId: userId,
+      );
+
+      await committeeLocal.permanentDeleteCommittee(
+        committeeId,
+      );
+
+      await syncQueue.remove(queueItem.id);
+      break;
+
+    default:
+      throw Exception(
+        'Unknown Committee operation: ${queueItem.operation}',
+      );
+  }
+}
+
+Map<String, dynamic> _cleanCommitteePayload(
+  Map<String, dynamic> payload,
+) {
+  dynamic decodeJsonField(
+    dynamic value,
+    dynamic fallback,
+  ) {
+    if (value == null) return fallback;
+
+    if (value is String) {
+      try {
+        return jsonDecode(value);
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    return value;
+  }
+
+  return {
+    'id': payload['id'],
+    'user_id': payload['user_id'],
+    'name': payload['name'],
+    'contribution': payload['contribution'],
+    'member_count': payload['member_count'],
+    'duration': payload['duration'],
+    'unit': payload['unit'] ?? 'Months',
+    'start_date': payload['start_date'],
+    'ending_date': payload['ending_date'],
+    'allocation_mode': payload['allocation_mode'] ?? 'sequence',
+    'members': decodeJsonField(payload['members'], []),
+    'payments': decodeJsonField(payload['payments'], []),
+    'receiving_selections': decodeJsonField(
+      payload['receiving_selections'],
+      {},
+    ),
+    'created_at': payload['created_at'],
+    'updated_at': payload['updated_at'],
+  };
+}
+
+  // ==========================================================
   // BUDGET SYNC
   // ==========================================================
 
@@ -761,17 +951,16 @@ Future<void> _syncPendingOperations(
   // ==========================================================
 
   Future<void> _syncCloudToLocal(
-    String userId,
-  ) async {
-    await _syncTransactionsFromCloud(userId);
+  String userId,
+) async {
+  await _syncTransactionsFromCloud(userId);
+  await _syncWalletsFromCloud(userId);
+  await _syncCategoriesFromCloud(userId);
+  await _syncBudgetsFromCloud(userId);
 
-    await _syncWalletsFromCloud(userId);
-
-    await _syncCategoriesFromCloud(userId);
-
-    await _syncBudgetsFromCloud(userId);
-  }
-
+  await _syncUdhaarFromCloud(userId);
+  await _syncCommitteesFromCloud(userId);
+}
   // ==========================================================
   // TRANSACTIONS CLOUD → LOCAL
   // ==========================================================
@@ -1159,6 +1348,143 @@ Future<void> _syncPendingOperations(
     }
   }
 
+
+// ==========================================================
+// UDHAAR CLOUD → LOCAL
+// ==========================================================
+
+Future<void> _syncUdhaarFromCloud(String userId) async {
+  final entries = await udhaarRemote.getEntries(userId);
+
+  for (final entry in entries) {
+    final id = entry['id']?.toString();
+
+    if (id == null || id.isEmpty) continue;
+
+    final pending = await syncQueue.getByEntityAndRecord(
+      userId: userId,
+      entityTable: 'udhaar_entries',
+      recordId: id,
+    );
+
+    if (pending != null) continue;
+
+    final existing = await udhaarLocal.getEntryById(id);
+
+    if (existing != null && existing.isDeleted) continue;
+
+    final companion = LocalUdhaarEntriesCompanion(
+      id: drift.Value(id),
+      userId: drift.Value(userId),
+      personName: drift.Value(
+        entry['person_name']?.toString() ?? '',
+      ),
+      phone: drift.Value(
+        entry['phone']?.toString() ?? '',
+      ),
+      amount: drift.Value(
+        (entry['amount'] as num?)?.toDouble() ?? 0,
+      ),
+      isLent: drift.Value(entry['is_lent'] == true),
+      entryDate: drift.Value(_parseDate(entry['entry_date'])),
+      note: drift.Value(entry['note']?.toString() ?? ''),
+      isSettled: drift.Value(entry['is_settled'] == true),
+      settledOn: entry['settled_on'] == null
+          ? const drift.Value(null)
+          : drift.Value(_parseDate(entry['settled_on'])),
+      createdAt: drift.Value(_parseDate(entry['created_at'])),
+      updatedAt: drift.Value(_parseDate(entry['updated_at'])),
+      version: const drift.Value(1),
+      isDeleted: const drift.Value(false),
+    );
+
+    if (existing == null) {
+      await udhaarLocal.insertEntry(companion);
+    } else {
+      await udhaarLocal.updateEntry(id, companion);
+    }
+  }
+}
+// ==========================================================
+// COMMITTEES CLOUD → LOCAL
+// ==========================================================
+
+Future<void> _syncCommitteesFromCloud(String userId) async {
+  final committees = await committeeRemote.getCommittees(userId);
+
+  for (final committee in committees) {
+    final id = committee['id']?.toString();
+
+    if (id == null || id.isEmpty) continue;
+
+    final pending = await syncQueue.getByEntityAndRecord(
+      userId: userId,
+      entityTable: 'committees',
+      recordId: id,
+    );
+
+    if (pending != null) continue;
+
+    final existing = await committeeLocal.getCommitteeById(id);
+
+    if (existing != null && existing.isDeleted) continue;
+
+    String encodeJson(dynamic value, String fallback) {
+      if (value == null) return fallback;
+
+      if (value is String) {
+        // Normalize JSON strings before storing locally.
+        try {
+          return jsonEncode(jsonDecode(value));
+        } catch (_) {
+          return fallback;
+        }
+      }
+
+      return jsonEncode(value);
+    }
+
+    final companion = LocalCommitteesCompanion(
+      id: drift.Value(id),
+      userId: drift.Value(userId),
+      name: drift.Value(committee['name']?.toString() ?? ''),
+      contribution: drift.Value(
+        (committee['contribution'] as num?)?.toDouble() ?? 0,
+      ),
+      memberCount: drift.Value(
+        (committee['member_count'] as num?)?.toInt() ?? 0,
+      ),
+      duration: drift.Value(
+        (committee['duration'] as num?)?.toInt() ?? 0,
+      ),
+      unit: drift.Value(committee['unit']?.toString() ?? 'Months'),
+      startDate: drift.Value(_parseDate(committee['start_date'])),
+      endingDate: drift.Value(_parseDate(committee['ending_date'])),
+      allocationMode: drift.Value(
+        committee['allocation_mode']?.toString() ?? 'sequence',
+      ),
+      membersJson: drift.Value(
+        encodeJson(committee['members'], '[]'),
+      ),
+      paymentsJson: drift.Value(
+        encodeJson(committee['payments'], '[]'),
+      ),
+      receivingSelectionsJson: drift.Value(
+        encodeJson(committee['receiving_selections'], '{}'),
+      ),
+      createdAt: drift.Value(_parseDate(committee['created_at'])),
+      updatedAt: drift.Value(_parseDate(committee['updated_at'])),
+      version: const drift.Value(1),
+      isDeleted: const drift.Value(false),
+    );
+
+    if (existing == null) {
+      await committeeLocal.insertCommittee(companion);
+    } else {
+      await committeeLocal.updateCommittee(id, companion);
+    }
+  }
+}
   // ==========================================================
   // PAYLOAD
   // ==========================================================

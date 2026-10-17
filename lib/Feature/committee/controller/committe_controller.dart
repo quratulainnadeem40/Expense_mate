@@ -1,20 +1,33 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' as drift;
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../Core/constants/app_keys.dart';
-
+import '../../../Core/Database/app_database.dart';
+import '../../../Core/Database/database_provider.dart';
+import '../../../Core/Database/repositories/committee_local_repository.dart';
+import '../../../Core/Database/repositories/sync_queue_repository.dart';
+import '../../../Core/Database/sync/sync_manager.dart';
 class CommitteeController extends GetxController {
   static final CommitteeController instance = CommitteeController();
 
   CommitteeController() {
-    _loadCommittees();
-  }
+  _loadCommittees();
+  unawaited(_initializeLocalSync());
+}
 
   Box get _storage => Hive.box(AppKeys.committeesBox);
 
   static const String _committeesKey = 'saved_committees';
+  final CommitteeLocalRepository _localRepository =
+    CommitteeLocalRepository(DatabaseProvider.instance.database);
+
+final SyncQueueRepository _syncQueueRepository =
+    SyncQueueRepository(DatabaseProvider.instance.database);
 
   // --------------------------------------------------
   // ALL COMMITTEES
@@ -47,6 +60,204 @@ class CommitteeController extends GetxController {
 
   bool get hasCommittee => committeeName.value.trim().isNotEmpty;
 
+  
+
+String? get _currentUserId {
+  return Supabase.instance.client.auth.currentUser?.id;
+}
+
+double _toDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+
+  return double.tryParse(value?.toString() ?? '') ?? 0.0;
+}
+
+int _toInt(dynamic value) {
+  if (value is num) return value.toInt();
+
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+List<dynamic> _asList(dynamic value) {
+  if (value is List) return value;
+
+  if (value is String && value.isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+
+      if (decoded is List) return decoded;
+    } catch (_) {
+      // Invalid JSON: return an empty list.
+    }
+  }
+
+  return <dynamic>[];
+}
+
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is Map) {
+    return Map<String, dynamic>.from(value);
+  }
+
+  if (value is String && value.isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {
+      // Invalid JSON: return an empty map.
+    }
+  }
+
+  return <String, dynamic>{};
+}
+
+Map<String, dynamic> _toRemotePayload(
+  Map<String, dynamic> committee,
+  String userId,
+) {
+  final DateTime now = DateTime.now();
+
+  final DateTime createdAt =
+      _parseDate(committee['createdAt'] ?? committee['created_at']) ?? now;
+
+  final DateTime start =
+      _parseDate(committee['startDate'] ?? committee['start_date']) ?? now;
+
+  final DateTime ending =
+      _parseDate(committee['endingDate'] ?? committee['ending_date']) ?? now;
+
+  return {
+    'id': committee['id'].toString(),
+    'user_id': userId,
+    'name': committee['name']?.toString() ?? '',
+    'contribution': _toDouble(committee['contribution']),
+    'member_count': _toInt(
+      committee['memberCount'] ?? committee['member_count'] ??
+          committee['membersCount'],
+    ),
+    'duration': _toInt(committee['duration']),
+    'unit': committee['unit']?.toString() ??
+        committee['durationUnit']?.toString() ??
+        'Months',
+    'start_date': start.toIso8601String(),
+    'ending_date': ending.toIso8601String(),
+    'allocation_mode':
+        committee['allocationMode']?.toString() ?? 'sequence',
+    'members': _encodeValue(_asList(committee['members'])),
+    'payments': _encodeValue(_asList(committee['payments'])),
+    'receiving_selections': _encodeValue(
+      _asMap(
+        committee['receivingSelections'] ??
+            committee['receiving_selections'],
+      ),
+    ),
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': now.toIso8601String(),
+  };
+}
+
+LocalCommitteesCompanion _toLocalCompanion(
+  Map<String, dynamic> committee,
+  String userId,
+) {
+  final DateTime now = DateTime.now();
+
+  final DateTime createdAt =
+      _parseDate(committee['createdAt'] ?? committee['created_at']) ?? now;
+
+  final DateTime start =
+      _parseDate(committee['startDate'] ?? committee['start_date']) ?? now;
+
+  final DateTime ending =
+      _parseDate(committee['endingDate'] ?? committee['ending_date']) ?? now;
+
+  final List<dynamic> savedMembers = _asList(committee['members']);
+
+  final List<dynamic> savedPayments = _asList(committee['payments']);
+
+  final Map<String, dynamic> savedSelections = _asMap(
+    committee['receivingSelections'] ?? committee['receiving_selections'],
+  );
+
+  return LocalCommitteesCompanion(
+    id: drift.Value(committee['id'].toString()),
+    userId: drift.Value(userId),
+    name: drift.Value(committee['name']?.toString() ?? ''),
+    contribution: drift.Value(_toDouble(committee['contribution'])),
+    memberCount: drift.Value(
+      _toInt(
+        committee['memberCount'] ??
+            committee['member_count'] ??
+            committee['membersCount'],
+      ),
+    ),
+    duration: drift.Value(_toInt(committee['duration'])),
+    unit: drift.Value(
+      committee['unit']?.toString() ??
+          committee['durationUnit']?.toString() ??
+          'Months',
+    ),
+    startDate: drift.Value(start),
+    endingDate: drift.Value(ending),
+    allocationMode: drift.Value(
+      committee['allocationMode']?.toString() ?? 'sequence',
+    ),
+    membersJson: drift.Value(jsonEncode(_encodeValue(savedMembers))),
+    paymentsJson: drift.Value(jsonEncode(_encodeValue(savedPayments))),
+    receivingSelectionsJson: drift.Value(
+      jsonEncode(_encodeValue(savedSelections)),
+    ),
+    createdAt: drift.Value(createdAt),
+    updatedAt: drift.Value(now),
+    version: const drift.Value(1),
+    isDeleted: const drift.Value(false),
+  );
+}
+
+Future<void> _saveCommitteeLocallyAndQueue(
+  Map<String, dynamic> committee,
+) async {
+  final String? userId = _currentUserId;
+
+  if (userId == null || userId.isEmpty) {
+    return;
+  }
+
+  final String committeeId = committee['id']?.toString() ?? '';
+
+  if (committeeId.isEmpty) return;
+
+  try {
+    final existing = await _localRepository.getCommitteeById(committeeId);
+
+    final companion = _toLocalCompanion(committee, userId);
+
+    final String operation;
+
+    if (existing == null) {
+      await _localRepository.insertCommittee(companion);
+      operation = 'insert';
+    } else {
+      await _localRepository.updateCommittee(committeeId, companion);
+      operation = 'update';
+    }
+
+    await _syncQueueRepository.enqueue(
+      userId: userId,
+      entityTable: 'committees',
+      recordId: committeeId,
+      operation: operation,
+      payload: _toRemotePayload(committee, userId),
+    );
+
+    _triggerCommitteeSync();
+  } catch (e) {
+    print('COMMITTEE LOCAL SAVE ERROR: $e');
+  }
+}
   // --------------------------------------------------
   // USERNAME HELPERS
   // --------------------------------------------------
@@ -112,6 +323,145 @@ class CommitteeController extends GetxController {
     return false;
   }
 
+void _triggerCommitteeSync() {
+  if (!Get.isRegistered<SyncManager>()) {
+    print(
+      'COMMITTEE SYNC: SyncManager is not registered. '
+      'The queued operation will wait for the sync process.',
+    );
+    return;
+  }
+
+  unawaited(_runCommitteeSync());
+}
+
+Future<void> _runCommitteeSync() async {
+  try {
+    await Get.find<SyncManager>().sync();
+
+    print('COMMITTEE SYNC: Sync completed.');
+  } catch (e) {
+    print('COMMITTEE SYNC ERROR: $e');
+  }
+}
+
+Future<void> _initializeLocalSync() async {
+  final String? userId = _currentUserId;
+
+  if (userId == null || userId.isEmpty) {
+    print('COMMITTEE SYNC: No authenticated user.');
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+
+    // Migrate existing Hive committees without deleting Hive data.
+    for (final committee in committees.toList()) {
+      final String id = committee['id']?.toString() ?? '';
+
+      if (id.isEmpty) continue;
+
+      final existing = await _localRepository.getCommitteeById(id);
+
+      if (existing == null) {
+        await _localRepository.insertCommittee(
+          _toLocalCompanion(committee, userId),
+        );
+
+        await _syncQueueRepository.enqueue(
+          userId: userId,
+          entityTable: 'committees',
+          recordId: id,
+          operation: 'insert',
+          payload: _toRemotePayload(committee, userId),
+        );
+
+        print('COMMITTEE MIGRATED TO DRIFT: $id');
+      }
+    }
+
+    // Upload pending changes and download remote committees.
+    if (Get.isRegistered<SyncManager>()) {
+      await Get.find<SyncManager>().sync();
+    }
+
+    // Load synced/local records into the existing UI collection.
+    await _refreshCommitteesFromLocal(userId);
+  } catch (e) {
+    print('COMMITTEE INITIALIZATION ERROR: $e');
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+Map<String, dynamic> _localRowToMap(LocalCommittee row) {
+  final List<dynamic> restoredPayments = _asList(row.paymentsJson)
+      .map((item) {
+        if (item is! Map) return item;
+
+        final payment = Map<String, dynamic>.from(item);
+
+        payment['paymentDate'] = _parseDate(payment['paymentDate']);
+
+        return payment;
+      })
+      .toList();
+
+  return {
+    'id': row.id,
+    'name': row.name,
+    'contribution': row.contribution,
+    'memberCount': row.memberCount,
+    'duration': row.duration,
+    'unit': row.unit,
+    'startDate': row.startDate,
+    'endingDate': row.endingDate,
+    'allocationMode': row.allocationMode,
+    'members': _asList(row.membersJson),
+    'payments': restoredPayments,
+    'receivingSelections': _asMap(row.receivingSelectionsJson),
+  };
+}
+
+Future<void> _refreshCommitteesFromLocal(String userId) async {
+  final localRecords = await _localRepository.getCommittees(userId);
+
+  // Keep existing Hive records if a local read returns no records.
+  if (localRecords.isEmpty) return;
+
+  final Map<String, Map<String, dynamic>> merged = {};
+
+  // Keep current records first so Hive-only data is not discarded.
+  for (final committee in committees) {
+    final String id = committee['id']?.toString() ?? '';
+
+    if (id.isNotEmpty) {
+      merged[id] = Map<String, dynamic>.from(committee);
+    }
+  }
+
+  // Local DB records are the synced/local database representation.
+  for (final row in localRecords) {
+    merged[row.id] = _localRowToMap(row);
+  }
+
+  committees.assignAll(merged.values.toList());
+
+  final String? previousActiveId = activeCommitteeId.value;
+
+  final Map<String, dynamic>? active = committees.firstWhereOrNull(
+    (committee) => committee['id']?.toString() == previousActiveId,
+  );
+
+  if (active != null) {
+    _loadCommittee(active);
+  } else if (committees.isNotEmpty) {
+    _loadCommittee(committees.first);
+  }
+
+  _persistCommittees();
+}
   // --------------------------------------------------
   // LOAD SAVED COMMITTEES
   // --------------------------------------------------
@@ -249,28 +599,32 @@ class CommitteeController extends GetxController {
   }
 
   void _saveActiveCommittee() {
-    final String? id = activeCommitteeId.value;
+  final String? id = activeCommitteeId.value;
 
-    if (id == null || id.isEmpty || !hasCommittee) {
-      return;
-    }
-
-    final int index = committees.indexWhere(
-      (committee) => committee['id']?.toString() == id,
-    );
-
-    final Map<String, dynamic> snapshot = _currentCommitteeSnapshot();
-
-    if (index == -1) {
-      committees.add(snapshot);
-    } else {
-      committees[index] = snapshot;
-    }
-
-    committees.refresh();
-    _persistCommittees();
+  if (id == null || id.isEmpty || !hasCommittee) {
+    return;
   }
 
+  final int index = committees.indexWhere(
+    (committee) => committee['id']?.toString() == id,
+  );
+
+  final Map<String, dynamic> snapshot = _currentCommitteeSnapshot();
+
+  if (index == -1) {
+    committees.add(snapshot);
+  } else {
+    committees[index] = snapshot;
+  }
+
+  committees.refresh();
+
+  // Keep existing Hive persistence.
+  _persistCommittees();
+
+  // Save to Drift and enqueue Supabase sync.
+  unawaited(_saveCommitteeLocallyAndQueue(snapshot));
+}
   // --------------------------------------------------
   // ADD COMMITTEE
   // --------------------------------------------------
@@ -307,9 +661,12 @@ class CommitteeController extends GetxController {
     committees.refresh();
 
     _loadCommittee(newCommittee);
-    _persistCommittees();
+_persistCommittees();
 
-    return id;
+unawaited(_saveCommitteeLocallyAndQueue(newCommittee));
+
+return id;
+
   }
 
   // --------------------------------------------------
@@ -838,9 +1195,11 @@ class CommitteeController extends GetxController {
     if (activeCommitteeId.value == committeeId) {
       receivingSelections.assignAll(selections);
       _saveActiveCommittee();
-    } else {
-      _persistCommittees();
-    }
+   } else {
+  _persistCommittees();
+
+  unawaited(_saveCommitteeLocallyAndQueue(committee));
+}
   }
 
   void setCommitteeAllocationMode({
@@ -858,10 +1217,12 @@ class CommitteeController extends GetxController {
     if (activeCommitteeId.value == committeeId) {
       allocationMode.value = mode;
       _saveActiveCommittee();
-    } else {
-      committees.refresh();
-      _persistCommittees();
-    }
+   } else {
+  committees.refresh();
+  _persistCommittees();
+
+  unawaited(_saveCommitteeLocallyAndQueue(committee));
+}
   }
 
   // --------------------------------------------------
@@ -895,14 +1256,20 @@ class CommitteeController extends GetxController {
   // CLEAR SELECTED COMMITTEE
   // --------------------------------------------------
 
-  void clearCommittee() {
-    final String? id = activeCommitteeId.value;
+ void clearCommittee() {
+  final String? id = activeCommitteeId.value;
 
-    if (id != null) {
-      committees.removeWhere((committee) => committee['id']?.toString() == id);
-      committees.refresh();
-    }
+  if (id != null && id.isNotEmpty) {
+    unawaited(_deleteCommitteeLocallyAndQueue(id));
 
+    committees.removeWhere(
+      (committee) => committee['id']?.toString() == id,
+    );
+
+    committees.refresh();
+  }
+
+  // Keep the rest of your existing clearCommittee() method unchanged.
     activeCommitteeId.value = null;
     committeeName.value = '';
     monthlyContribution.value = 0;
@@ -922,4 +1289,33 @@ class CommitteeController extends GetxController {
 
     _persistCommittees();
   }
+
+  Future<void> _deleteCommitteeLocallyAndQueue(String committeeId) async {
+  final String? userId = _currentUserId;
+
+  if (userId == null || userId.isEmpty) return;
+
+  try {
+    final existing = await _localRepository.getCommitteeById(committeeId);
+
+    if (existing != null) {
+      await _localRepository.softDeleteCommittee(committeeId);
+    }
+
+    await _syncQueueRepository.enqueue(
+      userId: userId,
+      entityTable: 'committees',
+      recordId: committeeId,
+      operation: 'delete',
+      payload: {
+        'id': committeeId,
+        'user_id': userId,
+      },
+    );
+
+    _triggerCommitteeSync();
+  } catch (e) {
+    print('COMMITTEE DELETE ERROR: $e');
+  }
+}
 }
