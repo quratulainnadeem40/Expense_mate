@@ -124,11 +124,16 @@ Map<String, dynamic> _toRemotePayload(
       _parseDate(committee['createdAt'] ?? committee['created_at']) ?? now;
 
   final DateTime start =
-      _parseDate(committee['startDate'] ?? committee['start_date']) ?? now;
+    _parseDate(committee['startDate'] ?? committee['start_date']) ??
+        DateTime.now();
 
-  final DateTime ending =
-      _parseDate(committee['endingDate'] ?? committee['ending_date']) ?? now;
-
+final DateTime ending =
+    _parseDate(committee['endingDate'] ?? committee['ending_date']) ??
+        DateTime(
+          start.year,
+          start.month + _toInt(committee['duration']),
+          start.day,
+        );
   return {
     'id': committee['id'].toString(),
     'user_id': userId,
@@ -142,8 +147,8 @@ Map<String, dynamic> _toRemotePayload(
     'unit': committee['unit']?.toString() ??
         committee['durationUnit']?.toString() ??
         'Months',
-    'start_date': start.toIso8601String(),
-    'ending_date': ending.toIso8601String(),
+   'start_date': start.toIso8601String().split('T').first,
+'ending_date': ending.toIso8601String().split('T').first,
     'allocation_mode':
         committee['allocationMode']?.toString() ?? 'sequence',
     'members': _encodeValue(_asList(committee['members'])),
@@ -168,11 +173,17 @@ LocalCommitteesCompanion _toLocalCompanion(
   final DateTime createdAt =
       _parseDate(committee['createdAt'] ?? committee['created_at']) ?? now;
 
-  final DateTime start =
-      _parseDate(committee['startDate'] ?? committee['start_date']) ?? now;
+ final DateTime start =
+    _parseDate(committee['startDate'] ?? committee['start_date']) ??
+        DateTime.now();
 
-  final DateTime ending =
-      _parseDate(committee['endingDate'] ?? committee['ending_date']) ?? now;
+final DateTime ending =
+    _parseDate(committee['endingDate'] ?? committee['ending_date']) ??
+        DateTime(
+          start.year,
+          start.month + _toInt(committee['duration']),
+          start.day,
+        );
 
   final List<dynamic> savedMembers = _asList(committee['members']);
 

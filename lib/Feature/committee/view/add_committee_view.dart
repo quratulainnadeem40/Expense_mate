@@ -400,21 +400,18 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     );
   }
 
-  Widget _buildDateField({
-    required String label,
-    required DateTime? date,
-    required VoidCallback onTap,
-    bool readOnly = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        readOnly: true,
-        controller: TextEditingController(
-          text: _formatDate(date),
-        ),
-        onTap: readOnly ? null : onTap,
-        style: TextStyle(color: primaryText),
+Widget _buildDateField({
+  required String label,
+  required DateTime? date,
+  required VoidCallback onTap,
+  bool readOnly = false,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: InkWell(
+      onTap: readOnly ? null : onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
         decoration: _inputDecoration(
           label: label,
           suffixIcon: Icon(
@@ -423,12 +420,26 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                 : Icons.calendar_month_rounded,
             color: readOnly
                 ? purpleAccent
-                : (isDark ? const Color(0xFF7DD6A8) : greenAccent),
+                : (isDark
+                    ? const Color(0xFF7DD6A8)
+                    : greenAccent),
+          ),
+        ),
+        child: Text(
+          _formatDate(date),
+          style: TextStyle(
+            color: date == null
+                ? secondaryText
+                : primaryText,
+            fontSize: 16,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 
   // --------------------------------------------------
   // SAVE COMMITTEE
