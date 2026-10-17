@@ -34,16 +34,36 @@ class TransactionModel {
   // Backward-compatible getters
   String get customCategoryName => customCategory ?? '';
 
+  String get displayCategoryFallback => fallbackCategoryLabel(
+    categoryId: categoryId,
+    customCategory: customCategoryName,
+  );
+
+  static String fallbackCategoryLabel({
+    required String categoryId,
+    String customCategory = '',
+  }) {
+    final customName = customCategory.trim();
+    if (customName.isNotEmpty) {
+      return customName;
+    }
+
+    final id = categoryId.trim();
+    if (id.isEmpty || _looksLikeUuid(id)) {
+      return 'Uncategorized';
+    }
+    return id;
+  }
+
+  static bool _looksLikeUuid(String value) {
+    return RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    ).hasMatch(value);
+  }
+
   String get category {
-    if (customCategoryName.trim().isNotEmpty) {
-      return customCategoryName.trim();
-    }
-
-    if (categoryId.trim().isNotEmpty) {
-      return categoryId.trim();
-    }
-
-    return '';
+    return displayCategoryFallback;
   }
 
   DateTime get date => transactionDate;
@@ -170,4 +190,3 @@ class TransactionModel {
     );
   }
 }
-

@@ -862,22 +862,6 @@ class SettingsController extends GetxController {
   // RESET SETTINGS
   // ============================================================
 
-  Future<void> resetSettings() async {
-    await settingsBox.clear();
-
-    isDarkMode.value = false;
-    selectedCurrency.value = 'PKR';
-    customCurrencies.clear();
-    notificationsEnabled.value = true;
-
-    try {
-      await notificationService.cancelAllNotifications();
-    } catch (e) {
-      debugPrint('Notification cleanup error: $e');
-    }
-
-    Get.changeThemeMode(ThemeMode.light);
-  }
 
   // ============================================================
   // LOGOUT

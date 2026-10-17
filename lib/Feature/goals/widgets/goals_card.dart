@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
+import '../../settings/controller/settings_controller.dart';
 
 import '../model/goal_icon.dart';
 import '../model/goals_model.dart';
@@ -8,6 +11,27 @@ const Color kGoalGreen = Color(0xFF2EA44F);
 
 String formatMoney(double value) =>
     NumberFormat('#,##0', 'en_US').format(value);
+
+/// Whatever currency the user picked in Settings.
+///
+/// Goals used to print "Rs." everywhere, so switching the app to USD
+/// left this one screen still showing rupees.
+String get goalCurrency {
+  if (!Get.isRegistered<SettingsController>()) return 'Rs.';
+  return Get.find<SettingsController>().selectedCurrency.value;
+}
+
+/// An amount with the current symbol in front.
+String goalMoney(double value) =>
+    '$goalCurrency ${formatMoney(value)}';
+
+/// "8 months left" reads better than "243 days left".
+String _timeLeft(int days) {
+  if (days >= 60) return '${(days / 30).round()} months left';
+  if (days >= 14) return '${(days / 7).round()} weeks left';
+  if (days == 1) return '1 day left';
+  return '$days days left';
+}
 
 class GoalsCard extends StatelessWidget {
   const GoalsCard({
@@ -42,6 +66,15 @@ class GoalsCard extends StatelessWidget {
               ? kGoalGreen.withOpacity(0.45)
               : (isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
         ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,11 +82,37 @@ class GoalsCard extends StatelessWidget {
           // ---------------------------------------------------- header
           Row(
             children: [
-              GoalIconBadge(
-                iconKey: goal.iconKey,
-                size: 46,
+              // The ring turns progress into something you can read at a
+              // glance, instead of only from the bar further down.
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: CircularProgressIndicator(
+                        value: goal.progress,
+                        strokeWidth: 4,
+                        strokeCap: StrokeCap.round,
+                        backgroundColor: isDark
+                            ? Colors.white12
+                            : Colors.black.withOpacity(0.07),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          kGoalGreen,
+                        ),
+                      ),
+                    ),
+                    GoalIconBadge(
+                      iconKey: goal.iconKey,
+                      size: 40,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +128,24 @@ class GoalsCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    _StatusChip(goal: goal),
+
+                    // A plain line reads easier than a chip here, and it
+                    // leaves the width for the title.
+                    Text(
+                      done
+                          ? 'Completed'
+                          : (goal.daysLeft > 0
+                              ? '${_timeLeft(goal.daysLeft)} · '
+                                  '${goal.progressPercent}% done'
+                              : 'Target date has passed'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: done ? FontWeight.w600 : FontWeight.w400,
+                        color: done ? kGoalGreen : theme.hintColor,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -112,7 +188,7 @@ class GoalsCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  'Rs. ${formatMoney(goal.savedAmount)}',
+                  goalMoney(goal.savedAmount),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -127,7 +203,7 @@ class GoalsCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 2),
                   child: Text(
-                    'of Rs. ${formatMoney(goal.targetAmount)}',
+                    'of ${goalMoney(goal.targetAmount)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: theme.hintColor),
@@ -148,15 +224,26 @@ class GoalsCard extends StatelessWidget {
 
           const SizedBox(height: 10),
 
+          // A gradient fill rather than a flat block; the bar is the
+          // biggest piece of colour on the card.
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: goal.progress,
-              minHeight: 9,
-              backgroundColor: isDark
+            child: Container(
+              height: 9,
+              color: isDark
                   ? Colors.white12
                   : Colors.black.withOpacity(0.07),
-              valueColor: const AlwaysStoppedAnimation<Color>(kGoalGreen),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: goal.progress.clamp(0.0, 1.0),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF4CC66A), Color(0xFF1F7A37)],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
 
@@ -164,19 +251,37 @@ class GoalsCard extends StatelessWidget {
 
           // ---------------------------------------------------- footer
           if (done)
-            Row(
-              children: const [
-                Icon(Icons.check_circle_rounded, size: 18, color: kGoalGreen),
-                SizedBox(width: 8),
-                Text(
-                  'Goal completed. Well done!',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 11,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: kGoalGreen.withOpacity(isDark ? 0.16 : 0.09),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 17,
                     color: kGoalGreen,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      '${goalMoney(goal.savedAmount)} saved — goal reached',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: kGoalGreen,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             )
           else
             Row(
@@ -186,7 +291,7 @@ class GoalsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Rs. ${formatMoney(goal.remaining)} to go',
+                        '${goalMoney(goal.remaining)} to go',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -198,7 +303,7 @@ class GoalsCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         goal.daysLeft > 0
-                            ? 'Save about Rs. '
+                            ? 'Save about $goalCurrency '
                                   '${formatMoney(goal.monthlyTarget)} a month'
                             : 'Target date has passed',
                         maxLines: 2,
@@ -268,57 +373,3 @@ class GoalsCard extends StatelessWidget {
 // =====================================================================
 // STATUS CHIP - days left / overdue / completed
 // =====================================================================
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.goal});
-
-  final GoalModel goal;
-
-  @override
-  Widget build(BuildContext context) {
-    late final String label;
-    late final Color colour;
-    late final IconData icon;
-
-    if (goal.isCompleted) {
-      label = 'Completed';
-      colour = kGoalGreen;
-      icon = Icons.check_circle_rounded;
-    } else if (goal.isOverdue) {
-      label = '${goal.daysLeft.abs()} days overdue';
-      colour = const Color(0xFFE53935);
-      icon = Icons.error_outline_rounded;
-    } else if (goal.daysLeft == 0) {
-      label = 'Due today';
-      colour = const Color(0xFFFF9800);
-      icon = Icons.today_rounded;
-    } else if (goal.daysLeft <= 30) {
-      label = '${goal.daysLeft} days left';
-      colour = const Color(0xFFFF9800);
-      icon = Icons.schedule_rounded;
-    } else {
-      label = 'By ${DateFormat('d MMM yyyy').format(goal.targetDate)}';
-      colour = Theme.of(context).hintColor;
-      icon = Icons.event_outlined;
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: colour),
-        const SizedBox(width: 5),
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: colour,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}

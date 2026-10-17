@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -174,7 +175,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
       result.write(value[i]);
     }
 
-    return 'PKR $result';
+    return '${Formatters.code} $result';
   }
 
   // --------------------------------------------------

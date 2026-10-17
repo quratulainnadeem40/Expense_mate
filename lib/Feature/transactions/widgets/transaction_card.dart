@@ -66,7 +66,7 @@ class TransactionCard extends StatelessWidget {
     }
 
     if (!Get.isRegistered<CategoriesController>()) {
-      return transaction.categoryId;
+      return transaction.displayCategoryFallback;
     }
 
     final categoriesController = Get.find<CategoriesController>();
@@ -74,11 +74,12 @@ class TransactionCard extends StatelessWidget {
     final category = categoriesController.categoryList.firstWhereOrNull(
       (category) => category.linkedIds.any(
         (id) =>
-            id.trim().toLowerCase() == transaction.categoryId.trim().toLowerCase(),
+            id.trim().toLowerCase() ==
+            transaction.categoryId.trim().toLowerCase(),
       ),
     );
 
-    return category?.name ?? transaction.categoryId;
+    return category?.name ?? transaction.displayCategoryFallback;
   }
 
   @override

@@ -1,4 +1,4 @@
- import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
+import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -160,6 +160,49 @@ void main() {
   );
 
   test(
+    'manual reset excludes prior totals but includes later same-day entries',
+    () {
+      final totals = CategoriesController.calculateCategoryTotals(
+        transactions: [
+          TransactionModel(
+            id: 'before-reset',
+            categoryId: 'food',
+            title: 'Before reset',
+            amount: 1200,
+            type: 'expense',
+            transactionDate: DateTime(2026, 10, 14, 10),
+            createdAt: DateTime(2026, 10, 14, 10),
+          ),
+          TransactionModel(
+            id: 'after-reset',
+            categoryId: 'food',
+            title: 'After reset',
+            amount: 300,
+            type: 'expense',
+            transactionDate: DateTime(2026, 10, 14),
+            createdAt: DateTime(2026, 10, 14, 16),
+          ),
+          TransactionModel(
+            id: 'older-date',
+            categoryId: 'food',
+            title: 'Older dated entry',
+            amount: 500,
+            type: 'income',
+            transactionDate: DateTime(2026, 10, 13),
+            createdAt: DateTime(2026, 10, 14, 17),
+          ),
+        ],
+        categoryIds: {'food'},
+        periodStart: DateTime(2026, 10, 14),
+        periodEndExclusive: DateTime(2026, 10, 15),
+        resetAt: DateTime(2026, 10, 14, 15),
+      );
+
+      expect(totals, {'income': 0, 'expense': 300});
+    },
+  );
+
+  test(
     'only default categories show until a custom category has a transaction',
     () {
       final categories = [
@@ -222,4 +265,199 @@ void main() {
       expect(visible.map((category) => category.name), ['Freelance']);
     },
   );
+
+  test('category cycle honors selected start and end dates', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 10, 14),
+      startDay: 20,
+    );
+
+    expect(period.start, DateTime(2026, 9, 20));
+    expect(period.end, DateTime(2026, 10, 19));
+  });
+
+  test('manual category reset starts a new cycle immediately', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 10, 14, 18),
+      startDay: 20,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14, 16),
+    );
+
+    expect(period.start, DateTime(2026, 10, 14));
+    expect(period.end, DateTime(2026, 11, 13));
+  });
+
+  test('manual cycle uses its reset day as the monthly cycle anchor', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 1),
+      startDay: 20,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14),
+    );
+
+    expect(period.start, DateTime(2026, 10, 14));
+    expect(period.end, DateTime(2026, 11, 13));
+  });
+
+  test('manual day 31 clamps to month end and continues on day 31', () {
+    final february = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 2, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 1, 31, 15),
+    );
+    final march = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 3, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 1, 31, 15),
+    );
+    final marchResetDay = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 3, 31, 16),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 1, 31, 15),
+    );
+
+    expect(february.start, DateTime(2026, 1, 31));
+    expect(february.end, DateTime(2026, 2, 27));
+    expect(march.start, DateTime(2026, 2, 28));
+    expect(march.end, DateTime(2026, 3, 30));
+    expect(marchResetDay.start, DateTime(2026, 3, 31));
+    expect(marchResetDay.end, DateTime(2026, 4, 29));
+  });
+
+  test('manual monthly rollover respects the original reset time', () {
+    final beforeResetTime = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 14, 14, 59),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14, 15),
+    );
+    final atResetTime = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 14, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2026, 10, 14, 15),
+    );
+
+    expect(beforeResetTime.start, DateTime(2026, 10, 14));
+    expect(atResetTime.start, DateTime(2026, 11, 14));
+    expect(atResetTime.end, DateTime(2026, 12, 13));
+  });
+
+  test('manual day 31 reaches leap-year February last day', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2028, 2, 15),
+      startDay: 1,
+      automatic: false,
+      manualResetDate: DateTime(2028, 1, 31, 15),
+    );
+
+    expect(period.start, DateTime(2028, 1, 31));
+    expect(period.end, DateTime(2028, 2, 28));
+  });
+
+  test('automatic category cycle rolls over on the selected day', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 11, 20),
+      startDay: 20,
+      automatic: true,
+      manualResetDate: DateTime(2026, 10, 14),
+    );
+
+    expect(period.start, DateTime(2026, 11, 20));
+    expect(period.end, DateTime(2026, 12, 19));
+  });
+
+  test('category cycle clamps start dates to the last day of short months', () {
+    final period = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 2, 27),
+      startDay: 31,
+    );
+
+    expect(period.start, DateTime(2026, 1, 31));
+    expect(period.end, DateTime(2026, 2, 27));
+  });
+
+  test('default first-day cycle ends on each calendar month end', () {
+    final periods = [
+      (
+        now: DateTime(2026, 2, 14),
+        start: DateTime(2026, 2, 1),
+        end: DateTime(2026, 2, 28),
+      ),
+      (
+        now: DateTime(2028, 2, 14),
+        start: DateTime(2028, 2, 1),
+        end: DateTime(2028, 2, 29),
+      ),
+      (
+        now: DateTime(2026, 4, 14),
+        start: DateTime(2026, 4, 1),
+        end: DateTime(2026, 4, 30),
+      ),
+      (
+        now: DateTime(2026, 3, 14),
+        start: DateTime(2026, 3, 1),
+        end: DateTime(2026, 3, 31),
+      ),
+    ];
+
+    for (final expected in periods) {
+      final period = CategoriesController.categoryCyclePeriod(
+        now: expected.now,
+        startDay: 1,
+      );
+
+      expect(period.start, expected.start);
+      expect(period.end, expected.end);
+    }
+  });
+
+  test('day 31 resets at February end then on March 31', () {
+    final february = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 2, 28),
+      startDay: 31,
+    );
+    final march = CategoriesController.categoryCyclePeriod(
+      now: DateTime(2026, 3, 31),
+      startDay: 31,
+    );
+
+    expect(february.start, DateTime(2026, 2, 28));
+    expect(february.end, DateTime(2026, 3, 30));
+    expect(march.start, DateTime(2026, 3, 31));
+    expect(march.end, DateTime(2026, 4, 29));
+  });
+
+  test('category fallback never displays a UUID', () {
+    final uuidTransaction = TransactionModel(
+      id: 'transaction',
+      title: 'Purchase',
+      amount: 1,
+      categoryId: 'c95a4e1f-d6fd-4194-b681-fe31400157c7',
+    );
+
+    expect(uuidTransaction.displayCategoryFallback, 'Uncategorized');
+    expect(uuidTransaction.category, 'Uncategorized');
+    expect(
+      TransactionModel.fallbackCategoryLabel(
+        categoryId: 'c95a4e1f-d6fd-4194-b681-fe31400157c7',
+      ),
+      'Uncategorized',
+    );
+    expect(
+      TransactionModel.fallbackCategoryLabel(
+        categoryId: 'c95a4e1f-d6fd-4194-b681-fe31400157c7',
+        customCategory: 'Food',
+      ),
+      'Food',
+    );
+    expect(
+      TransactionModel.fallbackCategoryLabel(categoryId: 'Education'),
+      'Education',
+    );
+  });
 }

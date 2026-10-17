@@ -47,6 +47,104 @@ class CategoriesController extends GetxController {
     return protectedCategoryOrder.contains(_normalizeCategoryName(name));
   }
 
+  static ({DateTime start, DateTime end}) categoryCyclePeriod({
+    required DateTime now,
+    required int startDay,
+    bool automatic = true,
+    DateTime? manualResetDate,
+  }) {
+    final day = startDay.clamp(1, 31).toInt();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduledThisMonth = DateTime(
+      today.year,
+      today.month,
+      _clampDay(today.year, today.month, day),
+    );
+    var start = today.isBefore(scheduledThisMonth)
+        ? DateTime(today.year, today.month - 1, 1)
+        : DateTime(today.year, today.month, 1);
+    start = DateTime(
+      start.year,
+      start.month,
+      _clampDay(start.year, start.month, day),
+    );
+
+    var cycleStartDay = day;
+    if (manualResetDate != null && !automatic) {
+      cycleStartDay = manualResetDate.day.clamp(1, 31).toInt();
+      final candidateThisMonth = DateTime(
+        today.year,
+        today.month,
+        _clampDay(today.year, today.month, cycleStartDay),
+      );
+      final candidateThisMonthAt = DateTime(
+        candidateThisMonth.year,
+        candidateThisMonth.month,
+        candidateThisMonth.day,
+        manualResetDate.hour,
+        manualResetDate.minute,
+        manualResetDate.second,
+        manualResetDate.millisecond,
+        manualResetDate.microsecond,
+      );
+      start = now.isBefore(candidateThisMonthAt)
+          ? DateTime(
+              today.year,
+              today.month - 1,
+              _clampDay(
+                today.year,
+                today.month - 1,
+                cycleStartDay,
+              ),
+            )
+          : candidateThisMonth;
+
+      final firstManualStart = DateTime(
+        manualResetDate.year,
+        manualResetDate.month,
+        manualResetDate.day,
+      );
+      if (start.isBefore(firstManualStart)) {
+        start = firstManualStart;
+      }
+    } else if (manualResetDate != null) {
+      final manualStart = DateTime(
+        manualResetDate.year,
+        manualResetDate.month,
+        manualResetDate.day,
+      );
+      if (!manualStart.isAfter(today) && manualStart.isAfter(start)) {
+        start = manualStart;
+      }
+    }
+
+    var nextStart = DateTime(
+      start.year,
+      start.month,
+      _clampDay(start.year, start.month, cycleStartDay),
+    );
+    if (!nextStart.isAfter(start)) {
+      final nextMonth = DateTime(start.year, start.month + 1, 1);
+      nextStart = DateTime(
+        nextMonth.year,
+        nextMonth.month,
+        _clampDay(nextMonth.year, nextMonth.month, cycleStartDay),
+      );
+    }
+
+    return (
+      start: start,
+      end: automatic || manualResetDate != null
+          ? nextStart.subtract(const Duration(days: 1))
+          : today,
+    );
+  }
+
+  static int _clampDay(int year, int month, int day) {
+    final lastDay = DateTime(year, month + 1, 0).day;
+    return day > lastDay ? lastDay : day;
+  }
+
   static List<CategoryModel> filterCategoriesForDisplay({
     required Iterable<CategoryModel> categories,
     required Iterable<TransactionModel> transactions,
@@ -440,19 +538,32 @@ class CategoriesController extends GetxController {
     required Set<String> categoryIds,
     DateTime? periodStart,
     DateTime? periodEndExclusive,
+    DateTime? resetAt,
   }) {
     final normalizedIds = categoryIds
         .map((id) => id.trim().toLowerCase())
         .where((id) => id.isNotEmpty)
         .toSet();
     final totals = <String, double>{'income': 0, 'expense': 0};
+    final resetDay = resetAt == null
+        ? null
+        : DateTime(resetAt.year, resetAt.month, resetAt.day);
 
     for (final transaction in transactions) {
       final categoryId = transaction.categoryId.trim().toLowerCase();
       final type = transaction.type.trim().toLowerCase();
+      final transactionDay = DateTime(
+        transaction.transactionDate.year,
+        transaction.transactionDate.month,
+        transaction.transactionDate.day,
+      );
       if (!normalizedIds.contains(categoryId) ||
           !totals.containsKey(type) ||
           !transaction.amount.isFinite ||
+          (resetAt != null &&
+              (transactionDay.isBefore(resetDay!) ||
+                  (transactionDay == resetDay &&
+                      transaction.createdAt.isBefore(resetAt)))) ||
           (periodStart != null &&
               transaction.transactionDate.isBefore(periodStart)) ||
           (periodEndExclusive != null &&

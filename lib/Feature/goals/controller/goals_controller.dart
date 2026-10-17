@@ -1,3 +1,4 @@
+import '../../settings/controller/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -117,6 +118,12 @@ class GoalsController extends GetxController {
   // ----------------------------------------------------------------
   // FORM HELPERS
   // ----------------------------------------------------------------
+  /// Currency the user picked, for the messages below.
+  String get _currency {
+    if (!Get.isRegistered<SettingsController>()) return 'Rs.';
+    return Get.find<SettingsController>().selectedCurrency.value;
+  }
+
   void prepareForCreate() {
     editingId.value = null;
     titleController.clear();
@@ -234,7 +241,7 @@ class GoalsController extends GetxController {
     if (!wasCompleted && goal.isCompleted) {
       _ok('🎉 Goal reached! ${goal.title} is complete.');
     } else {
-      _ok('Rs. ${amount.toStringAsFixed(0)} added');
+      _ok('${_currency} ${amount.toStringAsFixed(0)} added');
     }
   }
 
@@ -250,7 +257,8 @@ class GoalsController extends GetxController {
 
     final goal = goals[index];
     if (amount > goal.savedAmount) {
-      _warn('You have only Rs. ${goal.savedAmount.toStringAsFixed(0)} saved');
+      _warn('You have only ${_currency} '
+          '${goal.savedAmount.toStringAsFixed(0)} saved');
       return;
     }
 
@@ -260,7 +268,7 @@ class GoalsController extends GetxController {
 
     amountController.clear();
     Get.back();
-    _ok('Rs. ${amount.toStringAsFixed(0)} withdrawn');
+    _ok('${_currency} ${amount.toStringAsFixed(0)} withdrawn');
   }
 
   void deleteGoal(String id) {

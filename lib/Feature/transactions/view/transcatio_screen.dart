@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -37,12 +38,11 @@ class _TransactionsViewState extends State<TransactionsView>
     with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
   final RxString searchQuery = ''.obs;
-late final TransactionsController transactionsController;
+  late final TransactionsController transactionsController;
   late final RxBool isSearchFocused = false.obs;
-// Transaction Filter
-final RxString selectedFilter = 'All'.obs;
-  final TextEditingController _searchController =
-      TextEditingController();
+  // Transaction Filter
+  final RxString selectedFilter = 'All'.obs;
+  final TextEditingController _searchController = TextEditingController();
 
   late final FocusNode _searchFocusNode = FocusNode();
 
@@ -50,34 +50,27 @@ final RxString selectedFilter = 'All'.obs;
   // MULTIPLE SELECTION
   // ==========================================================
 
- final Set<String> selectedTransactionIds = {};
+  final Set<String> selectedTransactionIds = {};
 
-bool get _isSelectionMode =>
-    selectedTransactionIds.isNotEmpty;
+  bool get _isSelectionMode => selectedTransactionIds.isNotEmpty;
 
   @override
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  transactionsController =
-      Get.find<TransactionsController>();
-
+    transactionsController = Get.find<TransactionsController>();
 
     WidgetsBinding.instance.addObserver(this);
 
-    _searchFocusNode.addListener(
-      _handleSearchFocusChange,
-    );
+    _searchFocusNode.addListener(_handleSearchFocusChange);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
-    _searchFocusNode.removeListener(
-      _handleSearchFocusChange,
-    );
+    _searchFocusNode.removeListener(_handleSearchFocusChange);
 
     _searchFocusNode.dispose();
     _searchController.dispose();
@@ -86,14 +79,11 @@ void initState() {
   }
 
   void _handleSearchFocusChange() {
-    isSearchFocused.value =
-        _searchFocusNode.hasFocus;
+    isSearchFocused.value = _searchFocusNode.hasFocus;
   }
 
   @override
-  void didChangeAppLifecycleState(
-    AppLifecycleState state,
-  ) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       isDrawerOpen.value = false;
     }
@@ -104,26 +94,20 @@ void initState() {
   // ==========================================================
 
   String get _userName {
-    final user =
-        Supabase.instance.client.auth.currentUser;
+    final user = Supabase.instance.client.auth.currentUser;
 
     if (user != null) {
       final nameFromMetaData =
-          user.userMetadata?['full_name'] ??
-              user.userMetadata?['name'];
+          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null &&
-          nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
-      if (user.email != null &&
-          user.email!.contains('@')) {
-        final emailPrefix =
-            user.email!.split('@').first;
+      if (user.email != null && user.email!.contains('@')) {
+        final emailPrefix = user.email!.split('@').first;
 
-        return emailPrefix[0].toUpperCase() +
-            emailPrefix.substring(1);
+        return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
       }
     }
 
@@ -134,44 +118,50 @@ void initState() {
   // CATEGORY NAME
   // ==========================================================
 
-  String _getCategoryName(
-    String categoryId, {
-    String customCategory = '',
-  }) {
+  String _getCategoryName(String categoryId, {String customCategory = ''}) {
     if (customCategory.trim().isNotEmpty) {
       return customCategory;
     }
 
     if (!Get.isRegistered<CategoriesController>()) {
-      return categoryId;
+      return TransactionModel.fallbackCategoryLabel(
+        categoryId: categoryId,
+        customCategory: customCategory,
+      );
     }
 
-    final categoriesController =
-        Get.find<CategoriesController>();
+    final categoriesController = Get.find<CategoriesController>();
 
-    final category =
-        categoriesController.categoryList.firstWhereOrNull(
-      (cat) => cat.id == categoryId,
+    final category = categoriesController.categoryList.firstWhereOrNull(
+      (cat) =>
+          cat.id.trim().toLowerCase() == categoryId.trim().toLowerCase() ||
+          cat.linkedIds.any(
+            (id) => id.trim().toLowerCase() == categoryId.trim().toLowerCase(),
+          ),
     );
 
-    return category?.name ?? categoryId;
+    return category?.name ??
+        TransactionModel.fallbackCategoryLabel(
+          categoryId: categoryId,
+          customCategory: customCategory,
+        );
   }
-// ==========================================================
-// TRANSACTION FILTER LOGIC
-// ==========================================================
+  // ==========================================================
+  // TRANSACTION FILTER LOGIC
+  // ==========================================================
 
-bool _matchesSelectedFilter(TransactionModel transaction) {
-  switch (selectedFilter.value) {
-    case 'Income':
-      return transaction.isIncome;
+  bool _matchesSelectedFilter(TransactionModel transaction) {
+    switch (selectedFilter.value) {
+      case 'Income':
+        return transaction.isIncome;
 
-    case 'Expense':
-      return !transaction.isIncome;
+      case 'Expense':
+        return !transaction.isIncome;
 
-    default:
-      return true;
+      default:
+        return true;
+    }
   }
-}
   // ==========================================================
   // DATE FORMAT
   // ==========================================================
@@ -238,27 +228,23 @@ bool _matchesSelectedFilter(TransactionModel transaction) {
   // ==========================================================
   // SELECTION
   // ==========================================================
-void _toggleTransactionSelection(
-  String transactionId,
-) {
-  setState(() {
-    if (selectedTransactionIds.contains(transactionId)) {
-      selectedTransactionIds.remove(transactionId);
-    } else {
-      selectedTransactionIds.add(transactionId);
-    }
-  });
-}
+  void _toggleTransactionSelection(String transactionId) {
+    setState(() {
+      if (selectedTransactionIds.contains(transactionId)) {
+        selectedTransactionIds.remove(transactionId);
+      } else {
+        selectedTransactionIds.add(transactionId);
+      }
+    });
+  }
 
-void _clearSelection() {
-  setState(() {
-    selectedTransactionIds.clear();
-  });
-}
+  void _clearSelection() {
+    setState(() {
+      selectedTransactionIds.clear();
+    });
+  }
 
-  void _selectAll(
-    List<TransactionModel> visibleTransactions,
-  ) {
+  void _selectAll(List<TransactionModel> visibleTransactions) {
     if (visibleTransactions.isEmpty) {
       return;
     }
@@ -273,14 +259,10 @@ void _clearSelection() {
 
     if (allVisibleSelected) {
       // Unselect all currently visible transactions.
-      selectedTransactionIds.removeWhere(
-        (id) => visibleIds.contains(id),
-      );
+      selectedTransactionIds.removeWhere((id) => visibleIds.contains(id));
     } else {
       // Select all currently visible transactions.
-      selectedTransactionIds.addAll(
-        visibleIds,
-      );
+      selectedTransactionIds.addAll(visibleIds);
     }
   }
 
@@ -288,9 +270,7 @@ void _clearSelection() {
   // DELETE MULTIPLE
   // ==========================================================
 
-  Future<void> _confirmDeleteSelected(
-    TransactionsController controller,
-  ) async {
+  Future<void> _confirmDeleteSelected(TransactionsController controller) async {
     if (selectedTransactionIds.isEmpty) {
       return;
     }
@@ -301,13 +281,10 @@ void _clearSelection() {
       context: context,
       builder: (dialogContext) {
         final theme = Theme.of(dialogContext);
-        final isDark =
-            theme.brightness == Brightness.dark;
+        final isDark = theme.brightness == Brightness.dark;
 
         return AlertDialog(
-          title: const Text(
-            'Delete Transactions',
-          ),
+          title: const Text('Delete Transactions'),
           content: Text(
             'Are you sure you want to delete '
             '$count selected transaction'
@@ -316,27 +293,18 @@ void _clearSelection() {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(
-                  false,
-                );
+                Navigator.of(dialogContext).pop(false);
               },
               child: const Text('Cancel'),
             ),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(dialogContext).pop(
-                  true,
-                );
+                Navigator.of(dialogContext).pop(true);
               },
-              icon: const Icon(
-                Icons.delete_outline,
-              ),
+              icon: const Icon(Icons.delete_outline),
               label: const Text('Delete'),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isDark
-                        ? Colors.red.shade800
-                        : Colors.red,
+                backgroundColor: isDark ? Colors.red.shade800 : Colors.red,
                 foregroundColor: Colors.white,
               ),
             ),
@@ -349,13 +317,9 @@ void _clearSelection() {
       return;
     }
 
-    final idsToDelete =
-        selectedTransactionIds.toList();
+    final idsToDelete = selectedTransactionIds.toList();
 
-    final success =
-        await controller.deleteMultipleTransactions(
-      idsToDelete,
-    );
+    final success = await controller.deleteMultipleTransactions(idsToDelete);
 
     if (success) {
       _clearSelection();
@@ -366,87 +330,70 @@ void _clearSelection() {
   // DRAWER NAVIGATION
   // ==========================================================
 
-  void _closeDrawerAndNavigate(
-    Widget Function() page, {
-    Bindings? binding,
-  }) {
+  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     Get.back();
 
-    Future.delayed(
-      const Duration(milliseconds: 150),
-      () {
-        Get.to(
-          page,
-          binding: binding,
-        );
-      },
-    );
+    Future.delayed(const Duration(milliseconds: 150), () {
+      Get.to(page, binding: binding);
+    });
   }
 
-void _selectAllVisibleTransactions() {
-  final query = searchQuery.value.toLowerCase().trim();
+  void _selectAllVisibleTransactions() {
+    final query = searchQuery.value.toLowerCase().trim();
 
-  final visibleTransactions =
-      transactionsController.transactions.where((tx) {
-    // Apply Income / Expense filter first.
-    if (!_matchesSelectedFilter(tx)) {
-      return false;
-    }
-
-    // Apply search filter.
-    if (query.isNotEmpty) {
-      final categoryName = _getCategoryName(
-        tx.categoryId,
-        customCategory: tx.customCategoryName,
-      ).toLowerCase();
-
-      final title = tx.title.toLowerCase();
-
-      final matchesSearch =
-          title.contains(query) || categoryName.contains(query);
-
-      if (!matchesSearch) {
+    final visibleTransactions = transactionsController.transactions.where((tx) {
+      // Apply Income / Expense filter first.
+      if (!_matchesSelectedFilter(tx)) {
         return false;
       }
+
+      // Apply search filter.
+      if (query.isNotEmpty) {
+        final categoryName = _getCategoryName(
+          tx.categoryId,
+          customCategory: tx.customCategoryName,
+        ).toLowerCase();
+
+        final title = tx.title.toLowerCase();
+
+        final matchesSearch =
+            title.contains(query) || categoryName.contains(query);
+
+        if (!matchesSearch) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    final visibleIds = visibleTransactions.map((tx) => tx.id).toSet();
+
+    if (visibleIds.isEmpty) {
+      return;
     }
 
-    return true;
-  }).toList();
+    setState(() {
+      final allSelected = visibleIds.every(selectedTransactionIds.contains);
 
-  final visibleIds =
-      visibleTransactions.map((tx) => tx.id).toSet();
-
-  if (visibleIds.isEmpty) {
-    return;
+      if (allSelected) {
+        selectedTransactionIds.removeWhere((id) => visibleIds.contains(id));
+      } else {
+        selectedTransactionIds.addAll(visibleIds);
+      }
+    });
   }
-
-  setState(() {
-    final allSelected =
-        visibleIds.every(selectedTransactionIds.contains);
-
-    if (allSelected) {
-      selectedTransactionIds.removeWhere(
-        (id) => visibleIds.contains(id),
-      );
-    } else {
-      selectedTransactionIds.addAll(visibleIds);
-    }
-  });
-}
   // ==========================================================
   // BUILD
   // ==========================================================
 
   @override
   Widget build(BuildContext context) {
-  
-    final settingsController =
-        Get.find<SettingsController>();
+    final settingsController = Get.find<SettingsController>();
 
     final theme = Theme.of(context);
 
-    final isDarkMode =
-        theme.brightness == Brightness.dark;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return WillPopScope(
       onWillPop: () async {
@@ -463,8 +410,7 @@ void _selectAllVisibleTransactions() {
         return true;
       },
       child: Scaffold(
-        backgroundColor:
-            theme.scaffoldBackgroundColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
 
         endDrawer: _buildNavigationDrawer(
           context,
@@ -475,51 +421,48 @@ void _selectAllVisibleTransactions() {
         // ======================================================
         // APP BAR
         // ======================================================
+        appBar: AppBar(
+          title: _isSelectionMode
+              ? Text('${selectedTransactionIds.length} Selected')
+              : const Text('Transactions'),
 
-       appBar: AppBar(
-  title: _isSelectionMode
-      ? Text('${selectedTransactionIds.length} Selected')
-      : const Text('Transactions'),
+          actions: [
+            if (_isSelectionMode) ...[
+              IconButton(
+                tooltip: 'Select All',
+                icon: const Icon(Icons.select_all_rounded),
+                onPressed: _selectAllVisibleTransactions,
+              ),
+              IconButton(
+                tooltip: 'Delete Selected',
+                icon: const Icon(Icons.delete_outline_rounded),
+                onPressed: () {
+                  _confirmDeleteSelected(transactionsController);
+                },
+              ),
+            ] else ...[
+              const Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: SyncStatusIndicator(),
+              ),
 
-  actions: [
-    if (_isSelectionMode) ...[
-      IconButton(
-        tooltip: 'Select All',
-        icon: const Icon(Icons.select_all_rounded),
-        onPressed: _selectAllVisibleTransactions,
-      ),
-      IconButton(
-        tooltip: 'Delete Selected',
-        icon: const Icon(Icons.delete_outline_rounded),
-        onPressed: () {
-          _confirmDeleteSelected(transactionsController);
-        },
-      ),
-    ] else ...[
-      const Padding(
-        padding: EdgeInsets.only(right: 4),
-        child: SyncStatusIndicator(),
-      ),
-
-      Builder(
-        builder: (scaffoldContext) {
-          return IconButton(
-            icon: Icon(
-              Icons.menu_rounded,
-              size: 28,
-              color: isDarkMode
-                  ? Colors.white
-                  : Colors.black87,
-            ),
-            onPressed: () {
-              Scaffold.of(scaffoldContext).openEndDrawer();
-            },
-          );
-        },
-      ),
-    ],
-  ],
-),
+              Builder(
+                builder: (scaffoldContext) {
+                  return IconButton(
+                    icon: Icon(
+                      Icons.menu_rounded,
+                      size: 28,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                    onPressed: () {
+                      Scaffold.of(scaffoldContext).openEndDrawer();
+                    },
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
         // ======================================================
         // BODY
         // ======================================================
@@ -533,52 +476,31 @@ void _selectAllVisibleTransactions() {
                 // ==================================================
 
                 Obx(() {
-                  final list =
-                      transactionsController
-                          .transactions;
+                  final list = transactionsController.transactions;
 
                   double totalIncome = list
-                      .where(
-                        (tx) =>
-                            tx.isIncome == true,
-                      )
-                      .fold(
-                        0.0,
-                        (sum, tx) =>
-                            sum + tx.amount,
-                      );
+                      .where((tx) => tx.isIncome == true)
+                      .fold(0.0, (sum, tx) => sum + tx.amount);
 
                   double totalExpense = list
-                      .where(
-                        (tx) =>
-                            tx.isIncome == false,
-                      )
-                      .fold(
-                        0.0,
-                        (sum, tx) =>
-                            sum + tx.amount,
-                      );
+                      .where((tx) => tx.isIncome == false)
+                      .fold(0.0, (sum, tx) => sum + tx.amount);
 
-                  final safeIncome =
-                      totalIncome.isNaN ||
-                              totalIncome.isInfinite
-                          ? 0.0
-                          : totalIncome;
+                  final safeIncome = totalIncome.isNaN || totalIncome.isInfinite
+                      ? 0.0
+                      : totalIncome;
 
                   final safeExpense =
-                      totalExpense.isNaN ||
-                              totalExpense.isInfinite
-                          ? 0.0
-                          : totalExpense;
+                      totalExpense.isNaN || totalExpense.isInfinite
+                      ? 0.0
+                      : totalExpense;
 
                   return Container(
-                    margin:
-                        const EdgeInsets.symmetric(
+                    margin: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       vertical: 20,
                       horizontal: 16,
                     ),
@@ -586,21 +508,14 @@ void _selectAllVisibleTransactions() {
                       color: isDarkMode
                           ? const Color(0xFF121212)
                           : Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(
-                        20,
-                      ),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black
-                              .withOpacity(
-                            isDarkMode
-                                ? 0.3
-                                : 0.05,
+                          color: Colors.black.withOpacity(
+                            isDarkMode ? 0.3 : 0.05,
                           ),
                           blurRadius: 10,
-                          offset:
-                              const Offset(0, 4),
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -614,27 +529,17 @@ void _selectAllVisibleTransactions() {
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode
-                                      ? Colors
-                                          .grey
-                                          .shade400
-                                      : Colors
-                                          .grey
-                                          .shade600,
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                 ),
                               ),
-                              const SizedBox(
-                                height: 6,
-                              ),
+                              const SizedBox(height: 6),
                               Text(
-                                'PKR ${safeIncome.toStringAsFixed(2)}',
-                                style:
-                                    const TextStyle(
+                                Formatters.money(safeIncome, decimals: 2),
+                                style: const TextStyle(
                                   fontSize: 16,
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-                                  color:
-                                      Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
                                 ),
                               ),
                             ],
@@ -657,28 +562,17 @@ void _selectAllVisibleTransactions() {
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode
-                                      ? Colors
-                                          .grey
-                                          .shade400
-                                      : Colors
-                                          .grey
-                                          .shade600,
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                 ),
                               ),
-                              const SizedBox(
-                                height: 6,
-                              ),
+                              const SizedBox(height: 6),
                               Text(
-                                'PKR ${safeExpense.toStringAsFixed(2)}',
-                                style:
-                                    const TextStyle(
+                                Formatters.money(safeExpense, decimals: 2),
+                                style: const TextStyle(
                                   fontSize: 16,
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-                                  color: Color(
-                                    0xFFEB5757,
-                                  ),
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFEB5757),
                                 ),
                               ),
                             ],
@@ -692,130 +586,72 @@ void _selectAllVisibleTransactions() {
                 // ==================================================
                 // SEARCH
                 // ==================================================
-
                 Obx(
                   () => Padding(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 4,
                     ),
                     child: TextField(
-                      controller:
-                          _searchController,
-                      focusNode:
-                          _searchFocusNode,
-                      textInputAction:
-                          TextInputAction.search,
-                      onChanged: (value) =>
-                          searchQuery.value =
-                              value,
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      textInputAction: TextInputAction.search,
+                      onChanged: (value) => searchQuery.value = value,
                       style: TextStyle(
                         fontSize: 16,
-                        color: isDarkMode
-                            ? Colors.white
-                            : Colors.black87,
+                        color: isDarkMode ? Colors.white : Colors.black87,
                       ),
-                      cursorColor:
-                          const Color(0xFF4CAF50),
-                      decoration:
-                          InputDecoration(
+                      cursorColor: const Color(0xFF4CAF50),
+                      decoration: InputDecoration(
                         isDense: true,
                         filled: true,
                         fillColor: isDarkMode
-                            ? const Color(
-                                0xFF121212,
-                              )
+                            ? const Color(0xFF121212)
                             : Colors.white,
-                        contentPadding:
-                            const EdgeInsets
-                                .symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           vertical: 14,
                         ),
-                        prefixIcon:
-                            isSearchFocused.value
-                                ? null
-                                : Icon(
-                                    Icons
-                                        .search_rounded,
-                                    color: isDarkMode
-                                        ? Colors
-                                            .grey
-                                            .shade400
-                                        : Colors
-                                            .grey
-                                            .shade600,
-                                  ),
+                        prefixIcon: isSearchFocused.value
+                            ? null
+                            : Icon(
+                                Icons.search_rounded,
+                                color: isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
+                              ),
                         suffixIcon:
-                            searchQuery.value
-                                        .isEmpty &&
-                                    !isSearchFocused
-                                        .value
-                                ? null
-                                : IconButton(
-                                    tooltip:
-                                        'Cancel search',
-                                    onPressed:
-                                        _closeSearch,
-                                    icon:
-                                        const Icon(
-                                      Icons
-                                          .close_rounded,
-                                    ),
-                                  ),
-                        hintText:
-                            'Search title or category...',
+                            searchQuery.value.isEmpty && !isSearchFocused.value
+                            ? null
+                            : IconButton(
+                                tooltip: 'Cancel search',
+                                onPressed: _closeSearch,
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                        hintText: 'Search title or category...',
                         hintStyle: TextStyle(
                           fontSize: 15,
-                          color:
-                              Colors.grey.shade500,
+                          color: Colors.grey.shade500,
                         ),
-                        border:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
                             color: isDarkMode
-                                ? Colors.grey
-                                    .shade700
-                                : const Color(
-                                    0xFFE2E6E9,
-                                  ),
+                                ? Colors.grey.shade700
+                                : const Color(0xFFE2E6E9),
                           ),
                         ),
-                        enabledBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              BorderSide(
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
                             color: isDarkMode
-                                ? Colors.grey
-                                    .shade700
-                                : const Color(
-                                    0xFFE2E6E9,
-                                  ),
+                                ? Colors.grey.shade700
+                                : const Color(0xFFE2E6E9),
                           ),
                         ),
-                        focusedBorder:
-                            OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
-                          borderSide:
-                              const BorderSide(
-                            color: Color(
-                              0xFF4CAF50,
-                            ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF4CAF50),
                             width: 1.5,
                           ),
                         ),
@@ -824,102 +660,98 @@ void _selectAllVisibleTransactions() {
                   ),
                 ),
 
-// ==================================================
-// TRANSACTION FILTER
-// ==================================================
+                // ==================================================
+                // TRANSACTION FILTER
+                // ==================================================
+                Obx(() {
+                  final filters = ['All', 'Income', 'Expense'];
 
-Obx(
-  () {
-    final filters = ['All', 'Income', 'Expense'];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: filters.map((filter) {
+                        final isSelected = selectedFilter.value == filter;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
-      child: Row(
-        children: filters.map((filter) {
-          final isSelected =
-              selectedFilter.value == filter;
-
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-              ),
-              child: ChoiceChip(
-                label: Text(filter),
-                selected: isSelected,
-                showCheckmark: false,
-                onSelected: (_) {
-                  selectedFilter.value = filter;
-                },
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  },
-),
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: ChoiceChip(
+                              label: Text(filter),
+                              selected: isSelected,
+                              showCheckmark: false,
+                              onSelected: (_) {
+                                selectedFilter.value = filter;
+                              },
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                }),
                 // ==================================================
                 // TRANSACTION LIST
                 // ==================================================
 
-               Expanded(
-  child: Obx(() {
-    final query = searchQuery.value.toLowerCase().trim();
+                Expanded(
+                  child: Obx(() {
+                    final query = searchQuery.value.toLowerCase().trim();
 
-    final list = transactionsController.transactions.where((tx) {
-      // 1. Apply Income / Expense filter.
-      if (!_matchesSelectedFilter(tx)) {
-        return false;
-      }
+                    final list = transactionsController.transactions.where((
+                      tx,
+                    ) {
+                      // 1. Apply Income / Expense filter.
+                      if (!_matchesSelectedFilter(tx)) {
+                        return false;
+                      }
 
-      // 2. Apply search filter.
-      if (query.isEmpty) {
-        return true;
-      }
+                      // 2. Apply search filter.
+                      if (query.isEmpty) {
+                        return true;
+                      }
 
-      final categoryName = _getCategoryName(
-        tx.categoryId,
-        customCategory: tx.customCategoryName,
-      ).toLowerCase();
+                      final categoryName = _getCategoryName(
+                        tx.categoryId,
+                        customCategory: tx.customCategoryName,
+                      ).toLowerCase();
 
-      final title = tx.title.toLowerCase();
+                      final title = tx.title.toLowerCase();
 
-      return title.contains(query) ||
-          categoryName.contains(query);
-    }).toList();
+                      return title.contains(query) ||
+                          categoryName.contains(query);
+                    }).toList();
 
-    if (list.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 48,
-              color: isDarkMode
-                  ? Colors.grey.shade600
-                  : Colors.grey.shade400,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No transactions found.',
-              style: TextStyle(
-                color: isDarkMode
-                    ? Colors.grey.shade400
-                    : Colors.grey.shade600,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+                    if (list.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 48,
+                              color: isDarkMode
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No transactions found.',
+                              style: TextStyle(
+                                color: isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
-    // Keep your existing ListView.builder code here.
+                    // Keep your existing ListView.builder code here.
 
                     return ListView.builder(
                       padding: EdgeInsets.fromLTRB(
@@ -929,18 +761,12 @@ Obx(
                         112 + MediaQuery.of(context).viewPadding.bottom,
                       ),
                       itemCount: list.length,
-                      itemBuilder:
-                          (context, index) {
-                        final TransactionModel
-                            transaction =
-                            list[index];
+                      itemBuilder: (context, index) {
+                        final TransactionModel transaction = list[index];
 
-                        final bool isIncome =
-                            transaction.isIncome;
+                        final bool isIncome = transaction.isIncome;
 
-                        final bool isSelected =
-                            selectedTransactionIds
-                                .contains(
+                        final bool isSelected = selectedTransactionIds.contains(
                           transaction.id,
                         );
 
@@ -950,85 +776,49 @@ Obx(
                         );
 
                         final String displayTitle =
-                            transaction.title
-                                    .trim()
-                                    .isEmpty
-                                ? categoryName
-                                : transaction.title;
+                            transaction.title.trim().isEmpty
+                            ? categoryName
+                            : transaction.title;
 
                         return GestureDetector(
                           onLongPress: () {
-                            _toggleTransactionSelection(
-                              transaction.id,
-                            );
+                            _toggleTransactionSelection(transaction.id);
                           },
                           onTap: _isSelectionMode
                               ? () {
-                                  _toggleTransactionSelection(
-                                    transaction.id,
-                                  );
+                                  _toggleTransactionSelection(transaction.id);
                                 }
                               : null,
                           child: AnimatedContainer(
-                            duration:
-                                const Duration(
-                              milliseconds: 180,
-                            ),
-                            margin:
-                                const EdgeInsets.only(
-                              bottom: 12,
-                            ),
-                            decoration:
-                                BoxDecoration(
+                            duration: const Duration(milliseconds: 180),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
                               color: isSelected
                                   ? (isDarkMode
-                                      ? const Color(
-                                          0xFF183D1C,
-                                        )
-                                      : const Color(
-                                          0xFFE8F5E9,
-                                        ))
+                                        ? const Color(0xFF183D1C)
+                                        : const Color(0xFFE8F5E9))
                                   : (isDarkMode
-                                      ? const Color(
-                                          0xFF121212,
-                                        )
-                                      : Colors.white),
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(
-                                16,
-                              ),
+                                        ? const Color(0xFF121212)
+                                        : Colors.white),
+                              borderRadius: BorderRadius.circular(16),
                               border: isSelected
                                   ? Border.all(
-                                      color:
-                                          const Color(
-                                        0xFF4CAF50,
-                                      ),
+                                      color: const Color(0xFF4CAF50),
                                       width: 1.5,
                                     )
                                   : null,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors
-                                      .black
-                                      .withOpacity(
-                                    isDarkMode
-                                        ? 0.2
-                                        : 0.04,
+                                  color: Colors.black.withOpacity(
+                                    isDarkMode ? 0.2 : 0.04,
                                   ),
                                   blurRadius: 8,
-                                  offset:
-                                      const Offset(
-                                    0,
-                                    2,
-                                  ),
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                             child: ListTile(
-                              contentPadding:
-                                  const EdgeInsets
-                                      .symmetric(
+                              contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 6,
                               ),
@@ -1036,59 +826,36 @@ Obx(
                               // ====================================
                               // LEADING
                               // ====================================
-
                               leading: Row(
-                                mainAxisSize:
-                                    MainAxisSize.min,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (_isSelectionMode)
                                     Padding(
-                                      padding:
-                                          const EdgeInsets
-                                              .only(
-                                        right: 10,
-                                      ),
+                                      padding: const EdgeInsets.only(right: 10),
                                       child: AnimatedContainer(
-                                        duration:
-                                            const Duration(
-                                          milliseconds:
-                                              150,
+                                        duration: const Duration(
+                                          milliseconds: 150,
                                         ),
                                         width: 24,
                                         height: 24,
-                                        decoration:
-                                            BoxDecoration(
-                                          shape: BoxShape
-                                              .circle,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
                                           color: isSelected
-                                              ? const Color(
-                                                  0xFF4CAF50,
-                                                )
-                                              : Colors
-                                                  .transparent,
-                                          border:
-                                              Border.all(
-                                            color:
-                                                isSelected
-                                                    ? const Color(
-                                                        0xFF4CAF50,
-                                                      )
-                                                    : (isDarkMode
-                                                        ? Colors
-                                                            .grey
-                                                            .shade600
-                                                        : Colors
-                                                            .grey
-                                                            .shade400),
+                                              ? const Color(0xFF4CAF50)
+                                              : Colors.transparent,
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? const Color(0xFF4CAF50)
+                                                : (isDarkMode
+                                                      ? Colors.grey.shade600
+                                                      : Colors.grey.shade400),
                                             width: 2,
                                           ),
                                         ),
                                         child: isSelected
                                             ? const Icon(
-                                                Icons
-                                                    .check,
-                                                color: Colors
-                                                    .white,
+                                                Icons.check,
+                                                color: Colors.white,
                                                 size: 16,
                                               )
                                             : null,
@@ -1097,35 +864,20 @@ Obx(
 
                                   CircleAvatar(
                                     radius: 22,
-                                    backgroundColor:
-                                        isIncome
-                                            ? (isDarkMode
-                                                ? const Color(
-                                                    0xFF1E382B,
-                                                  )
-                                                : const Color(
-                                                    0xFFEBF9EE,
-                                                  ))
-                                            : (isDarkMode
-                                                ? const Color(
-                                                    0xFF3B1E1E,
-                                                  )
-                                                : const Color(
-                                                    0xFFFDEEEE,
-                                                  )),
+                                    backgroundColor: isIncome
+                                        ? (isDarkMode
+                                              ? const Color(0xFF1E382B)
+                                              : const Color(0xFFEBF9EE))
+                                        : (isDarkMode
+                                              ? const Color(0xFF3B1E1E)
+                                              : const Color(0xFFFDEEEE)),
                                     child: Icon(
                                       isIncome
-                                          ? Icons
-                                              .arrow_downward_rounded
-                                          : Icons
-                                              .arrow_upward_rounded,
+                                          ? Icons.arrow_downward_rounded
+                                          : Icons.arrow_upward_rounded,
                                       color: isIncome
-                                          ? const Color(
-                                              0xFF4CAF50,
-                                            )
-                                          : const Color(
-                                              0xFFEB5757,
-                                            ),
+                                          ? const Color(0xFF4CAF50)
+                                          : const Color(0xFFEB5757),
                                       size: 20,
                                     ),
                                   ),
@@ -1135,49 +887,32 @@ Obx(
                               // ====================================
                               // TITLE
                               // ====================================
-
                               title: Text(
                                 displayTitle,
                                 maxLines: 1,
-                                overflow:
-                                    TextOverflow
-                                        .ellipsis,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                   color: isDarkMode
                                       ? Colors.white
-                                      : Colors
-                                          .black87,
+                                      : Colors.black87,
                                 ),
                               ),
 
                               // ====================================
                               // SUBTITLE
                               // ====================================
-
                               subtitle: Padding(
-                                padding:
-                                    const EdgeInsets
-                                        .only(
-                                  top: 4.0,
-                                ),
+                                padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
                                   "$categoryName • ${_getFormattedDate(transaction.date)}",
                                   maxLines: 1,
-                                  overflow:
-                                      TextOverflow
-                                          .ellipsis,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: isDarkMode
-                                        ? Colors
-                                            .grey
-                                            .shade400
-                                        : Colors
-                                            .grey
-                                            .shade600,
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1186,116 +921,80 @@ Obx(
                               // ====================================
                               // TRAILING
                               // ====================================
-
-                              trailing:
-                                  _isSelectionMode
-                                      ? Text(
-                                          "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
-                                          style:
-                                              AppTextStyles
-                                                  .bodyMedium(
+                              trailing: _isSelectionMode
+                                  ? Text(
+                                      Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
+                                      style:
+                                          AppTextStyles.bodyMedium(
                                             isDarkMode,
                                           ).copyWith(
                                             color: isIncome
-                                                ? Colors
-                                                    .green
-                                                : Colors
-                                                    .red,
-                                            fontWeight:
-                                                FontWeight
-                                                    .bold,
+                                                ? Colors.green
+                                                : Colors.red,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        )
-                                      : Row(
-                                          mainAxisSize:
-                                              MainAxisSize
-                                                  .min,
-                                          children: [
-                                            Text(
-                                              "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
-                                              style:
-                                                  AppTextStyles
-                                                      .bodyMedium(
+                                    )
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
+                                          style:
+                                              AppTextStyles.bodyMedium(
                                                 isDarkMode,
                                               ).copyWith(
-                                                color:
-                                                    isIncome
-                                                        ? Colors.green
-                                                        : Colors.red,
-                                                fontWeight:
-                                                    FontWeight.bold,
+                                                color: isIncome
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                            ),
+                                        ),
 
-                                            PopupMenuButton<
-                                                String>(
-                                              icon:
-                                                  const Icon(
-                                                Icons
-                                                    .more_vert,
-                                              ),
-                                              onSelected:
-                                                  (value) async {
-                                                if (value ==
-                                                    'edit') {
-                                                  await showDialog(
-                                                    context:
-                                                        context,
-                                                    builder:
-                                                        (_) {
-                                                      return AddTransactionDialog(
-                                                        transaction:
-                                                            transaction,
-                                                      );
-                                                    },
+                                        PopupMenuButton<String>(
+                                          icon: const Icon(Icons.more_vert),
+                                          onSelected: (value) async {
+                                            if (value == 'edit') {
+                                              await showDialog(
+                                                context: context,
+                                                builder: (_) {
+                                                  return AddTransactionDialog(
+                                                    transaction: transaction,
                                                   );
-                                                }
+                                                },
+                                              );
+                                            }
 
-                                                if (value ==
-                                                    'delete') {
-                                                  final shouldDelete =
-                                                      await showDialog<
-                                                          bool>(
-                                                    context:
-                                                        context,
-                                                    builder:
-                                                        (dialogContext) {
+                                            if (value == 'delete') {
+                                              final shouldDelete =
+                                                  await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (dialogContext) {
                                                       return AlertDialog(
-                                                        title:
-                                                            const Text(
+                                                        title: const Text(
                                                           'Delete Transaction',
                                                         ),
-                                                        content:
-                                                            Text(
+                                                        content: Text(
                                                           'Are you sure you want to delete '
                                                           '"${transaction.title}"?',
                                                         ),
                                                         actions: [
                                                           TextButton(
-                                                            onPressed:
-                                                                () {
+                                                            onPressed: () {
                                                               Navigator.of(
                                                                 dialogContext,
-                                                              ).pop(
-                                                                false,
-                                                              );
+                                                              ).pop(false);
                                                             },
-                                                            child:
-                                                                const Text(
+                                                            child: const Text(
                                                               'Cancel',
                                                             ),
                                                           ),
                                                           ElevatedButton(
-                                                            onPressed:
-                                                                () {
+                                                            onPressed: () {
                                                               Navigator.of(
                                                                 dialogContext,
-                                                              ).pop(
-                                                                true,
-                                                              );
+                                                              ).pop(true);
                                                             },
-                                                            child:
-                                                                const Text(
+                                                            child: const Text(
                                                               'Delete',
                                                             ),
                                                           ),
@@ -1304,65 +1003,39 @@ Obx(
                                                     },
                                                   );
 
-                                                  if (shouldDelete ==
-                                                      true) {
-                                                    await transactionsController
-                                                        .deleteTransaction(
-                                                      transaction
-                                                          .id,
+                                              if (shouldDelete == true) {
+                                                await transactionsController
+                                                    .deleteTransaction(
+                                                      transaction.id,
                                                     );
-                                                  }
-                                                }
-                                              },
-                                              itemBuilder:
-                                                  (context) =>
-                                                      const [
-                                                PopupMenuItem<
-                                                    String>(
-                                                  value:
-                                                      'edit',
-                                                  child:
-                                                      Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons
-                                                            .edit_outlined,
-                                                      ),
-                                                      SizedBox(
-                                                        width:
-                                                            10,
-                                                      ),
-                                                      Text(
-                                                        'Edit',
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                PopupMenuItem<
-                                                    String>(
-                                                  value:
-                                                      'delete',
-                                                  child:
-                                                      Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons
-                                                            .delete_outline,
-                                                      ),
-                                                      SizedBox(
-                                                        width:
-                                                            10,
-                                                      ),
-                                                      Text(
-                                                        'Delete',
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
+                                              }
+                                            }
+                                          },
+                                          itemBuilder: (context) => const [
+                                            PopupMenuItem<String>(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit_outlined),
+                                                  SizedBox(width: 10),
+                                                  Text('Edit'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem<String>(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete_outline),
+                                                  SizedBox(width: 10),
+                                                  Text('Delete'),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
+                                      ],
+                                    ),
                             ),
                           ),
                         );
@@ -1376,7 +1049,6 @@ Obx(
             // ====================================================
             // CUSTOM FLOATING DRAWER OVERLAY
             // ====================================================
-
             Obx(() {
               if (!isDrawerOpen.value) {
                 return const SizedBox.shrink();
@@ -1385,206 +1057,117 @@ Obx(
               return Stack(
                 children: [
                   GestureDetector(
-                    onTap: () =>
-                        isDrawerOpen.value = false,
-                    child: Container(
-                      color: Colors.black
-                          .withOpacity(0.5),
-                    ),
+                    onTap: () => isDrawerOpen.value = false,
+                    child: Container(color: Colors.black.withOpacity(0.5)),
                   ),
 
                   Align(
-                    alignment:
-                        Alignment.centerRight,
+                    alignment: Alignment.centerRight,
                     child: Container(
-                      width:
-                          MediaQuery.of(context)
-                                      .size
-                                      .width <
-                                  316
-                              ? MediaQuery.of(
-                                    context,
-                                  ).size.width -
-                                  12
-                              : 304,
-                      height:
-                          MediaQuery.of(context)
-                                  .size
-                                  .height *
-                              0.76,
-                      margin:
-                          const EdgeInsets.only(
+                      width: MediaQuery.of(context).size.width < 316
+                          ? MediaQuery.of(context).size.width - 12
+                          : 304,
+                      height: MediaQuery.of(context).size.height * 0.76,
+                      margin: const EdgeInsets.only(
                         right: 12,
                         top: 10,
                         bottom: 80,
                       ),
-                      decoration:
-                          BoxDecoration(
+                      decoration: BoxDecoration(
                         color: isDarkMode
-                            ? const Color(
-                                0xFF1E1E1E,
-                              )
-                            : const Color(
-                                0xFFF9FAFB,
-                              ),
-                        borderRadius:
-                            BorderRadius.circular(
-                          28,
-                        ),
+                            ? const Color(0xFF1E1E1E)
+                            : const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
-                                .withOpacity(0.3),
+                            color: Colors.black.withOpacity(0.3),
                             blurRadius: 20,
-                            offset:
-                                const Offset(
-                              0,
-                              10,
-                            ),
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(
-                          28,
-                        ),
+                        borderRadius: BorderRadius.circular(28),
                         child: Column(
                           children: [
                             Align(
-                              alignment:
-                                  Alignment.topRight,
+                              alignment: Alignment.topRight,
                               child: Padding(
-                                padding:
-                                    const EdgeInsets
-                                        .only(
+                                padding: const EdgeInsets.only(
                                   top: 6,
                                   right: 6,
                                 ),
                                 child: IconButton(
-                                  onPressed: () =>
-                                      isDrawerOpen
-                                              .value =
-                                          false,
+                                  onPressed: () => isDrawerOpen.value = false,
                                   icon: Icon(
                                     Icons.close,
                                     size: 28,
                                     color: isDarkMode
                                         ? Colors.white
-                                        : Colors
-                                            .black87,
+                                        : Colors.black87,
                                   ),
                                 ),
                               ),
                             ),
 
                             UserAccountsDrawerHeader(
-                              margin:
-                                  EdgeInsets.zero,
-                              decoration:
-                                  BoxDecoration(
-                                gradient:
-                                    LinearGradient(
+                              margin: EdgeInsets.zero,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
                                   colors: isDarkMode
                                       ? const [
-                                          Color(
-                                            0xFF2E7D32,
-                                          ),
-                                          Color(
-                                            0xFF1B5E20,
-                                          ),
+                                          Color(0xFF2E7D32),
+                                          Color(0xFF1B5E20),
                                         ]
                                       : const [
-                                          Color(
-                                            0xFF4CAF50,
-                                          ),
-                                          Color(
-                                            0xFF388E3C,
-                                          ),
+                                          Color(0xFF4CAF50),
+                                          Color(0xFF388E3C),
                                         ],
-                                  begin:
-                                      Alignment
-                                          .topLeft,
-                                  end: Alignment
-                                      .bottomRight,
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
                               ),
-                              currentAccountPictureSize:
-                                  const Size.square(
-                                64,
-                              ),
-                              currentAccountPicture:
-                                  Obx(() {
+                              currentAccountPictureSize: const Size.square(64),
+                              currentAccountPicture: Obx(() {
                                 final imageUrl =
-                                    settingsController
-                                        .profilePictureUrl
-                                        .value;
+                                    settingsController.profilePictureUrl.value;
 
                                 final name =
-                                    settingsController
-                                        .profileName
-                                        .value;
+                                    settingsController.profileName.value;
 
-                                final firstLetter =
-                                    name.isNotEmpty
-                                        ? name[0]
-                                            .toUpperCase()
-                                        : 'U';
+                                final firstLetter = name.isNotEmpty
+                                    ? name[0].toUpperCase()
+                                    : 'U';
 
                                 return Container(
-                                  decoration:
-                                      BoxDecoration(
-                                    shape:
-                                        BoxShape
-                                            .circle,
-                                    border:
-                                        Border.all(
-                                      color:
-                                          Colors.white,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
                                       width: 2,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors
-                                            .black
-                                            .withValues(
+                                        color: Colors.black.withValues(
                                           alpha: 0.15,
                                         ),
-                                        blurRadius:
-                                            8,
-                                        offset:
-                                            const Offset(
-                                          0,
-                                          3,
-                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
                                       ),
                                     ],
                                   ),
-                                  child:
-                                      CircleAvatar(
-                                    backgroundColor:
-                                        Colors.white,
-                                    backgroundImage:
-                                        imageUrl
-                                                .isNotEmpty
-                                            ? NetworkImage(
-                                                imageUrl,
-                                              )
-                                            : null,
-                                    child: imageUrl
-                                            .isEmpty
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.white,
+                                    backgroundImage: imageUrl.isNotEmpty
+                                        ? NetworkImage(imageUrl)
+                                        : null,
+                                    child: imageUrl.isEmpty
                                         ? Text(
                                             firstLetter,
-                                            style:
-                                                const TextStyle(
-                                              fontSize:
-                                                  26,
-                                              fontWeight:
-                                                  FontWeight
-                                                      .bold,
-                                              color: Color(
-                                                0xFF2E7D32,
-                                              ),
+                                            style: const TextStyle(
+                                              fontSize: 26,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF2E7D32),
                                             ),
                                           )
                                         : null,
@@ -1593,14 +1176,10 @@ Obx(
                               }),
                               accountName: Text(
                                 _userName,
-                                style:
-                                    const TextStyle(
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 18,
-                                  color:
-                                      Colors.white,
+                                  color: Colors.white,
                                 ),
                               ),
                               accountEmail: Text(
@@ -1613,179 +1192,107 @@ Obx(
                                     '',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors
-                                      .white
-                                      .withOpacity(
-                                    0.9,
-                                  ),
+                                  color: Colors.white.withOpacity(0.9),
                                 ),
                               ),
                             ),
 
                             Expanded(
                               child: ListView(
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                   vertical: 16,
                                 ),
-                                physics:
-                                    const BouncingScrollPhysics(),
+                                physics: const BouncingScrollPhysics(),
                                 children: [
                                   _buildDrawerOption(
-                                    context:
-                                        context,
-                                    icon: Icons
-                                        .account_balance_wallet_rounded,
-                                    iconColor:
-                                        const Color(
-                                      0xFF3A5BA0,
-                                    ),
+                                    context: context,
+                                    icon: Icons.account_balance_wallet_rounded,
+                                    iconColor: const Color(0xFF3A5BA0),
                                     emoji: '💳',
-                                    title:
-                                        'Wallets',
+                                    title: 'Wallets',
                                     subtitle:
                                         'Manage your cash, bank and other wallets',
-                                    onTap: () =>
-                                        _closeDrawerAndNavigate(
-                                      () =>
-                                          const WalletsView(),
-                                      binding:
-                                          WalletsBinding(),
+                                    onTap: () => _closeDrawerAndNavigate(
+                                      () => const WalletsView(),
+                                      binding: WalletsBinding(),
                                     ),
                                   ),
 
-                                  const SizedBox(
-                                    height: 12,
-                                  ),
+                                  const SizedBox(height: 12),
 
                                   _buildDrawerOption(
-                                    context:
-                                        context,
-                                    icon: Icons
-                                        .donut_small_rounded,
-                                    iconColor:
-                                        const Color(
-                                      0xFF2E7D32,
-                                    ),
+                                    context: context,
+                                    icon: Icons.donut_small_rounded,
+                                    iconColor: const Color(0xFF2E7D32),
                                     emoji: '📊',
-                                    title:
-                                        'Budgets',
+                                    title: 'Budgets',
                                     subtitle:
                                         'Set and track monthly spending limits',
-                                    onTap: () =>
-                                        _closeDrawerAndNavigate(
-                                      () =>
-                                          const BudgetView(),
-                                      binding:
-                                          BudgetBinding(),
+                                    onTap: () => _closeDrawerAndNavigate(
+                                      () => const BudgetView(),
+                                      binding: BudgetBinding(),
                                     ),
                                   ),
 
-                                  const SizedBox(
-                                    height: 12,
-                                  ),
+                                  const SizedBox(height: 12),
 
                                   _buildDrawerOption(
-                                    context:
-                                        context,
-                                    icon: Icons
-                                        .flag_rounded,
-                                    iconColor:
-                                        const Color(
-                                      0xFFB26A00,
-                                    ),
+                                    context: context,
+                                    icon: Icons.flag_rounded,
+                                    iconColor: const Color(0xFFB26A00),
                                     emoji: '🎯',
-                                    title:
-                                        'Goals',
+                                    title: 'Goals',
                                     subtitle:
                                         'Track your financial targets and savings',
-                                    onTap: () =>
-                                        _closeDrawerAndNavigate(
-                                      () =>
-                                          const GoalsView(),
-                                      binding:
-                                          GoalsBinding(),
+                                    onTap: () => _closeDrawerAndNavigate(
+                                      () => const GoalsView(),
+                                      binding: GoalsBinding(),
                                     ),
                                   ),
 
-                                  const SizedBox(
-                                    height: 12,
-                                  ),
+                                  const SizedBox(height: 12),
 
                                   _buildDrawerOption(
-                                    context:
-                                        context,
-                                    icon: Icons
-                                        .receipt_long_rounded,
-                                    iconColor:
-                                        const Color(
-                                      0xFF7A4EAB,
-                                    ),
+                                    context: context,
+                                    icon: Icons.receipt_long_rounded,
+                                    iconColor: const Color(0xFF7A4EAB),
                                     emoji: '🧾',
-                                    title:
-                                        'Bills & Reminders',
+                                    title: 'Bills & Reminders',
                                     subtitle:
                                         'Manage upcoming bills and reminders',
-                                    onTap: () =>
-                                        _closeDrawerAndNavigate(
-                                      () =>
-                                          const BillsRemindersView(),
-                                      binding:
-                                          BillsRemindersBinding(),
+                                    onTap: () => _closeDrawerAndNavigate(
+                                      () => const BillsRemindersView(),
+                                      binding: BillsRemindersBinding(),
                                     ),
                                   ),
 
-                                  const SizedBox(
-                                    height: 12,
-                                  ),
+                                  const SizedBox(height: 12),
 
                                   _buildDrawerOption(
-                                    context:
-                                        context,
-                                    icon: Icons
-                                        .groups_rounded,
-                                    iconColor:
-                                        const Color(
-                                      0xFF00695C,
-                                    ),
+                                    context: context,
+                                    icon: Icons.groups_rounded,
+                                    iconColor: const Color(0xFF00695C),
                                     emoji: '🤝',
-                                    title:
-                                        'Digital Committee',
+                                    title: 'Digital Committee',
                                     subtitle:
                                         'Manage your committee and member payments',
-                                    onTap: () =>
-                                        _closeDrawerAndNavigate(
-                                      () =>
-                                          CommitteeView(),
+                                    onTap: () => _closeDrawerAndNavigate(
+                                      () => CommitteeView(),
                                     ),
                                   ),
 
-                                  const SizedBox(
-                                    height: 12,
-                                  ),
+                                  const SizedBox(height: 12),
 
                                   _buildDrawerOption(
-                                    context:
-                                        context,
-                                    icon: Icons
-                                        .person_rounded,
-                                    iconColor:
-                                        const Color(
-                                      0xFF455A64,
-                                    ),
-                                    emoji: '🧑',
-                                    title:
-                                        'Profile',
-                                    subtitle:
-                                        'Manage your profile and acc...',
-                                    onTap: () =>
-                                        _closeDrawerAndNavigate(
-                                      () =>
-                                          const SettingsView(),
-                                      binding:
-                                          SettingsBinding(),
+                                    context: context,
+                                    icon: Icons.person_rounded,
+                                    iconColor: const Color(0xFFF2C14E),
+                                    title: 'Profile',
+                                    subtitle: 'Manage your profile and acc...',
+                                    onTap: () => _closeDrawerAndNavigate(
+                                      () => const SettingsView(),
+                                      binding: SettingsBinding(),
                                     ),
                                   ),
                                 ],
@@ -1816,14 +1323,9 @@ Obx(
   ) {
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.only(
-          top: 12,
-          bottom: 16,
-          right: 12,
-        ),
+        margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
         child: ClipRRect(
-          borderRadius:
-              BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(28),
           child: Drawer(
             elevation: 4,
             backgroundColor: isDarkMode
@@ -1832,28 +1334,17 @@ Obx(
             child: Column(
               children: [
                 Align(
-                  alignment:
-                      Alignment.topRight,
+                  alignment: Alignment.topRight,
                   child: Padding(
-                    padding:
-                        const EdgeInsets.only(
-                      top: 6,
-                      right: 6,
-                    ),
+                    padding: const EdgeInsets.only(top: 6, right: 6),
                     child: Builder(
-                      builder:
-                          (drawerContext) =>
-                              IconButton(
+                      builder: (drawerContext) => IconButton(
                         onPressed: () =>
-                            Scaffold.of(
-                              drawerContext,
-                            ).closeEndDrawer(),
+                            Scaffold.of(drawerContext).closeEndDrawer(),
                         icon: Icon(
                           Icons.close,
                           size: 28,
-                          color: isDarkMode
-                              ? Colors.white
-                              : Colors.black87,
+                          color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
                     ),
@@ -1862,96 +1353,49 @@ Obx(
 
                 UserAccountsDrawerHeader(
                   margin: EdgeInsets.zero,
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        LinearGradient(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
                       colors: isDarkMode
-                          ? const [
-                              Color(0xFF2E7D32),
-                              Color(0xFF1B5E20),
-                            ]
-                          : const [
-                              Color(0xFF4CAF50),
-                              Color(0xFF388E3C),
-                            ],
-                      begin:
-                          Alignment.topLeft,
-                      end: Alignment
-                          .bottomRight,
+                          ? const [Color(0xFF2E7D32), Color(0xFF1B5E20)]
+                          : const [Color(0xFF4CAF50), Color(0xFF388E3C)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
                   ),
-                  currentAccountPictureSize:
-                      const Size.square(64),
-                  currentAccountPicture:
-                      Obx(() {
-                    final imageUrl =
-                        settingsController
-                            .profilePictureUrl
-                            .value;
+                  currentAccountPictureSize: const Size.square(64),
+                  currentAccountPicture: Obx(() {
+                    final imageUrl = settingsController.profilePictureUrl.value;
 
-                    final name =
-                        settingsController
-                            .profileName
-                            .value;
+                    final name = settingsController.profileName.value;
 
-                    final firstLetter =
-                        name.isNotEmpty
-                            ? name[0]
-                                .toUpperCase()
-                            : 'U';
+                    final firstLetter = name.isNotEmpty
+                        ? name[0].toUpperCase()
+                        : 'U';
 
                     return Container(
-                      decoration:
-                          BoxDecoration(
-                        shape: BoxShape
-                            .circle,
-                        border:
-                            Border.all(
-                          color:
-                              Colors.white,
-                          width: 2,
-                        ),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors
-                                .black
-                                .withValues(
-                              alpha: 0.15,
-                            ),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 8,
-                            offset:
-                                const Offset(
-                              0,
-                              3,
-                            ),
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
-                      child:
-                          CircleAvatar(
-                        backgroundColor:
-                            Colors.white,
-                        backgroundImage:
-                            imageUrl.isNotEmpty
-                                ? NetworkImage(
-                                    imageUrl,
-                                  )
-                                : null,
-                        child: imageUrl
-                                .isEmpty
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        backgroundImage: imageUrl.isNotEmpty
+                            ? NetworkImage(imageUrl)
+                            : null,
+                        child: imageUrl.isEmpty
                             ? Text(
                                 firstLetter,
-                                style:
-                                    const TextStyle(
-                                  fontSize:
-                                      26,
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
-                                  color: Color(
-                                    0xFF2E7D32,
-                                  ),
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E7D32),
                                 ),
                               )
                             : null,
@@ -1960,209 +1404,126 @@ Obx(
                   }),
                   accountName: Text(
                     _userName,
-                    style:
-                        const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
                       fontSize: 18,
-                      color:
-                          Colors.white,
+                      color: Colors.white,
                     ),
                   ),
                   accountEmail: Text(
-                    Supabase
-                            .instance
-                            .client
-                            .auth
-                            .currentUser
-                            ?.email ??
-                        '',
+                    Supabase.instance.client.auth.currentUser?.email ?? '',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white
-                          .withOpacity(0.9),
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ),
 
                 Expanded(
                   child: ListView(
-                    padding:
-                        const EdgeInsets
-                            .symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 16,
                     ),
-                    physics:
-                        const BouncingScrollPhysics(),
+                    physics: const BouncingScrollPhysics(),
                     children: [
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .account_balance_wallet_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF3A5BA0,
-                        ),
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFF3A5BA0),
                         emoji: '💳',
                         title: 'Wallets',
-                        subtitle:
-                            'Manage your cash, bank and other wallets',
-                        onTap: () =>
-                            _closeDrawerAndNavigate(
-                          () =>
-                              const WalletsView(),
-                          binding:
-                              WalletsBinding(),
+                        subtitle: 'Manage your cash, bank and other wallets',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const WalletsView(),
+                          binding: WalletsBinding(),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .donut_small_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF2E7D32,
-                        ),
+                        icon: Icons.donut_small_rounded,
+                        iconColor: const Color(0xFF2E7D32),
                         emoji: '📊',
                         title: 'Budgets',
-                        subtitle:
-                            'Set and track monthly spending limits',
-                        onTap: () =>
-                            _closeDrawerAndNavigate(
-                          () =>
-                              const BudgetView(),
-                          binding:
-                              BudgetBinding(),
+                        subtitle: 'Set and track monthly spending limits',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const BudgetView(),
+                          binding: BudgetBinding(),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .flag_rounded,
-                        iconColor:
-                            const Color(
-                          0xFFB26A00,
-                        ),
+                        icon: Icons.flag_rounded,
+                        iconColor: const Color(0xFFB26A00),
                         emoji: '🎯',
                         title: 'Goals',
-                        subtitle:
-                            'Track your financial targets and savings',
-                        onTap: () =>
-                            _closeDrawerAndNavigate(
-                          () =>
-                              const GoalsView(),
-                          binding:
-                              GoalsBinding(),
+                        subtitle: 'Track your financial targets and savings',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const GoalsView(),
+                          binding: GoalsBinding(),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .receipt_long_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF7A4EAB,
-                        ),
+                        icon: Icons.receipt_long_rounded,
+                        iconColor: const Color(0xFF7A4EAB),
                         emoji: '🧾',
-                        title:
-                            'Bills & Reminders',
-                        subtitle:
-                            'Manage upcoming bills and reminders',
-                        onTap: () =>
-                            _closeDrawerAndNavigate(
-                          () =>
-                              const BillsRemindersView(),
-                          binding:
-                              BillsRemindersBinding(),
+                        title: 'Bills & Reminders',
+                        subtitle: 'Manage upcoming bills and reminders',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const BillsRemindersView(),
+                          binding: BillsRemindersBinding(),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .groups_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF00695C,
-                        ),
+                        icon: Icons.groups_rounded,
+                        iconColor: const Color(0xFF00695C),
                         emoji: '🤝',
-                        title:
-                            'Digital Committee',
-                        subtitle:
-                            'Manage your committee and member payments',
+                        title: 'Digital Committee',
+                        subtitle: 'Manage your committee and member payments',
                         onTap: () =>
-                            _closeDrawerAndNavigate(
-                          () =>
-                              CommitteeView(),
-                        ),
+                            _closeDrawerAndNavigate(() => CommitteeView()),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .account_balance_wallet_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF3A5BA0,
-                        ),
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFF3A5BA0),
                         emoji: '🧮',
                         title: 'Udhaar',
-                        subtitle:
-                            'Money you lent out and money you owe',
-                        onTap: () =>
-                            _closeDrawerAndNavigate(
+                        subtitle: 'Money you lent out and money you owe',
+                        onTap: () => _closeDrawerAndNavigate(
                           () => UdhaarView(),
-                          binding:
-                              UdhaarBinding(),
+                          binding: UdhaarBinding(),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
 
                       _buildDrawerOption(
                         context: context,
-                        icon: Icons
-                            .person_rounded,
-                        iconColor:
-                            const Color(
-                          0xFF455A64,
-                        ),
-                        emoji: '🧑',
+                        icon: Icons.person_rounded,
+                        iconColor: const Color(0xFFF2C14E),
                         title: 'Profile',
-                        subtitle:
-                            'Manage your profile and account settings',
-                        onTap: () =>
-                            _closeDrawerAndNavigate(
-                          () =>
-                              const SettingsView(),
-                          binding:
-                              SettingsBinding(),
+                        subtitle: 'Manage your profile and account settings',
+                        onTap: () => _closeDrawerAndNavigate(
+                          () => const SettingsView(),
+                          binding: SettingsBinding(),
                         ),
                       ),
                     ],
@@ -2189,32 +1550,19 @@ Obx(
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    final theme =
-        Theme.of(context);
+    final theme = Theme.of(context);
 
-    final isDarkMode =
-        theme.brightness ==
-            Brightness.dark;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
-      decoration:
-          BoxDecoration(
-        color: isDarkMode
-            ? const Color(0xFF2A2A2A)
-            : Colors.white,
-        borderRadius:
-            BorderRadius.circular(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black
-                .withOpacity(
-              isDarkMode
-                  ? 0.2
-                  : 0.04,
-            ),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
-            offset:
-                const Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -2222,98 +1570,52 @@ Obx(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius:
-              BorderRadius.circular(
-            16,
-          ),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding:
-                const EdgeInsets
-                    .symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration:
-                      BoxDecoration(
-                    color: iconColor
-                        .withOpacity(
-                      0.12,
-                    ),
-                    borderRadius:
-                        BorderRadius
-                            .circular(
-                      12,
-                    ),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  alignment:
-                      Alignment.center,
+                  alignment: Alignment.center,
                   child: emoji == null
-                      ? Icon(
-                          icon,
-                          color:
-                              iconColor,
-                          size: 24,
-                        )
-                      : Text(
-                          emoji,
-                          style:
-                              const TextStyle(
-                            fontSize: 23,
-                          ),
-                        ),
+                      ? Icon(icon, color: iconColor, size: 24)
+                      : Text(emoji, style: const TextStyle(fontSize: 23)),
                 ),
 
-                const SizedBox(
-                  width: 14,
-                ),
+                const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style:
-                            TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
-                          fontWeight:
-                              FontWeight
-                                  .w700,
+                          fontWeight: FontWeight.w700,
                           color: isDarkMode
                               ? Colors.white
-                              : const Color(
-                                  0xFF212121,
-                                ),
+                              : const Color(0xFF212121),
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 2,
-                      ),
+                      const SizedBox(height: 2),
 
                       Text(
                         subtitle,
                         maxLines: 1,
-                        overflow:
-                            TextOverflow
-                                .ellipsis,
-                        style:
-                            TextStyle(
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
                           fontSize: 11,
                           color: isDarkMode
-                              ? Colors
-                                  .grey
-                                  .shade400
-                              : const Color(
-                                  0xFF757575,
-                                ),
+                              ? Colors.grey.shade400
+                              : const Color(0xFF757575),
                         ),
                       ),
                     ],
@@ -2321,16 +1623,11 @@ Obx(
                 ),
 
                 Icon(
-                  Icons
-                      .arrow_forward_ios_rounded,
+                  Icons.arrow_forward_ios_rounded,
                   size: 14,
                   color: isDarkMode
-                      ? Colors
-                          .grey
-                          .shade500
-                      : Colors
-                          .grey
-                          .shade400,
+                      ? Colors.grey.shade500
+                      : Colors.grey.shade400,
                 ),
               ],
             ),

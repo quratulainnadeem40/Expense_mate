@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 class ScheduleCard extends StatelessWidget {
@@ -10,7 +11,7 @@ class ScheduleCard extends StatelessWidget {
     super.key,
     this.title = 'Monthly Payment',
     this.dueDate = 'Due Date',
-    this.amount = 'PKR 0',
+    this.amount = '',
     this.status = 'Upcoming',
   });
 
@@ -35,6 +36,7 @@ class ScheduleCard extends StatelessWidget {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 48,
@@ -58,8 +60,8 @@ class ScheduleCard extends StatelessWidget {
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   title,
@@ -74,9 +76,10 @@ class ScheduleCard extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.calendar_month_rounded,
@@ -86,19 +89,23 @@ class ScheduleCard extends StatelessWidget {
                           : Colors.black45,
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      dueDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark
-                            ? Colors.white54
-                            : Colors.black54,
+                    Expanded(
+                      child: Text(
+                        dueDate,
+                        softWrap: true,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: isDark
+                              ? Colors.white54
+                              : Colors.black54,
+                        ),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 5),
+                const SizedBox(height: 8),
 
                 Text(
                   amount,
@@ -114,9 +121,12 @@ class ScheduleCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
 
           Container(
+            constraints: const BoxConstraints(
+              maxWidth: 90,
+            ),
             padding: const EdgeInsets.symmetric(
               horizontal: 9,
               vertical: 7,
@@ -129,6 +139,8 @@ class ScheduleCard extends StatelessWidget {
             ),
             child: Text(
               status,
+              textAlign: TextAlign.center,
+              softWrap: true,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

@@ -23,7 +23,7 @@ class CategoryHistoryScreen extends StatelessWidget {
             transaction.categoryId.trim().toLowerCase(),
       ),
     );
-    return category?.name ?? transaction.categoryId;
+    return category?.name ?? transaction.displayCategoryFallback;
   }
 
   @override
