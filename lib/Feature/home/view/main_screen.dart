@@ -78,13 +78,6 @@ class _MainScreenState extends State<MainScreen> {
     // Theme Colors
     const primaryGreen = Color(0xFF2EA44F);
 
-    final List<Widget> pages = [
-      const HomeScreen(),
-      TransactionsView(),
-      CategoriesView(),
-      ReportView(),
-    ];
-
     final isDark =
         Theme.of(context).brightness == Brightness.dark;
 
@@ -100,7 +93,12 @@ class _MainScreenState extends State<MainScreen> {
       body: Obx(
         () => IndexedStack(
           index: controller.currentIndex.value,
-          children: pages,
+          children: [
+            const HomeScreen(),
+            TransactionsView(),
+            CategoriesView(isActive: controller.currentIndex.value == 2),
+            ReportView(),
+          ],
         ),
       ),
 

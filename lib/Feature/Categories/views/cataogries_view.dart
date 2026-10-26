@@ -27,7 +27,9 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesView extends StatefulWidget {
-  const CategoriesView({super.key});
+  const CategoriesView({super.key, this.isActive = true});
+
+  final bool isActive;
 
   @override
   State<CategoriesView> createState() => _CategoriesViewState();
@@ -73,16 +75,31 @@ class _CategoriesViewState extends State<CategoriesView>
       if (!mounted) return;
       controller.fetchCategories();
       _scheduleCycleRefresh();
-
-      final box = Hive.box(AppKeys.budgetBox);
-      final isCycleConfigured =
-          box.containsKey(AppKeys.categoryCycleStartDayKey) ||
-          box.containsKey(AppKeys.categoryCycleAutomaticResetKey);
-      if (!isCycleConfigured && !_cycleSetupOfferedThisSession) {
-        _cycleSetupOfferedThisSession = true;
-        _showCycleSetupSheet();
-      }
+      _maybeOfferCycleSetup();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoriesView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive && widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _maybeOfferCycleSetup();
+      });
+    }
+  }
+
+  void _maybeOfferCycleSetup() {
+    if (!widget.isActive || _cycleSetupOfferedThisSession) return;
+
+    final box = Hive.box(AppKeys.budgetBox);
+    final isCycleConfigured =
+        box.containsKey(AppKeys.categoryCycleStartDayKey) ||
+        box.containsKey(AppKeys.categoryCycleAutomaticResetKey);
+    if (!isCycleConfigured) {
+      _cycleSetupOfferedThisSession = true;
+      _showCycleSetupSheet();
+    }
   }
 
   @override

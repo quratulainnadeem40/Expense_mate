@@ -142,15 +142,30 @@ class UdhaarView extends GetView<UdhaarController> {
         ],
       ),
 
-      floatingActionButton: Obx(
+      bottomNavigationBar: Obx(
         () => _selectionMode.value
             ? const SizedBox.shrink()
-            : FloatingActionButton.extended(
-                onPressed: () => _openEntrySheet(context, isDark),
-                backgroundColor: _green,
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Add udhaar'),
+            : SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openEntrySheet(context, isDark),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Add udhaar'),
+                    ),
+                  ),
+                ),
               ),
       ),
 
@@ -174,7 +189,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           .isNotEmpty,
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                       itemCount: people.length,
                       itemBuilder: (context, i) => Obx(
                         () => _personCard(
