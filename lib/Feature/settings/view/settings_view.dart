@@ -271,7 +271,7 @@ class SettingsView extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         title: Text(
-          'Select Language',
+          'Select Language'.tr,
           style: AppTextStyles.headingMedium(
             isDark,
           ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
@@ -314,7 +314,7 @@ class SettingsView extends StatelessWidget {
         actions: [
           OutlinedButton(
             onPressed: () => Get.back<void>(),
-            child: const Text('Close'),
+            child: Text('Close'.tr),
           ),
         ],
       ),
@@ -498,7 +498,7 @@ class SettingsView extends StatelessWidget {
                     color: const Color(0xFF2979FF),
                   ),
                   title: Text(
-                    'Language',
+                    'Language'.tr,
                     style: AppTextStyles.bodyLarge(
                       isDark,
                     ).copyWith(fontWeight: FontWeight.w600),

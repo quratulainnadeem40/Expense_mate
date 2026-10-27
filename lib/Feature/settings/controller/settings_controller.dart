@@ -709,6 +709,7 @@ class SettingsController extends GetxController {
 
     selectedLanguage.value =
         settingsBox.get('app_language', defaultValue: 'en') as String;
+    Get.locale = Locale(selectedLanguage.value);
     await loadCurrencySettings();
 
     notificationsEnabled.value =
@@ -795,10 +796,11 @@ class SettingsController extends GetxController {
   Future<void> changeLanguage(String languageCode) async {
     final code = languageCode.trim().toLowerCase();
 
-    if (code.isEmpty) return;
+    if (!{'en', 'ur', 'ps', 'sd', 'ar', 'hi'}.contains(code)) return;
 
     selectedLanguage.value = code;
     await settingsBox.put('app_language', code);
+    await Get.updateLocale(Locale(code));
   }
 
   Future<void> addCustomCurrency(String currency) async {

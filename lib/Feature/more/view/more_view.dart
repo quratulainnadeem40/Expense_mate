@@ -21,7 +21,7 @@ class MoreView extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'More',
+          'More'.tr,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: isDarkMode ? Colors.white : Colors.black87,
@@ -39,8 +39,8 @@ class MoreView extends StatelessWidget {
             context: context,
             icon: Icons.account_balance_wallet_rounded,
             iconColor: const Color(0xFF2B82FB),
-            title: 'Wallets',
-            subtitle: 'Manage your cash, bank and other wallets',
+            title: 'Wallets'.tr,
+            subtitle: 'Manage your cash, bank and other wallets'.tr,
             onTap: () => Get.to(
               () => const WalletsView(),
               binding: WalletsBinding(),
@@ -51,8 +51,8 @@ class MoreView extends StatelessWidget {
             context: context,
             icon: Icons.notifications_active_rounded,
             iconColor: const Color(0xFF9C27B0),
-            title: 'Bills & Reminders',
-            subtitle: 'Manage upcoming bills and reminders',
+            title: 'Bills & Reminders'.tr,
+            subtitle: 'Manage upcoming bills and reminders'.tr,
             onTap: () => Get.to(
               () => const BillsRemindersView(),
               binding: BillsRemindersBinding(),
@@ -63,8 +63,8 @@ class MoreView extends StatelessWidget {
             context: context,
             icon: Icons.settings_rounded,
             iconColor: const Color(0xFF607D8B),
-            title: 'Settings',
-            subtitle: 'Manage app preferences and settings',
+            title: 'Settings'.tr,
+            subtitle: 'Manage app preferences and settings'.tr,
             onTap: () => Get.to(
               () => const SettingsView(),
               binding: SettingsBinding(),

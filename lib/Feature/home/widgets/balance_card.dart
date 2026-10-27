@@ -40,9 +40,9 @@ class BalanceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Total Balance',
+                  'Total Balance'.tr,
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ),
@@ -95,13 +95,13 @@ class BalanceCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildInfoItem(
-                'Income',
+                'Income'.tr,
                 totalIncome,
                 Colors.green,
                 settingsController,
               ),
               _buildInfoItem(
-                'Expense',
+                'Expense'.tr,
                 totalExpense,
                 AppColors.expenseRed,
                 settingsController,
@@ -125,7 +125,7 @@ class BalanceCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+          title.tr,
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         const SizedBox(height: 4),

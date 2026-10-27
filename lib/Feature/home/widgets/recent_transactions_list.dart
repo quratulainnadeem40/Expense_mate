@@ -13,10 +13,13 @@ class RecentTransactionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (transactions.isEmpty) {
-        return const Center(
+        return Center(
           child: Padding(
             padding: EdgeInsets.all(20.0),
-            child: Text('No transactions yet.', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'No transactions yet.'.tr,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
         );
       }
@@ -34,8 +37,8 @@ class RecentTransactionsList extends StatelessWidget {
                 isIncome ? Icons.arrow_downward : Icons.arrow_upward,
                 color: isIncome ? Colors.green : Colors.red,
               ),
-              title: Text(tx['title'] ?? 'Transaction'),
-              subtitle: Text(tx['category'] ?? 'General'),
+              title: Text(tx['title'] ?? 'Transaction'.tr),
+              subtitle: Text(tx['category'] ?? 'General'.tr),
               trailing: Text(
                 '${isIncome ? '+' : '-'}\$${(tx['amount'] ?? 0.0).toStringAsFixed(2)}',
                 style: TextStyle(

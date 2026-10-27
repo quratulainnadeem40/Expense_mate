@@ -194,7 +194,25 @@ class _CategoriesViewState extends State<CategoriesView>
   }
 
   String _formatCycleDate(DateTime date) =>
-      DateFormat('d MMM yyyy').format(date);
+      '${DateFormat('d').format(date)} '
+      '${DateFormat('MMM').format(date).tr} ${date.year}';
+
+  String _localizedCategoryName(String name) {
+    switch (name.trim().toLowerCase()) {
+      case 'education':
+        return 'Education'.tr;
+      case 'food':
+        return 'Food'.tr;
+      case 'bills':
+        return 'Bills'.tr;
+      case 'transport':
+        return 'Transport'.tr;
+      case 'health':
+        return 'Health'.tr;
+      default:
+        return name.tr;
+    }
+  }
 
   Widget _buildCategoryType({
     required String label,
@@ -278,7 +296,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Delete category?'),
+        title: Text('Delete category?'.tr),
         content: Text(
           categoryNames.length == 1
               ? hasLinkedData
@@ -291,14 +309,14 @@ class _CategoriesViewState extends State<CategoriesView>
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFE53935),
             ),
             onPressed: () => Get.back(result: true),
-            child: const Text('Delete'),
+            child: Text('Delete'.tr),
           ),
         ],
       ),
@@ -383,14 +401,14 @@ class _CategoriesViewState extends State<CategoriesView>
     final endDate = period.end;
 
     final message = automatic
-        ? 'Transactions are present. Category totals will be tracked from '
-              '${_formatCycleDate(startDate)} to ${_formatCycleDate(endDate)} '
-              'and will start a new cycle automatically on day $startDay. '
-              'Your transactions and history will not be deleted.'
-        : 'This will start a new category tracking cycle today, '
-              '${_formatCycleDate(startDate)}. Current category totals will '
-              'start from zero. Transactions and reports history will remain '
-              'available and nothing will be deleted.';
+        ? 'Transactions are present. Category totals will be tracked from @start to @end and will start a new cycle automatically on day @day. Your transactions and history will not be deleted.'
+              .trParams({
+                'start': _formatCycleDate(startDate),
+                'end': _formatCycleDate(endDate),
+                'day': '$startDay',
+              })
+        : 'This will start a new category tracking cycle today, @start. Current category totals will start from zero. Transactions and reports history will remain available and nothing will be deleted.'
+              .trParams({'start': _formatCycleDate(startDate)});
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -398,7 +416,7 @@ class _CategoriesViewState extends State<CategoriesView>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
-          automatic ? 'Confirm category cycle' : 'Reset category totals?',
+          (automatic ? 'Confirm category cycle' : 'Reset category totals?').tr,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         ),
         content: Text(
@@ -408,11 +426,11 @@ class _CategoriesViewState extends State<CategoriesView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(automatic ? 'Confirm' : 'Reset totals'),
+            child: Text((automatic ? 'Confirm' : 'Reset totals').tr),
           ),
         ],
       ),
@@ -538,7 +556,7 @@ class _CategoriesViewState extends State<CategoriesView>
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: IconButton(
-                                  tooltip: 'Close',
+                                  tooltip: 'Close'.tr,
                                   visualDensity: VisualDensity.compact,
                                   onPressed: () =>
                                       Navigator.of(sheetContext).pop(),
@@ -555,7 +573,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Set Up Your Category Cycle',
+                          'Set Up Your Category Cycle'.tr,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -566,7 +584,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Choose when your monthly category tracking period should start.',
+                          'Choose when your monthly category tracking period should start.'
+                              .tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark ? Colors.white70 : Colors.black54,
@@ -574,7 +593,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          'Cycle Start Day',
+                          'Cycle Start Day'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -640,7 +659,7 @@ class _CategoriesViewState extends State<CategoriesView>
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            'Cycle: ${_formatCycleDate(previewPeriod.start)} – '
+                            '${'Cycle:'.tr} ${_formatCycleDate(previewPeriod.start)} – '
                             '${_formatCycleDate(previewPeriod.end)}',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
@@ -652,7 +671,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          'Category Reset Mode',
+                          'Category Reset Mode'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -690,7 +709,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      auto ? 'Automatic' : 'Manual',
+                                      (auto ? 'Automatic' : 'Manual').tr,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: active
@@ -709,8 +728,10 @@ class _CategoriesViewState extends State<CategoriesView>
                         const SizedBox(height: 14),
                         Text(
                           automatic
-                              ? 'Category totals roll over automatically on day $day each month. Your transactions remain saved.'
-                              : 'Reset category totals whenever you choose. Your transactions remain saved.',
+                              ? 'Category totals roll over automatically on day @day each month. Your transactions remain saved.'
+                                    .trParams({'day': '$day'})
+                              : 'Reset category totals whenever you choose. Your transactions remain saved.'
+                                    .tr,
                           style: TextStyle(
                             fontSize: 13.5,
                             height: 1.5,
@@ -737,8 +758,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text(
-                                'Reset Category Totals',
+                              child: Text(
+                                'Reset Category Totals'.tr,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -766,8 +787,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Save Category Cycle',
+                            child: Text(
+                              'Save Category Cycle'.tr,
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -1206,8 +1227,8 @@ class _CategoriesViewState extends State<CategoriesView>
             children: [
               Text(
                 isSelectionMode
-                    ? '${selectedCategoryIds.length} selected'
-                    : 'Categories',
+                    ? '${selectedCategoryIds.length} ${'selected'.tr}'
+                    : 'Categories'.tr,
                 style: AppTextStyles.headingMedium(
                   isDark,
                 ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
@@ -1229,7 +1250,7 @@ class _CategoriesViewState extends State<CategoriesView>
           actions: [
             if (isSelectionMode)
               IconButton(
-                tooltip: 'Delete selected categories',
+                tooltip: 'Delete selected categories'.tr,
                 onPressed: selectedCategoryIds.isEmpty
                     ? null
                     : _deleteSelectedCategories,
@@ -1245,15 +1266,15 @@ class _CategoriesViewState extends State<CategoriesView>
                         isSelectionMode = true;
                       });
                     },
-                    child: const Text('Select'),
+                    child: Text('Select'.tr),
                   ),
                   IconButton(
-                    tooltip: 'Category cycle settings',
+                    tooltip: 'Category cycle settings'.tr,
                     onPressed: _showCycleSetupSheet,
                     icon: const Icon(Icons.calendar_month_rounded),
                   ),
                   IconButton(
-                    tooltip: 'Open navigation menu',
+                    tooltip: 'Open navigation menu'.tr,
                     icon: Icon(
                       Icons.menu_rounded,
                       color: isDark ? Colors.white : const Color(0xFF2E7D32),
@@ -1289,9 +1310,9 @@ class _CategoriesViewState extends State<CategoriesView>
                     .toList();
 
                 if (controller.categoryList.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'No categories found',
+                      'No categories found'.tr,
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   );
@@ -1431,7 +1452,9 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                           children: [
                                             Text(
-                                              category.name,
+                                              _localizedCategoryName(
+                                                category.name,
+                                              ),
                                               style:
                                                   AppTextStyles.bodyLarge(
                                                     isDark,
@@ -1451,7 +1474,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                                 if (transactionCounts['income']! >
                                                     0)
                                                   _buildCategoryType(
-                                                    label: 'Income',
+                                                    label: 'Income'.tr,
                                                     color: const Color(
                                                       0xFF2E9D59,
                                                     ),
@@ -1460,7 +1483,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                                 if (transactionCounts['expense']! >
                                                     0)
                                                   _buildCategoryType(
-                                                    label: 'Expense',
+                                                    label: 'Expense'.tr,
                                                     color: const Color(
                                                       0xFFE25555,
                                                     ),
