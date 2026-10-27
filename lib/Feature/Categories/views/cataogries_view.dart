@@ -169,7 +169,7 @@ class _CategoriesViewState extends State<CategoriesView>
       DateFormat('d MMM yyyy').format(date);
 
   String _formatCategoryAmount(double amount) {
-    return '\${Formatters.code} \${NumberFormat('#,##0.00', 'en_US').format(amount)}';
+    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
   }
 
   Widget _buildCategoryAmount({

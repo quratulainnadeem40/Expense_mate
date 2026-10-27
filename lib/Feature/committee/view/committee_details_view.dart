@@ -442,7 +442,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                               decimal: true,
                             ),
                             style: TextStyle(color: primaryText),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Monthly Contribution',
                               prefixText: '${Formatters.code} ',
                               border: OutlineInputBorder(),
@@ -866,7 +866,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                         decimal: true,
                       ),
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Monthly Contribution',
                         prefixText: '${Formatters.code} ',
                         border: OutlineInputBorder(),
@@ -942,7 +942,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     return;
                   }
 
-                  if (isEdit && editIndex != null) {
+                  if (isEdit) {
                     final bool updated = committeeController.updateMember(
                       index: editIndex,
                       name: name,

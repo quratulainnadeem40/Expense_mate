@@ -30,11 +30,9 @@ class LocalTransactions extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version =>
-      integer().withDefault(const Constant(1))();
+  IntColumn get version => integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -51,24 +49,19 @@ class LocalWallets extends Table {
 
   TextColumn get name => text()();
 
-  RealColumn get balance =>
-      real().withDefault(const Constant(0.0))();
+  RealColumn get balance => real().withDefault(const Constant(0.0))();
 
-  TextColumn get currency =>
-      text().withDefault(const Constant('PKR'))();
+  TextColumn get currency => text().withDefault(const Constant('PKR'))();
 
-  TextColumn get type =>
-      text().withDefault(const Constant('Cash'))();
+  TextColumn get type => text().withDefault(const Constant('Cash'))();
 
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version =>
-      integer().withDefault(const Constant(1))();
+  IntColumn get version => integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -95,11 +88,9 @@ class LocalCategories extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version =>
-      integer().withDefault(const Constant(1))();
+  IntColumn get version => integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -118,11 +109,9 @@ class LocalBudgets extends Table {
 
   TextColumn get name => text()();
 
-  RealColumn get amount =>
-      real().withDefault(const Constant(0.0))();
+  RealColumn get amount => real().withDefault(const Constant(0.0))();
 
-  RealColumn get spent =>
-      real().withDefault(const Constant(0.0))();
+  RealColumn get spent => real().withDefault(const Constant(0.0))();
 
   DateTimeColumn get startDate => dateTime()();
 
@@ -132,11 +121,80 @@ class LocalBudgets extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version =>
-      integer().withDefault(const Constant(1))();
+  IntColumn get version => integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// ------------------------------------------------------------
+/// COMMITTEES
+/// ------------------------------------------------------------
+
+class LocalCommittees extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get userId => text()();
+
+  TextColumn get name => text()();
+
+  RealColumn get monthlyContribution =>
+      real().withDefault(const Constant(0.0))();
+
+  IntColumn get totalMembers => integer().withDefault(const Constant(0))();
+
+  DateTimeColumn get startDate => dateTime()();
+
+  IntColumn get durationMonths => integer().withDefault(const Constant(0))();
+
+  DateTimeColumn get dueDate => dateTime()();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  IntColumn get version => integer().withDefault(const Constant(1))();
+
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// ------------------------------------------------------------
+/// UDHAAR ENTRIES
+/// ------------------------------------------------------------
+
+class LocalUdhaarEntries extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get userId => text()();
+
+  TextColumn get personName => text()();
+
+  RealColumn get amount => real().withDefault(const Constant(0.0))();
+
+  BoolColumn get isLent => boolean()();
+
+  DateTimeColumn get entryDate => dateTime()();
+
+  TextColumn get phone => text().withDefault(const Constant(''))();
+
+  TextColumn get note => text().withDefault(const Constant(''))();
+
+  BoolColumn get isSettled => boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get settledOn => dateTime().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  IntColumn get version => integer().withDefault(const Constant(1))();
+
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -159,8 +217,7 @@ class SyncQueue extends Table {
 
   TextColumn get payload => text()();
 
-  IntColumn get retryCount =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
 
   TextColumn get lastError => text().nullable()();
 
@@ -170,8 +227,8 @@ class SyncQueue extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {userId, entityTable, recordId},
-      ];
+    {userId, entityTable, recordId},
+  ];
 }
 
 /// ------------------------------------------------------------
@@ -184,6 +241,8 @@ class SyncQueue extends Table {
     LocalWallets,
     LocalCategories,
     LocalBudgets,
+    LocalCommittees,
+    LocalUdhaarEntries,
     SyncQueue,
   ],
 )
@@ -202,10 +261,16 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Version 3:
   /// Added LocalBudgets
+  ///
+  /// Version 4:
+  /// Added LocalCommittees
+  ///
+  /// Version 5:
+  /// Added LocalUdhaarEntries
   /// ----------------------------------------------------------
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -229,6 +294,20 @@ class AppDatabase extends _$AppDatabase {
         if (from < 3) {
           await m.createTable(localBudgets);
         }
+
+        /// -----------------------------------------------
+        /// VERSION 3 → VERSION 4
+        /// -----------------------------------------------
+        if (from < 4) {
+          await m.createTable(localCommittees);
+        }
+
+        /// -----------------------------------------------
+        /// VERSION 4 → VERSION 5
+        /// -----------------------------------------------
+        if (from < 5) {
+          await m.createTable(localUdhaarEntries);
+        }
       },
     );
   }
@@ -237,9 +316,7 @@ class AppDatabase extends _$AppDatabase {
   /// MIGRATION: VERSION 1 → VERSION 2
   /// ----------------------------------------------------------
 
-  Future<void> _migrateSyncQueueToVersion2(
-    Migrator m,
-  ) async {
+  Future<void> _migrateSyncQueueToVersion2(Migrator m) async {
     await customStatement(
       'ALTER TABLE sync_queue '
       'RENAME TO sync_queue_old',
@@ -292,9 +369,7 @@ class AppDatabase extends _$AppDatabase {
       FROM sync_queue_old
     ''');
 
-    await customStatement(
-      'DROP TABLE sync_queue_old',
-    );
+    await customStatement('DROP TABLE sync_queue_old');
   }
 }
 
