@@ -1,17 +1,7 @@
-import 'dart:async';
-
-import 'package:drift/drift.dart' as drift;
-import 'package:expense_mate/Core/Database/app_database.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../Core/constants/app_keys.dart';
-import '../../../Core/Database/database_provider.dart';
-import '../../../Core/Database/repositories/udhaar_local_repository.dart';
-import '../../../Core/Database/repositories/sync_queue_repository.dart';
-import '../../../Core/Database/sync/sync_manager.dart';
 import '../model/udhaar_model.dart';
 
 enum UdhaarFilter { all, toReceive, toPay, settled }
@@ -25,344 +15,44 @@ class UdhaarController extends GetxController {
 
   Box get _box => Hive.box(AppKeys.udhaarBox);
 
-  late final UdhaarLocalRepository _local;
-  late final SyncQueueRepository _queue;
-  Future<void> _loadFuture = Future<void>.value();
-  int _entriesRevision = 0;
-
-  final SupabaseClient _supabase = Supabase.instance.client;
-
-  String? get _userId => _supabase.auth.currentUser?.id;
-
   @override
   void onInit() {
     super.onInit();
-
-    final database = DatabaseProvider.instance.database;
-
-    _local = UdhaarLocalRepository(database);
-    _queue = SyncQueueRepository(database);
-
-    _loadFuture = load();
-    unawaited(_loadFuture);
+    load();
   }
 
   // ================================================================
-  // LOAD AND MIGRATE
+  // STORAGE
   // ================================================================
 
-  Future<void> load() async {
-    if (!Hive.isBoxOpen(AppKeys.udhaarBox)) {
-      return;
-    }
+  void load() {
+    if (!Hive.isBoxOpen(AppKeys.udhaarBox)) return;
+
+    final stored = _box.get(_entriesKey);
+    if (stored is! List) return;
 
     try {
-      final stored = _box.get(_entriesKey);
-
-      final hiveEntries = stored is List
-          ? stored
-                .whereType<Map>()
-                .map(
-                  (item) =>
-                      UdhaarEntry.fromMap(Map<String, dynamic>.from(item)),
-                )
-                .toList()
-          : <UdhaarEntry>[];
-
-      final userId = _userId;
-
-      // Without a signed-in user, retain the existing
-      // Hive-based experience.
-      if (userId == null) {
-        entries.assignAll(hiveEntries);
-        _sort();
-        return;
-      }
-
-      // First migrate existing Hive records into Drift.
-      await _migrateHiveEntries(userId: userId, hiveEntries: hiveEntries);
-
-      // Drift is the source of truth for a signed-in user.
-      final localEntries = await _local.getEntries(userId);
-
-      entries.assignAll(localEntries.map(_fromLocal).toList());
-
-      _sort();
-
-      // Refresh from Supabase and reload Drift afterward.
-      // Do not block the initial UI on network access.
-      unawaited(_refreshFromCloud());
-    } catch (e, stackTrace) {
-      // Keep the old data visible if local migration fails.
-      debugPrint('Udhaar load failed: $e');
-      debugPrint('$stackTrace');
-
-      try {
-        final stored = _box.get(_entriesKey);
-
-        if (stored is List) {
-          entries.assignAll(
-            stored
-                .whereType<Map>()
-                .map(
-                  (item) =>
-                      UdhaarEntry.fromMap(Map<String, dynamic>.from(item)),
-                )
-                .toList(),
-          );
-
-          _sort();
-        }
-      } catch (fallbackError) {
-        debugPrint('Udhaar Hive fallback failed: $fallbackError');
-      }
-    }
-  }
-
-  Future<void> _migrateHiveEntries({
-    required String userId,
-    required List<UdhaarEntry> hiveEntries,
-  }) async {
-    final marker = 'udhaar_migrated_user_$userId';
-
-    // A successful migration is performed once per user.
-    if (_box.get(marker) == true) {
-      return;
-    }
-
-    for (final entry in hiveEntries) {
-      final existing = await _local.getEntryById(entry.id);
-
-      // Do not overwrite an existing Drift record.
-      if (existing != null) {
-        continue;
-      }
-
-      final now = DateTime.now();
-
-      final companion = _toCompanion(
-        entry: entry,
-        userId: userId,
-        createdAt: now,
-        updatedAt: now,
+      entries.assignAll(
+        stored
+            .map((e) => UdhaarEntry.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList(),
       );
-
-      await _local.insertEntry(companion);
-
-      // Preserve the original Hive ID.
-      await _enqueue(
-        userId: userId,
-        entry: entry,
-        operation: 'insert',
-        createdAt: now,
-        updatedAt: now,
-      );
-    }
-
-    // Set the marker only after every entry has been processed.
-    await _box.put(marker, true);
-  }
-
-  Future<void> _refreshFromCloud() async {
-    if (_userId == null) return;
-    final revisionAtStart = _entriesRevision;
-
-    try {
-      if (Get.isRegistered<SyncManager>()) {
-        await Get.find<SyncManager>().sync();
-      }
-
-      final userId = _userId;
-
-      // The account might have changed during the sync.
-      if (userId == null) return;
-
-      final localEntries = await _local.getEntries(userId);
-
-      if (revisionAtStart != _entriesRevision) return;
-
-      entries.assignAll(localEntries.map(_fromLocal).toList());
-
       _sort();
-      await _save();
-    } catch (e) {
-      debugPrint('Udhaar cloud refresh failed: $e');
+    } catch (_) {
+      entries.clear();
     }
   }
-
-  // ================================================================
-  // HIVE BACKUP
-  // ================================================================
 
   Future<void> _save() async {
-    if (!Hive.isBoxOpen(AppKeys.udhaarBox)) {
-      return;
-    }
-
-    await _box.put(_entriesKey, entries.map((entry) => entry.toMap()).toList());
+    if (!Hive.isBoxOpen(AppKeys.udhaarBox)) return;
+    await _box.put(_entriesKey, entries.map((e) => e.toMap()).toList());
   }
-
-  // ================================================================
-  // DRIFT MAPPING
-  // ================================================================
-
-  UdhaarEntry _fromLocal(dynamic row) {
-    return UdhaarEntry(
-      id: row.id.toString(),
-      personName: row.personName.toString(),
-      amount: (row.amount as num).toDouble(),
-      isLent: row.isLent as bool,
-      date: row.entryDate as DateTime,
-      phone: row.phone?.toString() ?? '',
-      note: row.note?.toString() ?? '',
-      isSettled: row.isSettled as bool,
-      settledOn: row.settledOn as DateTime?,
-    );
-  }
-
-  LocalUdhaarEntriesCompanion _toCompanion({
-    required UdhaarEntry entry,
-    required String userId,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) {
-    return LocalUdhaarEntriesCompanion(
-      id: drift.Value(entry.id),
-      userId: drift.Value(userId),
-      personName: drift.Value(entry.personName),
-      phone: drift.Value(entry.phone),
-      amount: drift.Value(entry.amount),
-      isLent: drift.Value(entry.isLent),
-      entryDate: drift.Value(entry.date),
-      note: drift.Value(entry.note),
-      isSettled: drift.Value(entry.isSettled),
-      settledOn: drift.Value(entry.settledOn),
-      createdAt: drift.Value(createdAt),
-      updatedAt: drift.Value(updatedAt),
-      version: const drift.Value(1),
-      isDeleted: const drift.Value(false),
-    );
-  }
-
-  Map<String, dynamic> _toRemotePayload({
-    required UdhaarEntry entry,
-    required String userId,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) {
-    return {
-      'id': entry.id,
-      'user_id': userId,
-      'person_name': entry.personName,
-      'phone': entry.phone,
-      'amount': entry.amount,
-      'is_lent': entry.isLent,
-      'entry_date': entry.date.toIso8601String(),
-      'note': entry.note,
-      'is_settled': entry.isSettled,
-      'settled_on': entry.settledOn?.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-    };
-  }
-
-  // ================================================================
-  // SAVE LOCALLY AND QUEUE SYNC
-  // ================================================================
-
-  Future<void> _persistEntry(
-    UdhaarEntry entry, {
-    required String operation,
-  }) async {
-    final userId = _userId;
-
-    // Signed-out changes remain available in Hive.
-    // They can be migrated when the user signs in.
-    if (userId == null) {
-      await _save();
-      return;
-    }
-
-    final now = DateTime.now();
-    final existing = await _local.getEntryById(entry.id);
-
-    if (existing != null && existing.userId != userId) {
-      throw StateError('This Udhaar entry belongs to another account.');
-    }
-
-    final createdAt = existing?.createdAt ?? now;
-
-    final companion = _toCompanion(
-      entry: entry,
-      userId: userId,
-      createdAt: createdAt,
-      updatedAt: now,
-    );
-
-    if (existing == null) {
-      await _local.insertEntry(companion);
-    } else {
-      await _local.updateEntry(entry.id, companion);
-    }
-
-    await _enqueue(
-      userId: userId,
-      entry: entry,
-      operation: existing == null ? 'insert' : operation,
-      createdAt: createdAt,
-      updatedAt: now,
-    );
-
-    // Hive remains a backup for backward compatibility.
-    await _save();
-
-    // Attempt immediate sync if SyncManager is registered.
-    _triggerSync();
-  }
-
-  Future<void> _enqueue({
-    required String userId,
-    required UdhaarEntry entry,
-    required String operation,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) async {
-    await _queue.enqueue(
-      userId: userId,
-      entityTable: 'udhaar_entries',
-      recordId: entry.id,
-      operation: operation,
-      payload: _toRemotePayload(
-        entry: entry,
-        userId: userId,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      ),
-    );
-  }
-
-  void _triggerSync() {
-    if (!Get.isRegistered<SyncManager>()) {
-      return;
-    }
-
-    unawaited(
-      Get.find<SyncManager>().sync().catchError((Object error) {
-        debugPrint('Udhaar sync deferred: $error');
-      }),
-    );
-  }
-
-  // ================================================================
-  // SORTING
-  // ================================================================
 
   void _sort() {
+    // Open items first, then newest. A settled record sinking to the
+    // bottom is what you want when the list gets long.
     entries.sort((a, b) {
-      if (a.isSettled != b.isSettled) {
-        return a.isSettled ? 1 : -1;
-      }
-
+      if (a.isSettled != b.isSettled) return a.isSettled ? 1 : -1;
       return b.date.compareTo(a.date);
     });
   }
@@ -371,10 +61,12 @@ class UdhaarController extends GetxController {
   // TOTALS
   // ================================================================
 
+  /// Money that should come back to you.
   double get totalToReceive => entries
       .where((e) => !e.isSettled && e.isLent)
       .fold(0.0, (sum, e) => sum + e.amount);
 
+  /// Money you still have to return.
   double get totalToPay => entries
       .where((e) => !e.isSettled && !e.isLent)
       .fold(0.0, (sum, e) => sum + e.amount);
@@ -384,16 +76,17 @@ class UdhaarController extends GetxController {
   int get openCount => entries.where((e) => !e.isSettled).length;
 
   // ================================================================
-  // PEOPLE
+  // GROUPED BY PERSON
   // ================================================================
 
+  /// Entries rolled up per person, because what you actually want to
+  /// know is "where do I stand with Ali", not every single line.
   List<UdhaarPerson> get people {
     final grouped = <String, List<UdhaarEntry>>{};
     final phones = <String, String>{};
 
     for (final entry in entries) {
       final key = entry.personName.trim().toLowerCase();
-
       if (key.isEmpty) continue;
 
       grouped.putIfAbsent(key, () => []).add(entry);
@@ -412,10 +105,8 @@ class UdhaarController extends GetxController {
     }).toList();
 
     result.sort((a, b) {
-      if (a.isClear != b.isClear) {
-        return a.isClear ? 1 : -1;
-      }
-
+      // Anything still open outranks a cleared person.
+      if (a.isClear != b.isClear) return a.isClear ? 1 : -1;
       return b.lastActivity.compareTo(a.lastActivity);
     });
 
@@ -445,6 +136,7 @@ class UdhaarController extends GetxController {
     }).toList();
   }
 
+  /// How many people sit under each filter, for the chip labels.
   int countFor(UdhaarFilter value) {
     final all = people;
 
@@ -460,16 +152,16 @@ class UdhaarController extends GetxController {
     }
   }
 
+  /// Names already on record, for the suggestions in the add sheet.
   List<String> get knownNames =>
       people.map((p) => p.name).where((n) => n.isNotEmpty).toList();
 
+  /// Last phone saved for a person, so it is not typed again.
   String phoneFor(String personName) {
     final key = personName.trim().toLowerCase();
 
     for (final person in people) {
-      if (person.name.trim().toLowerCase() == key) {
-        return person.phone;
-      }
+      if (person.name.trim().toLowerCase() == key) return person.phone;
     }
 
     return '';
@@ -484,7 +176,7 @@ class UdhaarController extends GetxController {
   }
 
   // ================================================================
-  // ADD
+  // ACTIONS
   // ================================================================
 
   Future<void> addEntry({
@@ -495,216 +187,76 @@ class UdhaarController extends GetxController {
     String phone = '',
     String note = '',
   }) async {
-    await _loadFuture;
-
-    final entry = UdhaarEntry(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      personName: personName.trim(),
-      amount: amount,
-      isLent: isLent,
-      date: date,
-      phone: phone.trim(),
-      note: note.trim(),
+    entries.add(
+      UdhaarEntry(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        personName: personName.trim(),
+        amount: amount,
+        isLent: isLent,
+        date: date,
+        phone: phone.trim(),
+        note: note.trim(),
+      ),
     );
 
-    // Show the change immediately.
-    entries.add(entry);
-    _entriesRevision++;
     _sort();
-
-    try {
-      await _persistEntry(entry, operation: 'insert');
-    } catch (e, stackTrace) {
-      entries.removeWhere((item) => item.id == entry.id);
-      _entriesRevision++;
-      _sort();
-      try {
-        await _save();
-      } catch (saveError, saveStackTrace) {
-        debugPrint('Udhaar rollback save failed: $saveError');
-        debugPrint('$saveStackTrace');
-      }
-      debugPrint('Udhaar entry save failed: $e');
-      debugPrint('$stackTrace');
-      rethrow;
-    }
+    await _save();
   }
-
-  // ================================================================
-  // UPDATE
-  // ================================================================
 
   Future<void> updateEntry(UdhaarEntry updated) async {
     final index = entries.indexWhere((e) => e.id == updated.id);
-
     if (index == -1) return;
 
-    final previous = entries[index];
-
     entries[index] = updated;
-    _entriesRevision++;
     _sort();
-
-    try {
-      await _persistEntry(updated, operation: 'update');
-    } catch (e) {
-      entries[indexWhere(updated.id)] = previous;
-      _entriesRevision++;
-      _sort();
-      await _save();
-      rethrow;
-    }
+    await _save();
   }
-
-  int indexWhere(String id) => entries.indexWhere((entry) => entry.id == id);
-
-  // ================================================================
-  // SETTLEMENT
-  // ================================================================
 
   Future<void> toggleSettled(String id) async {
     final index = entries.indexWhere((e) => e.id == id);
-
     if (index == -1) return;
 
     final current = entries[index];
 
-    final updated = current.copyWith(
+    entries[index] = current.copyWith(
       isSettled: !current.isSettled,
       settledOn: current.isSettled ? null : DateTime.now(),
       clearSettledOn: current.isSettled,
     );
 
-    entries[index] = updated;
-    _entriesRevision++;
     _sort();
-
-    try {
-      await _persistEntry(updated, operation: 'update');
-    } catch (e) {
-      entries.add(current);
-      entries.removeWhere(
-        (entry) => entry.id == updated.id && entry != current,
-      );
-      _entriesRevision++;
-      _sort();
-      await _save();
-      rethrow;
-    }
+    await _save();
   }
 
+  /// Closes everything still open with one person in a single step.
   Future<void> settlePerson(String personName) async {
     final key = personName.trim().toLowerCase();
     final now = DateTime.now();
-
-    final previous = <String, UdhaarEntry>{};
-    final updatedEntries = <UdhaarEntry>[];
 
     for (var i = 0; i < entries.length; i++) {
       final entry = entries[i];
 
       if (entry.personName.trim().toLowerCase() == key && !entry.isSettled) {
-        previous[entry.id] = entry;
-
-        final updated = entry.copyWith(isSettled: true, settledOn: now);
-
-        entries[i] = updated;
-        updatedEntries.add(updated);
+        entries[i] = entry.copyWith(isSettled: true, settledOn: now);
       }
     }
 
-    if (updatedEntries.isNotEmpty) {
-      _entriesRevision++;
-    }
     _sort();
-
-    try {
-      for (final entry in updatedEntries) {
-        await _persistEntry(entry, operation: 'update');
-      }
-    } catch (e) {
-      for (var i = 0; i < entries.length; i++) {
-        final old = previous[entries[i].id];
-
-        if (old != null) {
-          entries[i] = old;
-        }
-      }
-
-      _entriesRevision++;
-      _sort();
-      await _save();
-      rethrow;
-    }
+    await _save();
   }
-
-  // ================================================================
-  // DELETE
-  // ================================================================
 
   Future<void> deleteEntry(String id) async {
-    final index = entries.indexWhere((e) => e.id == id);
-
-    if (index == -1) return;
-
-    final entry = entries[index];
-    final userId = _userId;
-
-    if (userId == null) {
-      entries.removeAt(index);
-      _entriesRevision++;
-      await _save();
-      return;
-    }
-
-    // Queue the delete before removing the local record.
-    // This keeps the original payload available for sync.
-    final now = DateTime.now();
-
-    await _enqueue(
-      userId: userId,
-      entry: entry,
-      operation: 'delete',
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    await _local.softDeleteEntry(id);
-
-    entries.removeWhere((item) => item.id == id);
-    _entriesRevision++;
+    entries.removeWhere((e) => e.id == id);
     await _save();
-
-    _triggerSync();
-  }
-
-  Future<void> deleteEntries(Iterable<String> ids) async {
-    for (final id in ids.toSet()) {
-      await deleteEntry(id);
-    }
   }
 
   Future<void> deletePerson(String personName) async {
     final key = personName.trim().toLowerCase();
-
-    final personEntries = entries
-        .where((e) => e.personName.trim().toLowerCase() == key)
-        .toList();
-
-    for (final entry in personEntries) {
-      await deleteEntry(entry.id);
-    }
+    entries.removeWhere((e) => e.personName.trim().toLowerCase() == key);
+    await _save();
   }
 
-  // ================================================================
-  // FILTER AND SEARCH
-  // ================================================================
+  void setFilter(UdhaarFilter value) => filter.value = value;
 
-  void setFilter(UdhaarFilter value) {
-    filter.value = value;
-  }
-
-  void setSearch(String value) {
-    searchQuery.value = value;
-  }
+  void setSearch(String value) => searchQuery.value = value;
 }

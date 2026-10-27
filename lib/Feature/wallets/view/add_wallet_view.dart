@@ -2,7 +2,6 @@
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../controller/wallets_controller.dart';
@@ -86,9 +85,8 @@ class _AddWalletViewState extends State<AddWalletView> {
       return;
     }
 
-    // Remove commas before converting the amount to a number.
     final balance = double.tryParse(
-      balanceController.text.trim().replaceAll(',', ''),
+      balanceController.text.trim(),
     );
 
     if (balance == null) {
@@ -173,9 +171,6 @@ class _AddWalletViewState extends State<AddWalletView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [
-                    IndianAmountFormatter(),
-                  ],
                   decoration: const InputDecoration(
                     labelText: 'Initial Balance',
                     hintText: '0.00',
@@ -187,9 +182,7 @@ class _AddWalletViewState extends State<AddWalletView> {
                       return 'Please enter balance';
                     }
 
-                    final amount = double.tryParse(
-                      value.trim().replaceAll(',', ''),
-                    );
+                    final amount = double.tryParse(value.trim());
 
                     if (amount == null) {
                       return 'Please enter a valid amount';
@@ -282,96 +275,3 @@ class _AddWalletViewState extends State<AddWalletView> {
   }
 }
 
-/// Automatically adds commas using the Pakistani/Indian number format.
-/// Examples: 10000 -> 10,000; 1000000 -> 10,00,000.
-class IndianAmountFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final rawText = newValue.text.replaceAll(',', '');
-
-    // Allow digits and a single decimal point only.
-    if (RegExp(r'[^0-9.]').hasMatch(rawText) ||
-        '.'.allMatches(rawText).length > 1) {
-      return oldValue;
-    }
-
-    if (rawText.isEmpty) {
-      return newValue.copyWith(
-        text: '',
-        selection: const TextSelection.collapsed(offset: 0),
-      );
-    }
-
-    final parts = rawText.split('.');
-    final integerPart = parts[0];
-    final decimalPart = parts.length > 1 ? parts[1] : null;
-
-    String formattedInteger = integerPart;
-
-    if (integerPart.length > 3) {
-      final lastThree = integerPart.substring(
-        integerPart.length - 3,
-      );
-
-      var remaining = integerPart.substring(
-        0,
-        integerPart.length - 3,
-      );
-
-      final groups = <String>[];
-
-      while (remaining.length > 2) {
-        groups.insert(
-          0,
-          remaining.substring(remaining.length - 2),
-        );
-
-        remaining = remaining.substring(
-          0,
-          remaining.length - 2,
-        );
-      }
-
-      if (remaining.isNotEmpty) {
-        groups.insert(0, remaining);
-      }
-
-      formattedInteger = '${groups.join(',')},$lastThree';
-    }
-
-    var formattedText = formattedInteger;
-
-    if (decimalPart != null) {
-      formattedText += '.$decimalPart';
-    }
-
-    // Keep the cursor near its original logical position.
-    final oldCursor = newValue.selection.baseOffset
-        .clamp(0, newValue.text.length);
-
-    final logicalCursor = newValue.text
-        .substring(0, oldCursor)
-        .replaceAll(',', '')
-        .length;
-
-    var newCursor = 0;
-    var logicalCount = 0;
-
-    while (newCursor < formattedText.length &&
-        logicalCount < logicalCursor) {
-      if (formattedText[newCursor] != ',') {
-        logicalCount++;
-      }
-      newCursor++;
-    }
-
-    return TextEditingValue(
-      text: formattedText,
-      selection: TextSelection.collapsed(offset: newCursor),
-      composing: TextRange.empty,
-    );
-  }
-}

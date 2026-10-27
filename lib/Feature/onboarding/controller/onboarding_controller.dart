@@ -119,12 +119,7 @@ class OnboardingController extends GetxController {
 
   bool get isLastPage => pageIndex.value == pageCount - 1;
 
-  Future<void> setLanguage(String code) async {
-    selectedLanguage.value = code;
-    if (Get.isRegistered<SettingsController>()) {
-      await Get.find<SettingsController>().changeLanguage(code);
-    }
-  }
+  void setLanguage(String code) => selectedLanguage.value = code;
 
   void setCurrency(String code) => selectedCurrency.value = code;
 
@@ -149,7 +144,6 @@ class OnboardingController extends GetxController {
         ? Get.find<SettingsController>()
         : Get.put(SettingsController());
 
-    await settings.changeLanguage(selectedLanguage.value);
     await settings.changeCurrency(selectedCurrency.value);
   }
 }

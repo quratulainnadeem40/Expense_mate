@@ -78,6 +78,13 @@ class _MainScreenState extends State<MainScreen> {
     // Theme Colors
     const primaryGreen = Color(0xFF2EA44F);
 
+    final List<Widget> pages = [
+      const HomeScreen(),
+      TransactionsView(),
+      CategoriesView(),
+      ReportView(),
+    ];
+
     final isDark =
         Theme.of(context).brightness == Brightness.dark;
 
@@ -93,12 +100,7 @@ class _MainScreenState extends State<MainScreen> {
       body: Obx(
         () => IndexedStack(
           index: controller.currentIndex.value,
-          children: [
-            const HomeScreen(),
-            TransactionsView(),
-            CategoriesView(isActive: controller.currentIndex.value == 2),
-            ReportView(),
-          ],
+          children: pages,
         ),
       ),
 
@@ -172,7 +174,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     _buildNavItem(
                       icon: Icons.home_rounded,
-                      label: 'Home'.tr,
+                      label: 'Home',
                       index: 0,
                       controller: controller,
                       context: context,
@@ -180,7 +182,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     _buildNavItem(
                       icon: Icons.swap_horiz_rounded,
-                      label: 'Transactions'.tr,
+                      label: 'Transactions',
                       tourKey: TourKeys.transactionsTab,
                       index: 1,
                       controller: controller,
@@ -206,7 +208,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     _buildNavItem(
                       icon: Icons.category_rounded,
-                      label: 'Categories'.tr,
+                      label: 'Categories',
                       tourKey: TourKeys.categoriesTab,
                       index: 2,
                       controller: controller,
@@ -215,7 +217,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     _buildNavItem(
                       icon: Icons.bar_chart_rounded,
-                      label: 'Reports'.tr,
+                      label: 'Reports',
                       tourKey: TourKeys.reportsTab,
                       index: 3,
                       controller: controller,

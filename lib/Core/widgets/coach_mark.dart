@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../constants/app_keys.dart';
@@ -332,7 +331,7 @@ class _StepCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  step.title.tr,
+                  step.title,
                   style: TextStyle(
                     fontSize: 16.5,
                     fontWeight: FontWeight.w700,
@@ -354,7 +353,7 @@ class _StepCard extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            step.body.tr,
+            step.body,
             style: TextStyle(
               fontSize: 13.5,
               height: 1.5,
@@ -374,7 +373,7 @@ class _StepCard extends StatelessWidget {
                         isDark ? Colors.white60 : Colors.black54,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  child: Text('Skip'.tr),
+                  child: const Text('Skip'),
                 ),
 
               const Spacer(),
@@ -390,7 +389,7 @@ class _StepCard extends StatelessWidget {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                   ),
-                  child: Text('Back'.tr),
+                  child: const Text('Back'),
                 ),
 
               const SizedBox(width: 8),
@@ -406,7 +405,7 @@ class _StepCard extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 22),
                 ),
-                child: Text((isLast ? 'Got it' : 'Next').tr),
+                child: Text(isLast ? 'Got it' : 'Next'),
               ),
             ],
           ),

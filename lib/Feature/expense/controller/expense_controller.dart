@@ -1,3 +1,5 @@
+import '../../../Core/service/sound_service.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -302,6 +304,10 @@ class ExpenseController extends GetxController {
       }
 
       if (!success) return;
+
+      // Fired here, right after the record is confirmed saved, so the
+      // sound never plays for a transaction that failed.
+      unawaited(SoundService.instance.playSuccess());
 
       if (Get.isRegistered<HomeController>()) {
         Get.find<HomeController>().loadDashboardData();

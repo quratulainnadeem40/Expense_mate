@@ -40,7 +40,7 @@ class LoginView extends GetView<AuthController> {
 
               Center(
                 child: Text(
-                  'Welcome Back!'.tr,
+                  'Welcome Back!',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -53,7 +53,7 @@ class LoginView extends GetView<AuthController> {
 
               Center(
                 child: Text(
-                  'Login to continue to Expense Mate'.tr,
+                  'Login to continue to Expense Mate',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -65,7 +65,7 @@ class LoginView extends GetView<AuthController> {
               const SizedBox(height: 40),
 
               Text(
-                'Email'.tr,
+                'Email',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -77,7 +77,7 @@ class LoginView extends GetView<AuthController> {
 
               AuthTextField(
                 controller: controller.emailController,
-                hintText: 'Enter your email'.tr,
+                hintText: 'Enter your email',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -85,7 +85,7 @@ class LoginView extends GetView<AuthController> {
               const SizedBox(height: 20),
 
               Text(
-                'Password'.tr,
+                'Password',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -98,7 +98,7 @@ class LoginView extends GetView<AuthController> {
               Obx(
                 () => AuthTextField(
                   controller: controller.passwordController,
-                  hintText: 'Enter your password'.tr,
+                  hintText: 'Enter your password',
                   prefixIcon: Icons.lock_outline,
                   obscureText: controller.obscurePassword.value,
                   suffixIcon: IconButton(
@@ -121,8 +121,8 @@ class LoginView extends GetView<AuthController> {
                   onPressed: () {
                     Get.toNamed('/forgot-password');
                   },
-                  child: Text(
-                    'Forgot Password?'.tr,
+                  child: const Text(
+                    'Forgot Password?',
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -135,7 +135,7 @@ class LoginView extends GetView<AuthController> {
 
               Obx(
                 () => AuthButton(
-                  text: 'Login'.tr,
+                  text: 'Login',
                   isLoading: controller.isLoading.value,
                   onPressed: controller.login,
                 ),
@@ -147,7 +147,7 @@ class LoginView extends GetView<AuthController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Don't have an account?".tr,
+                    "Don't have an account?",
                     style: TextStyle(
                       color: isDark ? Colors.white70 : Colors.grey,
                     ),
@@ -156,8 +156,8 @@ class LoginView extends GetView<AuthController> {
                     onPressed: () {
                       Get.toNamed('/signup');
                     },
-                    child: Text(
-                      'Sign Up'.tr,
+                    child: const Text(
+                      'Sign Up',
                       style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,

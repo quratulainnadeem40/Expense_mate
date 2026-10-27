@@ -277,7 +277,7 @@ class _CommitteeViewState extends State<CommitteeView> {
                         ),
                       ),
                       subtitle: Text(
-                        '${Formatters.code} ${committee['contribution'] ?? '0'} monthly',
+                        '\${Formatters.code} \${committee['contribution'] ?? '0'} monthly',
                         style: TextStyle(color: secondaryColor),
                       ),
                       trailing: Icon(

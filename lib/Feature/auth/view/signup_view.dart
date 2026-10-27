@@ -50,7 +50,7 @@ class SignupView extends GetView<AuthController> {
 
               Center(
                 child: Text(
-                  'Create Account'.tr,
+                  'Create Account',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -63,7 +63,7 @@ class SignupView extends GetView<AuthController> {
 
               Center(
                 child: Text(
-                  'Create an account to manage your expenses'.tr,
+                  'Create an account to manage your expenses',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -75,7 +75,7 @@ class SignupView extends GetView<AuthController> {
               const SizedBox(height: 35),
 
               Text(
-                'Name'.tr,
+                'Name',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -87,14 +87,14 @@ class SignupView extends GetView<AuthController> {
 
               AuthTextField(
                 controller: controller.nameController,
-                hintText: 'Enter your name'.tr,
+                hintText: 'Enter your name',
                 prefixIcon: Icons.person_outline,
               ),
 
               const SizedBox(height: 20),
 
               Text(
-                'Email'.tr,
+                'Email',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -106,7 +106,7 @@ class SignupView extends GetView<AuthController> {
 
               AuthTextField(
                 controller: controller.emailController,
-                hintText: 'Enter your email'.tr,
+                hintText: 'Enter your email',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -114,7 +114,7 @@ class SignupView extends GetView<AuthController> {
               const SizedBox(height: 20),
 
               Text(
-                'Password'.tr,
+                'Password',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -127,7 +127,7 @@ class SignupView extends GetView<AuthController> {
               Obx(
                 () => AuthTextField(
                   controller: controller.passwordController,
-                  hintText: 'Create a password'.tr,
+                  hintText: 'Create a password',
                   prefixIcon: Icons.lock_outline,
                   obscureText: controller.obscurePassword.value,
                   suffixIcon: IconButton(
@@ -146,7 +146,7 @@ class SignupView extends GetView<AuthController> {
 
               Obx(
                 () => AuthButton(
-                  text: 'Create Account'.tr,
+                  text: 'Create Account',
                   isLoading: controller.isLoading.value,
                   onPressed: controller.signUp,
                 ),
@@ -158,15 +158,15 @@ class SignupView extends GetView<AuthController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Already have an account?'.tr,
+                    'Already have an account?',
                     style: TextStyle(
                       color: isDark ? Colors.white70 : Colors.grey,
                     ),
                   ),
                   TextButton(
                     onPressed: () => Get.back(),
-                    child: Text(
-                      'Login'.tr,
+                    child: const Text(
+                      'Login',
                       style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,

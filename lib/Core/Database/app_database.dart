@@ -143,96 +143,6 @@ class LocalBudgets extends Table {
 }
 
 /// ------------------------------------------------------------
-/// UDHAAR ENTRIES
-/// ------------------------------------------------------------
-
-class LocalUdhaarEntries extends Table {
-  TextColumn get id => text()();
-
-  TextColumn get userId => text()();
-
-  TextColumn get personName => text()();
-
-  TextColumn get phone =>
-      text().withDefault(const Constant(''))();
-
-  RealColumn get amount => real()();
-
-  BoolColumn get isLent => boolean()();
-
-  DateTimeColumn get entryDate => dateTime()();
-
-  TextColumn get note =>
-      text().withDefault(const Constant(''))();
-
-  BoolColumn get isSettled =>
-      boolean().withDefault(const Constant(false))();
-
-  DateTimeColumn get settledOn => dateTime().nullable()();
-
-  DateTimeColumn get createdAt => dateTime()();
-
-  DateTimeColumn get updatedAt => dateTime()();
-
-  IntColumn get version =>
-      integer().withDefault(const Constant(1))();
-
-  BoolColumn get isDeleted =>
-      boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-/// ------------------------------------------------------------
-/// COMMITTEES
-/// ------------------------------------------------------------
-
-class LocalCommittees extends Table {
-  TextColumn get id => text()();
-
-  TextColumn get userId => text()();
-
-  TextColumn get name => text()();
-
-  RealColumn get contribution => real()();
-
-  IntColumn get memberCount => integer()();
-
-  IntColumn get duration => integer()();
-
-  TextColumn get unit =>
-      text().withDefault(const Constant('Months'))();
-
-  DateTimeColumn get startDate => dateTime()();
-
-  DateTimeColumn get endingDate => dateTime()();
-
-  TextColumn get allocationMode =>
-      text().withDefault(const Constant('sequence'))();
-
-  TextColumn get membersJson =>
-      text().withDefault(const Constant('[]'))();
-
-  TextColumn get paymentsJson =>
-      text().withDefault(const Constant('[]'))();
-
-  TextColumn get receivingSelectionsJson =>
-      text().withDefault(const Constant('{}'))();
-
-  DateTimeColumn get createdAt => dateTime()();
-
-  DateTimeColumn get updatedAt => dateTime()();
-
-  IntColumn get version =>
-      integer().withDefault(const Constant(1))();
-
-  BoolColumn get isDeleted =>
-      boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-/// ------------------------------------------------------------
 /// SYNC QUEUE
 /// ------------------------------------------------------------
 
@@ -274,8 +184,6 @@ class SyncQueue extends Table {
     LocalWallets,
     LocalCategories,
     LocalBudgets,
-    LocalUdhaarEntries,
-    LocalCommittees,
     SyncQueue,
   ],
 )
@@ -294,58 +202,36 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Version 3:
   /// Added LocalBudgets
-  ///
-  /// Version 4:
-  /// Added Udhaar and Committees
-  ///
-  /// Version 5:
-  /// Repair databases where the Udhaar table was not created in version 4
   /// ----------------------------------------------------------
 
- @override
-int get schemaVersion => 5;
+  @override
+  int get schemaVersion => 3;
 
-@override
-MigrationStrategy get migration {
-  return MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-    },
-    onUpgrade: (Migrator m, int from, int to) async {
-      // Version 1 -> Version 2: SyncQueue unique key.
-      if (from < 2) {
-        await _migrateSyncQueueToVersion2(m);
-      }
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
 
-      // Version 2 -> Version 3: Budgets table.
-      if (from < 3) {
-        await m.createTable(localBudgets);
-      }
+      onUpgrade: (Migrator m, int from, int to) async {
+        /// -----------------------------------------------
+        /// VERSION 1 → VERSION 2
+        /// -----------------------------------------------
 
-      // Version 3 -> Version 4: Udhaar and Committees tables.
-      if (from < 4) {
-        await m.createTable(localUdhaarEntries);
-        await m.createTable(localCommittees);
-      }
-
-      // Repair version 4 databases that were marked upgraded without
-      // successfully creating the Udhaar table.
-      if (from < 5) {
-        final udhaarTable = await customSelect(
-          "SELECT name FROM sqlite_master "
-          "WHERE type = 'table' AND name = ?",
-          variables: [
-            Variable.withString(localUdhaarEntries.actualTableName),
-          ],
-        ).get();
-
-        if (udhaarTable.isEmpty) {
-          await m.createTable(localUdhaarEntries);
+        if (from < 2) {
+          await _migrateSyncQueueToVersion2(m);
         }
-      }
-    },
-  );
-}
+
+        /// -----------------------------------------------
+        /// VERSION 2 → VERSION 3
+        /// -----------------------------------------------
+        if (from < 3) {
+          await m.createTable(localBudgets);
+        }
+      },
+    );
+  }
 
   /// ----------------------------------------------------------
   /// MIGRATION: VERSION 1 → VERSION 2

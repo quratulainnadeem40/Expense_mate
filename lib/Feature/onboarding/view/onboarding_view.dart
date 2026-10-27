@@ -98,7 +98,7 @@ class OnboardingView extends GetView<OnboardingController> {
                       ),
                     ),
                     child: Text(
-                      (controller.isLastPage ? 'Get started' : 'Next').tr,
+                      controller.isLastPage ? 'Get started' : 'Next',
                       style: const TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w700,
@@ -200,7 +200,7 @@ class _LanguagePage extends GetView<OnboardingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Choose your language'.tr,
+                'Choose your language',
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
@@ -209,7 +209,7 @@ class _LanguagePage extends GetView<OnboardingController> {
               ),
               const SizedBox(height: 4),
               Text(
-                'You can change it later in Settings.'.tr,
+                'You can change it later in Settings.',
                 style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             ],
@@ -291,7 +291,7 @@ class _MessagePage extends StatelessWidget {
           const SizedBox(height: 32),
 
           Text(
-            title.tr,
+            title,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 22,
@@ -303,7 +303,7 @@ class _MessagePage extends StatelessWidget {
           const SizedBox(height: 12),
 
           Text(
-            body.tr,
+            body,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -342,7 +342,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Choose your currency'.tr,
+                'Choose your currency',
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
@@ -351,7 +351,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Every amount in the app is shown in this currency.'.tr,
+                'Every amount in the app is shown in this currency.',
                 style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             ],
@@ -375,7 +375,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
                   isDark: isDark,
                   isActive: isActive,
                   badge: currency.symbol,
-                  title: currency.name.tr,
+                  title: currency.name,
                   subtitle: currency.code,
                   primaryText: primaryText,
                   secondaryText: secondaryText,
