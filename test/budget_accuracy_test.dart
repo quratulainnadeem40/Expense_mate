@@ -9,8 +9,14 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+class _TestNotificationsPlatform extends FlutterLocalNotificationsPlatform {
+  @override
+  Future<void> cancel(int id) async {}
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +28,7 @@ void main() {
       url: 'https://example.supabase.co',
       anonKey: 'test-key',
     );
+    FlutterLocalNotificationsPlatform.instance = _TestNotificationsPlatform();
     tempDir = await Directory.systemTemp.createTemp('budget_accuracy_test_');
     Hive.init(tempDir.path);
     await Hive.openBox(AppKeys.budgetBox);
@@ -160,6 +167,7 @@ void main() {
         ),
       ];
       controller.customTotalBudget.value = 600000.0;
+      controller.resetReminderOn.value = false;
       controller.transactionsController.transactions.value = [
         TransactionModel(
           id: 'tx_1',
