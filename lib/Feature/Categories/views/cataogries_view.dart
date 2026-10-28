@@ -1136,9 +1136,7 @@ class _CategoriesViewState extends State<CategoriesView>
           ],
         ),
 
-        // ========================================================
-        // BODY
-        // ========================================================
+        
         body: Stack(
           children: [
             GestureDetector(
