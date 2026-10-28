@@ -44,7 +44,7 @@ class ReportView extends StatelessWidget {
   ];
 
   String _formatAmount(double amount) {
-    return '\${Formatters.code} \${amount.toStringAsFixed(0)}';
+    return '${Formatters.code} ${amount.toStringAsFixed(0)}';
   }
 
   @override
@@ -353,7 +353,6 @@ class ReportView extends StatelessWidget {
                 // ==================================================
                 // YEAR & MONTH FILTERS
                 // ==================================================
-
                 Row(
                   children: [
                     Expanded(

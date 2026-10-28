@@ -1,6 +1,8 @@
+import 'package:expense_mate/Core/service/biometric_service.dart';
+import 'package:expense_mate/Core/routes/app_routes.dart';
+import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
-import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -10,7 +12,6 @@ import '../controller/settings_controller.dart';
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
-  static const String _addCurrencyOption = '__add_currency__';
 
   SettingsController get controller => Get.find<SettingsController>();
 
@@ -302,7 +303,6 @@ class SettingsView extends StatelessWidget {
           ).copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
-       
       ),
       body: Obx(
         () => ListView(
@@ -456,6 +456,123 @@ class SettingsView extends StatelessWidget {
                   value: controller.notificationsEnabled.value,
                   onChanged: controller.toggleNotifications,
                 ),
+
+                // ---------------------------------------------
+                // APP LOCK
+                // ---------------------------------------------
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: _IconContainer(
+                    icon: PinService.instance.isPinSet
+                        ? Icons.lock_rounded
+                        : Icons.lock_open_rounded,
+                    isDark: isDark,
+                  ),
+                  title: Text(
+                    PinService.instance.isPinSet
+                        ? 'Change app PIN'
+                        : 'Set an app PIN',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    PinService.instance.isPinSet
+                        ? 'Asked for each time the app opens'
+                        : 'Lock the app with four digits',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                  onTap: () async {
+                    await Get.toNamed(AppRoutes.pinSetup);
+                    controller.update();
+                  },
+                ),
+
+                // Only offered once a PIN exists, because biometrics
+                // always need the PIN as a fallback.
+                if (PinService.instance.isPinSet)
+                  FutureBuilder<bool>(
+                    future: BiometricService.instance.isAvailable(),
+                    builder: (context, snapshot) {
+                      if (snapshot.data != true) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return SwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        secondary: _IconContainer(
+                          icon: Icons.fingerprint_rounded,
+                          isDark: isDark,
+                        ),
+                        title: Text(
+                          'Unlock with fingerprint',
+                          style: AppTextStyles.bodyLarge(
+                            isDark,
+                          ).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          'Your PIN still works if it fails',
+                          style: AppTextStyles.bodyMedium(isDark),
+                        ),
+                        value: BiometricService.instance.isEnabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            // Checked once here, so a switch that was
+                            // turned on can be trusted at the lock
+                            // screen.
+                            final ok = await BiometricService.instance
+                                .hasEnrolled();
+
+                            if (!ok) {
+                              Get.snackbar(
+                                'Nothing enrolled',
+                                'Add a fingerprint in your phone '
+                                    'settings first.',
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+                          }
+
+                          await BiometricService.instance.setEnabled(value);
+                          controller.update();
+                        },
+                      );
+                    },
+                  ),
+
+                if (PinService.instance.isPinSet)
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    leading: _IconContainer(
+                      icon: Icons.lock_open_rounded,
+                      isDark: isDark,
+                    ),
+                    title: Text(
+                      'Remove app PIN',
+                      style: AppTextStyles.bodyLarge(
+                        isDark,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      'The app will open without asking',
+                      style: AppTextStyles.bodyMedium(isDark),
+                    ),
+                    onTap: () => _confirmRemovePin(context, isDark),
+                  ),
 
                 SwitchListTile(
                   contentPadding: const EdgeInsets.symmetric(
@@ -935,7 +1052,6 @@ class SettingsView extends StatelessWidget {
                 // =================================================
                 // PROFILE PICTURE
                 // =================================================
-
                 Obx(
                   () => Container(
                     padding: const EdgeInsets.all(4),
@@ -1186,6 +1302,49 @@ class SettingsView extends StatelessWidget {
   // =============================================================
   // LOGOUT
   // =============================================================
+
+  /// Removing the lock is destructive enough to be worth confirming.
+  void _confirmRemovePin(BuildContext context, bool isDark) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Remove the PIN?'),
+        content: Text(
+          'Anyone who picks up this phone will be able to open Expense '
+          'Mate and see your records.',
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              Get.back();
+              await PinService.instance.clearPin();
+
+              // Biometrics lean on the PIN, so they go with it.
+              await BiometricService.instance.setEnabled(false);
+
+              controller.update();
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showLogoutDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

@@ -34,44 +34,47 @@ void main() {
     }
   });
 
-  test('budget totals and custom category limits persist after reopening the screen', () async {
-    final categoryList = [
-      CategoryModel(
-        id: 'food',
-        name: 'Food',
-        icon: 'food',
-        colorValue: 0xFFFF7043,
-        isDefault: true,
-      ),
-      CategoryModel(
-        id: 'health',
-        name: 'Health',
-        icon: 'health',
-        colorValue: 0xFF42A5F5,
-        isDefault: true,
-      ),
-    ];
+  test(
+    'budget totals and custom category limits persist after reopening the screen',
+    () async {
+      final categoryList = [
+        CategoryModel(
+          id: 'food',
+          name: 'Food',
+          icon: 'food',
+          colorValue: 0xFFFF7043,
+          isDefault: true,
+        ),
+        CategoryModel(
+          id: 'health',
+          name: 'Health',
+          icon: 'health',
+          colorValue: 0xFF42A5F5,
+          isDefault: true,
+        ),
+      ];
 
-    final controllerA = BudgetController();
-    controllerA.categoriesController = CategoriesController();
-    controllerA.transactionsController = TransactionsController();
-    controllerA.categoriesController.categoryList.value = categoryList;
+      final controllerA = BudgetController();
+      controllerA.categoriesController = CategoriesController();
+      controllerA.transactionsController = TransactionsController();
+      controllerA.categoriesController.categoryList.value = categoryList;
 
-    controllerA.setTotalBudget(10000);
-    controllerA.setCategoryLimit('Food', 5000);
-    controllerA.setCategoryLimit('Health', 5000);
-    controllerA.savePersistedState();
+      controllerA.setTotalBudget(10000);
+      controllerA.setCategoryLimit('Food', 5000);
+      controllerA.setCategoryLimit('Health', 5000);
+      controllerA.savePersistedState();
 
-    final controllerB = BudgetController();
-    controllerB.categoriesController = CategoriesController();
-    controllerB.transactionsController = TransactionsController();
-    controllerB.categoriesController.categoryList.value = categoryList;
+      final controllerB = BudgetController();
+      controllerB.categoriesController = CategoriesController();
+      controllerB.transactionsController = TransactionsController();
+      controllerB.categoriesController.categoryList.value = categoryList;
 
-    controllerB.loadPersistedState();
+      controllerB.loadPersistedState();
 
-    expect(controllerB.customTotalBudget.value, 10000.0);
-    expect(controllerB.customLimits['food'], 5000.0);
-    expect(controllerB.customLimits['health'], 5000.0);
-    expect(controllerB.totalAllocated, 10000.0);
-  });
+      expect(controllerB.customTotalBudget.value, 10000.0);
+      expect(controllerB.customLimits['Food'], 5000.0);
+      expect(controllerB.customLimits['Health'], 5000.0);
+      expect(controllerB.totalAllocated, 10000.0);
+    },
+  );
 }

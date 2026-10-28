@@ -31,9 +31,7 @@ class BudgetSyncRepository {
     final budget = LocalBudgetsCompanion(
       id: Value(id),
       userId: Value(userId),
-      categoryId: categoryId == null
-          ? const Value.absent()
-          : Value(categoryId),
+      categoryId: categoryId == null ? const Value.absent() : Value(categoryId),
       name: Value(name),
       amount: Value(amount),
       spent: Value(spent),
@@ -87,9 +85,7 @@ class BudgetSyncRepository {
 
     final budget = LocalBudgetsCompanion(
       userId: Value(userId),
-      categoryId: categoryId == null
-          ? const Value.absent()
-          : Value(categoryId),
+      categoryId: categoryId == null ? const Value.absent() : Value(categoryId),
       name: Value(name),
       amount: Value(amount),
       spent: Value(spent),
@@ -136,9 +132,7 @@ class BudgetSyncRepository {
       entityTable: 'budgets',
       recordId: id,
       operation: 'delete',
-      payload: {
-        'id': id,
-      },
+      payload: {'id': id},
     );
   }
 

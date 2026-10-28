@@ -130,77 +130,6 @@ class LocalBudgets extends Table {
 }
 
 /// ------------------------------------------------------------
-/// COMMITTEES
-/// ------------------------------------------------------------
-
-class LocalCommittees extends Table {
-  TextColumn get id => text()();
-
-  TextColumn get userId => text()();
-
-  TextColumn get name => text()();
-
-  RealColumn get monthlyContribution =>
-      real().withDefault(const Constant(0.0))();
-
-  IntColumn get totalMembers => integer().withDefault(const Constant(0))();
-
-  DateTimeColumn get startDate => dateTime()();
-
-  IntColumn get durationMonths => integer().withDefault(const Constant(0))();
-
-  DateTimeColumn get dueDate => dateTime()();
-
-  DateTimeColumn get createdAt => dateTime()();
-
-  DateTimeColumn get updatedAt => dateTime()();
-
-  IntColumn get version => integer().withDefault(const Constant(1))();
-
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
-/// ------------------------------------------------------------
-/// UDHAAR ENTRIES
-/// ------------------------------------------------------------
-
-class LocalUdhaarEntries extends Table {
-  TextColumn get id => text()();
-
-  TextColumn get userId => text()();
-
-  TextColumn get personName => text()();
-
-  RealColumn get amount => real().withDefault(const Constant(0.0))();
-
-  BoolColumn get isLent => boolean()();
-
-  DateTimeColumn get entryDate => dateTime()();
-
-  TextColumn get phone => text().withDefault(const Constant(''))();
-
-  TextColumn get note => text().withDefault(const Constant(''))();
-
-  BoolColumn get isSettled => boolean().withDefault(const Constant(false))();
-
-  DateTimeColumn get settledOn => dateTime().nullable()();
-
-  DateTimeColumn get createdAt => dateTime()();
-
-  DateTimeColumn get updatedAt => dateTime()();
-
-  IntColumn get version => integer().withDefault(const Constant(1))();
-
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
-/// ------------------------------------------------------------
 /// SYNC QUEUE
 /// ------------------------------------------------------------
 
@@ -241,8 +170,6 @@ class SyncQueue extends Table {
     LocalWallets,
     LocalCategories,
     LocalBudgets,
-    LocalCommittees,
-    LocalUdhaarEntries,
     SyncQueue,
   ],
 )
@@ -261,16 +188,10 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Version 3:
   /// Added LocalBudgets
-  ///
-  /// Version 4:
-  /// Added LocalCommittees
-  ///
-  /// Version 5:
-  /// Added LocalUdhaarEntries
   /// ----------------------------------------------------------
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -293,20 +214,6 @@ class AppDatabase extends _$AppDatabase {
         /// -----------------------------------------------
         if (from < 3) {
           await m.createTable(localBudgets);
-        }
-
-        /// -----------------------------------------------
-        /// VERSION 3 → VERSION 4
-        /// -----------------------------------------------
-        if (from < 4) {
-          await m.createTable(localCommittees);
-        }
-
-        /// -----------------------------------------------
-        /// VERSION 4 → VERSION 5
-        /// -----------------------------------------------
-        if (from < 5) {
-          await m.createTable(localUdhaarEntries);
         }
       },
     );

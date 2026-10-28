@@ -92,10 +92,7 @@ class CategorySyncRepository {
     );
 
     // Update local database immediately.
-    await localRepository.updateCategory(
-      id,
-      category,
-    );
+    await localRepository.updateCategory(id, category);
 
     // Queue cloud synchronization.
     await syncQueue.enqueue(
@@ -132,9 +129,7 @@ class CategorySyncRepository {
       entityTable: 'categories',
       recordId: id,
       operation: 'delete',
-      payload: {
-        'id': id,
-      },
+      payload: {'id': id},
     );
   }
 
@@ -142,9 +137,7 @@ class CategorySyncRepository {
   // HELPERS
   // ---------------------------------------------------------------------------
 
-  Value<String?> _nullableValue(
-    String? value,
-  ) {
+  Value<String?> _nullableValue(String? value) {
     if (value == null || value.isEmpty) {
       return const Value(null);
     }

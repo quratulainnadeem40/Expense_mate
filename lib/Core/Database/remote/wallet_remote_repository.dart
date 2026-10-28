@@ -5,9 +5,7 @@ class WalletRemoteRepository {
 
   WalletRemoteRepository(this.supabase);
 
-  Future<List<Map<String, dynamic>>> getWallets(
-    String userId,
-  ) async {
+  Future<List<Map<String, dynamic>>> getWallets(String userId) async {
     final response = await supabase
         .from('wallets')
         .select()
@@ -17,9 +15,7 @@ class WalletRemoteRepository {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  Future<Map<String, dynamic>?> getWalletById(
-    String walletId,
-  ) async {
+  Future<Map<String, dynamic>?> getWalletById(String walletId) async {
     final response = await supabase
         .from('wallets')
         .select()
@@ -29,30 +25,18 @@ class WalletRemoteRepository {
     return response;
   }
 
-  Future<void> insertWallet(
-    Map<String, dynamic> wallet,
-  ) async {
-    await supabase
-        .from('wallets')
-        .insert(wallet);
+  Future<void> insertWallet(Map<String, dynamic> wallet) async {
+    await supabase.from('wallets').insert(wallet);
   }
 
   Future<void> updateWallet(
     String walletId,
     Map<String, dynamic> wallet,
   ) async {
-    await supabase
-        .from('wallets')
-        .update(wallet)
-        .eq('id', walletId);
+    await supabase.from('wallets').update(wallet).eq('id', walletId);
   }
 
- Future<void> deleteWallet(
-  String walletId,
-) async {
-  await supabase
-      .from('wallets')
-      .delete()
-      .eq('id', walletId);
-}
+  Future<void> deleteWallet(String walletId) async {
+    await supabase.from('wallets').delete().eq('id', walletId);
+  }
 }

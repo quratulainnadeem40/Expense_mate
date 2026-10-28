@@ -42,6 +42,7 @@ class ExpenseController extends GetxController {
   List<CategoryModel> get incomeCategories {
     return categoriesController.categoriesForType('income');
   }
+
   @override
   void onInit() {
     super.onInit();
@@ -84,8 +85,7 @@ class ExpenseController extends GetxController {
     amountController.text = _amountForEditing(transaction.amount);
     noteController.text = transaction.note ?? transaction.title;
 
-    isExpense.value =
-        transaction.type.trim().toLowerCase() == 'expense';
+    isExpense.value = transaction.type.trim().toLowerCase() == 'expense';
 
     selectedCategoryId.value = transaction.categoryId;
     customCategoryName.value = transaction.customCategoryName;
@@ -98,65 +98,65 @@ class ExpenseController extends GetxController {
   /// This is what makes a typed-in category show up on the Categories
   /// screen and in the dropdown next time, instead of being stranded
   /// inside one transaction.
- Future<String> _resolveCategoryId(String name, String type) async {
-  final normalizedName = name.trim().toLowerCase();
-  final normalizedType = type.trim().toLowerCase();
+  Future<String> _resolveCategoryId(String name, String type) async {
+    final normalizedName = name.trim().toLowerCase();
+    final normalizedType = type.trim().toLowerCase();
 
-  if (normalizedName.isEmpty) {
+    if (normalizedName.isEmpty) {
+      return '';
+    }
+
+    // Search by BOTH category name and transaction type.
+    CategoryModel? match;
+
+    for (final category in categoriesController.categoryList) {
+      final existingName = category.name.trim().toLowerCase();
+      final existingType = category.type.trim().toLowerCase();
+
+      if (existingName != normalizedName) {
+        continue;
+      }
+
+      if (existingType == normalizedType) {
+        match = category;
+        break;
+      }
+
+      if (existingType == 'both') {
+        match ??= category;
+      }
+    }
+
+    // Reuse an existing category of the correct type.
+    if (match != null && !match.id.startsWith('default_')) {
+      return match.id;
+    }
+
+    // Create a real category if only a virtual default exists
+    // or no category with this name/type exists.
+    await categoriesController.addCategory(
+      CategoryModel(
+        id: '',
+        name: name.trim(),
+        icon: _iconNameFor(name),
+        colorValue: 0xFF2E7D32,
+        isDefault: false,
+        type: normalizedType,
+      ),
+      closeDialog: false,
+    );
+
+    // Reload the current in-memory list after insertion.
+    for (final category in categoriesController.categoryList) {
+      if (category.name.trim().toLowerCase() == normalizedName &&
+          category.type.trim().toLowerCase() == normalizedType &&
+          !category.id.startsWith('default_')) {
+        return category.id;
+      }
+    }
+
     return '';
   }
-
-  // Search by BOTH category name and transaction type.
-  CategoryModel? match;
-
-  for (final category in categoriesController.categoryList) {
-    final existingName = category.name.trim().toLowerCase();
-    final existingType = category.type.trim().toLowerCase();
-
-    if (existingName != normalizedName) {
-      continue;
-    }
-
-    if (existingType == normalizedType) {
-      match = category;
-      break;
-    }
-
-    if (existingType == 'both') {
-      match ??= category;
-    }
-  }
-
-  // Reuse an existing category of the correct type.
-  if (match != null && !match.id.startsWith('default_')) {
-    return match.id;
-  }
-
-  // Create a real category if only a virtual default exists
-  // or no category with this name/type exists.
-  await categoriesController.addCategory(
-    CategoryModel(
-      id: '',
-      name: name.trim(),
-      icon: _iconNameFor(name),
-      colorValue: 0xFF2E7D32,
-      isDefault: false,
-      type: normalizedType,
-    ),
-    closeDialog: false,
-  );
-
-  // Reload the current in-memory list after insertion.
-  for (final category in categoriesController.categoryList) {
-    if (category.name.trim().toLowerCase() == normalizedName &&
-        category.type.trim().toLowerCase() == normalizedType &&
-        !category.id.startsWith('default_')) {
-      return category.id;
-    }
-  }
-
-  return '';
-}
 
   /// Picks a sensible icon from the name, so a new category does not all
   /// land on the generic box.
@@ -268,9 +268,7 @@ class ExpenseController extends GetxController {
         walletId: selectedWalletId.value,
         categoryId: categoryId,
         customCategory: customCategory,
-        title: note.isEmpty
-            ? (isExpense.value ? 'Expense' : 'Income')
-            : note,
+        title: note.isEmpty ? (isExpense.value ? 'Expense' : 'Income') : note,
         amount: amount,
         type: isExpense.value ? 'expense' : 'income',
         transactionDate: DateTime.now(),
@@ -281,8 +279,7 @@ class ExpenseController extends GetxController {
         Get.put(TransactionsController());
       }
 
-      final transactionsController =
-          Get.find<TransactionsController>();
+      final transactionsController = Get.find<TransactionsController>();
 
       bool success;
 
@@ -292,15 +289,9 @@ class ExpenseController extends GetxController {
           return;
         }
 
-        success =
-            await transactionsController.updateTransaction(
-          transaction,
-        );
+        success = await transactionsController.updateTransaction(transaction);
       } else {
-        success =
-            await transactionsController.addTransaction(
-          transaction,
-        );
+        success = await transactionsController.addTransaction(transaction);
       }
 
       if (!success) return;
@@ -324,11 +315,7 @@ class ExpenseController extends GetxController {
         snackPosition: SnackPosition.TOP,
         backgroundColor: const Color(0xFF2EA44F),
         colorText: Colors.white,
-        icon: const Icon(
-          Icons.check_circle,
-          color: Colors.white,
-          size: 28,
-        ),
+        icon: const Icon(Icons.check_circle, color: Colors.white, size: 28),
         margin: const EdgeInsets.all(15),
         borderRadius: 12,
         duration: const Duration(seconds: 3),
@@ -371,11 +358,7 @@ class ExpenseController extends GetxController {
       snackPosition: SnackPosition.TOP,
       backgroundColor: const Color(0xFFE53935),
       colorText: Colors.white,
-      icon: const Icon(
-        Icons.error_outline,
-        color: Colors.white,
-        size: 28,
-      ),
+      icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
       margin: const EdgeInsets.all(15),
       borderRadius: 12,
       duration: const Duration(seconds: 3),

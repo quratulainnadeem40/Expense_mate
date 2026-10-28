@@ -91,11 +91,7 @@ class CategoriesController extends GetxController {
           ? DateTime(
               today.year,
               today.month - 1,
-              _clampDay(
-                today.year,
-                today.month - 1,
-                cycleStartDay,
-              ),
+              _clampDay(today.year, today.month - 1, cycleStartDay),
             )
           : candidateThisMonth;
 
@@ -172,9 +168,10 @@ class CategoriesController extends GetxController {
       }
 
       final categoryName = _normalizeCategoryName(category.name);
-      final categoryIds = <String>{category.id, ...category.linkedIds}
-          .map((id) => id.trim().toLowerCase())
-          .where((id) => id.isNotEmpty);
+      final categoryIds = <String>{
+        category.id,
+        ...category.linkedIds,
+      }.map((id) => id.trim().toLowerCase()).where((id) => id.isNotEmpty);
 
       return categoryIds.any(transactionCategoryIds.contains) ||
           transactionCategoryNames.contains(categoryName);
@@ -486,8 +483,7 @@ class CategoriesController extends GetxController {
       for (final categoryName in protectedCategoryOrder)
         ...protectedItems.where(
           (item) =>
-              _normalizeCategoryName(item['name']?.toString()) ==
-              categoryName,
+              _normalizeCategoryName(item['name']?.toString()) == categoryName,
         ),
     ];
     ordered.addAll(customItems);
@@ -735,9 +731,11 @@ class CategoriesController extends GetxController {
           (localCategory) => localCategory.id == transactionCategoryId,
         );
 
-        final itemTypes = (item['types'] as List<dynamic>? ?? [
-          item['type']?.toString() ?? '',
-        ]).map((type) => type.toString().trim().toLowerCase()).toSet();
+        final itemTypes =
+            (item['types'] as List<dynamic>? ??
+                    [item['type']?.toString() ?? ''])
+                .map((type) => type.toString().trim().toLowerCase())
+                .toSet();
 
         if (matchingLocalCategory != null &&
             _normalizeCategoryName(matchingLocalCategory.name) ==

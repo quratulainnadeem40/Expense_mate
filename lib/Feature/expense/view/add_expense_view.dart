@@ -69,11 +69,7 @@ class AddExpenseView extends GetView<ExpenseController> {
       return;
     }
 
-    await _saveCategory(
-      customName.trim(),
-      'expense',
-      previousCategoryId,
-    );
+    await _saveCategory(customName.trim(), 'expense', previousCategoryId);
   }
 
   Future<void> _openCustomIncomeCategoryDialog(
@@ -126,103 +122,86 @@ class AddExpenseView extends GetView<ExpenseController> {
       return;
     }
 
-    await _saveCategory(
-      customName.trim(),
-      'income',
-      previousCategoryId,
-    );
+    await _saveCategory(customName.trim(), 'income', previousCategoryId);
   }
 
+  Future<void> _saveCategory(
+    String name,
+    String type,
+    String previousCategoryId,
+  ) async {
+    final categoriesController = controller.categoriesController;
 
-Future<void> _saveCategory(
-  String name,
-  String type,
-  String previousCategoryId,
-) async {
-  final categoriesController = controller.categoriesController;
+    final normalizedName = name.trim();
+    final normalizedType = type.trim().toLowerCase();
 
-  final normalizedName = name.trim();
-  final normalizedType = type.trim().toLowerCase();
+    if (normalizedName.isEmpty) {
+      controller.selectedCategoryId.value = previousCategoryId;
 
-  if (normalizedName.isEmpty) {
-    controller.selectedCategoryId.value = previousCategoryId;
+      Get.snackbar('Required', 'Please enter a category name.');
 
-    Get.snackbar(
-      'Required',
-      'Please enter a category name.',
-    );
+      return;
+    }
 
-    return;
-  }
+    if (normalizedType != 'income' && normalizedType != 'expense') {
+      controller.selectedCategoryId.value = previousCategoryId;
 
-  if (normalizedType != 'income' && normalizedType != 'expense') {
-    controller.selectedCategoryId.value = previousCategoryId;
+      Get.snackbar('Invalid category', 'Please select a valid category type.');
 
-    Get.snackbar(
-      'Invalid category',
-      'Please select a valid category type.',
-    );
+      return;
+    }
 
-    return;
-  }
-
-  // Check duplicates only within the SAME type.
-  // Income "Salary" and Expense "Salary" are allowed.
-  final existingCategory =
-      await categoriesController.findCategoryByName(
-    normalizedName,
-    type: normalizedType,
-  );
-
-  if (existingCategory != null) {
-    // Select the existing category of the same type.
-    controller.selectedCategoryId.value = existingCategory.id;
-    controller.customCategoryName.value = '';
-
-    Get.snackbar(
-      'Category already exists',
-      'This category already exists in '
-          '${normalizedType == 'income' ? 'Income' : 'Expense'}.',
-    );
-
-    return;
-  }
-
-  // Save locally and queue the category for cloud sync.
-  await categoriesController.addCategory(
-    CategoryModel(
-      id: '',
-      name: normalizedName,
-      icon: 'category',
-      colorValue: const Color(0xFF2EA44F).value,
-      isDefault: false,
+    // Check duplicates only within the SAME type.
+    // Income "Salary" and Expense "Salary" are allowed.
+    final existingCategory = await categoriesController.findCategoryByName(
+      normalizedName,
       type: normalizedType,
-    ),
-    closeDialog: false,
-  );
-
-  // Find the newly saved category using BOTH name and type.
-  final savedCategory =
-      await categoriesController.findCategoryByName(
-    normalizedName,
-    type: normalizedType,
-  );
-
-  if (savedCategory == null) {
-    controller.selectedCategoryId.value = previousCategoryId;
-
-    Get.snackbar(
-      'Unable to save category',
-      'Please try again.',
     );
 
-    return;
+    if (existingCategory != null) {
+      // Select the existing category of the same type.
+      controller.selectedCategoryId.value = existingCategory.id;
+      controller.customCategoryName.value = '';
+
+      Get.snackbar(
+        'Category already exists',
+        'This category already exists in '
+            '${normalizedType == 'income' ? 'Income' : 'Expense'}.',
+      );
+
+      return;
+    }
+
+    // Save locally and queue the category for cloud sync.
+    await categoriesController.addCategory(
+      CategoryModel(
+        id: '',
+        name: normalizedName,
+        icon: 'category',
+        colorValue: const Color(0xFF2EA44F).value,
+        isDefault: false,
+        type: normalizedType,
+      ),
+      closeDialog: false,
+    );
+
+    // Find the newly saved category using BOTH name and type.
+    final savedCategory = await categoriesController.findCategoryByName(
+      normalizedName,
+      type: normalizedType,
+    );
+
+    if (savedCategory == null) {
+      controller.selectedCategoryId.value = previousCategoryId;
+
+      Get.snackbar('Unable to save category', 'Please try again.');
+
+      return;
+    }
+
+    controller.selectedCategoryId.value = savedCategory.id;
+    controller.customCategoryName.value = '';
   }
-
-  controller.selectedCategoryId.value = savedCategory.id;
-  controller.customCategoryName.value = '';
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -506,23 +485,23 @@ Future<void> _saveCategory(
                     // Now it works for BOTH Expense and Income.
                     // -------------------------------------------------------
                     Obx(() {
-                    final isExpense = controller.isExpense.value;
+                      final isExpense = controller.isExpense.value;
 
-// Refresh categories from the controller's current reactive lists.
-final categoryList = isExpense
-    ? controller.expenseCategories.toList()
-    : controller.incomeCategories.toList();
+                      // Refresh categories from the controller's current reactive lists.
+                      final categoryList = isExpense
+                          ? controller.expenseCategories.toList()
+                          : controller.incomeCategories.toList();
 
-final dropdownCategories = List<CategoryModel>.from(
-  categoryList,
-);
+                      final dropdownCategories = List<CategoryModel>.from(
+                        categoryList,
+                      );
 
-debugPrint(
-  'ADD EXPENSE VIEW: type=${isExpense ? 'expense' : 'income'}, '
-  'expenseCount=${controller.expenseCategories.length}, '
-  'incomeCount=${controller.incomeCategories.length}, '
-  'selectedListCount=${dropdownCategories.length}',
-);
+                      debugPrint(
+                        'ADD EXPENSE VIEW: type=${isExpense ? 'expense' : 'income'}, '
+                        'expenseCount=${controller.expenseCategories.length}, '
+                        'incomeCount=${controller.incomeCategories.length}, '
+                        'selectedListCount=${dropdownCategories.length}',
+                      );
                       if (!isExpense) {
                         for (final name in _defaultIncomeCategories) {
                           final alreadySaved = categoryList.any(

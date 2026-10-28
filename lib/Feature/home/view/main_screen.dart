@@ -41,10 +41,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final HomeController controller =
-        Get.isRegistered<HomeController>()
-            ? Get.find<HomeController>()
-            : Get.put(HomeController());
+    final HomeController controller = Get.isRegistered<HomeController>()
+        ? Get.find<HomeController>()
+        : Get.put(HomeController());
 
     // ==========================================================
     // REGISTER SHARED CONTROLLERS
@@ -52,13 +51,13 @@ class _MainScreenState extends State<MainScreen> {
 
     final CategoriesController categoriesController =
         Get.isRegistered<CategoriesController>()
-            ? Get.find<CategoriesController>()
-            : Get.put(CategoriesController());
+        ? Get.find<CategoriesController>()
+        : Get.put(CategoriesController());
 
     final TransactionsController transactionsController =
         Get.isRegistered<TransactionsController>()
-            ? Get.find<TransactionsController>()
-            : Get.put(TransactionsController());
+        ? Get.find<TransactionsController>()
+        : Get.put(TransactionsController());
 
     // IMPORTANT:
     // Reports is inside IndexedStack, so ReportBindings()
@@ -66,8 +65,8 @@ class _MainScreenState extends State<MainScreen> {
     // Therefore ReportController must be registered here.
     final ReportController reportController =
         Get.isRegistered<ReportController>()
-            ? Get.find<ReportController>()
-            : Get.put(ReportController());
+        ? Get.find<ReportController>()
+        : Get.put(ReportController());
 
     // Keep these references alive and use the same
     // controllers for the whole MainScreen.
@@ -85,32 +84,25 @@ class _MainScreenState extends State<MainScreen> {
       ReportView(),
     ];
 
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       extendBody: true,
-      backgroundColor:
-          Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
 
       // ==========================================================
       // MAIN BODY
       // ==========================================================
-
       body: Obx(
-        () => IndexedStack(
-          index: controller.currentIndex.value,
-          children: pages,
-        ),
+        () =>
+            IndexedStack(index: controller.currentIndex.value, children: pages),
       ),
 
       // ==========================================================
       // FLOATING ACTION BUTTON
       // ==========================================================
-
       floatingActionButton: Obx(() {
-        final isCategories =
-            controller.currentIndex.value == 2;
+        final isCategories = controller.currentIndex.value == 2;
 
         return SizedBox(
           key: TourKeys.addButton,
@@ -124,38 +116,27 @@ class _MainScreenState extends State<MainScreen> {
                   barrierDismissible: false,
                 );
               } else {
-                Get.to(
-                  () => const AddExpenseView(),
-                  binding: ExpenseBinding(),
-                );
+                Get.to(() => const AddExpenseView(), binding: ExpenseBinding());
               }
             },
             backgroundColor: primaryGreen,
             elevation: 3,
             shape: const CircleBorder(),
-            child: const Icon(
-              Icons.add,
-              color: Colors.white,
-              size: 28,
-            ),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
           ),
         );
       }),
 
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       // ==========================================================
       // BOTTOM NAVIGATION BAR
       // ==========================================================
-
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
         clipBehavior: Clip.antiAlias,
-        color: isDark
-            ? const Color(0xFF1E1E1E)
-            : Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 12,
         padding: EdgeInsets.zero,
         child: SizedBox(
@@ -165,12 +146,10 @@ class _MainScreenState extends State<MainScreen> {
               // =================================================
               // LEFT SIDE ITEMS
               // =================================================
-
               Expanded(
                 flex: 2,
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildNavItem(
                       icon: Icons.home_rounded,
@@ -199,12 +178,10 @@ class _MainScreenState extends State<MainScreen> {
               // =================================================
               // RIGHT SIDE ITEMS
               // =================================================
-
               Expanded(
                 flex: 2,
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildNavItem(
                       icon: Icons.category_rounded,
@@ -248,17 +225,12 @@ class _MainScreenState extends State<MainScreen> {
     // Used by the guided tour to point at this tab.
     Key? tourKey,
   }) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final inactiveColor =
-        isDark
-            ? Colors.grey[500]
-            : const Color(0xFF757575);
+    final inactiveColor = isDark ? Colors.grey[500] : const Color(0xFF757575);
 
     return Obx(() {
-      final isSelected =
-          controller.currentIndex.value == index;
+      final isSelected = controller.currentIndex.value == index;
 
       return InkWell(
         key: tourKey,
@@ -269,29 +241,21 @@ class _MainScreenState extends State<MainScreen> {
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: isSelected
                     ? (isDark
-                        ? activeColor.withOpacity(0.2)
-                        : activeColor.withOpacity(0.12))
+                          ? activeColor.withOpacity(0.2)
+                          : activeColor.withOpacity(0.12))
                     : Colors.transparent,
-                borderRadius:
-                    BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 icon,
-                color: isSelected
-                    ? activeColor
-                    : inactiveColor,
+                color: isSelected ? activeColor : inactiveColor,
                 size: 22,
               ),
             ),
@@ -300,12 +264,8 @@ class _MainScreenState extends State<MainScreen> {
               label,
               style: TextStyle(
                 fontSize: 10.5,
-                fontWeight: isSelected
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: isSelected
-                    ? activeColor
-                    : inactiveColor,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? activeColor : inactiveColor,
               ),
             ),
           ],

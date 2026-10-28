@@ -11,9 +11,7 @@ class CommitteeRemoteRepository {
   // GET ALL COMMITTEES
   // ------------------------------------------------------------
 
-  Future<List<Map<String, dynamic>>> getCommittees(
-    String userId,
-  ) async {
+  Future<List<Map<String, dynamic>>> getCommittees(String userId) async {
     final response = await supabase
         .from(tableName)
         .select()
@@ -45,12 +43,8 @@ class CommitteeRemoteRepository {
   // INSERT / UPSERT COMMITTEE
   // ------------------------------------------------------------
 
-  Future<void> insertCommittee(
-    Map<String, dynamic> committee,
-  ) async {
-    await supabase
-        .from(tableName)
-        .upsert(committee, onConflict: 'id');
+  Future<void> insertCommittee(Map<String, dynamic> committee) async {
+    await supabase.from(tableName).upsert(committee, onConflict: 'id');
   }
 
   // ------------------------------------------------------------

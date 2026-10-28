@@ -30,7 +30,8 @@ class AddBudgetButton extends GetView<BudgetController> {
           ),
           textConfirm: 'Add',
           onConfirm: () {
-            if (categoryController.text.isNotEmpty && amountController.text.isNotEmpty) {
+            if (categoryController.text.isNotEmpty &&
+                amountController.text.isNotEmpty) {
               controller.addNewBudget(
                 categoryController.text,
                 double.parse(amountController.text),

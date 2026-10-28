@@ -16,27 +16,19 @@ class CommitteeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF0A0A0A)
-            : Colors.white,
+        color: isDark ? const Color(0xFF0A0A0A) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark
-              ? Colors.white10
-              : Colors.black12,
-        ),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -44,14 +36,9 @@ class CommitteeCard extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark
-                      ? Colors.white10
-                      : Colors.black12,
+                  color: isDark ? Colors.white10 : Colors.black12,
                 ),
-                child: const Icon(
-                  Icons.groups_rounded,
-                  size: 26,
-                ),
+                child: const Icon(Icons.groups_rounded, size: 26),
               ),
 
               const SizedBox(width: 12),
@@ -62,9 +49,7 @@ class CommitteeCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? Colors.white
-                        : Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
               ),
@@ -75,8 +60,7 @@ class CommitteeCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20),
                   color: status == 'Active'
                       ? Colors.green.withOpacity(0.12)
                       : Colors.orange.withOpacity(0.12),
@@ -86,9 +70,7 @@ class CommitteeCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: status == 'Active'
-                        ? Colors.green
-                        : Colors.orange,
+                    color: status == 'Active' ? Colors.green : Colors.orange,
                   ),
                 ),
               ),
@@ -131,27 +113,18 @@ class CommitteeCard extends StatelessWidget {
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isDark
-              ? Colors.white70
-              : Colors.black54,
-        ),
+        Icon(icon, size: 20, color: isDark ? Colors.white70 : Colors.black54),
 
         const SizedBox(width: 8),
 
         Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: isDark
-                    ? Colors.white54
-                    : Colors.black45,
+                color: isDark ? Colors.white54 : Colors.black45,
               ),
             ),
 
@@ -162,9 +135,7 @@ class CommitteeCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? Colors.white
-                    : Colors.black87,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
           ],

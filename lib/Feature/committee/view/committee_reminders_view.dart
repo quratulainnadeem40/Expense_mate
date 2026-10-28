@@ -7,12 +7,10 @@ class CommitteeRemindersView extends StatefulWidget {
   const CommitteeRemindersView({super.key});
 
   @override
-  State<CommitteeRemindersView> createState() =>
-      _CommitteeRemindersViewState();
+  State<CommitteeRemindersView> createState() => _CommitteeRemindersViewState();
 }
 
-class _CommitteeRemindersViewState
-    extends State<CommitteeRemindersView> {
+class _CommitteeRemindersViewState extends State<CommitteeRemindersView> {
   bool paymentDueReminder = true;
   bool upcomingPaymentReminder = true;
   bool receivingReminder = true;
@@ -29,15 +27,8 @@ class _CommitteeRemindersViewState
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: SwitchListTile(
-        secondary: CircleAvatar(
-          child: Icon(icon),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        secondary: CircleAvatar(child: Icon(icon)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(description),
         value: value,
         onChanged: onChanged,
@@ -47,8 +38,7 @@ class _CommitteeRemindersViewState
 
   Future<void> _showTestNotification() async {
     try {
-      final notificationService =
-          Get.find<NotificationService>();
+      final notificationService = Get.find<NotificationService>();
 
       await notificationService.showCommitteeNotification();
 
@@ -56,20 +46,14 @@ class _CommitteeRemindersViewState
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Committee reminder notification sent successfully.',
-          ),
+          content: Text('Committee reminder notification sent successfully.'),
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to send notification: $e',
-          ),
-        ),
+        SnackBar(content: Text('Unable to send notification: $e')),
       );
     }
   }
@@ -81,13 +65,9 @@ class _CommitteeRemindersViewState
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.notifications_rounded,
-            ),
+            Icon(Icons.notifications_rounded),
             SizedBox(width: 8),
-            Text(
-              'Reminders & Notifications',
-            ),
+            Text('Reminders & Notifications'),
           ],
         ),
       ),
@@ -98,19 +78,14 @@ class _CommitteeRemindersViewState
           children: [
             const Text(
               'Committee Reminders',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 6),
 
             const Text(
               'Manage your committee payment and monthly reminders.',
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
 
             const SizedBox(height: 24),
@@ -118,8 +93,7 @@ class _CommitteeRemindersViewState
             _buildReminderCard(
               icon: Icons.payment_rounded,
               title: 'Payment Due Reminder',
-              description:
-                  'Get a reminder when your committee payment is due.',
+              description: 'Get a reminder when your committee payment is due.',
               value: paymentDueReminder,
               onChanged: (value) {
                 setState(() {
@@ -170,8 +144,7 @@ class _CommitteeRemindersViewState
             _buildReminderCard(
               icon: Icons.calendar_month_rounded,
               title: 'Monthly Committee Reminder',
-              description:
-                  'Receive a monthly reminder about your committee.',
+              description: 'Receive a monthly reminder about your committee.',
               value: monthlyReminder,
               onChanged: (value) {
                 setState(() {
@@ -186,12 +159,8 @@ class _CommitteeRemindersViewState
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _showTestNotification,
-                icon: const Icon(
-                  Icons.notifications_active_rounded,
-                ),
-                label: const Text(
-                  'Test Reminder',
-                ),
+                icon: const Icon(Icons.notifications_active_rounded),
+                label: const Text('Test Reminder'),
               ),
             ),
 
@@ -201,10 +170,7 @@ class _CommitteeRemindersViewState
               child: Text(
                 'Committee reminders are managed from this screen.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
             ),
           ],

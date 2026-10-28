@@ -22,8 +22,7 @@ String get goalCurrency {
 }
 
 /// An amount with the current symbol in front.
-String goalMoney(double value) =>
-    '$goalCurrency ${formatMoney(value)}';
+String goalMoney(double value) => '$goalCurrency ${formatMoney(value)}';
 
 /// "8 months left" reads better than "243 days left".
 String _timeLeft(int days) {
@@ -105,10 +104,7 @@ class GoalsCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    GoalIconBadge(
-                      iconKey: goal.iconKey,
-                      size: 40,
-                    ),
+                    GoalIconBadge(iconKey: goal.iconKey, size: 40),
                   ],
                 ),
               ),
@@ -135,9 +131,9 @@ class GoalsCard extends StatelessWidget {
                       done
                           ? 'Completed'
                           : (goal.daysLeft > 0
-                              ? '${_timeLeft(goal.daysLeft)} · '
-                                  '${goal.progressPercent}% done'
-                              : 'Target date has passed'),
+                                ? '${_timeLeft(goal.daysLeft)} · '
+                                      '${goal.progressPercent}% done'
+                                : 'Target date has passed'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -230,9 +226,7 @@ class GoalsCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: Container(
               height: 9,
-              color: isDark
-                  ? Colors.white12
-                  : Colors.black.withOpacity(0.07),
+              color: isDark ? Colors.white12 : Colors.black.withOpacity(0.07),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: goal.progress.clamp(0.0, 1.0),
@@ -252,10 +246,7 @@ class GoalsCard extends StatelessWidget {
           // ---------------------------------------------------- footer
           if (done)
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 9,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
                 color: kGoalGreen.withOpacity(isDark ? 0.16 : 0.09),
                 borderRadius: BorderRadius.circular(11),

@@ -4,10 +4,8 @@ import 'package:get/get.dart';
 class RecentTransactionsList extends StatelessWidget {
   final RxList<Map<dynamic, dynamic>> transactions;
 
-  const RecentTransactionsList({
-    Key? key,
-    required this.transactions,
-  }) : super(key: key);
+  const RecentTransactionsList({Key? key, required this.transactions})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +14,10 @@ class RecentTransactionsList extends StatelessWidget {
         return const Center(
           child: Padding(
             padding: EdgeInsets.all(20.0),
-            child: Text('No transactions yet.', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'No transactions yet.',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
         );
       }

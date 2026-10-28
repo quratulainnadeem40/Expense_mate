@@ -17,6 +17,8 @@ dependencies:
   get: ^4.7.3
   intl: ^0.20.2
   audioplayers: ^6.1.0
+  crypto: ^3.0.6
+  local_auth: ^2.3.0
   get_storage: ^2.1.1
   hive_flutter: ^1.1.0
   path_provider: ^2.1.5
@@ -37,7 +39,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_local_notifications_platform_interface: ^9.1.0
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
   icons_launcher: ^3.1.0

@@ -9,8 +9,7 @@ class AppKeys {
   static const String budgetBox = 'budget_box';
   static const String udhaarBox = 'udhaar_box';
 
-  static const String transactionSoundKey =
-      'transaction_sound_enabled';
+  static const String transactionSoundKey = 'transaction_sound_enabled';
   static const String committeesBox = 'committees_box';
 
   static const String isDarkModeKey = 'is_dark_mode';

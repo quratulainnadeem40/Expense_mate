@@ -718,10 +718,9 @@ class SettingsController extends GetxController {
     hideAmounts.value =
         settingsBox.get('hide_amounts', defaultValue: true) as bool;
 
-    transactionSound.value = settingsBox.get(
-      AppKeys.transactionSoundKey,
-      defaultValue: true,
-    ) as bool;
+    transactionSound.value =
+        settingsBox.get(AppKeys.transactionSoundKey, defaultValue: true)
+            as bool;
   }
 
   // ============================================================
@@ -878,7 +877,6 @@ class SettingsController extends GetxController {
   // ============================================================
   // RESET SETTINGS
   // ============================================================
-
 
   // ============================================================
   // LOGOUT

@@ -41,10 +41,8 @@ class MoreView extends StatelessWidget {
             iconColor: const Color(0xFF2B82FB),
             title: 'Wallets',
             subtitle: 'Manage your cash, bank and other wallets',
-            onTap: () => Get.to(
-              () => const WalletsView(),
-              binding: WalletsBinding(),
-            ),
+            onTap: () =>
+                Get.to(() => const WalletsView(), binding: WalletsBinding()),
           ),
           const SizedBox(height: 12),
           _buildOption(
@@ -65,10 +63,8 @@ class MoreView extends StatelessWidget {
             iconColor: const Color(0xFF607D8B),
             title: 'Settings',
             subtitle: 'Manage app preferences and settings',
-            onTap: () => Get.to(
-              () => const SettingsView(),
-              binding: SettingsBinding(),
-            ),
+            onTap: () =>
+                Get.to(() => const SettingsView(), binding: SettingsBinding()),
           ),
         ],
       ),
@@ -114,11 +110,7 @@ class MoreView extends StatelessWidget {
                     color: iconColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

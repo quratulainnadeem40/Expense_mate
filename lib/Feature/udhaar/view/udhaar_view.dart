@@ -33,13 +33,22 @@ class UdhaarView extends GetView<UdhaarController> {
   }
 
   static const List<String> _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   /// "10 Oct" for the card rows, where the year only adds noise.
-  static String _shortDate(DateTime d) =>
-      '${d.day} ${_months[d.month - 1]}';
+  static String _shortDate(DateTime d) => '${d.day} ${_months[d.month - 1]}';
 
   static String _date(DateTime d) =>
       '${d.day} ${_months[d.month - 1]} ${d.year}';
@@ -48,12 +57,12 @@ class UdhaarView extends GetView<UdhaarController> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final background =
-        isDark ? const Color(0xFF101010) : const Color(0xFFF6F7F2);
+    final background = isDark
+        ? const Color(0xFF101010)
+        : const Color(0xFFF6F7F2);
     final card = isDark ? const Color(0xFF1A1A1A) : Colors.white;
     final primaryText = isDark ? Colors.white : const Color(0xFF1E1E1E);
-    final secondaryText =
-        isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     return Scaffold(
       backgroundColor: background,
@@ -66,10 +75,7 @@ class UdhaarView extends GetView<UdhaarController> {
         ),
         title: Text(
           'Udhaar',
-          style: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: primaryText, fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -92,10 +98,14 @@ class UdhaarView extends GetView<UdhaarController> {
 
             Expanded(
               child: people.isEmpty
-                  ? _empty(primaryText, secondaryText,
+                  ? _empty(
+                      primaryText,
+                      secondaryText,
                       hasAnyEntries: controller.entries.isNotEmpty,
-                      isSearching:
-                          controller.searchQuery.value.trim().isNotEmpty)
+                      isSearching: controller.searchQuery.value
+                          .trim()
+                          .isNotEmpty,
+                    )
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
                       itemCount: people.length,
@@ -212,10 +222,7 @@ class UdhaarView extends GetView<UdhaarController> {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  color: Colors.white70,
-                ),
+                style: const TextStyle(fontSize: 11.5, color: Colors.white70),
               ),
             ],
           ),
@@ -249,17 +256,11 @@ class UdhaarView extends GetView<UdhaarController> {
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.white12 : Colors.black12,
-          ),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.search_rounded,
-              size: 20,
-              color: secondaryText,
-            ),
+            Icon(Icons.search_rounded, size: 20, color: secondaryText),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -269,8 +270,7 @@ class UdhaarView extends GetView<UdhaarController> {
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 13),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
                   hintText: 'Search a name',
                   hintStyle: TextStyle(
                     color: secondaryText.withOpacity(0.8),
@@ -329,9 +329,7 @@ class UdhaarView extends GetView<UdhaarController> {
                 decoration: BoxDecoration(
                   color: active
                       ? _green
-                      : (isDark
-                          ? const Color(0xFF1F1F1F)
-                          : Colors.white),
+                      : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
                     color: active
@@ -364,8 +362,8 @@ class UdhaarView extends GetView<UdhaarController> {
                           color: active
                               ? Colors.white24
                               : (isDark
-                                  ? Colors.white12
-                                  : Colors.black.withOpacity(0.06)),
+                                    ? Colors.white12
+                                    : Colors.black.withOpacity(0.06)),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -373,8 +371,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color:
-                                active ? Colors.white : secondaryText,
+                            color: active ? Colors.white : secondaryText,
                           ),
                         ),
                       ),
@@ -401,9 +398,7 @@ class UdhaarView extends GetView<UdhaarController> {
     Color secondaryText,
   ) {
     final clear = person.isClear;
-    final accent = clear
-        ? secondaryText
-        : (person.theyOweYou ? _green : _red);
+    final accent = clear ? secondaryText : (person.theyOweYou ? _green : _red);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -445,9 +440,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           ? const [Color(0xFF4CC66A), Color(0xFF1F7A37)]
                           : const [Color(0xFFF2706B), Color(0xFFC62828)],
                     ),
-              color: clear
-                  ? (isDark ? Colors.white12 : Colors.black12)
-                  : null,
+              color: clear ? (isDark ? Colors.white12 : Colors.black12) : null,
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -475,7 +468,7 @@ class UdhaarView extends GetView<UdhaarController> {
             clear
                 ? 'Settled · last ${_shortDate(person.lastActivity)}'
                 : '${person.openCount} open · '
-                    'last ${_shortDate(person.lastActivity)}',
+                      'last ${_shortDate(person.lastActivity)}',
             style: TextStyle(fontSize: 11.5, color: secondaryText),
           ),
 
@@ -520,7 +513,9 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
 
           children: [
-            ...controller.entriesFor(person.name).map(
+            ...controller
+                .entriesFor(person.name)
+                .map(
                   (entry) => _entryRow(
                     context,
                     entry,
@@ -590,10 +585,7 @@ class UdhaarView extends GetView<UdhaarController> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.delete_outline_rounded, size: 18),
                   ),
                 ),
               ],
@@ -622,8 +614,9 @@ class UdhaarView extends GetView<UdhaarController> {
             height: 26,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: (entry.isSettled ? secondaryText : accent)
-                  .withOpacity(isDark ? 0.20 : 0.10),
+              color: (entry.isSettled ? secondaryText : accent).withOpacity(
+                isDark ? 0.20 : 0.10,
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -670,18 +663,13 @@ class UdhaarView extends GetView<UdhaarController> {
               fontSize: 13.5,
               fontWeight: FontWeight.w700,
               color: entry.isSettled ? secondaryText : accent,
-              decoration:
-                  entry.isSettled ? TextDecoration.lineThrough : null,
+              decoration: entry.isSettled ? TextDecoration.lineThrough : null,
             ),
           ),
 
           PopupMenuButton<String>(
             padding: EdgeInsets.zero,
-            icon: Icon(
-              Icons.more_vert_rounded,
-              size: 18,
-              color: secondaryText,
-            ),
+            icon: Icon(Icons.more_vert_rounded, size: 18, color: secondaryText),
             color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -705,10 +693,7 @@ class UdhaarView extends GetView<UdhaarController> {
               ),
               const PopupMenuItem<String>(
                 value: 'delete',
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: _red),
-                ),
+                child: Text('Delete', style: TextStyle(color: _red)),
               ),
             ],
           ),
@@ -736,9 +721,9 @@ class UdhaarView extends GetView<UdhaarController> {
     final body = isSearching
         ? 'No one by that name. Try part of the name instead.'
         : (hasAnyEntries
-            ? 'Your records are under one of the other tabs above.'
-            : 'Record money you lent to someone, or took from them, '
-                'and the balance with each person is kept for you.');
+              ? 'Your records are under one of the other tabs above.'
+              : 'Record money you lent to someone, or took from them, '
+                    'and the balance with each person is kept for you.');
 
     return Center(
       child: Padding(
@@ -802,33 +787,25 @@ class UdhaarView extends GetView<UdhaarController> {
     final date = DateTime.now().obs;
     final error = RxnString();
 
-    final fieldFill =
-        isDark ? Colors.white10 : Colors.black.withOpacity(0.04);
+    final fieldFill = isDark ? Colors.white10 : Colors.black.withOpacity(0.04);
     final primaryText = isDark ? Colors.white : const Color(0xFF1E1E1E);
-    final secondaryText =
-        isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     InputDecoration decoration(String hint) => InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: secondaryText.withOpacity(0.7),
-            fontSize: 14,
-          ),
-          filled: true,
-          fillColor: fieldFill,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 14,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _green, width: 1.4),
-          ),
-        );
+      hintText: hint,
+      hintStyle: TextStyle(color: secondaryText.withOpacity(0.7), fontSize: 14),
+      filled: true,
+      fillColor: fieldFill,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _green, width: 1.4),
+      ),
+    );
 
     showModalBottomSheet(
       context: context,
@@ -881,10 +858,7 @@ class UdhaarView extends GetView<UdhaarController> {
                         minWidth: 36,
                         minHeight: 36,
                       ),
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: secondaryText,
-                      ),
+                      icon: Icon(Icons.close_rounded, color: secondaryText),
                       onPressed: () => Navigator.pop(sheetContext),
                     ),
                   ],
@@ -1004,15 +978,18 @@ class UdhaarView extends GetView<UdhaarController> {
                     ...[500, 1000, 5000, 10000].map((step) {
                       return GestureDetector(
                         onTap: () {
-                          final current = double.tryParse(
-                                amountController.text
-                                    .trim()
-                                    .replaceAll(',', ''),
+                          final current =
+                              double.tryParse(
+                                amountController.text.trim().replaceAll(
+                                  ',',
+                                  '',
+                                ),
                               ) ??
                               0;
 
-                          amountController.text =
-                              (current + step).round().toString();
+                          amountController.text = (current + step)
+                              .round()
+                              .toString();
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -1085,9 +1062,7 @@ class UdhaarView extends GetView<UdhaarController> {
                         context: sheetContext,
                         initialDate: date.value,
                         firstDate: DateTime(2015),
-                        lastDate: DateTime.now().add(
-                          const Duration(days: 365),
-                        ),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
                       );
 
                       if (picked != null) date.value = picked;
@@ -1111,10 +1086,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           const SizedBox(width: 10),
                           Text(
                             _date(date.value),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: primaryText,
-                            ),
+                            style: TextStyle(fontSize: 14, color: primaryText),
                           ),
                         ],
                       ),
@@ -1129,10 +1101,7 @@ class UdhaarView extends GetView<UdhaarController> {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       error.value!,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: _red,
-                      ),
+                      style: const TextStyle(fontSize: 12.5, color: _red),
                     ),
                   );
                 }),
@@ -1248,9 +1217,7 @@ class UdhaarView extends GetView<UdhaarController> {
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
           'Delete ${person.name}?',
           style: TextStyle(
@@ -1270,10 +1237,7 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _red,
@@ -1302,9 +1266,7 @@ class UdhaarView extends GetView<UdhaarController> {
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
           'Settle with ${person.name}?',
           style: TextStyle(
@@ -1324,10 +1286,7 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _green,

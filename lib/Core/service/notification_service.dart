@@ -5,8 +5,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
-  static final NotificationService _instance =
-      NotificationService._internal();
+  static final NotificationService _instance = NotificationService._internal();
 
   factory NotificationService() => _instance;
 
@@ -34,8 +33,9 @@ class NotificationService {
   Future<void> init() async {
     tz.initializeTimeZones();
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     const iosSettings = DarwinInitializationSettings();
 
@@ -52,24 +52,20 @@ class NotificationService {
   Future<void> requestPermission() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
-    final notificationPermission =
-        await androidPlugin?.requestNotificationsPermission();
+    final notificationPermission = await androidPlugin
+        ?.requestNotificationsPermission();
 
-    debugPrint(
-      'NOTIFICATION PERMISSION: $notificationPermission',
-    );
+    debugPrint('NOTIFICATION PERMISSION: $notificationPermission');
 
     final iosPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
+          IOSFlutterLocalNotificationsPlugin
+        >();
 
-    await iosPlugin?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   Future<void> showTestNotification() async {
@@ -81,9 +77,7 @@ class NotificationService {
       priority: Priority.high,
     );
 
-    const details = NotificationDetails(
-      android: androidDetails,
-    );
+    const details = NotificationDetails(android: androidDetails);
 
     await _notifications.show(
       999,
@@ -100,15 +94,12 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'committee_reminders',
       'Committee Reminders',
-      channelDescription:
-          'Notifications for committee payments',
+      channelDescription: 'Notifications for committee payments',
       importance: Importance.max,
       priority: Priority.high,
     );
 
-    const details = NotificationDetails(
-      android: androidDetails,
-    );
+    const details = NotificationDetails(android: androidDetails);
 
     await _notifications.show(
       1000,
@@ -137,9 +128,7 @@ class NotificationService {
       priority: Priority.high,
     );
 
-    const details = NotificationDetails(
-      android: androidDetails,
-    );
+    const details = NotificationDetails(android: androidDetails);
 
     // Reminder one day before at 9 AM.
     final reminderDate = tz.TZDateTime(
@@ -158,8 +147,7 @@ class NotificationService {
             '$currency ${amount.toStringAsFixed(2)}',
         reminderDate,
         details,
-        androidScheduleMode:
-            AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
 
       debugPrint('DAY-BEFORE REMINDER SCHEDULED');
@@ -182,8 +170,7 @@ class NotificationService {
             '$currency ${amount.toStringAsFixed(2)}',
         dueNotificationDate,
         details,
-        androidScheduleMode:
-            AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
 
       debugPrint('DUE-DATE NOTIFICATION SCHEDULED');
@@ -229,9 +216,7 @@ class NotificationService {
 
     const details = NotificationDetails(android: androidDetails);
 
-    final whenText = daysBefore == 1
-        ? 'tomorrow'
-        : 'in $daysBefore days';
+    final whenText = daysBefore == 1 ? 'tomorrow' : 'in $daysBefore days';
 
     await _notifications.zonedSchedule(
       _budgetReminderId,
@@ -252,27 +237,18 @@ class NotificationService {
     debugPrint('BUDGET REMINDER CANCELLED');
   }
 
-  Future<void> cancelNotification(
-    int notificationId,
-  ) async {
+  Future<void> cancelNotification(int notificationId) async {
     await _notifications.cancel(notificationId);
-    await _notifications.cancel(
-      notificationId + 1000000,
-    );
+    await _notifications.cancel(notificationId + 1000000);
 
-    debugPrint(
-      'NOTIFICATION CANCELLED: $notificationId',
-    );
+    debugPrint('NOTIFICATION CANCELLED: $notificationId');
   }
 
   Future<void> checkPendingNotifications() async {
-    final pending =
-        await _notifications.pendingNotificationRequests();
+    final pending = await _notifications.pendingNotificationRequests();
 
     debugPrint('================================');
-    debugPrint(
-      'PENDING NOTIFICATIONS: ${pending.length}',
-    );
+    debugPrint('PENDING NOTIFICATIONS: ${pending.length}');
 
     for (final notification in pending) {
       debugPrint(

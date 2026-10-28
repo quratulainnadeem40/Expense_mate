@@ -13,7 +13,6 @@ import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
-import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:expense_mate/Feature/home/widgets/balance_card.dart';
@@ -22,7 +21,6 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:expense_mate/Feature/home/controller/home_controller.dart';
-
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

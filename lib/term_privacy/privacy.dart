@@ -243,8 +243,7 @@ class _PrivacyHero extends StatelessWidget {
                   isDark: isDark,
                   icon: Icons.block_outlined,
                   title: 'No ads, no data selling',
-                  description:
-                      'We never sell or share data with advertisers.',
+                  description: 'We never sell or share data with advertisers.',
                 ),
               ],
             );
@@ -458,9 +457,7 @@ class _PrivacySection extends StatelessWidget {
         decoration: BoxDecoration(
           border: isLast
               ? null
-              : Border(
-                  bottom: BorderSide(color: AppColors.border(isDark)),
-                ),
+              : Border(bottom: BorderSide(color: AppColors.border(isDark))),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -638,9 +635,7 @@ class _PrivacyContactTile extends StatelessWidget {
               text,
               softWrap: true,
               style: TextStyle(
-                color: onTap == null
-                    ? AppColors.textPrimary(isDark)
-                    : primary,
+                color: onTap == null ? AppColors.textPrimary(isDark) : primary,
                 fontSize: 14,
                 height: 1.45,
                 fontWeight: FontWeight.w500,
@@ -756,7 +751,8 @@ const List<_PrivacySectionData> _privacySections = [
       'To reply when you contact support',
       'To fix problems and improve the app',
     ],
-    note: 'We do not use your financial records for advertising, and we do not '
+    note:
+        'We do not use your financial records for advertising, and we do not '
         'build advertising profiles about you.',
   ),
   _PrivacySectionData(

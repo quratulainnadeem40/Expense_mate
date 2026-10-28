@@ -11,9 +11,7 @@ class UdhaarRemoteRepository {
   // GET ALL ENTRIES
   // ------------------------------------------------------------
 
-  Future<List<Map<String, dynamic>>> getEntries(
-    String userId,
-  ) async {
+  Future<List<Map<String, dynamic>>> getEntries(String userId) async {
     final response = await supabase
         .from(tableName)
         .select()
@@ -45,12 +43,8 @@ class UdhaarRemoteRepository {
   // INSERT / UPSERT ENTRY
   // ------------------------------------------------------------
 
-  Future<void> insertEntry(
-    Map<String, dynamic> entry,
-  ) async {
-    await supabase
-        .from(tableName)
-        .upsert(entry, onConflict: 'id');
+  Future<void> insertEntry(Map<String, dynamic> entry) async {
+    await supabase.from(tableName).upsert(entry, onConflict: 'id');
   }
 
   // ------------------------------------------------------------

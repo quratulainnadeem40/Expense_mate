@@ -44,7 +44,8 @@ class GoalsController extends GetxController {
     'gift',
   ];
 
-  String get nameHint => 'e.g. ${goalIconFor(selectedIconKey.value).label} goal';
+  String get nameHint =>
+      'e.g. ${goalIconFor(selectedIconKey.value).label} goal';
 
   // ----------------------------------------------------------------
   // SUMMARY  (for the header card)
@@ -99,11 +100,7 @@ class GoalsController extends GetxController {
 
     final knownKeys = goalIconOptions.map((option) => option.key).toSet();
     recentIconKeys.assignAll(
-      stored
-          .whereType<String>()
-          .where(knownKeys.contains)
-          .toSet()
-          .toList(),
+      stored.whereType<String>().where(knownKeys.contains).toSet().toList(),
     );
   }
 
@@ -257,8 +254,10 @@ class GoalsController extends GetxController {
 
     final goal = goals[index];
     if (amount > goal.savedAmount) {
-      _warn('You have only ${_currency} '
-          '${goal.savedAmount.toStringAsFixed(0)} saved');
+      _warn(
+        'You have only ${_currency} '
+        '${goal.savedAmount.toStringAsFixed(0)} saved',
+      );
       return;
     }
 

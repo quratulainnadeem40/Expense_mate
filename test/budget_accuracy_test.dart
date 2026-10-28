@@ -9,36 +9,28 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class _TestNotificationsPlatform extends FlutterLocalNotificationsPlatform {
-  @override
-  Future<void> cancel(int id) async {}
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late Directory tempDir;
 
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
-      url: 'https://example.supabase.co',
-      anonKey: 'test-key',
+      url: 'https://epjzyrjxrhbfdyrbdsli.supabase.co',
+      anonKey: 'sb_publishable_2VnrpBbdOhiJpqw74rhufg_rp8GgJ_p',
     );
-    FlutterLocalNotificationsPlatform.instance = _TestNotificationsPlatform();
-    tempDir = await Directory.systemTemp.createTemp('budget_accuracy_test_');
+    final tempDir = await Directory.systemTemp.createTemp(
+      'budget_accuracy_test_',
+    );
     Hive.init(tempDir.path);
     await Hive.openBox(AppKeys.budgetBox);
   });
 
   tearDownAll(() async {
     await Hive.close();
-    await tempDir.delete(recursive: true);
   });
-
   test(
     'budget spending is calculated from real category ids and limits are summed accurately',
     () {
@@ -153,7 +145,7 @@ void main() {
 
   test(
     'manual reset clears spent amount without changing the budget limit',
-    () {
+    () async {
       final controller = BudgetController();
       controller.categoriesController = CategoriesController();
       controller.transactionsController = TransactionsController();
@@ -167,7 +159,6 @@ void main() {
         ),
       ];
       controller.customTotalBudget.value = 600000.0;
-      controller.resetReminderOn.value = false;
       controller.transactionsController.transactions.value = [
         TransactionModel(
           id: 'tx_1',
@@ -184,7 +175,7 @@ void main() {
       expect(controller.totalSpent, 350000.0);
       expect(controller.customTotalBudget.value, 600000.0);
 
-      controller.resetMonthlySpent();
+      await controller.resetMonthlySpent();
 
       expect(controller.totalSpent, 0.0);
       expect(controller.customTotalBudget.value, 600000.0);

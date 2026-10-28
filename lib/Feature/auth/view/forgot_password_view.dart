@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:flutter/material.dart';
@@ -21,17 +20,13 @@ class ForgotPasswordView extends GetView<AuthController> {
           : const Color(0xFFF6F7F2),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 30,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ==================================================
               // BACK ARROW
               // ==================================================
-
               IconButton(
                 onPressed: () {
                   Get.offNamed(AppRoutes.login);
@@ -106,9 +101,7 @@ class ForgotPasswordView extends GetView<AuthController> {
                   text: 'Send Reset Link',
                   isLoading: controller.isLoading.value,
                   onPressed: () {
-                    controller.resetPassword(
-                      controller.emailController.text,
-                    );
+                    controller.resetPassword(controller.emailController.text);
                   },
                 ),
               ),
@@ -118,7 +111,6 @@ class ForgotPasswordView extends GetView<AuthController> {
               // ==================================================
               // BACK TO LOGIN
               // ==================================================
-
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -140,4 +132,3 @@ class ForgotPasswordView extends GetView<AuthController> {
     );
   }
 }
-

@@ -59,26 +59,26 @@ class UdhaarEntry {
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'personName': personName,
-        'amount': amount,
-        'isLent': isLent,
-        'date': date.toIso8601String(),
-        'phone': phone,
-        'note': note,
-        'isSettled': isSettled,
-        'settledOn': settledOn?.toIso8601String(),
-      };
+    'id': id,
+    'personName': personName,
+    'amount': amount,
+    'isLent': isLent,
+    'date': date.toIso8601String(),
+    'phone': phone,
+    'note': note,
+    'isSettled': isSettled,
+    'settledOn': settledOn?.toIso8601String(),
+  };
 
   factory UdhaarEntry.fromMap(Map<String, dynamic> map) {
     return UdhaarEntry(
-      id: map['id']?.toString() ??
+      id:
+          map['id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       personName: map['personName']?.toString() ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0,
       isLent: map['isLent'] == true,
-      date: DateTime.tryParse(map['date']?.toString() ?? '') ??
-          DateTime.now(),
+      date: DateTime.tryParse(map['date']?.toString() ?? '') ?? DateTime.now(),
       phone: map['phone']?.toString() ?? '',
       note: map['note']?.toString() ?? '',
       isSettled: map['isSettled'] == true,
@@ -110,7 +110,6 @@ class UdhaarPerson {
 
   int get openCount => entries.where((e) => !e.isSettled).length;
 
-  DateTime get lastActivity => entries
-      .map((e) => e.date)
-      .reduce((a, b) => a.isAfter(b) ? a : b);
+  DateTime get lastActivity =>
+      entries.map((e) => e.date).reduce((a, b) => a.isAfter(b) ? a : b);
 }

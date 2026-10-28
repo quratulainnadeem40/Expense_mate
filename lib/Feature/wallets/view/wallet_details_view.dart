@@ -9,15 +9,11 @@ import 'edit_wallet_view.dart';
 class WalletDetailsView extends StatelessWidget {
   final WalletModel wallet;
 
-  const WalletDetailsView({
-    super.key,
-    required this.wallet,
-  });
+  const WalletDetailsView({super.key, required this.wallet});
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final controller = Get.find<WalletsController>();
 
@@ -35,9 +31,7 @@ class WalletDetailsView extends StatelessWidget {
         );
 
         if (currentWallet == null) {
-          return const Center(
-            child: Text('Wallet not found'),
-          );
+          return const Center(child: Text('Wallet not found'));
         }
 
         return SingleChildScrollView(
@@ -50,10 +44,7 @@ class WalletDetailsView extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.account_balance_wallet,
-                        size: 56,
-                      ),
+                      const Icon(Icons.account_balance_wallet, size: 56),
 
                       const SizedBox(height: 14),
 
@@ -75,9 +66,9 @@ class WalletDetailsView extends StatelessWidget {
                       Text(
                         '${currentWallet.currency} '
                         '${currentWallet.balance.toStringAsFixed(2)}',
-                        style: AppTextStyles.headingMedium(isDark).copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.headingMedium(
+                          isDark,
+                        ).copyWith(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -90,9 +81,7 @@ class WalletDetailsView extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Get.to(
-                      () => EditWalletView(wallet: currentWallet),
-                    );
+                    Get.to(() => EditWalletView(wallet: currentWallet));
                   },
                   icon: const Icon(Icons.edit_outlined),
                   label: const Text('Edit Wallet'),
@@ -151,14 +140,10 @@ class WalletDetailsView extends StatelessWidget {
 
     final amount = await Get.dialog<double>(
       AlertDialog(
-        title: Text(
-          isAdd ? 'Add Money' : 'Withdraw Money',
-        ),
+        title: Text(isAdd ? 'Add Money' : 'Withdraw Money'),
         content: TextField(
           controller: amountController,
-          keyboardType: const TextInputType.numberWithOptions(
-            decimal: true,
-          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: 'Amount',
             prefixText: '${currentWallet.currency} ',
@@ -174,9 +159,7 @@ class WalletDetailsView extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              final value = double.tryParse(
-                amountController.text.trim(),
-              );
+              final value = double.tryParse(amountController.text.trim());
 
               if (value == null || value <= 0) {
                 Get.snackbar(
@@ -189,9 +172,7 @@ class WalletDetailsView extends StatelessWidget {
 
               Get.back(result: value);
             },
-            child: Text(
-              isAdd ? 'Add' : 'Withdraw',
-            ),
+            child: Text(isAdd ? 'Add' : 'Withdraw'),
           ),
         ],
       ),
@@ -206,10 +187,7 @@ class WalletDetailsView extends StatelessWidget {
 
     final change = isAdd ? amount : -amount;
 
-    await controller.changeBalance(
-      walletId: currentWallet.id,
-      amount: change,
-    );
+    await controller.changeBalance(walletId: currentWallet.id, amount: change);
 
     Get.snackbar(
       isAdd ? 'Money Added' : 'Money Withdrawn',

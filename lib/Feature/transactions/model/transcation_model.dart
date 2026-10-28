@@ -1,4 +1,3 @@
-
 class TransactionModel {
   final String id;
   final String userId;
@@ -78,17 +77,12 @@ class TransactionModel {
       userId: map['user_id']?.toString() ?? '',
       walletId: map['wallet_id']?.toString() ?? '',
       categoryId:
-          map['category_id']?.toString() ??
-          map['category']?.toString() ??
-          '',
+          map['category_id']?.toString() ?? map['category']?.toString() ?? '',
       customCategory:
           map['custom_category']?.toString() ??
           map['customCategory']?.toString() ??
           '',
-      title:
-          map['title']?.toString() ??
-          map['note']?.toString() ??
-          '',
+      title: map['title']?.toString() ?? map['note']?.toString() ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
       type:
           map['type']?.toString().toLowerCase() ??
@@ -102,9 +96,7 @@ class TransactionModel {
           DateTime.now(),
       note: map['note']?.toString(),
       createdAt:
-          DateTime.tryParse(
-            map['created_at']?.toString() ?? '',
-          ) ??
+          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
           DateTime.now(),
     );
   }
@@ -151,9 +143,7 @@ class TransactionModel {
           json['customCategory']?.toString() ??
           json['custom_category']?.toString() ??
           '',
-      date: DateTime.tryParse(
-        json['date']?.toString() ?? '',
-      ),
+      date: DateTime.tryParse(json['date']?.toString() ?? ''),
       isIncome: json['isIncome'] == true,
       type:
           json['type']?.toString().toLowerCase() ??
@@ -183,8 +173,7 @@ class TransactionModel {
       title: title ?? this.title,
       amount: amount ?? this.amount,
       type: type ?? this.type,
-      transactionDate:
-          transactionDate ?? this.transactionDate,
+      transactionDate: transactionDate ?? this.transactionDate,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
     );

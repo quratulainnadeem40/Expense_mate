@@ -272,10 +272,7 @@ class _HolePainter extends CustomPainter {
     final path = Path.combine(
       PathOperation.difference,
       Path()..addRect(full),
-      Path()
-        ..addRRect(
-          RRect.fromRectAndRadius(hole!, Radius.circular(radius)),
-        ),
+      Path()..addRRect(RRect.fromRectAndRadius(hole!, Radius.circular(radius))),
     );
 
     canvas.drawPath(path, dim);
@@ -369,8 +366,7 @@ class _StepCard extends StatelessWidget {
                 TextButton(
                   onPressed: onSkip,
                   style: TextButton.styleFrom(
-                    foregroundColor:
-                        isDark ? Colors.white60 : Colors.black54,
+                    foregroundColor: isDark ? Colors.white60 : Colors.black54,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
                   child: const Text('Skip'),
@@ -421,54 +417,61 @@ class _StepCard extends StatelessWidget {
 
 /// The seven stops, written for Expense Mate.
 List<CoachStep> expenseMateTour() => [
-      CoachStep(
-        key: TourKeys.balanceCard,
-        title: 'Your balance',
-        body: 'Everything you have, minus everything you have spent. '
-            'The income and expense figures below it cover this month '
-            'only.',
-        radius: 20,
-      ),
-      CoachStep(
-        key: TourKeys.recentEntries,
-        title: 'Recent transactions',
-        body: 'The last few entries you recorded, newest first. Tap one '
-            'to open or change it.',
-      ),
-      CoachStep(
-        key: TourKeys.addButton,
-        title: 'Add a transaction',
-        body: 'Record money in or out. Choose a category and wallet, and '
-            'the balance updates by itself.',
-        radius: 40,
-        padding: 10,
-      ),
-      CoachStep(
-        key: TourKeys.transactionsTab,
-        title: 'Transactions',
-        body: 'Your full record. Search it, edit an entry, or delete one '
-            'or several together.',
-        radius: 12,
-      ),
-      CoachStep(
-        key: TourKeys.categoriesTab,
-        title: 'Categories',
-        body: 'Decide how your spending is sorted. Tap any category to '
-            'see just its transactions.',
-        radius: 12,
-      ),
-      CoachStep(
-        key: TourKeys.reportsTab,
-        title: 'Reports',
-        body: 'Where the money actually went: income against expense, a '
-            'breakdown by category, and the trend over six months.',
-        radius: 12,
-      ),
-      CoachStep(
-        key: TourKeys.menuButton,
-        title: 'Everything else',
-        body: 'Wallets, budgets, savings goals, bill reminders and your '
-            'committee all live behind this menu.',
-        radius: 12,
-      ),
-    ];
+  CoachStep(
+    key: TourKeys.balanceCard,
+    title: 'Your balance',
+    body:
+        'Everything you have, minus everything you have spent. '
+        'The income and expense figures below it cover this month '
+        'only.',
+    radius: 20,
+  ),
+  CoachStep(
+    key: TourKeys.recentEntries,
+    title: 'Recent transactions',
+    body:
+        'The last few entries you recorded, newest first. Tap one '
+        'to open or change it.',
+  ),
+  CoachStep(
+    key: TourKeys.addButton,
+    title: 'Add a transaction',
+    body:
+        'Record money in or out. Choose a category and wallet, and '
+        'the balance updates by itself.',
+    radius: 40,
+    padding: 10,
+  ),
+  CoachStep(
+    key: TourKeys.transactionsTab,
+    title: 'Transactions',
+    body:
+        'Your full record. Search it, edit an entry, or delete one '
+        'or several together.',
+    radius: 12,
+  ),
+  CoachStep(
+    key: TourKeys.categoriesTab,
+    title: 'Categories',
+    body:
+        'Decide how your spending is sorted. Tap any category to '
+        'see just its transactions.',
+    radius: 12,
+  ),
+  CoachStep(
+    key: TourKeys.reportsTab,
+    title: 'Reports',
+    body:
+        'Where the money actually went: income against expense, a '
+        'breakdown by category, and the trend over six months.',
+    radius: 12,
+  ),
+  CoachStep(
+    key: TourKeys.menuButton,
+    title: 'Everything else',
+    body:
+        'Wallets, budgets, savings goals, bill reminders and your '
+        'committee all live behind this menu.',
+    radius: 12,
+  ),
+];

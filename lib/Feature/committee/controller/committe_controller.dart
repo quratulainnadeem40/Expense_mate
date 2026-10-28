@@ -356,8 +356,7 @@ class CommitteeController extends GetxController {
     endingDate.value = _parseDate(committee['endingDate']);
     final String savedAllocationMode =
         committee['allocationMode']?.toString() ?? 'sequence';
-    allocationMode.value =
-        savedAllocationMode == 'spin' ? 'spin' : 'sequence';
+    allocationMode.value = savedAllocationMode == 'spin' ? 'spin' : 'sequence';
 
     final dynamic savedMembers = committee['members'];
     final dynamic savedPayments = committee['payments'];
@@ -819,7 +818,8 @@ class CommitteeController extends GetxController {
     if (name.isEmpty || committee == null) return;
 
     final dynamic savedMembers = committee['members'];
-    final bool memberExists = savedMembers is List &&
+    final bool memberExists =
+        savedMembers is List &&
         savedMembers.whereType<Map>().any(
           (member) => member['name']?.toString().trim() == name,
         );

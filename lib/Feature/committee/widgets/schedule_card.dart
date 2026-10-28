@@ -16,23 +16,16 @@ class ScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF0A0A0A)
-            : Colors.white,
+        color: isDark ? const Color(0xFF0A0A0A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white10
-              : Colors.black12,
-        ),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
       child: Row(
         children: [
@@ -41,16 +34,12 @@ class ScheduleCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDark
-                  ? Colors.white10
-                  : Colors.black12,
+              color: isDark ? Colors.white10 : Colors.black12,
             ),
             child: Icon(
               Icons.event_note_rounded,
               size: 25,
-              color: isDark
-                  ? Colors.white70
-                  : Colors.black54,
+              color: isDark ? Colors.white70 : Colors.black54,
             ),
           ),
 
@@ -58,8 +47,7 @@ class ScheduleCard extends StatelessWidget {
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
@@ -68,9 +56,7 @@ class ScheduleCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? Colors.white
-                        : Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
 
@@ -81,18 +67,14 @@ class ScheduleCard extends StatelessWidget {
                     Icon(
                       Icons.calendar_month_rounded,
                       size: 14,
-                      color: isDark
-                          ? Colors.white54
-                          : Colors.black45,
+                      color: isDark ? Colors.white54 : Colors.black45,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       dueDate,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? Colors.white54
-                            : Colors.black54,
+                        color: isDark ? Colors.white54 : Colors.black54,
                       ),
                     ),
                   ],
@@ -105,9 +87,7 @@ class ScheduleCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? Colors.white
-                        : Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
               ],
@@ -117,10 +97,7 @@ class ScheduleCard extends StatelessWidget {
           const SizedBox(width: 8),
 
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 9,
-              vertical: 7,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: status.toLowerCase() == 'paid'
