@@ -32,7 +32,7 @@ class WalletTypeSelector extends StatelessWidget {
       items: walletTypes.map((type) {
         return DropdownMenuItem<String>(
           value: type,
-          child: Text(type),
+          child: Text(type == 'Cash' ? 'Cash (Physical cash)' : type),
         );
       }).toList(),
       onChanged: (value) {

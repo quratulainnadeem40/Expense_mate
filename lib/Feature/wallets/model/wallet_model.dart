@@ -17,6 +17,20 @@ class WalletModel {
     required this.createdAt,
   });
 
+  bool get isCash => type.trim().toLowerCase() == 'cash';
+
+  String get displayType => isCash ? 'Cash (Physical cash)' : type;
+
+  String get transactionOptionLabel {
+    if (!isCash) {
+      return name;
+    }
+
+    return name.trim().toLowerCase() == 'cash'
+        ? displayType
+        : '$name · Physical cash';
+  }
+
   factory WalletModel.fromMap(Map<String, dynamic> map) {
     return WalletModel(
       id: map['id'] as String,
