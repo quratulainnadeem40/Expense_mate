@@ -48,36 +48,20 @@ class OnboardingController extends GetxController {
 
   /// Urdu first because most of the people using this app read it.
   static const List<OnboardingLanguage> languages = [
-    OnboardingLanguage(
-      code: 'UR',
-      nativeName: 'اردو',
-      englishName: 'Urdu',
-    ),
+    OnboardingLanguage(code: 'UR', nativeName: 'اردو', englishName: 'Urdu'),
     OnboardingLanguage(
       code: 'EN',
       nativeName: 'English',
       englishName: 'English',
     ),
-    OnboardingLanguage(
-      code: 'PS',
-      nativeName: 'پښتو',
-      englishName: 'Pashto',
-    ),
-    OnboardingLanguage(
-      code: 'SD',
-      nativeName: 'سنڌي',
-      englishName: 'Sindhi',
-    ),
+    OnboardingLanguage(code: 'PS', nativeName: 'پښتو', englishName: 'Pashto'),
+    OnboardingLanguage(code: 'SD', nativeName: 'سنڌي', englishName: 'Sindhi'),
     OnboardingLanguage(
       code: 'AR',
       nativeName: 'العربية',
       englishName: 'Arabic',
     ),
-    OnboardingLanguage(
-      code: 'HI',
-      nativeName: 'हिन्दी',
-      englishName: 'Hindi',
-    ),
+    OnboardingLanguage(code: 'HI', nativeName: 'हिन्दी', englishName: 'Hindi'),
   ];
 
   static const List<OnboardingCurrency> currencies = [
@@ -89,8 +73,11 @@ class OnboardingController extends GetxController {
     OnboardingCurrency(code: 'EUR', name: 'Euro', symbol: '\u20AC'),
     OnboardingCurrency(code: 'INR', name: 'Indian Rupee', symbol: '\u20B9'),
     OnboardingCurrency(code: 'CAD', name: 'Canadian Dollar', symbol: 'C\u0024'),
-    OnboardingCurrency(code: 'AUD', name: 'Australian Dollar',
-        symbol: 'A\u0024'),
+    OnboardingCurrency(
+      code: 'AUD',
+      name: 'Australian Dollar',
+      symbol: 'A\u0024',
+    ),
     OnboardingCurrency(code: 'TRY', name: 'Turkish Lira', symbol: '\u20BA'),
   ];
 
@@ -99,8 +86,8 @@ class OnboardingController extends GetxController {
   /// True once the user has been through onboarding on this install.
   static bool get hasSeen {
     if (!Hive.isBoxOpen(AppKeys.settingsBox)) return true;
-    return Hive.box(AppKeys.settingsBox)
-        .get(seenKey, defaultValue: false) as bool;
+    return Hive.box(AppKeys.settingsBox).get(seenKey, defaultValue: false)
+        as bool;
   }
 
   @override
@@ -119,12 +106,7 @@ class OnboardingController extends GetxController {
 
   bool get isLastPage => pageIndex.value == pageCount - 1;
 
-  Future<void> setLanguage(String code) async {
-    selectedLanguage.value = code;
-    if (Get.isRegistered<SettingsController>()) {
-      await Get.find<SettingsController>().changeLanguage(code);
-    }
-  }
+  void setLanguage(String code) => selectedLanguage.value = code;
 
   void setCurrency(String code) => selectedCurrency.value = code;
 
@@ -149,7 +131,6 @@ class OnboardingController extends GetxController {
         ? Get.find<SettingsController>()
         : Get.put(SettingsController());
 
-    await settings.changeLanguage(selectedLanguage.value);
     await settings.changeCurrency(selectedCurrency.value);
   }
 }

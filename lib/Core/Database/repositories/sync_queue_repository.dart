@@ -30,17 +30,19 @@ class SyncQueueRepository {
 
     // No existing operation → create a new queue item.
     if (existing == null) {
-      await database.into(database.syncQueue).insert(
-        SyncQueueCompanion.insert(
-          userId: userId,
-          entityTable: entityTable,
-          recordId: recordId,
-          operation: operation,
-          payload: jsonEncode(payload),
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
+      await database
+          .into(database.syncQueue)
+          .insert(
+            SyncQueueCompanion.insert(
+              userId: userId,
+              entityTable: entityTable,
+              recordId: recordId,
+              operation: operation,
+              payload: jsonEncode(payload),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
 
       return;
     }
@@ -67,9 +69,9 @@ class SyncQueueRepository {
     // -------------------------------------------------------------------------
 
     if (existingOperation == 'insert' && operation == 'update') {
-      await (database.update(database.syncQueue)
-            ..where((tbl) => tbl.id.equals(existing.id)))
-          .write(
+      await (database.update(
+        database.syncQueue,
+      )..where((tbl) => tbl.id.equals(existing.id))).write(
         SyncQueueCompanion(
           operation: const Value('insert'),
           payload: Value(jsonEncode(payload)),
@@ -89,9 +91,9 @@ class SyncQueueRepository {
     // -------------------------------------------------------------------------
 
     if (existingOperation == 'update' && operation == 'update') {
-      await (database.update(database.syncQueue)
-            ..where((tbl) => tbl.id.equals(existing.id)))
-          .write(
+      await (database.update(
+        database.syncQueue,
+      )..where((tbl) => tbl.id.equals(existing.id))).write(
         SyncQueueCompanion(
           operation: const Value('update'),
           payload: Value(jsonEncode(payload)),
@@ -111,9 +113,9 @@ class SyncQueueRepository {
     // -------------------------------------------------------------------------
 
     if (operation == 'delete') {
-      await (database.update(database.syncQueue)
-            ..where((tbl) => tbl.id.equals(existing.id)))
-          .write(
+      await (database.update(
+        database.syncQueue,
+      )..where((tbl) => tbl.id.equals(existing.id))).write(
         SyncQueueCompanion(
           operation: const Value('delete'),
           payload: Value(jsonEncode(payload)),
@@ -130,9 +132,9 @@ class SyncQueueRepository {
     // Fallback
     // -------------------------------------------------------------------------
 
-    await (database.update(database.syncQueue)
-          ..where((tbl) => tbl.id.equals(existing.id)))
-        .write(
+    await (database.update(
+      database.syncQueue,
+    )..where((tbl) => tbl.id.equals(existing.id))).write(
       SyncQueueCompanion(
         operation: Value(operation),
         payload: Value(jsonEncode(payload)),
@@ -147,18 +149,12 @@ class SyncQueueRepository {
   // GET PENDING OPERATIONS
   // ---------------------------------------------------------------------------
 
-  Future<List<SyncQueueData>> getPendingOperations(
-    String userId,
-  ) {
+  Future<List<SyncQueueData>> getPendingOperations(String userId) {
     return (database.select(database.syncQueue)
-          ..where(
-            (tbl) => tbl.userId.equals(userId),
-          )
+          ..where((tbl) => tbl.userId.equals(userId))
           ..orderBy([
-            (tbl) => OrderingTerm(
-                  expression: tbl.createdAt,
-                  mode: OrderingMode.asc,
-                ),
+            (tbl) =>
+                OrderingTerm(expression: tbl.createdAt, mode: OrderingMode.asc),
           ]))
         .get();
   }
@@ -167,14 +163,10 @@ class SyncQueueRepository {
   // GET BY ID
   // ---------------------------------------------------------------------------
 
-  Future<SyncQueueData?> getById(
-    int id,
-  ) {
-    return (database.select(database.syncQueue)
-          ..where(
-            (tbl) => tbl.id.equals(id),
-          ))
-        .getSingleOrNull();
+  Future<SyncQueueData?> getById(int id) {
+    return (database.select(
+      database.syncQueue,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
   // ---------------------------------------------------------------------------
@@ -186,13 +178,12 @@ class SyncQueueRepository {
     required String entityTable,
     required String recordId,
   }) {
-    return (database.select(database.syncQueue)
-          ..where(
-            (tbl) =>
-                tbl.userId.equals(userId) &
-                tbl.entityTable.equals(entityTable) &
-                tbl.recordId.equals(recordId),
-          ))
+    return (database.select(database.syncQueue)..where(
+          (tbl) =>
+              tbl.userId.equals(userId) &
+              tbl.entityTable.equals(entityTable) &
+              tbl.recordId.equals(recordId),
+        ))
         .getSingleOrNull();
   }
 
@@ -200,14 +191,10 @@ class SyncQueueRepository {
   // REMOVE
   // ---------------------------------------------------------------------------
 
-  Future<int> remove(
-    int id,
-  ) {
-    return (database.delete(database.syncQueue)
-          ..where(
-            (tbl) => tbl.id.equals(id),
-          ))
-        .go();
+  Future<int> remove(int id) {
+    return (database.delete(
+      database.syncQueue,
+    )..where((tbl) => tbl.id.equals(id))).go();
   }
 
   // ---------------------------------------------------------------------------
@@ -219,11 +206,9 @@ class SyncQueueRepository {
     required int retryCount,
     String? lastError,
   }) {
-    return (database.update(database.syncQueue)
-          ..where(
-            (tbl) => tbl.id.equals(id),
-          ))
-        .write(
+    return (database.update(
+      database.syncQueue,
+    )..where((tbl) => tbl.id.equals(id))).write(
       SyncQueueCompanion(
         retryCount: Value(retryCount),
         lastError: Value(lastError),
@@ -236,57 +221,40 @@ class SyncQueueRepository {
   // CLEAR USER QUEUE
   // ---------------------------------------------------------------------------
 
-  Future<int> clearUserQueue(
-    String userId,
-  ) {
-    return (database.delete(database.syncQueue)
-          ..where(
-            (tbl) => tbl.userId.equals(userId),
-          ))
-        .go();
+  Future<int> clearUserQueue(String userId) {
+    return (database.delete(
+      database.syncQueue,
+    )..where((tbl) => tbl.userId.equals(userId))).go();
   }
 
   // ---------------------------------------------------------------------------
   // PENDING COUNT
   // ---------------------------------------------------------------------------
 
-  Future<int> pendingCount(
-    String userId,
-  ) async {
+  Future<int> pendingCount(String userId) async {
     final query = database.selectOnly(database.syncQueue)
-      ..addColumns([
-        database.syncQueue.id.count(),
-      ])
-      ..where(
-        database.syncQueue.userId.equals(userId),
-      );
+      ..addColumns([database.syncQueue.id.count()])
+      ..where(database.syncQueue.userId.equals(userId));
 
     final result = await query.getSingle();
 
-    return result.read(
-          database.syncQueue.id.count(),
-        ) ??
-        0;
+    return result.read(database.syncQueue.id.count()) ?? 0;
   }
 
   // ---------------------------------------------------------------------------
   // DECODE PAYLOAD
   // ---------------------------------------------------------------------------
 
-  Map<String, dynamic> decodePayload(
-    String payload,
-  ) {
+  Map<String, dynamic> decodePayload(String payload) {
     final decoded = jsonDecode(payload);
 
     if (decoded is Map<String, dynamic>) {
       return decoded;
     }
 
-    return Map<String, dynamic>.from(
-      decoded as Map,
-    );
+    return Map<String, dynamic>.from(decoded as Map);
   }
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // REMOVE SPECIFIC FAILED QUEUE ITEM
   // ---------------------------------------------------------------------------
   //
@@ -299,13 +267,12 @@ class SyncQueueRepository {
     required String entityTable,
     required String recordId,
   }) async {
-    return (database.delete(database.syncQueue)
-          ..where(
-            (tbl) =>
-                tbl.userId.equals(userId) &
-                tbl.entityTable.equals(entityTable) &
-                tbl.recordId.equals(recordId),
-          ))
+    return (database.delete(database.syncQueue)..where(
+          (tbl) =>
+              tbl.userId.equals(userId) &
+              tbl.entityTable.equals(entityTable) &
+              tbl.recordId.equals(recordId),
+        ))
         .go();
   }
 }

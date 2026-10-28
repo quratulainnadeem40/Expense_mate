@@ -19,11 +19,6 @@ import '../repositories/wallet_local_repository.dart';
 import '../remote/category_remote_repository.dart';
 import '../remote/transaction_remote_repository.dart';
 import '../remote/wallet_remote_repository.dart';
-import '../repositories/udhaar_local_repository.dart';
-import '../repositories/committee_local_repository.dart';
-
-import '../remote/udhaar_remote_repository.dart';
-import '../remote/committee_remote_repository.dart';
 
 class SyncManager extends GetxController {
   final SupabaseClient supabase;
@@ -38,12 +33,6 @@ class SyncManager extends GetxController {
   late final WalletRemoteRepository walletRemote;
   late final CategoryRemoteRepository categoryRemote;
   late final BudgetRemoteRepository budgetRemote;
-
-  late final UdhaarLocalRepository udhaarLocal;
-late final CommitteeLocalRepository committeeLocal;
-
-late final UdhaarRemoteRepository udhaarRemote;
-late final CommitteeRemoteRepository committeeRemote;
 
   bool _isSyncing = false;
 
@@ -73,9 +62,8 @@ late final CommitteeRemoteRepository committeeRemote;
   // CONSTRUCTOR
   // ==========================================================
 
-  SyncManager({
-    SupabaseClient? supabaseClient,
-  }) : supabase = supabaseClient ?? Supabase.instance.client {
+  SyncManager({SupabaseClient? supabaseClient})
+    : supabase = supabaseClient ?? Supabase.instance.client {
     final database = DatabaseProvider.instance.database;
 
     transactionLocal = TransactionLocalRepository(database);
@@ -83,15 +71,11 @@ late final CommitteeRemoteRepository committeeRemote;
     categoryLocal = CategoryLocalRepository(database);
     budgetLocal = BudgetLocalRepository(database);
     syncQueue = SyncQueueRepository(database);
-    udhaarLocal = UdhaarLocalRepository(database);
-committeeLocal = CommitteeLocalRepository(database);
 
     transactionRemote = TransactionRemoteRepository(supabase);
     walletRemote = WalletRemoteRepository(supabase);
     categoryRemote = CategoryRemoteRepository(supabase);
     budgetRemote = BudgetRemoteRepository(supabase);
-    udhaarRemote = UdhaarRemoteRepository(supabase);
-committeeRemote = CommitteeRemoteRepository(supabase);
   }
 
   // ==========================================================
@@ -120,39 +104,34 @@ committeeRemote = CommitteeRemoteRepository(supabase);
   void _startAutomaticRetry() {
     _retryTimer?.cancel();
 
-    _retryTimer = Timer.periodic(
-      const Duration(seconds: 10),
-      (_) async {
-        if (_isSyncing) {
-          return;
-        }
+    _retryTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      if (_isSyncing) {
+        return;
+      }
 
-        final user = supabase.auth.currentUser;
+      final user = supabase.auth.currentUser;
 
-        if (user == null) {
-          return;
-        }
+      if (user == null) {
+        return;
+      }
 
-        await _refreshPendingCount(user.id);
+      await _refreshPendingCount(user.id);
 
-        if (pendingCount.value == 0) {
-          return;
-        }
+      if (pendingCount.value == 0) {
+        return;
+      }
 
-        try {
-          debugPrint('================================');
-          debugPrint('AUTOMATIC SYNC RETRY');
-          debugPrint('Pending: ${pendingCount.value}');
-          debugPrint('================================');
+      try {
+        debugPrint('================================');
+        debugPrint('AUTOMATIC SYNC RETRY');
+        debugPrint('Pending: ${pendingCount.value}');
+        debugPrint('================================');
 
-          await sync();
-        } catch (e) {
-          debugPrint(
-            'Automatic sync retry failed: $e',
-          );
-        }
-      },
-    );
+        await sync();
+      } catch (e) {
+        debugPrint('Automatic sync retry failed: $e');
+      }
+    });
   }
 
   // ==========================================================
@@ -185,33 +164,29 @@ committeeRemote = CommitteeRemoteRepository(supabase);
     try {
       await _refreshPendingCount(user.id);
 
-      debugPrint(
-        'Pending operations: ${pendingCount.value}',
-      );
+      debugPrint('Pending operations: ${pendingCount.value}');
 
       // ------------------------------------------------------
       // STEP 1: Upload local pending changes.
       // ------------------------------------------------------
-await _syncPendingOperations(user.id);
+      await _syncPendingOperations(user.id);
 
-await _syncCloudToLocal(user.id);
+      await _syncCloudToLocal(user.id);
 
-await _refreshPendingCount(user.id);
+      await _refreshPendingCount(user.id);
 
-if (pendingCount.value == 0) {
-  syncStatus.value = 'Synced';
-  lastError.value = '';
+      if (pendingCount.value == 0) {
+        syncStatus.value = 'Synced';
+        lastError.value = '';
 
-  _lastSuccessfulSync = DateTime.now();
+        _lastSuccessfulSync = DateTime.now();
 
-  debugPrint('SYNC SUCCESSFUL');
-} else {
-  syncStatus.value = 'Pending';
+        debugPrint('SYNC SUCCESSFUL');
+      } else {
+        syncStatus.value = 'Pending';
 
-  debugPrint(
-    'SYNC STILL PENDING: ${pendingCount.value}',
-  );
-}
+        debugPrint('SYNC STILL PENDING: ${pendingCount.value}');
+      }
     } catch (e, stackTrace) {
       await _refreshPendingCount(user.id);
 
@@ -236,18 +211,13 @@ if (pendingCount.value == 0) {
   // REFRESH PENDING COUNT
   // ==========================================================
 
-  Future<void> _refreshPendingCount(
-    String userId,
-  ) async {
+  Future<void> _refreshPendingCount(String userId) async {
     try {
-      final operations =
-          await syncQueue.getPendingOperations(userId);
+      final operations = await syncQueue.getPendingOperations(userId);
 
       pendingCount.value = operations.length;
     } catch (e) {
-      debugPrint(
-        'Could not refresh pending count: $e',
-      );
+      debugPrint('Could not refresh pending count: $e');
     }
   }
 
@@ -255,100 +225,83 @@ if (pendingCount.value == 0) {
   // PENDING OPERATIONS
   // ==========================================================
 
-Future<void> _syncPendingOperations(
-  String userId,
-) async {
-  final pendingOperations =
-      await syncQueue.getPendingOperations(userId);
+  Future<void> _syncPendingOperations(String userId) async {
+    final pendingOperations = await syncQueue.getPendingOperations(userId);
 
-  pendingCount.value = pendingOperations.length;
+    pendingCount.value = pendingOperations.length;
 
-  debugPrint(
-    'Processing ${pendingOperations.length} '
-    'pending operation(s)',
-  );
+    debugPrint(
+      'Processing ${pendingOperations.length} '
+      'pending operation(s)',
+    );
 
-  for (final queueItem in pendingOperations) {
-    try {
-      debugPrint('--------------------------------');
-      debugPrint('SYNC QUEUE ITEM');
-      debugPrint('ID: ${queueItem.id}');
-      debugPrint('Entity: ${queueItem.entityTable}');
-      debugPrint('Record: ${queueItem.recordId}');
-      debugPrint('Operation: ${queueItem.operation}');
+    for (final queueItem in pendingOperations) {
+      try {
+        debugPrint('--------------------------------');
+        debugPrint('SYNC QUEUE ITEM');
+        debugPrint('ID: ${queueItem.id}');
+        debugPrint('Entity: ${queueItem.entityTable}');
+        debugPrint('Record: ${queueItem.recordId}');
+        debugPrint('Operation: ${queueItem.operation}');
 
-      await _processQueueItem(queueItem);
+        await _processQueueItem(queueItem);
 
-      debugPrint('QUEUE ITEM SYNCED');
-    } catch (e, stackTrace) {
-      final nextRetryCount =
-          queueItem.retryCount + 1;
+        debugPrint('QUEUE ITEM SYNCED');
+      } catch (e, stackTrace) {
+        final nextRetryCount = queueItem.retryCount + 1;
 
-      final errorMessage = e.toString();
+        final errorMessage = e.toString();
 
-      await syncQueue.updateRetryInfo(
-        id: queueItem.id,
-        retryCount: nextRetryCount,
-        lastError: errorMessage,
-      );
+        await syncQueue.updateRetryInfo(
+          id: queueItem.id,
+          retryCount: nextRetryCount,
+          lastError: errorMessage,
+        );
 
-      lastError.value = errorMessage;
-      syncStatus.value = 'Sync failed';
+        lastError.value = errorMessage;
+        syncStatus.value = 'Sync failed';
 
-      debugPrint('--------------------------------');
-      debugPrint('QUEUE ITEM FAILED');
-      debugPrint('Entity: ${queueItem.entityTable}');
-      debugPrint('Record: ${queueItem.recordId}');
-      debugPrint('Operation: ${queueItem.operation}');
-      debugPrint('Retry count: $nextRetryCount');
-      debugPrint('ERROR: $errorMessage');
-      debugPrint('STACK TRACE: $stackTrace');
-      debugPrint('--------------------------------');
+        debugPrint('--------------------------------');
+        debugPrint('QUEUE ITEM FAILED');
+        debugPrint('Entity: ${queueItem.entityTable}');
+        debugPrint('Record: ${queueItem.recordId}');
+        debugPrint('Operation: ${queueItem.operation}');
+        debugPrint('Retry count: $nextRetryCount');
+        debugPrint('ERROR: $errorMessage');
+        debugPrint('STACK TRACE: $stackTrace');
+        debugPrint('--------------------------------');
 
-      // IMPORTANT:
-      // Do not process the remaining queue items as if
-      // everything succeeded.
-      rethrow;
+        // IMPORTANT:
+        // Do not process the remaining queue items as if
+        // everything succeeded.
+        rethrow;
+      }
     }
-  }
 
-  await _refreshPendingCount(userId);
-}
+    await _refreshPendingCount(userId);
+  }
 
   // ==========================================================
   // PROCESS QUEUE ITEM
   // ==========================================================
 
-  Future<void> _processQueueItem(
-    SyncQueueData queueItem,
-  ) async {
-    final payload =
-        _decodePayload(queueItem.payload);
+  Future<void> _processQueueItem(SyncQueueData queueItem) async {
+    final payload = _decodePayload(queueItem.payload);
 
     debugPrint('Payload: $payload');
 
     switch (queueItem.entityTable) {
       case 'transactions':
-        await _syncTransaction(
-          queueItem: queueItem,
-          payload: payload,
-        );
+        await _syncTransaction(queueItem: queueItem, payload: payload);
         break;
 
       case 'wallets':
-        await _syncWallet(
-          queueItem: queueItem,
-          payload: payload,
-        );
+        await _syncWallet(queueItem: queueItem, payload: payload);
         break;
 
       case 'categories':
-        await _syncCategory(
-          queueItem: queueItem,
-          payload: payload,
-        );
+        await _syncCategory(queueItem: queueItem, payload: payload);
         break;
-
 
       case 'budgets':
         await _syncBudget(
@@ -356,20 +309,6 @@ Future<void> _syncPendingOperations(
           payload: _cleanBudgetPayload(payload),
         );
         break;
-
-        case 'udhaar_entries':
-  await _syncUdhaar(
-    queueItem: queueItem,
-    payload: payload,
-  );
-  break;
-
-case 'committees':
-  await _syncCommittee(
-    queueItem: queueItem,
-    payload: payload,
-  );
-  break;
 
       default:
         throw Exception(
@@ -390,33 +329,23 @@ case 'committees':
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await transactionRemote.insertTransaction(
-          payload,
-        );
+        await transactionRemote.insertTransaction(payload);
 
         await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'update':
-        await transactionRemote.updateTransaction(
-          queueItem.recordId,
-          payload,
-        );
+        await transactionRemote.updateTransaction(queueItem.recordId, payload);
 
         await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'delete':
-        await transactionRemote.deleteTransaction(
-          queueItem.recordId,
-        );
+        await transactionRemote.deleteTransaction(queueItem.recordId);
 
-        await transactionLocal
-            .permanentlyDeleteTransaction(
-          queueItem.recordId,
-        );
+        await transactionLocal.permanentlyDeleteTransaction(queueItem.recordId);
 
         await syncQueue.remove(queueItem.id);
 
@@ -441,32 +370,23 @@ case 'committees':
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await walletRemote.insertWallet(
-          payload,
-        );
+        await walletRemote.insertWallet(payload);
 
         await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'update':
-        await walletRemote.updateWallet(
-          queueItem.recordId,
-          payload,
-        );
+        await walletRemote.updateWallet(queueItem.recordId, payload);
 
         await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'delete':
-        await walletRemote.deleteWallet(
-          queueItem.recordId,
-        );
+        await walletRemote.deleteWallet(queueItem.recordId);
 
-        await walletLocal.permanentlyDeleteWallet(
-          queueItem.recordId,
-        );
+        await walletLocal.permanentlyDeleteWallet(queueItem.recordId);
 
         await syncQueue.remove(queueItem.id);
 
@@ -491,33 +411,23 @@ case 'committees':
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        await categoryRemote.insertCategory(
-          payload,
-        );
+        await categoryRemote.insertCategory(payload);
 
         await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'update':
-        await categoryRemote.updateCategory(
-          queueItem.recordId,
-          payload,
-        );
+        await categoryRemote.updateCategory(queueItem.recordId, payload);
 
         await syncQueue.remove(queueItem.id);
 
         break;
 
       case 'delete':
-        await categoryRemote.deleteCategory(
-          queueItem.recordId,
-        );
+        await categoryRemote.deleteCategory(queueItem.recordId);
 
-        await categoryLocal
-            .permanentlyDeleteCategory(
-          queueItem.recordId,
-        );
+        await categoryLocal.permanentlyDeleteCategory(queueItem.recordId);
 
         await syncQueue.remove(queueItem.id);
 
@@ -535,30 +445,21 @@ case 'committees':
   // ENSURE BUDGET CATEGORY EXISTS
   // ==========================================================
 
-  Future<void> _ensureBudgetCategoryExists(
-    Map<String, dynamic> payload,
-  ) async {
-    final categoryId =
-        payload['category_id']?.toString();
+  Future<void> _ensureBudgetCategoryExists(Map<String, dynamic> payload) async {
+    final categoryId = payload['category_id']?.toString();
 
     // Total budget does not have a category.
-    if (categoryId == null ||
-        categoryId.isEmpty) {
+    if (categoryId == null || categoryId.isEmpty) {
       return;
     }
 
-    final userId =
-        payload['user_id']?.toString();
+    final userId = payload['user_id']?.toString();
 
     if (userId == null || userId.isEmpty) {
-      throw Exception(
-        'Budget user_id is missing.',
-      );
+      throw Exception('Budget user_id is missing.');
     }
 
-    debugPrint(
-      'Checking budget category: $categoryId',
-    );
+    debugPrint('Checking budget category: $categoryId');
 
     // --------------------------------------------------------
     // 1. Check Supabase first.
@@ -572,23 +473,18 @@ case 'committees':
         .maybeSingle();
 
     if (remoteCategory != null) {
-      debugPrint(
-        'Budget category already exists in Supabase.',
-      );
+      debugPrint('Budget category already exists in Supabase.');
 
       return;
     }
 
-    debugPrint(
-      'Budget category does not exist in Supabase.',
-    );
+    debugPrint('Budget category does not exist in Supabase.');
 
     // --------------------------------------------------------
     // 2. Check pending category queue.
     // --------------------------------------------------------
 
-    final pendingCategory =
-        await syncQueue.getByEntityAndRecord(
+    final pendingCategory = await syncQueue.getByEntityAndRecord(
       userId: userId,
       entityTable: 'categories',
       recordId: categoryId,
@@ -600,18 +496,15 @@ case 'committees':
         'Syncing category before budget...',
       );
 
-      await _processQueueItem(
-        pendingCategory,
-      );
+      await _processQueueItem(pendingCategory);
 
       // Verify again after category sync.
-      final categoryAfterSync =
-          await supabase
-              .from('categories')
-              .select('id')
-              .eq('id', categoryId)
-              .eq('user_id', userId)
-              .maybeSingle();
+      final categoryAfterSync = await supabase
+          .from('categories')
+          .select('id')
+          .eq('id', categoryId)
+          .eq('user_id', userId)
+          .maybeSingle();
 
       if (categoryAfterSync != null) {
         debugPrint(
@@ -627,13 +520,9 @@ case 'committees':
     // 3. Check local Drift.
     // --------------------------------------------------------
 
-    final localCategory =
-        await categoryLocal.getCategoryById(
-      categoryId,
-    );
+    final localCategory = await categoryLocal.getCategoryById(categoryId);
 
-    if (localCategory != null &&
-        !localCategory.isDeleted) {
+    if (localCategory != null && !localCategory.isDeleted) {
       debugPrint(
         'Found category locally. '
         'Uploading it before budget...',
@@ -646,17 +535,12 @@ case 'committees':
         'type': localCategory.type,
         'icon': localCategory.icon,
         'color': localCategory.color,
-        'created_at':
-            localCategory.createdAt.toIso8601String(),
+        'created_at': localCategory.createdAt.toIso8601String(),
       };
 
-      await categoryRemote.insertCategory(
-        categoryPayload,
-      );
+      await categoryRemote.insertCategory(categoryPayload);
 
-      debugPrint(
-        'Local category uploaded successfully.',
-      );
+      debugPrint('Local category uploaded successfully.');
 
       return;
     }
@@ -673,166 +557,6 @@ case 'committees':
   }
 
   // ==========================================================
-// UDHAAR SYNC
-// ==========================================================
-
-Future<void> _syncUdhaar({
-  required SyncQueueData queueItem,
-  required Map<String, dynamic> payload,
-}) async {
-  final userId = queueItem.userId;
-  final entryId = queueItem.recordId;
-
-  switch (queueItem.operation.toLowerCase()) {
-    case 'insert':
-    case 'create':
-      await udhaarRemote.insertEntry(
-        _cleanUdhaarPayload(payload),
-      );
-
-      await syncQueue.remove(queueItem.id);
-      break;
-
-    case 'update':
-      await udhaarRemote.updateEntry(
-        entryId: entryId,
-        userId: userId,
-        entry: _cleanUdhaarPayload(payload),
-      );
-
-      await syncQueue.remove(queueItem.id);
-      break;
-
-    case 'delete':
-      await udhaarRemote.deleteEntry(
-        entryId: entryId,
-        userId: userId,
-      );
-
-      await udhaarLocal.permanentDeleteEntry(entryId);
-
-      await syncQueue.remove(queueItem.id);
-      break;
-
-    default:
-      throw Exception(
-        'Unknown Udhaar operation: ${queueItem.operation}',
-      );
-  }
-}
-
-Map<String, dynamic> _cleanUdhaarPayload(
-  Map<String, dynamic> payload,
-) {
-  return {
-    'id': payload['id'],
-    'user_id': payload['user_id'],
-    'person_name': payload['person_name'],
-    'phone': payload['phone'] ?? '',
-    'amount': payload['amount'],
-    'is_lent': payload['is_lent'],
-    'entry_date': payload['entry_date'],
-    'note': payload['note'] ?? '',
-    'is_settled': payload['is_settled'] ?? false,
-    'settled_on': payload['settled_on'],
-    'created_at': payload['created_at'],
-    'updated_at': payload['updated_at'],
-  };
-}
-// ==========================================================
-// COMMITTEE SYNC
-// ==========================================================
-
-Future<void> _syncCommittee({
-  required SyncQueueData queueItem,
-  required Map<String, dynamic> payload,
-}) async {
-  final userId = queueItem.userId;
-  final committeeId = queueItem.recordId;
-
-  switch (queueItem.operation.toLowerCase()) {
-    case 'insert':
-    case 'create':
-      await committeeRemote.insertCommittee(
-        _cleanCommitteePayload(payload),
-      );
-
-      await syncQueue.remove(queueItem.id);
-      break;
-
-    case 'update':
-      await committeeRemote.updateCommittee(
-        committeeId: committeeId,
-        userId: userId,
-        committee: _cleanCommitteePayload(payload),
-      );
-
-      await syncQueue.remove(queueItem.id);
-      break;
-
-    case 'delete':
-      await committeeRemote.deleteCommittee(
-        committeeId: committeeId,
-        userId: userId,
-      );
-
-      await committeeLocal.permanentDeleteCommittee(
-        committeeId,
-      );
-
-      await syncQueue.remove(queueItem.id);
-      break;
-
-    default:
-      throw Exception(
-        'Unknown Committee operation: ${queueItem.operation}',
-      );
-  }
-}
-
-Map<String, dynamic> _cleanCommitteePayload(
-  Map<String, dynamic> payload,
-) {
-  dynamic decodeJsonField(
-    dynamic value,
-    dynamic fallback,
-  ) {
-    if (value == null) return fallback;
-
-    if (value is String) {
-      try {
-        return jsonDecode(value);
-      } catch (_) {
-        return fallback;
-      }
-    }
-
-    return value;
-  }
-
-  return {
-    'id': payload['id'],
-    'user_id': payload['user_id'],
-    'name': payload['name'],
-    'contribution': payload['contribution'],
-    'member_count': payload['member_count'],
-    'duration': payload['duration'],
-    'unit': payload['unit'] ?? 'Months',
-    'start_date': payload['start_date'],
-    'ending_date': payload['ending_date'],
-    'allocation_mode': payload['allocation_mode'] ?? 'sequence',
-    'members': decodeJsonField(payload['members'], []),
-    'payments': decodeJsonField(payload['payments'], []),
-    'receiving_selections': decodeJsonField(
-      payload['receiving_selections'],
-      {},
-    ),
-    'created_at': payload['created_at'],
-    'updated_at': payload['updated_at'],
-  };
-}
-
-  // ==========================================================
   // BUDGET SYNC
   // ==========================================================
 
@@ -842,33 +566,23 @@ Map<String, dynamic> _cleanCommitteePayload(
   }) async {
     // A budget with category_id must never be uploaded
     // before that category exists in Supabase.
-    await _ensureBudgetCategoryExists(
-      payload,
-    );
+    await _ensureBudgetCategoryExists(payload);
 
     switch (queueItem.operation.toLowerCase()) {
       case 'insert':
       case 'create':
-        debugPrint(
-          'Uploading budget to Supabase...',
-        );
+        debugPrint('Uploading budget to Supabase...');
 
-        await budgetRemote.insertBudget(
-          _cleanBudgetPayload(payload),
-        );
+        await budgetRemote.insertBudget(_cleanBudgetPayload(payload));
 
         await syncQueue.remove(queueItem.id);
 
-        debugPrint(
-          'Budget uploaded successfully.',
-        );
+        debugPrint('Budget uploaded successfully.');
 
         break;
 
       case 'update':
-        debugPrint(
-          'Updating budget in Supabase...',
-        );
+        debugPrint('Updating budget in Supabase...');
 
         await budgetRemote.updateBudget(
           queueItem.recordId,
@@ -877,30 +591,20 @@ Map<String, dynamic> _cleanCommitteePayload(
 
         await syncQueue.remove(queueItem.id);
 
-        debugPrint(
-          'Budget updated successfully.',
-        );
+        debugPrint('Budget updated successfully.');
 
         break;
 
       case 'delete':
-        debugPrint(
-          'Deleting budget from Supabase...',
-        );
+        debugPrint('Deleting budget from Supabase...');
 
-        await budgetRemote.deleteBudget(
-          queueItem.recordId,
-        );
+        await budgetRemote.deleteBudget(queueItem.recordId);
 
-        await budgetLocal.permanentDeleteBudget(
-          queueItem.recordId,
-        );
+        await budgetLocal.permanentDeleteBudget(queueItem.recordId);
 
         await syncQueue.remove(queueItem.id);
 
-        debugPrint(
-          'Budget deleted successfully.',
-        );
+        debugPrint('Budget deleted successfully.');
 
         break;
 
@@ -930,9 +634,7 @@ Map<String, dynamic> _cleanCommitteePayload(
   ///
   /// Local-only sync fields such as updated_at and version
   /// must NEVER be sent to Supabase.
-  Map<String, dynamic> _cleanBudgetPayload(
-    Map<String, dynamic> payload,
-  ) {
+  Map<String, dynamic> _cleanBudgetPayload(Map<String, dynamic> payload) {
     return {
       'id': payload['id'],
       'user_id': payload['user_id'],
@@ -950,39 +652,31 @@ Map<String, dynamic> _cleanCommitteePayload(
   // CLOUD → LOCAL
   // ==========================================================
 
-  Future<void> _syncCloudToLocal(
-  String userId,
-) async {
-  await _syncTransactionsFromCloud(userId);
-  await _syncWalletsFromCloud(userId);
-  await _syncCategoriesFromCloud(userId);
-  await _syncBudgetsFromCloud(userId);
+  Future<void> _syncCloudToLocal(String userId) async {
+    await _syncTransactionsFromCloud(userId);
 
-  await _syncUdhaarFromCloud(userId);
-  await _syncCommitteesFromCloud(userId);
-}
+    await _syncWalletsFromCloud(userId);
+
+    await _syncCategoriesFromCloud(userId);
+
+    await _syncBudgetsFromCloud(userId);
+  }
+
   // ==========================================================
   // TRANSACTIONS CLOUD → LOCAL
   // ==========================================================
 
-  Future<void> _syncTransactionsFromCloud(
-    String userId,
-  ) async {
-    final transactions =
-        await transactionRemote.getTransactions(
-      userId,
-    );
+  Future<void> _syncTransactionsFromCloud(String userId) async {
+    final transactions = await transactionRemote.getTransactions(userId);
 
     for (final transaction in transactions) {
-      final id =
-          transaction['id']?.toString();
+      final id = transaction['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      final pending =
-          await syncQueue.getByEntityAndRecord(
+      final pending = await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'transactions',
         recordId: id,
@@ -992,74 +686,36 @@ Map<String, dynamic> _cleanCommitteePayload(
         continue;
       }
 
-      final existing =
-          await transactionLocal
-              .getTransactionById(id);
+      final existing = await transactionLocal.getTransactionById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
-      final transactionDate =
-          _parseDate(
-        transaction['transaction_date'],
-      );
+      final transactionDate = _parseDate(transaction['transaction_date']);
 
-      final createdAt =
-          _parseDate(
-        transaction['created_at'],
-      );
+      final createdAt = _parseDate(transaction['created_at']);
 
-      final companion =
-          LocalTransactionsCompanion(
+      final companion = LocalTransactionsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
-        walletId: _nullableValue(
-          transaction['wallet_id'],
-        ),
-        categoryId: _nullableValue(
-          transaction['category_id'],
-        ),
-        title: drift.Value(
-          transaction['title']?.toString() ??
-              '',
-        ),
-        amount: drift.Value(
-          (transaction['amount'] as num?)
-                  ?.toDouble() ??
-              0.0,
-        ),
-        type: drift.Value(
-          transaction['type']?.toString() ??
-              'expense',
-        ),
-        transactionDate:
-            drift.Value(transactionDate),
-        note: _nullableValue(
-          transaction['note'],
-        ),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        walletId: _nullableValue(transaction['wallet_id']),
+        categoryId: _nullableValue(transaction['category_id']),
+        title: drift.Value(transaction['title']?.toString() ?? ''),
+        amount: drift.Value((transaction['amount'] as num?)?.toDouble() ?? 0.0),
+        type: drift.Value(transaction['type']?.toString() ?? 'expense'),
+        transactionDate: drift.Value(transactionDate),
+        note: _nullableValue(transaction['note']),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await transactionLocal
-            .insertTransaction(
-          companion,
-        );
+        await transactionLocal.insertTransaction(companion);
       } else {
-        await transactionLocal
-            .updateTransaction(
-          id,
-          companion,
-        );
+        await transactionLocal.updateTransaction(id, companion);
       }
     }
   }
@@ -1068,24 +724,17 @@ Map<String, dynamic> _cleanCommitteePayload(
   // WALLETS CLOUD → LOCAL
   // ==========================================================
 
-  Future<void> _syncWalletsFromCloud(
-    String userId,
-  ) async {
-    final wallets =
-        await walletRemote.getWallets(
-      userId,
-    );
+  Future<void> _syncWalletsFromCloud(String userId) async {
+    final wallets = await walletRemote.getWallets(userId);
 
     for (final wallet in wallets) {
-      final id =
-          wallet['id']?.toString();
+      final id = wallet['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      final pending =
-          await syncQueue.getByEntityAndRecord(
+      final pending = await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'wallets',
         recordId: id,
@@ -1095,61 +744,31 @@ Map<String, dynamic> _cleanCommitteePayload(
         continue;
       }
 
-      final existing =
-          await walletLocal.getWalletById(
-        id,
-      );
+      final existing = await walletLocal.getWalletById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
-      final createdAt =
-          _parseDate(
-        wallet['created_at'],
-      );
+      final createdAt = _parseDate(wallet['created_at']);
 
-      final companion =
-          LocalWalletsCompanion(
+      final companion = LocalWalletsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
-        name: drift.Value(
-          wallet['name']?.toString() ??
-              '',
-        ),
-        balance: drift.Value(
-          (wallet['balance'] as num?)
-                  ?.toDouble() ??
-              0.0,
-        ),
-        currency: drift.Value(
-          wallet['currency']?.toString() ??
-              'PKR',
-        ),
-        type: drift.Value(
-          wallet['type']?.toString() ??
-              'Cash',
-        ),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        name: drift.Value(wallet['name']?.toString() ?? ''),
+        balance: drift.Value((wallet['balance'] as num?)?.toDouble() ?? 0.0),
+        currency: drift.Value(wallet['currency']?.toString() ?? 'PKR'),
+        type: drift.Value(wallet['type']?.toString() ?? 'Cash'),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await walletLocal.insertWallet(
-          companion,
-        );
+        await walletLocal.insertWallet(companion);
       } else {
-        await walletLocal.updateWallet(
-          id,
-          companion,
-        );
+        await walletLocal.updateWallet(id, companion);
       }
     }
   }
@@ -1158,24 +777,17 @@ Map<String, dynamic> _cleanCommitteePayload(
   // CATEGORIES CLOUD → LOCAL
   // ==========================================================
 
-  Future<void> _syncCategoriesFromCloud(
-    String userId,
-  ) async {
-    final categories =
-        await categoryRemote.getCategories(
-      userId,
-    );
+  Future<void> _syncCategoriesFromCloud(String userId) async {
+    final categories = await categoryRemote.getCategories(userId);
 
     for (final category in categories) {
-      final id =
-          category['id']?.toString();
+      final id = category['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      final pending =
-          await syncQueue.getByEntityAndRecord(
+      final pending = await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'categories',
         recordId: id,
@@ -1185,58 +797,31 @@ Map<String, dynamic> _cleanCommitteePayload(
         continue;
       }
 
-      final existing =
-          await categoryLocal.getCategoryById(
-        id,
-      );
+      final existing = await categoryLocal.getCategoryById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
-      final createdAt =
-          _parseDate(
-        category['created_at'],
-      );
+      final createdAt = _parseDate(category['created_at']);
 
-      final companion =
-          LocalCategoriesCompanion(
+      final companion = LocalCategoriesCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
-        name: drift.Value(
-          category['name']?.toString() ??
-              '',
-        ),
-        type: drift.Value(
-          category['type']?.toString() ??
-              'expense',
-        ),
-        icon: _nullableValue(
-          category['icon'],
-        ),
-        color: _nullableValue(
-          category['color'],
-        ),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        name: drift.Value(category['name']?.toString() ?? ''),
+        type: drift.Value(category['type']?.toString() ?? 'expense'),
+        icon: _nullableValue(category['icon']),
+        color: _nullableValue(category['color']),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await categoryLocal.insertCategory(
-          companion,
-        );
+        await categoryLocal.insertCategory(companion);
       } else {
-        await categoryLocal.updateCategory(
-          id,
-          companion,
-        );
+        await categoryLocal.updateCategory(id, companion);
       }
     }
   }
@@ -1245,24 +830,17 @@ Map<String, dynamic> _cleanCommitteePayload(
   // BUDGETS CLOUD → LOCAL
   // ==========================================================
 
-  Future<void> _syncBudgetsFromCloud(
-    String userId,
-  ) async {
-    final budgets =
-        await budgetRemote.getBudgets(
-      userId,
-    );
+  Future<void> _syncBudgetsFromCloud(String userId) async {
+    final budgets = await budgetRemote.getBudgets(userId);
 
     for (final budget in budgets) {
-      final id =
-          budget['id']?.toString();
+      final id = budget['id']?.toString();
 
       if (id == null || id.isEmpty) {
         continue;
       }
 
-      final pending =
-          await syncQueue.getByEntityAndRecord(
+      final pending = await syncQueue.getByEntityAndRecord(
         userId: userId,
         entityTable: 'budgets',
         recordId: id,
@@ -1272,232 +850,53 @@ Map<String, dynamic> _cleanCommitteePayload(
         continue;
       }
 
-      final existing =
-          await budgetLocal.getBudgetById(
-        id,
-      );
+      final existing = await budgetLocal.getBudgetById(id);
 
-      if (existing != null &&
-          existing.isDeleted) {
+      if (existing != null && existing.isDeleted) {
         continue;
       }
 
-      final startDate =
-          _parseDate(
-        budget['start_date'],
-      );
+      final startDate = _parseDate(budget['start_date']);
 
-      final endDate =
-          _parseDate(
-        budget['end_date'],
-      );
+      final endDate = _parseDate(budget['end_date']);
 
-      final createdAt =
-          _parseDate(
-        budget['created_at'],
-      );
+      final createdAt = _parseDate(budget['created_at']);
 
       // Supabase budgets does NOT have
       // updated_at/version.
       // These values are local-only.
-      final companion =
-          LocalBudgetsCompanion(
+      final companion = LocalBudgetsCompanion(
         id: drift.Value(id),
         userId: drift.Value(userId),
-        categoryId: _nullableValue(
-          budget['category_id'],
-        ),
-        name: drift.Value(
-          budget['name']?.toString() ??
-              '',
-        ),
-        amount: drift.Value(
-          (budget['amount'] as num?)
-                  ?.toDouble() ??
-              0.0,
-        ),
-        spent: drift.Value(
-          (budget['spent'] as num?)
-                  ?.toDouble() ??
-              0.0,
-        ),
-        startDate:
-            drift.Value(startDate),
-        endDate:
-            drift.Value(endDate),
-        createdAt:
-            drift.Value(createdAt),
-        updatedAt:
-            drift.Value(DateTime.now()),
-        version:
-            const drift.Value(1),
-        isDeleted:
-            const drift.Value(false),
+        categoryId: _nullableValue(budget['category_id']),
+        name: drift.Value(budget['name']?.toString() ?? ''),
+        amount: drift.Value((budget['amount'] as num?)?.toDouble() ?? 0.0),
+        spent: drift.Value((budget['spent'] as num?)?.toDouble() ?? 0.0),
+        startDate: drift.Value(startDate),
+        endDate: drift.Value(endDate),
+        createdAt: drift.Value(createdAt),
+        updatedAt: drift.Value(DateTime.now()),
+        version: const drift.Value(1),
+        isDeleted: const drift.Value(false),
       );
 
       if (existing == null) {
-        await budgetLocal.insertBudget(
-          companion,
-        );
+        await budgetLocal.insertBudget(companion);
       } else {
-        await budgetLocal.updateBudget(
-          id,
-          companion,
-        );
+        await budgetLocal.updateBudget(id, companion);
       }
     }
   }
 
-
-// ==========================================================
-// UDHAAR CLOUD → LOCAL
-// ==========================================================
-
-Future<void> _syncUdhaarFromCloud(String userId) async {
-  final entries = await udhaarRemote.getEntries(userId);
-
-  for (final entry in entries) {
-    final id = entry['id']?.toString();
-
-    if (id == null || id.isEmpty) continue;
-
-    final pending = await syncQueue.getByEntityAndRecord(
-      userId: userId,
-      entityTable: 'udhaar_entries',
-      recordId: id,
-    );
-
-    if (pending != null) continue;
-
-    final existing = await udhaarLocal.getEntryById(id);
-
-    if (existing != null && existing.isDeleted) continue;
-
-    final companion = LocalUdhaarEntriesCompanion(
-      id: drift.Value(id),
-      userId: drift.Value(userId),
-      personName: drift.Value(
-        entry['person_name']?.toString() ?? '',
-      ),
-      phone: drift.Value(
-        entry['phone']?.toString() ?? '',
-      ),
-      amount: drift.Value(
-        (entry['amount'] as num?)?.toDouble() ?? 0,
-      ),
-      isLent: drift.Value(entry['is_lent'] == true),
-      entryDate: drift.Value(_parseDate(entry['entry_date'])),
-      note: drift.Value(entry['note']?.toString() ?? ''),
-      isSettled: drift.Value(entry['is_settled'] == true),
-      settledOn: entry['settled_on'] == null
-          ? const drift.Value(null)
-          : drift.Value(_parseDate(entry['settled_on'])),
-      createdAt: drift.Value(_parseDate(entry['created_at'])),
-      updatedAt: drift.Value(_parseDate(entry['updated_at'])),
-      version: const drift.Value(1),
-      isDeleted: const drift.Value(false),
-    );
-
-    if (existing == null) {
-      await udhaarLocal.insertEntry(companion);
-    } else {
-      await udhaarLocal.updateEntry(id, companion);
-    }
-  }
-}
-// ==========================================================
-// COMMITTEES CLOUD → LOCAL
-// ==========================================================
-
-Future<void> _syncCommitteesFromCloud(String userId) async {
-  final committees = await committeeRemote.getCommittees(userId);
-
-  for (final committee in committees) {
-    final id = committee['id']?.toString();
-
-    if (id == null || id.isEmpty) continue;
-
-    final pending = await syncQueue.getByEntityAndRecord(
-      userId: userId,
-      entityTable: 'committees',
-      recordId: id,
-    );
-
-    if (pending != null) continue;
-
-    final existing = await committeeLocal.getCommitteeById(id);
-
-    if (existing != null && existing.isDeleted) continue;
-
-    String encodeJson(dynamic value, String fallback) {
-      if (value == null) return fallback;
-
-      if (value is String) {
-        // Normalize JSON strings before storing locally.
-        try {
-          return jsonEncode(jsonDecode(value));
-        } catch (_) {
-          return fallback;
-        }
-      }
-
-      return jsonEncode(value);
-    }
-
-    final companion = LocalCommitteesCompanion(
-      id: drift.Value(id),
-      userId: drift.Value(userId),
-      name: drift.Value(committee['name']?.toString() ?? ''),
-      contribution: drift.Value(
-        (committee['contribution'] as num?)?.toDouble() ?? 0,
-      ),
-      memberCount: drift.Value(
-        (committee['member_count'] as num?)?.toInt() ?? 0,
-      ),
-      duration: drift.Value(
-        (committee['duration'] as num?)?.toInt() ?? 0,
-      ),
-      unit: drift.Value(committee['unit']?.toString() ?? 'Months'),
-      startDate: drift.Value(_parseDate(committee['start_date'])),
-      endingDate: drift.Value(_parseDate(committee['ending_date'])),
-      allocationMode: drift.Value(
-        committee['allocation_mode']?.toString() ?? 'sequence',
-      ),
-      membersJson: drift.Value(
-        encodeJson(committee['members'], '[]'),
-      ),
-      paymentsJson: drift.Value(
-        encodeJson(committee['payments'], '[]'),
-      ),
-      receivingSelectionsJson: drift.Value(
-        encodeJson(committee['receiving_selections'], '{}'),
-      ),
-      createdAt: drift.Value(_parseDate(committee['created_at'])),
-      updatedAt: drift.Value(_parseDate(committee['updated_at'])),
-      version: const drift.Value(1),
-      isDeleted: const drift.Value(false),
-    );
-
-    if (existing == null) {
-      await committeeLocal.insertCommittee(companion);
-    } else {
-      await committeeLocal.updateCommittee(id, companion);
-    }
-  }
-}
   // ==========================================================
   // PAYLOAD
   // ==========================================================
 
-  Map<String, dynamic> _decodePayload(
-    String payload,
-  ) {
+  Map<String, dynamic> _decodePayload(String payload) {
     final decoded = jsonDecode(payload);
 
     if (decoded is! Map) {
-      throw const FormatException(
-        'Sync payload must be a JSON object.',
-      );
+      throw const FormatException('Sync payload must be a JSON object.');
     }
 
     return Map<String, dynamic>.from(decoded);
@@ -1512,25 +911,19 @@ Future<void> _syncCommitteesFromCloud(String userId) async {
       return DateTime.now();
     }
 
-    return DateTime.tryParse(
-          value.toString(),
-        ) ??
-        DateTime.now();
+    return DateTime.tryParse(value.toString()) ?? DateTime.now();
   }
 
   // ==========================================================
   // NULLABLE STRING
   // ==========================================================
 
-  drift.Value<String?> _nullableValue(
-    dynamic value,
-  ) {
+  drift.Value<String?> _nullableValue(dynamic value) {
     if (value == null) {
       return const drift.Value(null);
     }
 
-    final stringValue =
-        value.toString();
+    final stringValue = value.toString();
 
     if (stringValue.isEmpty) {
       return const drift.Value(null);

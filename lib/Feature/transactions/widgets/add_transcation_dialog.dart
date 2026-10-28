@@ -460,7 +460,6 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
               // --------------------------------------------------
               // TRANSACTION TYPE
               // --------------------------------------------------
-
               Row(
                 children: [
                   Expanded(
@@ -630,10 +629,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   items: wallets.map((wallet) {
                     return DropdownMenuItem<String>(
                       value: wallet.id,
-                      child: Text(
-                        wallet.transactionOptionLabel,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(wallet.name, overflow: TextOverflow.ellipsis),
                     );
                   }).toList(),
                   onChanged: _isSaving

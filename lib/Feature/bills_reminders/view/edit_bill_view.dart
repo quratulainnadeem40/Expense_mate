@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
@@ -10,10 +9,7 @@ import '../model/bill_model.dart';
 class EditBillView extends StatefulWidget {
   final BillModel bill;
 
-  const EditBillView({
-    super.key,
-    required this.bill,
-  });
+  const EditBillView({super.key, required this.bill});
 
   @override
   State<EditBillView> createState() => _EditBillViewState();
@@ -33,17 +29,13 @@ class _EditBillViewState extends State<EditBillView> {
     super.initState();
 
     // Load existing bill data
-    titleController = TextEditingController(
-      text: widget.bill.title,
-    );
+    titleController = TextEditingController(text: widget.bill.title);
 
     amountController = TextEditingController(
       text: widget.bill.amount.toString(),
     );
 
-    noteController = TextEditingController(
-      text: widget.bill.note ?? '',
-    );
+    noteController = TextEditingController(text: widget.bill.note ?? '');
 
     selectedDate = widget.bill.dueDate;
   }
@@ -86,9 +78,7 @@ class _EditBillViewState extends State<EditBillView> {
       return;
     }
 
-    final amount = double.tryParse(
-      amountController.text.trim(),
-    );
+    final amount = double.tryParse(amountController.text.trim());
 
     if (amount == null || amount <= 0) {
       return;
@@ -107,8 +97,7 @@ class _EditBillViewState extends State<EditBillView> {
 
     await controller.updateBill(updatedBill);
 
-Get.offNamed(AppRoutes.billsReminders);
-    
+    Get.offNamed(AppRoutes.billsReminders);
   }
 
   // ============================================================
@@ -117,15 +106,11 @@ Get.offNamed(AppRoutes.billsReminders);
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Edit Bill',
-          style: AppTextStyles.headingMedium(isDark),
-        ),
+        title: Text('Edit Bill', style: AppTextStyles.headingMedium(isDark)),
       ),
 
       body: SafeArea(
@@ -141,7 +126,6 @@ Get.offNamed(AppRoutes.billsReminders);
                 // ==================================================
                 // HEADING
                 // ==================================================
-
                 Text(
                   'Bill Details',
                   style: AppTextStyles.headingMedium(isDark),
@@ -152,25 +136,20 @@ Get.offNamed(AppRoutes.billsReminders);
                 // ==================================================
                 // BILL TITLE
                 // ==================================================
-
                 TextFormField(
                   controller: titleController,
 
-                  textInputAction:
-                      TextInputAction.next,
+                  textInputAction: TextInputAction.next,
 
                   decoration: const InputDecoration(
                     labelText: 'Bill Name',
                     hintText: 'e.g. Electricity Bill',
-                    prefixIcon: Icon(
-                      Icons.receipt_long_outlined,
-                    ),
+                    prefixIcon: Icon(Icons.receipt_long_outlined),
                     border: OutlineInputBorder(),
                   ),
 
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please enter bill name';
                     }
 
@@ -183,32 +162,26 @@ Get.offNamed(AppRoutes.billsReminders);
                 // ==================================================
                 // AMOUNT
                 // ==================================================
-
                 TextFormField(
                   controller: amountController,
 
-                  keyboardType:
-                      const TextInputType.numberWithOptions(
+                  keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
 
                   decoration: const InputDecoration(
                     labelText: 'Amount',
                     hintText: '0.00',
-                    prefixIcon: Icon(
-                      Icons.payments_outlined,
-                    ),
+                    prefixIcon: Icon(Icons.payments_outlined),
                     border: OutlineInputBorder(),
                   ),
 
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please enter amount';
                     }
 
-                    final amount =
-                        double.tryParse(value.trim());
+                    final amount = double.tryParse(value.trim());
 
                     if (amount == null) {
                       return 'Please enter a valid amount';
@@ -227,19 +200,15 @@ Get.offNamed(AppRoutes.billsReminders);
                 // ==================================================
                 // DUE DATE
                 // ==================================================
-
                 InkWell(
                   onTap: selectDate,
 
-                  borderRadius:
-                      BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(4),
 
                   child: InputDecorator(
                     decoration: const InputDecoration(
                       labelText: 'Due Date',
-                      prefixIcon: Icon(
-                        Icons.calendar_today_outlined,
-                      ),
+                      prefixIcon: Icon(Icons.calendar_today_outlined),
                       border: OutlineInputBorder(),
                     ),
 
@@ -256,7 +225,6 @@ Get.offNamed(AppRoutes.billsReminders);
                 // ==================================================
                 // NOTE
                 // ==================================================
-
                 TextFormField(
                   controller: noteController,
                   maxLines: 3,
@@ -264,9 +232,7 @@ Get.offNamed(AppRoutes.billsReminders);
                   decoration: const InputDecoration(
                     labelText: 'Note',
                     hintText: 'Add a note (optional)',
-                    prefixIcon: Icon(
-                      Icons.notes_outlined,
-                    ),
+                    prefixIcon: Icon(Icons.notes_outlined),
                     border: OutlineInputBorder(),
                     alignLabelWithHint: true,
                   ),
@@ -277,7 +243,6 @@ Get.offNamed(AppRoutes.billsReminders);
                 // ==================================================
                 // UPDATE BUTTON
                 // ==================================================
-
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -285,13 +250,9 @@ Get.offNamed(AppRoutes.billsReminders);
                   child: ElevatedButton.icon(
                     onPressed: updateBill,
 
-                    icon: const Icon(
-                      Icons.save_outlined,
-                    ),
+                    icon: const Icon(Icons.save_outlined),
 
-                    label: const Text(
-                      'Update Bill',
-                    ),
+                    label: const Text('Update Bill'),
                   ),
                 ),
               ],
@@ -302,4 +263,3 @@ Get.offNamed(AppRoutes.billsReminders);
     );
   }
 }
-

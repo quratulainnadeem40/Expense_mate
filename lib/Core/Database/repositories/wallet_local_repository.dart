@@ -7,40 +7,28 @@ class WalletLocalRepository {
 
   WalletLocalRepository(this.database);
 
-  Future<List<LocalWallet>> getWallets(
-    String userId,
-  ) {
+  Future<List<LocalWallet>> getWallets(String userId) {
     return (database.select(database.localWallets)
           ..where(
-            (tbl) =>
-                tbl.userId.equals(userId) &
-                tbl.isDeleted.equals(false),
+            (tbl) => tbl.userId.equals(userId) & tbl.isDeleted.equals(false),
           )
           ..orderBy([
             (tbl) => OrderingTerm(
-                  expression: tbl.createdAt,
-                  mode: OrderingMode.desc,
-                ),
+              expression: tbl.createdAt,
+              mode: OrderingMode.desc,
+            ),
           ]))
         .get();
   }
 
-  Future<LocalWallet?> getWalletById(
-    String walletId,
-  ) {
-    return (database.select(database.localWallets)
-          ..where(
-            (tbl) => tbl.id.equals(walletId),
-          ))
-        .getSingleOrNull();
+  Future<LocalWallet?> getWalletById(String walletId) {
+    return (database.select(
+      database.localWallets,
+    )..where((tbl) => tbl.id.equals(walletId))).getSingleOrNull();
   }
 
-  Future<void> insertWallet(
-    LocalWalletsCompanion wallet,
-  ) async {
-    await database
-        .into(database.localWallets)
-        .insert(wallet);
+  Future<void> insertWallet(LocalWalletsCompanion wallet) async {
+    await database.into(database.localWallets).insert(wallet);
   }
 
   Future<bool> updateWallet(
@@ -49,21 +37,13 @@ class WalletLocalRepository {
   ) async {
     return database
         .update(database.localWallets)
-        .replace(
-          wallet.copyWith(
-            id: Value(walletId),
-          ),
-        );
+        .replace(wallet.copyWith(id: Value(walletId)));
   }
 
-  Future<int> softDeleteWallet(
-    String walletId,
-  ) async {
-    return (database.update(database.localWallets)
-          ..where(
-            (tbl) => tbl.id.equals(walletId),
-          ))
-        .write(
+  Future<int> softDeleteWallet(String walletId) async {
+    return (database.update(
+      database.localWallets,
+    )..where((tbl) => tbl.id.equals(walletId))).write(
       LocalWalletsCompanion(
         isDeleted: const Value(true),
         updatedAt: Value(DateTime.now()),
@@ -71,14 +51,10 @@ class WalletLocalRepository {
     );
   }
 
-  Future<int> restoreWallet(
-    String walletId,
-  ) async {
-    return (database.update(database.localWallets)
-          ..where(
-            (tbl) => tbl.id.equals(walletId),
-          ))
-        .write(
+  Future<int> restoreWallet(String walletId) async {
+    return (database.update(
+      database.localWallets,
+    )..where((tbl) => tbl.id.equals(walletId))).write(
       LocalWalletsCompanion(
         isDeleted: const Value(false),
         updatedAt: Value(DateTime.now()),
@@ -86,25 +62,16 @@ class WalletLocalRepository {
     );
   }
 
-  Future<List<LocalWallet>> getDeletedWallets(
-    String userId,
-  ) {
-    return (database.select(database.localWallets)
-          ..where(
-            (tbl) =>
-                tbl.userId.equals(userId) &
-                tbl.isDeleted.equals(true),
-          ))
+  Future<List<LocalWallet>> getDeletedWallets(String userId) {
+    return (database.select(database.localWallets)..where(
+          (tbl) => tbl.userId.equals(userId) & tbl.isDeleted.equals(true),
+        ))
         .get();
   }
 
-  Future<int> permanentlyDeleteWallet(
-    String walletId,
-  ) {
-    return (database.delete(database.localWallets)
-          ..where(
-            (tbl) => tbl.id.equals(walletId),
-          ))
-        .go();
+  Future<int> permanentlyDeleteWallet(String walletId) {
+    return (database.delete(
+      database.localWallets,
+    )..where((tbl) => tbl.id.equals(walletId))).go();
   }
 }

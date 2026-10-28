@@ -353,7 +353,6 @@ class ReportView extends StatelessWidget {
                 // ==================================================
                 // YEAR & MONTH FILTERS
                 // ==================================================
-
                 Row(
                   children: [
                     Expanded(

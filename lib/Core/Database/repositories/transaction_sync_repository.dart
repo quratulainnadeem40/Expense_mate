@@ -59,8 +59,7 @@ class TransactionSyncRepository {
         'title': title,
         'amount': amount,
         'type': type,
-        'transaction_date':
-            transactionDate.toIso8601String(),
+        'transaction_date': transactionDate.toIso8601String(),
         'note': note,
         'created_at': created.toIso8601String(),
       },
@@ -97,10 +96,7 @@ class TransactionSyncRepository {
       isDeleted: const Value(false),
     );
 
-    await localRepository.updateTransaction(
-      id,
-      transaction,
-    );
+    await localRepository.updateTransaction(id, transaction);
 
     await syncQueue.enqueue(
       userId: userId,
@@ -111,13 +107,11 @@ class TransactionSyncRepository {
         'id': id,
         'user_id': userId,
         'wallet_id': walletId.isEmpty ? null : walletId,
-        'category_id':
-            categoryId.isEmpty ? null : categoryId,
+        'category_id': categoryId.isEmpty ? null : categoryId,
         'title': title,
         'amount': amount,
         'type': type,
-        'transaction_date':
-            transactionDate.toIso8601String(),
+        'transaction_date': transactionDate.toIso8601String(),
         'note': note,
         'created_at': createdAt.toIso8601String(),
       },
@@ -125,25 +119,21 @@ class TransactionSyncRepository {
   }
 
   Future<void> deleteTransaction({
-  required String userId,
-  required String id,
-}) async {
-  await localRepository.softDeleteTransaction(id);
+    required String userId,
+    required String id,
+  }) async {
+    await localRepository.softDeleteTransaction(id);
 
-  await syncQueue.enqueue(
-    userId: userId,
-    entityTable: 'transactions',
-    recordId: id,
-    operation: 'delete',
-    payload: {
-      'id': id,
-    },
-  );
-}
+    await syncQueue.enqueue(
+      userId: userId,
+      entityTable: 'transactions',
+      recordId: id,
+      operation: 'delete',
+      payload: {'id': id},
+    );
+  }
 
-  Value<String?> _nullableValue(
-    String? value,
-  ) {
+  Value<String?> _nullableValue(String? value) {
     if (value == null || value.isEmpty) {
       return const Value(null);
     }

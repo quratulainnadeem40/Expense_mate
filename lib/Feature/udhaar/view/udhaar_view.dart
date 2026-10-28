@@ -14,8 +14,6 @@ class UdhaarView extends GetView<UdhaarController> {
   /// Held here so the clear button can empty the field as well as the
   /// query behind it.
   final TextEditingController _searchController = TextEditingController();
-  final RxBool _selectionMode = false.obs;
-  final Rx<Set<String>> _selectedPersonKeys = Rx<Set<String>>(<String>{});
 
   static String _money(num value) {
     final digits = value.abs().round().toString();
@@ -71,102 +69,22 @@ class UdhaarView extends GetView<UdhaarController> {
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         elevation: 0,
-        leading: Obx(
-          () => IconButton(
-            icon: Icon(
-              _selectionMode.value
-                  ? Icons.close_rounded
-                  : Icons.arrow_back_rounded,
-              color: primaryText,
-            ),
-            tooltip: _selectionMode.value ? 'Cancel selection' : 'Back',
-            onPressed: _selectionMode.value
-                ? _cancelMemberSelection
-                : () => Get.back(),
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: primaryText),
+          onPressed: () => Get.back(),
         ),
-        title: Obx(
-          () => Text(
-            _selectionMode.value
-                ? '${_selectedPersonKeys.value.length} members selected'
-                : 'Udhaar',
-            style: TextStyle(color: primaryText, fontWeight: FontWeight.bold),
-          ),
+        title: Text(
+          'Udhaar',
+          style: TextStyle(color: primaryText, fontWeight: FontWeight.bold),
         ),
-        actions: [
-          Obx(() {
-            if (_selectionMode.value) {
-              final visibleKeys = controller.visiblePeople
-                  .map(_personKey)
-                  .toSet();
-              final allVisibleSelected =
-                  visibleKeys.isNotEmpty &&
-                  visibleKeys.every(_selectedPersonKeys.value.contains);
-
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: _toggleSelectAllVisible,
-                    child: Text(
-                      allVisibleSelected ? 'Deselect all' : 'Select all',
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Delete selected members',
-                    icon: const Icon(Icons.delete_outline_rounded),
-                    color: _red,
-                    onPressed: _selectedPersonKeys.value.isEmpty
-                        ? null
-                        : () => _confirmDeleteSelected(isDark),
-                  ),
-                ],
-              );
-            }
-
-            if (controller.entries.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            return TextButton(
-              onPressed: _startMemberSelection,
-              child: Text(
-                'Select',
-                style: TextStyle(
-                  color: primaryText,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            );
-          }),
-        ],
       ),
 
-      bottomNavigationBar: Obx(
-        () => _selectionMode.value
-            ? const SizedBox.shrink()
-            : SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openEntrySheet(context, isDark),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('Add udhaar'),
-                    ),
-                  ),
-                ),
-              ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openEntrySheet(context, isDark),
+        backgroundColor: _green,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add udhaar'),
       ),
 
       body: Obx(() {
@@ -189,17 +107,15 @@ class UdhaarView extends GetView<UdhaarController> {
                           .isNotEmpty,
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
                       itemCount: people.length,
-                      itemBuilder: (context, i) => Obx(
-                        () => _personCard(
-                          context,
-                          people[i],
-                          card,
-                          isDark,
-                          primaryText,
-                          secondaryText,
-                        ),
+                      itemBuilder: (context, i) => _personCard(
+                        context,
+                        people[i],
+                        card,
+                        isDark,
+                        primaryText,
+                        secondaryText,
                       ),
                     ),
             ),
@@ -207,123 +123,6 @@ class UdhaarView extends GetView<UdhaarController> {
         );
       }),
     );
-  }
-
-  void _startMemberSelection() {
-    _selectedPersonKeys.value = <String>{};
-    _selectionMode.value = true;
-  }
-
-  void _cancelMemberSelection() {
-    _selectedPersonKeys.value = <String>{};
-    _selectionMode.value = false;
-  }
-
-  static String _personKey(UdhaarPerson person) =>
-      person.name.trim().toLowerCase();
-
-  void _togglePersonSelection(UdhaarPerson person) {
-    final key = _personKey(person);
-    final updated = _selectedPersonKeys.value.toSet();
-    if (!updated.add(key)) {
-      updated.remove(key);
-    }
-    _selectedPersonKeys.value = updated;
-
-    if (updated.isEmpty) {
-      _selectionMode.value = false;
-    }
-  }
-
-  void _toggleSelectAllVisible() {
-    final visibleKeys = controller.visiblePeople.map(_personKey).toSet();
-    if (visibleKeys.isEmpty) return;
-
-    final updated = _selectedPersonKeys.value.toSet();
-    final allVisibleSelected = visibleKeys.every(updated.contains);
-    if (allVisibleSelected) {
-      updated.removeAll(visibleKeys);
-    } else {
-      updated.addAll(visibleKeys);
-    }
-    _selectedPersonKeys.value = updated;
-
-    _selectionMode.value = updated.isNotEmpty;
-  }
-
-  Future<void> _confirmDeleteSelected(bool isDark) async {
-    final personKeys = _selectedPersonKeys.value.toSet();
-    final ids = controller.entries
-        .where(
-          (entry) => personKeys.contains(entry.personName.trim().toLowerCase()),
-        )
-        .map((entry) => entry.id)
-        .toList();
-    if (ids.isEmpty) return;
-
-    final memberCount = personKeys.length;
-    final recordCount = ids.length;
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(
-          'Delete $memberCount '
-          '${memberCount == 1 ? 'member' : 'members'}?',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
-          ),
-        ),
-        content: Text(
-          'All $recordCount ${recordCount == 1 ? 'record' : 'records'} '
-          'belonging to the selected '
-          '${memberCount == 1 ? 'member' : 'members'} will be removed.',
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.5,
-            color: isDark ? Colors.white70 : const Color(0xFF4B5563),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _red,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () => Get.back(result: true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await controller.deleteEntries(ids);
-      _cancelMemberSelection();
-      Get.snackbar(
-        'Deleted',
-        '$recordCount ${recordCount == 1 ? 'record' : 'records'} deleted.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (error) {
-      Get.snackbar(
-        'Delete failed',
-        'Could not delete all selected records: $error',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
   }
 
   // =================================================================
@@ -601,322 +400,197 @@ class UdhaarView extends GetView<UdhaarController> {
     final clear = person.isClear;
     final accent = clear ? secondaryText : (person.theyOweYou ? _green : _red);
 
-    if (_selectionMode.value) {
-      final isSelected = _selectedPersonKeys.value.contains(_personKey(person));
-      final selectedColor = isDark
-          ? const Color(0xFF183D1C)
-          : const Color(0xFFE8F5E9);
-
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedColor : card,
-          borderRadius: BorderRadius.circular(17),
-          border: Border.all(
-            color: isSelected
-                ? _green
-                : (isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
         ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(17),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _togglePersonSelection(person),
-            borderRadius: BorderRadius.circular(17),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              child: Row(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected ? _green : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected
-                            ? _green
-                            : (isDark ? Colors.white54 : Colors.black38),
-                        width: 1.5,
-                      ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+
+          // A filled circle in the direction's colour. The old pale
+          // square said very little from a distance.
+          leading: Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: clear
+                  ? null
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: person.theyOweYou
+                          ? const [Color(0xFF4CC66A), Color(0xFF1F7A37)]
+                          : const [Color(0xFFF2706B), Color(0xFFC62828)],
                     ),
-                    child: isSelected
-                        ? const Icon(
-                            Icons.check_rounded,
-                            size: 17,
-                            color: Colors.white,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          person.name,
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            color: primaryText,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${person.entries.length} '
-                          '${person.entries.length == 1 ? 'record' : 'records'}'
-                          ' · ${person.theyOweYou ? 'They owe you' : 'You owe them'}',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: secondaryText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    clear ? '—' : '$_symbol ${_money(person.net)}',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                    ),
-                  ),
-                ],
+              color: clear ? (isDark ? Colors.white12 : Colors.black12) : null,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              person.name.isEmpty
+                  ? '?'
+                  : person.name.characters.first.toUpperCase(),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: clear ? secondaryText : Colors.white,
               ),
             ),
           ),
-        ),
-      );
-    }
 
-    return GestureDetector(
-      onLongPress: () {
-        _selectionMode.value = true;
-        _selectedPersonKeys.value = {
-          ..._selectedPersonKeys.value,
-          _personKey(person),
-        };
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: BorderRadius.circular(17),
-          border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+          title: Text(
+            person.name,
+            style: TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
+              color: primaryText,
+            ),
           ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Material(
-          color: card,
-          borderRadius: BorderRadius.circular(17),
-          clipBehavior: Clip.antiAlias,
-          child: Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              tilePadding: const EdgeInsets.symmetric(horizontal: 14),
-              childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
 
-              // A filled circle in the direction's colour. The old pale
-              // square said very little from a distance.
-              leading: Container(
-                width: 46,
-                height: 46,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: clear
-                      ? null
-                      : LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: person.theyOweYou
-                              ? const [Color(0xFF4CC66A), Color(0xFF1F7A37)]
-                              : const [Color(0xFFF2706B), Color(0xFFC62828)],
-                        ),
-                  color: clear
-                      ? (isDark ? Colors.white12 : Colors.black12)
-                      : null,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  person.name.isEmpty
-                      ? '?'
-                      : person.name.characters.first.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: clear ? secondaryText : Colors.white,
-                  ),
-                ),
-              ),
+          subtitle: Text(
+            clear
+                ? 'Settled · last ${_shortDate(person.lastActivity)}'
+                : '${person.openCount} open · '
+                      'last ${_shortDate(person.lastActivity)}',
+            style: TextStyle(fontSize: 11.5, color: secondaryText),
+          ),
 
-              title: Text(
-                person.name,
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                clear ? '—' : '$_symbol ${_money(person.net)}',
                 style: TextStyle(
-                  fontSize: 15.5,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: primaryText,
+                  color: accent,
                 ),
               ),
 
-              subtitle: Text(
-                clear
-                    ? 'Settled · last ${_shortDate(person.lastActivity)}'
-                    : '${person.openCount} open · '
-                          'last ${_shortDate(person.lastActivity)}',
-                style: TextStyle(fontSize: 11.5, color: secondaryText),
-              ),
-
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    clear ? '—' : '$_symbol ${_money(person.net)}',
+              // A chip rather than faint grey text, which was easy to
+              // miss on the row that matters most.
+              if (!clear) ...[
+                const SizedBox(height: 3),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(isDark ? 0.22 : 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    person.theyOweYou ? 'YOU GET' : 'YOU GIVE',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
                       color: accent,
                     ),
                   ),
+                ),
+              ],
+            ],
+          ),
 
-                  // A chip rather than faint grey text, which was easy to
-                  // miss on the row that matters most.
-                  if (!clear) ...[
-                    const SizedBox(height: 3),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: accent.withOpacity(isDark ? 0.22 : 0.12),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        person.theyOweYou ? 'YOU GET' : 'YOU GIVE',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                          color: accent,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-
-              children: [
-                ...controller
-                    .entriesFor(person.name)
-                    .map(
-                      (entry) => _entryRow(
-                        context,
-                        entry,
-                        isDark,
-                        primaryText,
-                        secondaryText,
-                      ),
-                    ),
-
-                if (!_selectionMode.value) ...[
-                  const SizedBox(height: 6),
-
-                  Row(
-                    children: [
-                      if (!clear)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () =>
-                                _confirmSettleAll(context, person, isDark),
-                            icon: const Icon(Icons.done_all_rounded, size: 17),
-                            label: const Text('Settle all'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: _green,
-                              side: const BorderSide(color: _green),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (!clear) const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _openEntrySheet(
-                            context,
-                            isDark,
-                            presetName: person.name,
-                            presetPhone: person.phone,
-                          ),
-                          icon: const Icon(Icons.add_rounded, size: 17),
-                          label: const Text('Add'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: secondaryText,
-                            side: BorderSide(
-                              color: isDark ? Colors.white24 : Colors.black26,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 8),
-
-                      // Removes the person and every entry with them. Separate
-                      // from Settle, which keeps the record.
-                      SizedBox(
-                        width: 46,
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              _confirmDeletePerson(context, person, isDark),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _red,
-                            side: const BorderSide(color: _red),
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.delete_outline_rounded,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ],
+          children: [
+            ...controller
+                .entriesFor(person.name)
+                .map(
+                  (entry) => _entryRow(
+                    context,
+                    entry,
+                    isDark,
+                    primaryText,
+                    secondaryText,
                   ),
-                ],
+                ),
+
+            const SizedBox(height: 6),
+
+            Row(
+              children: [
+                if (!clear)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          _confirmSettleAll(context, person, isDark),
+                      icon: const Icon(Icons.done_all_rounded, size: 17),
+                      label: const Text('Settle all'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _green,
+                        side: const BorderSide(color: _green),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (!clear) const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openEntrySheet(
+                      context,
+                      isDark,
+                      presetName: person.name,
+                      presetPhone: person.phone,
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 17),
+                    label: const Text('Add'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: secondaryText,
+                      side: BorderSide(
+                        color: isDark ? Colors.white24 : Colors.black26,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Removes the person and every entry with them. Separate
+                // from Settle, which keeps the record.
+                SizedBox(
+                  width: 46,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        _confirmDeletePerson(context, person, isDark),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _red,
+                      side: const BorderSide(color: _red),
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded, size: 18),
+                  ),
+                ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -953,7 +627,9 @@ class UdhaarView extends GetView<UdhaarController> {
               color: entry.isSettled ? secondaryText : accent,
             ),
           ),
+
           const SizedBox(width: 10),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -980,6 +656,7 @@ class UdhaarView extends GetView<UdhaarController> {
               ],
             ),
           ),
+
           Text(
             '$_symbol ${_money(entry.amount)}',
             style: TextStyle(
@@ -989,6 +666,7 @@ class UdhaarView extends GetView<UdhaarController> {
               decoration: entry.isSettled ? TextDecoration.lineThrough : null,
             ),
           ),
+
           PopupMenuButton<String>(
             padding: EdgeInsets.zero,
             icon: Icon(Icons.more_vert_rounded, size: 18, color: secondaryText),
@@ -1047,52 +725,45 @@ class UdhaarView extends GetView<UdhaarController> {
               : 'Record money you lent to someone, or took from them, '
                     'and the balance with each person is kept for you.');
 
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      color: _green.withOpacity(0.10),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.handshake_outlined,
-                      size: 42,
-                      color: _green,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    body,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      height: 1.6,
-                      color: secondaryText,
-                    ),
-                  ),
-                ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: _green.withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.handshake_outlined,
+                size: 42,
+                color: _green,
               ),
             ),
-          ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: primaryText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.6,
+                color: secondaryText,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1115,19 +786,6 @@ class UdhaarView extends GetView<UdhaarController> {
     final isLent = true.obs;
     final date = DateTime.now().obs;
     final error = RxnString();
-    final isSaving = false.obs;
-
-    void changeDirection(bool value) {
-      if (isLent.value == value) return;
-
-      isLent.value = value;
-      nameController.clear();
-      amountController.clear();
-      phoneController.clear();
-      noteController.clear();
-      date.value = DateTime.now();
-      error.value = null;
-    }
 
     final fieldFill = isDark ? Colors.white10 : Colors.black.withOpacity(0.04);
     final primaryText = isDark ? Colors.white : const Color(0xFF1E1E1E);
@@ -1224,7 +882,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           active: isLent.value,
                           colour: _green,
                           secondaryText: secondaryText,
-                          onTap: () => changeDirection(true),
+                          onTap: () => isLent.value = true,
                         ),
                         _directionTab(
                           label: 'I took',
@@ -1232,7 +890,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           active: !isLent.value,
                           colour: _red,
                           secondaryText: secondaryText,
-                          onTap: () => changeDirection(false),
+                          onTap: () => isLent.value = false,
                         ),
                       ],
                     ),
@@ -1301,19 +959,10 @@ class UdhaarView extends GetView<UdhaarController> {
                   ),
                   style: TextStyle(color: primaryText),
                   decoration: decoration('Amount').copyWith(
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.only(left: 14, right: 8),
-                      child: Text(
-                        _symbol,
-                        style: TextStyle(
-                          color: primaryText,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 0,
-                      minHeight: 0,
+                    prefixText: '$_symbol ',
+                    prefixStyle: TextStyle(
+                      color: primaryText,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -1462,77 +1111,48 @@ class UdhaarView extends GetView<UdhaarController> {
                 SizedBox(
                   width: double.infinity,
                   height: 52,
-                  child: Obx(
-                    () => ElevatedButton(
-                      onPressed: isSaving.value
-                          ? null
-                          : () async {
-                              final name = nameController.text.trim();
-                              final amount = double.tryParse(
-                                amountController.text.trim().replaceAll(
-                                  ',',
-                                  '',
-                                ),
-                              );
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      final amount = double.tryParse(
+                        amountController.text.trim().replaceAll(',', ''),
+                      );
 
-                              if (name.isEmpty) {
-                                error.value = 'Please enter the person name.';
-                                return;
-                              }
+                      if (name.isEmpty) {
+                        error.value = 'Please enter the person name.';
+                        return;
+                      }
 
-                              if (amount == null || amount <= 0) {
-                                error.value = 'Please enter a valid amount.';
-                                return;
-                              }
+                      if (amount == null || amount <= 0) {
+                        error.value = 'Please enter a valid amount.';
+                        return;
+                      }
 
-                              isSaving.value = true;
-                              error.value = null;
-                              try {
-                                await controller.addEntry(
-                                  personName: name,
-                                  amount: amount,
-                                  isLent: isLent.value,
-                                  date: date.value,
-                                  phone: phoneController.text,
-                                  note: noteController.text,
-                                );
+                      await controller.addEntry(
+                        personName: name,
+                        amount: amount,
+                        isLent: isLent.value,
+                        date: date.value,
+                        phone: phoneController.text,
+                        note: noteController.text,
+                      );
 
-                                if (sheetContext.mounted) {
-                                  Navigator.pop(sheetContext);
-                                }
-                              } catch (saveError) {
-                                error.value =
-                                    'Could not save this record: $saveError';
-                              } finally {
-                                isSaving.value = false;
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _green,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: _green.withOpacity(0.6),
-                        disabledForegroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                      Navigator.pop(sheetContext);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _green,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: isSaving.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text(
-                              'Save',
-                              style: TextStyle(
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                    ),
+                    child: const Text(
+                      'Save',
+                      style: TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),

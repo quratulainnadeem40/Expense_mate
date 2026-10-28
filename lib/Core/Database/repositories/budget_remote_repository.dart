@@ -45,10 +45,7 @@ class BudgetRemoteRepository {
       print('SUPABASE BUDGET INSERT START');
       print('Payload: $budget');
 
-      final response = await supabase
-          .from('budgets')
-          .insert(budget)
-          .select();
+      final response = await supabase.from('budgets').insert(budget).select();
 
       print('SUPABASE BUDGET INSERT RESPONSE');
       print(response);
@@ -69,10 +66,7 @@ class BudgetRemoteRepository {
       print('Budget ID: $budgetId');
       print('Payload: $budget');
 
-      await supabase
-          .from('budgets')
-          .update(budget)
-          .eq('id', budgetId);
+      await supabase.from('budgets').update(budget).eq('id', budgetId);
 
       print('SUPABASE BUDGET UPDATE SUCCESS');
     } catch (e, stackTrace) {
@@ -88,10 +82,7 @@ class BudgetRemoteRepository {
       print('SUPABASE BUDGET DELETE START');
       print('Budget ID: $budgetId');
 
-      await supabase
-          .from('budgets')
-          .delete()
-          .eq('id', budgetId);
+      await supabase.from('budgets').delete().eq('id', budgetId);
 
       print('SUPABASE BUDGET DELETE SUCCESS');
     } catch (e, stackTrace) {

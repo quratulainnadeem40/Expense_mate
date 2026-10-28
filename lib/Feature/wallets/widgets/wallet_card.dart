@@ -113,10 +113,7 @@ class WalletCard extends StatelessWidget {
         // ======================================================
         // WALLET TYPE
         // ======================================================
-        subtitle: Text(
-          wallet.displayType,
-          style: AppTextStyles.bodyMedium(isDark),
-        ),
+        subtitle: Text(wallet.type, style: AppTextStyles.bodyMedium(isDark)),
 
         // ======================================================
         // BALANCE + SELECTION

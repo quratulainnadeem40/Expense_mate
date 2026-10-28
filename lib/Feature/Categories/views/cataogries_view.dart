@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'dart:async';
 
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
@@ -27,9 +28,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesView extends StatefulWidget {
-  const CategoriesView({super.key, this.isActive = true});
-
-  final bool isActive;
+  const CategoriesView({super.key});
 
   @override
   State<CategoriesView> createState() => _CategoriesViewState();
@@ -47,8 +46,6 @@ class _CategoriesViewState extends State<CategoriesView>
   bool isSelectionMode = false;
   bool _isShowingCycleSetup = false;
   Timer? _cycleRefreshTimer;
-
-  static bool _cycleSetupOfferedThisSession = false;
 
   int get _monthStartDay {
     final box = Hive.box(AppKeys.budgetBox);
@@ -72,34 +69,9 @@ class _CategoriesViewState extends State<CategoriesView>
     WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
       controller.fetchCategories();
       _scheduleCycleRefresh();
-      _maybeOfferCycleSetup();
     });
-  }
-
-  @override
-  void didUpdateWidget(covariant CategoriesView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!oldWidget.isActive && widget.isActive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _maybeOfferCycleSetup();
-      });
-    }
-  }
-
-  void _maybeOfferCycleSetup() {
-    if (!widget.isActive || _cycleSetupOfferedThisSession) return;
-
-    final box = Hive.box(AppKeys.budgetBox);
-    final isCycleConfigured =
-        box.containsKey(AppKeys.categoryCycleStartDayKey) ||
-        box.containsKey(AppKeys.categoryCycleAutomaticResetKey);
-    if (!isCycleConfigured) {
-      _cycleSetupOfferedThisSession = true;
-      _showCycleSetupSheet();
-    }
   }
 
   @override
@@ -194,28 +166,15 @@ class _CategoriesViewState extends State<CategoriesView>
   }
 
   String _formatCycleDate(DateTime date) =>
-      '${DateFormat('d').format(date)} '
-      '${DateFormat('MMM').format(date).tr} ${date.year}';
+      DateFormat('d MMM yyyy').format(date);
 
-  String _localizedCategoryName(String name) {
-    switch (name.trim().toLowerCase()) {
-      case 'education':
-        return 'Education'.tr;
-      case 'food':
-        return 'Food'.tr;
-      case 'bills':
-        return 'Bills'.tr;
-      case 'transport':
-        return 'Transport'.tr;
-      case 'health':
-        return 'Health'.tr;
-      default:
-        return name.tr;
-    }
+  String _formatCategoryAmount(double amount) {
+    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
   }
 
-  Widget _buildCategoryType({
+  Widget _buildCategoryAmount({
     required String label,
+    required double amount,
     required Color color,
     required bool isDark,
   }) {
@@ -226,7 +185,7 @@ class _CategoriesViewState extends State<CategoriesView>
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        label,
+        '$label: ${_formatCategoryAmount(amount)}',
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -296,7 +255,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        title: Text('Delete category?'.tr),
+        title: const Text('Delete category?'),
         content: Text(
           categoryNames.length == 1
               ? hasLinkedData
@@ -309,14 +268,14 @@ class _CategoriesViewState extends State<CategoriesView>
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: Text('Cancel'.tr),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFE53935),
             ),
             onPressed: () => Get.back(result: true),
-            child: Text('Delete'.tr),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -401,14 +360,14 @@ class _CategoriesViewState extends State<CategoriesView>
     final endDate = period.end;
 
     final message = automatic
-        ? 'Transactions are present. Category totals will be tracked from @start to @end and will start a new cycle automatically on day @day. Your transactions and history will not be deleted.'
-              .trParams({
-                'start': _formatCycleDate(startDate),
-                'end': _formatCycleDate(endDate),
-                'day': '$startDay',
-              })
-        : 'This will start a new category tracking cycle today, @start. Current category totals will start from zero. Transactions and reports history will remain available and nothing will be deleted.'
-              .trParams({'start': _formatCycleDate(startDate)});
+        ? 'Transactions are present. Category totals will be tracked from '
+              '${_formatCycleDate(startDate)} to ${_formatCycleDate(endDate)} '
+              'and will start a new cycle automatically on day $startDay. '
+              'Your transactions and history will not be deleted.'
+        : 'This will start a new category tracking cycle today, '
+              '${_formatCycleDate(startDate)}. Current category totals will '
+              'start from zero. Transactions and reports history will remain '
+              'available and nothing will be deleted.';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -416,7 +375,7 @@ class _CategoriesViewState extends State<CategoriesView>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
-          (automatic ? 'Confirm category cycle' : 'Reset category totals?').tr,
+          automatic ? 'Confirm category cycle' : 'Reset category totals?',
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         ),
         content: Text(
@@ -426,11 +385,11 @@ class _CategoriesViewState extends State<CategoriesView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('Cancel'.tr),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text((automatic ? 'Confirm' : 'Reset totals').tr),
+            child: Text(automatic ? 'Confirm' : 'Reset totals'),
           ),
         ],
       ),
@@ -556,7 +515,7 @@ class _CategoriesViewState extends State<CategoriesView>
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: IconButton(
-                                  tooltip: 'Close'.tr,
+                                  tooltip: 'Close',
                                   visualDensity: VisualDensity.compact,
                                   onPressed: () =>
                                       Navigator.of(sheetContext).pop(),
@@ -573,7 +532,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Set Up Your Category Cycle'.tr,
+                          'Set Up Your Category Cycle',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -584,8 +543,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Choose when your monthly category tracking period should start.'
-                              .tr,
+                          'Choose when your monthly category tracking period should start.',
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark ? Colors.white70 : Colors.black54,
@@ -593,7 +551,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          'Cycle Start Day'.tr,
+                          'Cycle Start Day',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -659,7 +617,7 @@ class _CategoriesViewState extends State<CategoriesView>
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            '${'Cycle:'.tr} ${_formatCycleDate(previewPeriod.start)} – '
+                            'Cycle: ${_formatCycleDate(previewPeriod.start)} – '
                             '${_formatCycleDate(previewPeriod.end)}',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
@@ -671,7 +629,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          'Category Reset Mode'.tr,
+                          'Category Reset Mode',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -709,7 +667,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      (auto ? 'Automatic' : 'Manual').tr,
+                                      auto ? 'Automatic' : 'Manual',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: active
@@ -728,10 +686,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         const SizedBox(height: 14),
                         Text(
                           automatic
-                              ? 'Category totals roll over automatically on day @day each month. Your transactions remain saved.'
-                                    .trParams({'day': '$day'})
-                              : 'Reset category totals whenever you choose. Your transactions remain saved.'
-                                    .tr,
+                              ? 'Category totals roll over automatically on day $day each month. Your transactions remain saved.'
+                              : 'Reset category totals whenever you choose. Your transactions remain saved.',
                           style: TextStyle(
                             fontSize: 13.5,
                             height: 1.5,
@@ -758,8 +714,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: Text(
-                                'Reset Category Totals'.tr,
+                              child: const Text(
+                                'Reset Category Totals',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -787,8 +743,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: Text(
-                              'Save Category Cycle'.tr,
+                            child: const Text(
+                              'Save Category Cycle',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -1072,115 +1028,6 @@ class _CategoriesViewState extends State<CategoriesView>
     }
   }
 
-  IconData _getIconData(String iconName) {
-    switch (iconName.toLowerCase().trim()) {
-      case 'food':
-      case 'food & dining':
-      case 'restaurant':
-      case 'meal':
-        return Icons.restaurant_rounded;
-
-      case 'groceries':
-        return Icons.shopping_basket_rounded;
-
-      case 'rent':
-      case 'housing':
-      case 'home':
-        return Icons.home_work_rounded;
-
-      case 'bills':
-      case 'utilities':
-        return Icons.receipt_long_rounded;
-
-      case 'transport':
-      case 'transportation':
-      case 'directions_car':
-        return Icons.directions_car_rounded;
-
-      case 'fuel':
-        return Icons.local_gas_station_rounded;
-
-      case 'shopping':
-      case 'shopping_bag':
-        return Icons.shopping_bag_rounded;
-
-      case 'clothing':
-        return Icons.checkroom_rounded;
-
-      case 'health':
-      case 'healthcare':
-      case 'medicine':
-        return Icons.medical_services_rounded;
-
-      case 'education':
-      case 'school':
-        return Icons.school_rounded;
-
-      case 'mobile':
-      case 'phone':
-      case 'mobile & internet':
-        return Icons.phone_android_rounded;
-
-      case 'internet':
-      case 'wifi':
-        return Icons.wifi_rounded;
-
-      case 'entertainment':
-      case 'movie':
-        return Icons.movie_rounded;
-
-      case 'travel':
-      case 'flight':
-        return Icons.flight_rounded;
-
-      case 'beauty':
-      case 'personal care':
-        return Icons.face_retouching_natural_rounded;
-
-      case 'fitness':
-      case 'sports':
-        return Icons.fitness_center_rounded;
-
-      case 'pets':
-        return Icons.pets_rounded;
-
-      case 'gifts':
-      case 'gift':
-      case 'gifts & donations':
-        return Icons.card_giftcard_rounded;
-
-      case 'subscriptions':
-        return Icons.subscriptions_rounded;
-
-      case 'home maintenance':
-      case 'maintenance':
-      case 'tools':
-        return Icons.handyman_rounded;
-
-      // Existing categories
-      case 'work':
-      case 'salary':
-      case 'freelance':
-        return Icons.account_balance_wallet_rounded;
-
-      case 'business':
-        return Icons.business_center_rounded;
-
-      case 'investment':
-        return Icons.trending_up_rounded;
-
-      case 'bookmark':
-        return Icons.bookmark_rounded;
-
-      case 'other':
-        return Icons.more_horiz_rounded;
-
-      default:
-        return Icons.category_rounded;
-    }
-  }
-
-  // ============================================================
   // BUILD
   // ============================================================
 
@@ -1227,8 +1074,8 @@ class _CategoriesViewState extends State<CategoriesView>
             children: [
               Text(
                 isSelectionMode
-                    ? '${selectedCategoryIds.length} ${'selected'.tr}'
-                    : 'Categories'.tr,
+                    ? '${selectedCategoryIds.length} selected'
+                    : 'Categories',
                 style: AppTextStyles.headingMedium(
                   isDark,
                 ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
@@ -1250,7 +1097,7 @@ class _CategoriesViewState extends State<CategoriesView>
           actions: [
             if (isSelectionMode)
               IconButton(
-                tooltip: 'Delete selected categories'.tr,
+                tooltip: 'Delete selected categories',
                 onPressed: selectedCategoryIds.isEmpty
                     ? null
                     : _deleteSelectedCategories,
@@ -1266,15 +1113,15 @@ class _CategoriesViewState extends State<CategoriesView>
                         isSelectionMode = true;
                       });
                     },
-                    child: Text('Select'.tr),
+                    child: const Text('Select'),
                   ),
                   IconButton(
-                    tooltip: 'Category cycle settings'.tr,
+                    tooltip: 'Category cycle settings',
                     onPressed: _showCycleSetupSheet,
                     icon: const Icon(Icons.calendar_month_rounded),
                   ),
                   IconButton(
-                    tooltip: 'Open navigation menu'.tr,
+                    tooltip: 'Open navigation menu',
                     icon: Icon(
                       Icons.menu_rounded,
                       color: isDark ? Colors.white : const Color(0xFF2E7D32),
@@ -1310,9 +1157,9 @@ class _CategoriesViewState extends State<CategoriesView>
                     .toList();
 
                 if (controller.categoryList.isEmpty) {
-                  return Center(
+                  return const Center(
                     child: Text(
-                      'No categories found'.tr,
+                      'No categories found',
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   );
@@ -1338,8 +1185,8 @@ class _CategoriesViewState extends State<CategoriesView>
                             category.colorValue,
                           );
 
-                          final transactionCounts =
-                              CategoriesController.calculateCategoryTransactionCounts(
+                          final monthlyTotals =
+                              CategoriesController.calculateCategoryTotals(
                                 transactions: transactions,
                                 categoryIds: {
                                   category.id,
@@ -1452,9 +1299,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                           children: [
                                             Text(
-                                              _localizedCategoryName(
-                                                category.name,
-                                              ),
+                                              category.name,
                                               style:
                                                   AppTextStyles.bodyLarge(
                                                     isDark,
@@ -1471,24 +1316,24 @@ class _CategoriesViewState extends State<CategoriesView>
                                               spacing: 6,
                                               runSpacing: 4,
                                               children: [
-                                                if (transactionCounts['income']! >
-                                                    0)
-                                                  _buildCategoryType(
-                                                    label: 'Income'.tr,
-                                                    color: const Color(
-                                                      0xFF2E9D59,
-                                                    ),
-                                                    isDark: isDark,
+                                                _buildCategoryAmount(
+                                                  label: 'Income',
+                                                  amount:
+                                                      monthlyTotals['income']!,
+                                                  color: const Color(
+                                                    0xFF2E9D59,
                                                   ),
-                                                if (transactionCounts['expense']! >
-                                                    0)
-                                                  _buildCategoryType(
-                                                    label: 'Expense'.tr,
-                                                    color: const Color(
-                                                      0xFFE25555,
-                                                    ),
-                                                    isDark: isDark,
+                                                  isDark: isDark,
+                                                ),
+                                                _buildCategoryAmount(
+                                                  label: 'Expense',
+                                                  amount:
+                                                      monthlyTotals['expense']!,
+                                                  color: const Color(
+                                                    0xFFE25555,
                                                   ),
+                                                  isDark: isDark,
+                                                ),
                                               ],
                                             ),
                                           ],

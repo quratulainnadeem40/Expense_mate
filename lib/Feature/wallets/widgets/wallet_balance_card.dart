@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../../Core/theme/custom_colors.dart';
 
-
 class WalletBalanceCard extends StatelessWidget {
   final double totalBalance;
   final String currency;
@@ -30,28 +29,27 @@ class WalletBalanceCard extends StatelessWidget {
         children: [
           Text(
             'Total Balance',
-            style: AppTextStyles.bodyMedium(isDark).copyWith(
-              color: Colors.white70,
-            ),
+            style: AppTextStyles.bodyMedium(
+              isDark,
+            ).copyWith(color: Colors.white70),
           ),
 
           const SizedBox(height: 8),
 
           Text(
             '$currency ${totalBalance.toStringAsFixed(2)}',
-            style: AppTextStyles.headingLarge(isDark).copyWith(
-              color: Colors.white,
-              fontSize: 28,
-            ),
+            style: AppTextStyles.headingLarge(
+              isDark,
+            ).copyWith(color: Colors.white, fontSize: 28),
           ),
 
           const SizedBox(height: 4),
 
           Text(
             'Across all wallets',
-            style: AppTextStyles.caption(isDark).copyWith(
-              color: Colors.white70,
-            ),
+            style: AppTextStyles.caption(
+              isDark,
+            ).copyWith(color: Colors.white70),
           ),
         ],
       ),

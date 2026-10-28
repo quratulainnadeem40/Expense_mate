@@ -31,9 +31,7 @@ class AppTheme {
       color: AppColors.cardLight,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     dialogTheme: const DialogThemeData(
       backgroundColor: AppColors.surfaceLight,
@@ -98,9 +96,7 @@ class AppTheme {
       color: AppColors.cardDark,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     dialogTheme: const DialogThemeData(
       backgroundColor: AppColors.cardDark,

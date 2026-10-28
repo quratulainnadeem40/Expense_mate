@@ -13,7 +13,6 @@ import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
-import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:expense_mate/Feature/home/widgets/balance_card.dart';
@@ -259,9 +258,8 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
                           emoji: '💳',
-                          title: 'Wallets'.tr,
-                          subtitle:
-                              'Manage your cash, bank and other wallets'.tr,
+                          title: 'Wallets',
+                          subtitle: 'Manage your cash, bank and other wallets',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const WalletsView(),
                             binding: WalletsBinding(),
@@ -278,8 +276,8 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.donut_small_rounded,
                           iconColor: const Color(0xFF2E7D32),
                           emoji: '📊',
-                          title: 'Budgets'.tr,
-                          subtitle: 'Set and track monthly spending limits'.tr,
+                          title: 'Budgets',
+                          subtitle: 'Set and track monthly spending limits',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const BudgetView(),
                             binding: BudgetBinding(),
@@ -296,9 +294,8 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.flag_rounded,
                           iconColor: const Color(0xFFB26A00),
                           emoji: '🎯',
-                          title: 'Goals'.tr,
-                          subtitle:
-                              'Track your financial targets and savings'.tr,
+                          title: 'Goals',
+                          subtitle: 'Track your financial targets and savings',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const GoalsView(),
                             binding: GoalsBinding(),
@@ -315,8 +312,8 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.receipt_long_rounded,
                           iconColor: const Color(0xFF7A4EAB),
                           emoji: '🧾',
-                          title: 'Bills & Reminders'.tr,
-                          subtitle: 'Manage upcoming bills and reminders'.tr,
+                          title: 'Bills & Reminders',
+                          subtitle: 'Manage upcoming bills and reminders',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const BillsRemindersView(),
                             binding: BillsRemindersBinding(),
@@ -333,9 +330,8 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.groups_rounded,
                           iconColor: const Color(0xFF00695C),
                           emoji: '🤝',
-                          title: 'Digital Committee'.tr,
-                          subtitle:
-                              'Manage your committee and member payments'.tr,
+                          title: 'Digital Committee',
+                          subtitle: 'Manage your committee and member payments',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const CommitteeView(),
                           ),
@@ -351,8 +347,8 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
                           emoji: '🧮',
-                          title: 'Udhaar'.tr,
-                          subtitle: 'Money you lent out and money you owe'.tr,
+                          title: 'Udhaar',
+                          subtitle: 'Money you lent out and money you owe',
                           onTap: () => _closeDrawerAndNavigate(
                             () => UdhaarView(),
                             binding: UdhaarBinding(),
@@ -368,9 +364,8 @@ class HomeScreen extends StatelessWidget {
                           context: context,
                           icon: Icons.person_rounded,
                           iconColor: const Color(0xFFF2C14E),
-                          title: 'Profile'.tr,
-                          subtitle:
-                              'Manage your profile and account settings'.tr,
+                          title: 'Profile',
+                          subtitle: 'Manage your profile and account settings',
                           onTap: () => _closeDrawerAndNavigate(
                             () => const SettingsView(),
                           ),
@@ -404,7 +399,7 @@ class HomeScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${'Hello'.tr}, $_userName 👋',
+                            'Hello, $_userName 👋',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -417,7 +412,7 @@ class HomeScreen extends StatelessWidget {
                           const SizedBox(height: 2),
 
                           Text(
-                            'Welcome back to Expense Mate'.tr,
+                            'Welcome back to Expense Mate',
                             style: TextStyle(
                               fontSize: 13,
                               color: isDarkMode
@@ -461,7 +456,7 @@ class HomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Recent Transactions'.tr,
+                        'Recent Transactions',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -488,8 +483,8 @@ class HomeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Text(
-                            'View All'.tr,
+                          child: const Text(
+                            'View All',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -523,7 +518,7 @@ class HomeScreen extends StatelessWidget {
                             const SizedBox(height: 8),
 
                             Text(
-                              'No recent transactions found.'.tr,
+                              'No recent transactions found.',
                               style: TextStyle(
                                 color: isDarkMode
                                     ? Colors.grey.shade400

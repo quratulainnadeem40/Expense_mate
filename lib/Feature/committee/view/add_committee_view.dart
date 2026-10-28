@@ -365,25 +365,18 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
+      child: TextFormField(
+        readOnly: true,
+        controller: TextEditingController(text: _formatDate(date)),
         onTap: readOnly ? null : onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: InputDecorator(
-          decoration: _inputDecoration(
-            label: label,
-            suffixIcon: Icon(
-              readOnly ? Icons.event_rounded : Icons.calendar_month_rounded,
-              color: readOnly
-                  ? purpleAccent
-                  : (isDark ? const Color(0xFF7DD6A8) : greenAccent),
-            ),
-          ),
-          child: Text(
-            _formatDate(date),
-            style: TextStyle(
-              color: date == null ? secondaryText : primaryText,
-              fontSize: 16,
-            ),
+        style: TextStyle(color: primaryText),
+        decoration: _inputDecoration(
+          label: label,
+          suffixIcon: Icon(
+            readOnly ? Icons.event_rounded : Icons.calendar_month_rounded,
+            color: readOnly
+                ? purpleAccent
+                : (isDark ? const Color(0xFF7DD6A8) : greenAccent),
           ),
         ),
       ),

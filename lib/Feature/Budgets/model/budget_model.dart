@@ -12,7 +12,9 @@ class BudgetModel {
   });
 
   double get remainingAmount => allocatedAmount - spentAmount;
-  double get progress => (allocatedAmount > 0) ? (spentAmount / allocatedAmount).clamp(0.0, 1.0) : 0.0;
+  double get progress => (allocatedAmount > 0)
+      ? (spentAmount / allocatedAmount).clamp(0.0, 1.0)
+      : 0.0;
 }
 
 // =====================================================================
@@ -59,34 +61,38 @@ class BudgetCycleHistory {
   int get lengthInDays => endDate.difference(startDate).inDays + 1;
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
-        'totalLimit': totalLimit,
-        'totalSpent': totalSpent,
-        'wasAutomatic': wasAutomatic,
-        'categories': categories.map((c) => c.toMap()).toList(),
-      };
+    'id': id,
+    'startDate': startDate.toIso8601String(),
+    'endDate': endDate.toIso8601String(),
+    'totalLimit': totalLimit,
+    'totalSpent': totalSpent,
+    'wasAutomatic': wasAutomatic,
+    'categories': categories.map((c) => c.toMap()).toList(),
+  };
 
   factory BudgetCycleHistory.fromMap(Map<String, dynamic> map) {
     final rawCategories = map['categories'];
 
     return BudgetCycleHistory(
-      id: map['id']?.toString() ??
+      id:
+          map['id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
-      startDate: DateTime.tryParse(map['startDate']?.toString() ?? '') ??
+      startDate:
+          DateTime.tryParse(map['startDate']?.toString() ?? '') ??
           DateTime.now(),
-      endDate: DateTime.tryParse(map['endDate']?.toString() ?? '') ??
-          DateTime.now(),
+      endDate:
+          DateTime.tryParse(map['endDate']?.toString() ?? '') ?? DateTime.now(),
       totalLimit: (map['totalLimit'] as num?)?.toDouble() ?? 0.0,
       totalSpent: (map['totalSpent'] as num?)?.toDouble() ?? 0.0,
       wasAutomatic: map['wasAutomatic'] == true,
       categories: rawCategories is List
           ? rawCategories
-              .map((e) => CategoryCycleEntry.fromMap(
+                .map(
+                  (e) => CategoryCycleEntry.fromMap(
                     Map<String, dynamic>.from(e as Map),
-                  ))
-              .toList()
+                  ),
+                )
+                .toList()
           : <CategoryCycleEntry>[],
     );
   }
@@ -111,10 +117,10 @@ class CategoryCycleEntry {
   double get progress => limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
 
   Map<String, dynamic> toMap() => {
-        'name': name,
-        'limit': limit,
-        'spent': spent,
-      };
+    'name': name,
+    'limit': limit,
+    'spent': spent,
+  };
 
   factory CategoryCycleEntry.fromMap(Map<String, dynamic> map) =>
       CategoryCycleEntry(

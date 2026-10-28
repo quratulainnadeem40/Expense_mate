@@ -1,3 +1,4 @@
+import '../../../Core/service/sound_service.dart';
 import 'dart:async';
 
 import 'package:expense_mate/Core/constants/app_keys.dart';
@@ -23,8 +24,10 @@ class SettingsController extends GetxController {
   /// Hides the figures on the balance card. Starts on, so the amounts
   /// are not sitting in plain view the first time the app opens.
   final hideAmounts = true.obs;
+
+  /// Confirmation sound after a transaction is saved.
+  final transactionSound = true.obs;
   final selectedCurrency = 'PKR'.obs;
-  final selectedLanguage = 'en'.obs;
   final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
 
@@ -707,9 +710,6 @@ class SettingsController extends GetxController {
     isDarkMode.value =
         settingsBox.get(AppKeys.isDarkModeKey, defaultValue: false) as bool;
 
-    selectedLanguage.value =
-        settingsBox.get('app_language', defaultValue: 'en') as String;
-    Get.locale = Locale(selectedLanguage.value);
     await loadCurrencySettings();
 
     notificationsEnabled.value =
@@ -717,6 +717,10 @@ class SettingsController extends GetxController {
 
     hideAmounts.value =
         settingsBox.get('hide_amounts', defaultValue: true) as bool;
+
+    transactionSound.value =
+        settingsBox.get(AppKeys.transactionSoundKey, defaultValue: true)
+            as bool;
   }
 
   // ============================================================
@@ -778,6 +782,14 @@ class SettingsController extends GetxController {
   }
 
   /// Flips the balance card between the real figures and dots.
+  Future<void> toggleTransactionSound(bool value) async {
+    transactionSound.value = value;
+    await SoundService.instance.setEnabled(value);
+
+    // A quick play so the user hears what they just switched on.
+    if (value) await SoundService.instance.playSuccess();
+  }
+
   Future<void> toggleHideAmounts() async {
     hideAmounts.value = !hideAmounts.value;
     await settingsBox.put('hide_amounts', hideAmounts.value);
@@ -791,16 +803,6 @@ class SettingsController extends GetxController {
     selectedCurrency.value = code;
 
     await settingsBox.put('currency', code);
-  }
-
-  Future<void> changeLanguage(String languageCode) async {
-    final code = languageCode.trim().toLowerCase();
-
-    if (!{'en', 'ur', 'ps', 'sd', 'ar', 'hi'}.contains(code)) return;
-
-    selectedLanguage.value = code;
-    await settingsBox.put('app_language', code);
-    await Get.updateLocale(Locale(code));
   }
 
   Future<void> addCustomCurrency(String currency) async {

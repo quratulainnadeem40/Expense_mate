@@ -1,4 +1,3 @@
-
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
@@ -18,8 +17,7 @@ class AddCategoryDialog extends StatefulWidget {
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final TextEditingController nameController = TextEditingController();
 
-  final CategoriesController controller =
-      Get.find<CategoriesController>();
+  final CategoriesController controller = Get.find<CategoriesController>();
 
   String selectedIcon = 'food';
 
@@ -149,59 +147,57 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     },
   ];
 
-Future<void> _saveCategory() async {
-  final categoryName = nameController.text.trim();
+  Future<void> _saveCategory() async {
+    final categoryName = nameController.text.trim();
 
-  if (categoryName.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please enter category name.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    return;
-  }
-
-  final normalizedName = categoryName
-      .toLowerCase()
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
-
-  // Keep category names unique within each transaction type.
-  final existingCategory = await controller.findCategoryByName(
-    normalizedName,
-    type: selectedType,
-  );
-
-  if (!mounted) return;
-
-  if (existingCategory != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '"${existingCategory.name}" already exists for '
-          '${selectedType == 'income' ? 'income' : 'expense'}.',
+    if (categoryName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter category name.'),
+          behavior: SnackBarBehavior.floating,
         ),
-        behavior: SnackBarBehavior.floating,
-      ),
+      );
+      return;
+    }
+
+    final normalizedName = categoryName
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    // Keep category names unique within each transaction type.
+    final existingCategory = await controller.findCategoryByName(
+      normalizedName,
+      type: selectedType,
     );
-    return;
+
+    if (!mounted) return;
+
+    if (existingCategory != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '"${existingCategory.name}" already exists for '
+            '${selectedType == 'income' ? 'income' : 'expense'}.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final newCategory = CategoryModel(
+      id: const Uuid().v4(),
+      name: categoryName,
+      icon: selectedIcon,
+      colorValue: 0xFF2E7D32,
+      isDefault: false,
+      type: selectedType,
+    );
+
+    await controller.addCategory(newCategory, closeDialog: true);
   }
 
-  final newCategory = CategoryModel(
-    id: const Uuid().v4(),
-    name: categoryName,
-    icon: selectedIcon,
-    colorValue: 0xFF2E7D32,
-    isDefault: false,
-    type: selectedType,
-  );
-
-  await controller.addCategory(
-    newCategory,
-    closeDialog: true,
-  );
-}
   @override
   void dispose() {
     nameController.dispose();
@@ -231,14 +227,9 @@ Future<void> _saveCategory() async {
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected
-                ? color.withOpacity(0.13)
-                : Colors.transparent,
+            color: isSelected ? color.withOpacity(0.13) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
@@ -250,11 +241,7 @@ Future<void> _saveCategory() async {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 19,
-              ),
+              Icon(icon, color: color, size: 19),
               const SizedBox(width: 7),
               Flexible(
                 child: Text(
@@ -264,20 +251,14 @@ Future<void> _saveCategory() async {
                     color: isSelected
                         ? color
                         : (isDark ? Colors.white70 : Colors.black87),
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 14,
                   ),
                 ),
               ),
               if (isSelected) ...[
                 const SizedBox(width: 5),
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: color,
-                  size: 16,
-                ),
+                Icon(Icons.check_circle_rounded, color: color, size: 16),
               ],
             ],
           ),
@@ -292,8 +273,7 @@ Future<void> _saveCategory() async {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     const Color accent = AppColors.primary;
 
@@ -305,13 +285,8 @@ Future<void> _saveCategory() async {
       backgroundColor: surface,
       surfaceTintColor: Colors.transparent,
       elevation: 18,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 24,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       clipBehavior: Clip.antiAlias,
       titlePadding: EdgeInsets.zero,
       contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
@@ -320,16 +295,12 @@ Future<void> _saveCategory() async {
       // ======================================================
       // HEADER
       // ======================================================
-
       title: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              accent,
-              Color(0xFF1B5E20),
-            ],
+            colors: [accent, Color(0xFF1B5E20)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -342,9 +313,7 @@ Future<void> _saveCategory() async {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: Colors.white30,
-                ),
+                border: Border.all(color: Colors.white30),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.12),
@@ -392,23 +361,19 @@ Future<void> _saveCategory() async {
       // ======================================================
       // CONTENT
       // ======================================================
-
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // CATEGORY NAME
-
             TextField(
               controller: nameController,
               textCapitalization: TextCapitalization.words,
               decoration: InputDecoration(
                 hintText: 'Enter category name',
                 hintStyle: TextStyle(
-                  color: isDark
-                      ? Colors.white54
-                      : Colors.grey[600],
+                  color: isDark ? Colors.white54 : Colors.grey[600],
                   fontSize: 14,
                 ),
                 filled: true,
@@ -422,17 +387,12 @@ Future<void> _saveCategory() async {
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(
-                    color: isDark
-                        ? Colors.white24
-                        : Colors.black26,
+                    color: isDark ? Colors.white24 : Colors.black26,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: accent,
-                    width: 1.5,
-                  ),
+                  borderSide: const BorderSide(color: accent, width: 1.5),
                 ),
               ),
             ),
@@ -440,14 +400,11 @@ Future<void> _saveCategory() async {
             const SizedBox(height: 20),
 
             // CATEGORY TYPE
-
             Text(
               'Category Type',
               style: AppTextStyles.bodyMedium(isDark).copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? Colors.white70
-                    : Colors.grey[700],
+                color: isDark ? Colors.white70 : Colors.grey[700],
               ),
             ),
 
@@ -485,14 +442,11 @@ Future<void> _saveCategory() async {
             const SizedBox(height: 20),
 
             // ICON SELECTION
-
             Text(
               'Select Icon',
               style: AppTextStyles.bodyMedium(isDark).copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? Colors.white70
-                    : Colors.grey[700],
+                color: isDark ? Colors.white70 : Colors.grey[700],
               ),
             ),
 
@@ -506,8 +460,7 @@ Future<void> _saveCategory() async {
                 final String emoji = item['emoji'] as String;
                 final Color iconColor = item['color'] as Color;
 
-                final bool isSelected =
-                    selectedIcon == iconName;
+                final bool isSelected = selectedIcon == iconName;
 
                 return InkWell(
                   onTap: () {
@@ -521,19 +474,15 @@ Future<void> _saveCategory() async {
                     height: 54,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? iconColor.withOpacity(
-                              isDark ? 0.34 : 0.24,
-                            )
+                          ? iconColor.withOpacity(isDark ? 0.34 : 0.24)
                           : (isDark
-                              ? Colors.white.withOpacity(0.04)
-                              : iconColor.withOpacity(0.10)),
+                                ? Colors.white.withOpacity(0.04)
+                                : iconColor.withOpacity(0.10)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? iconColor
-                            : (isDark
-                                ? Colors.white24
-                                : Colors.black12),
+                            : (isDark ? Colors.white24 : Colors.black12),
                         width: isSelected ? 2.2 : 1,
                       ),
                       boxShadow: isSelected
@@ -551,10 +500,7 @@ Future<void> _saveCategory() async {
                       children: [
                         Text(
                           emoji,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            height: 1.15,
-                          ),
+                          style: const TextStyle(fontSize: 26, height: 1.15),
                         ),
                         if (isSelected)
                           Positioned(
@@ -593,37 +539,29 @@ Future<void> _saveCategory() async {
       // ======================================================
       // ACTIONS
       // ======================================================
-
       actions: [
         TextButton(
           onPressed: () => Get.back(),
           style: TextButton.styleFrom(
-            foregroundColor:
-                isDark ? Colors.white70 : Colors.grey[700],
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           child: const Text('Cancel'),
         ),
 
         FilledButton(
-  onPressed: _saveCategory,
-  style: FilledButton.styleFrom(
-    backgroundColor: accent,
-    foregroundColor: Colors.white,
-    elevation: 2,
-    padding: const EdgeInsets.symmetric(
-      horizontal: 22,
-      vertical: 12,
-    ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-  ),
-  child: const Text('Add'),
-),
+          onPressed: _saveCategory,
+          style: FilledButton.styleFrom(
+            backgroundColor: accent,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: const Text('Add'),
+        ),
       ],
     );
   }

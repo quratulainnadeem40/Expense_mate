@@ -14,8 +14,7 @@ class BillsRemindersController extends GetxController {
   final NotificationService notificationService =
       Get.find<NotificationService>();
 
-  SettingsController get settingsController =>
-      Get.find<SettingsController>();
+  SettingsController get settingsController => Get.find<SettingsController>();
 
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -29,11 +28,8 @@ class BillsRemindersController extends GetxController {
     return bills.where((bill) {
       return !bill.isPaid &&
           !isSameDay(bill.dueDate, now) &&
-          bill.dueDate.isAfter(
-            DateTime(now.year, now.month, now.day),
-          );
-    }).toList()
-      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+          bill.dueDate.isAfter(DateTime(now.year, now.month, now.day));
+    }).toList()..sort((a, b) => a.dueDate.compareTo(b.dueDate));
   }
 
   List<BillModel> get paidBills {
@@ -46,11 +42,8 @@ class BillsRemindersController extends GetxController {
 
     return bills.where((bill) {
       return !bill.isPaid &&
-          bill.dueDate.isBefore(
-            DateTime(now.year, now.month, now.day),
-          );
-    }).toList()
-      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+          bill.dueDate.isBefore(DateTime(now.year, now.month, now.day));
+    }).toList()..sort((a, b) => a.dueDate.compareTo(b.dueDate));
   }
 
   List<BillModel> get todayBills {
@@ -76,24 +69,15 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   double get upcomingAmount {
-    return upcomingBills.fold(
-      0.0,
-      (sum, bill) => sum + bill.amount,
-    );
+    return upcomingBills.fold(0.0, (sum, bill) => sum + bill.amount);
   }
 
   double get overdueAmount {
-    return overdueBills.fold(
-      0.0,
-      (sum, bill) => sum + bill.amount,
-    );
+    return overdueBills.fold(0.0, (sum, bill) => sum + bill.amount);
   }
 
   double get paidAmount {
-    return paidBills.fold(
-      0.0,
-      (sum, bill) => sum + bill.amount,
-    );
+    return paidBills.fold(0.0, (sum, bill) => sum + bill.amount);
   }
 
   // ==========================================================
@@ -129,19 +113,13 @@ class BillsRemindersController extends GetxController {
 
       bills.assignAll(
         (response as List)
-            .map(
-              (item) => BillModel.fromMap(
-                Map<String, dynamic>.from(item),
-              ),
-            )
+            .map((item) => BillModel.fromMap(Map<String, dynamic>.from(item)))
             .toList(),
       );
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Unable to load bills. Please try again.',
-      );
+      _showError('Unable to load bills. Please try again.');
     } finally {
       isLoading.value = false;
     }
@@ -169,9 +147,7 @@ class BillsRemindersController extends GetxController {
   // SCHEDULE ONE NOTIFICATION
   // ==========================================================
 
-  Future<void> _scheduleBillNotification(
-    BillModel bill,
-  ) async {
+  Future<void> _scheduleBillNotification(BillModel bill) async {
     if (bill.isPaid || !bill.reminderEnabled) {
       return;
     }
@@ -189,9 +165,7 @@ class BillsRemindersController extends GetxController {
         dueDate: bill.dueDate,
       );
     } catch (e) {
-      print(
-        'NOTIFICATION SCHEDULE ERROR for ${bill.title}: $e',
-      );
+      print('NOTIFICATION SCHEDULE ERROR for ${bill.title}: $e');
     }
   }
 
@@ -244,9 +218,7 @@ class BillsRemindersController extends GetxController {
           .select()
           .single();
 
-      final bill = BillModel.fromMap(
-        Map<String, dynamic>.from(response),
-      );
+      final bill = BillModel.fromMap(Map<String, dynamic>.from(response));
 
       bills.add(bill);
 
@@ -260,9 +232,7 @@ class BillsRemindersController extends GetxController {
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Unable to add bill. Please try again.',
-      );
+      _showError('Unable to add bill. Please try again.');
     } finally {
       isLoading.value = false;
     }
@@ -283,10 +253,7 @@ class BillsRemindersController extends GetxController {
     try {
       isLoading.value = true;
 
-      await notificationService
-          .cancelNotification(
-        _notificationId(bill.id),
-      );
+      await notificationService.cancelNotification(_notificationId(bill.id));
 
       final response = await _supabase
           .from('bills_reminders')
@@ -299,8 +266,7 @@ class BillsRemindersController extends GetxController {
             'note': bill.note,
             'is_paid': bill.isPaid,
             'reminder_enabled': bill.reminderEnabled,
-            'reminder_time':
-                bill.reminderTime?.toIso8601String(),
+            'reminder_time': bill.reminderTime?.toIso8601String(),
           })
           .eq('id', bill.id)
           .eq('user_id', user.id)
@@ -311,9 +277,7 @@ class BillsRemindersController extends GetxController {
         Map<String, dynamic>.from(response),
       );
 
-      final index = bills.indexWhere(
-        (item) => item.id == bill.id,
-      );
+      final index = bills.indexWhere((item) => item.id == bill.id);
 
       if (index != -1) {
         bills[index] = updatedBill;
@@ -330,9 +294,7 @@ class BillsRemindersController extends GetxController {
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Unable to update bill. Please try again.',
-      );
+      _showError('Unable to update bill. Please try again.');
     } finally {
       isLoading.value = false;
     }
@@ -343,9 +305,7 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> markAsPaid(String billId) async {
-    final index = bills.indexWhere(
-      (bill) => bill.id == billId,
-    );
+    final index = bills.indexWhere((bill) => bill.id == billId);
 
     if (index == -1) {
       _showError('Bill not found.');
@@ -354,9 +314,7 @@ class BillsRemindersController extends GetxController {
 
     final bill = bills[index];
 
-    await updateBill(
-      bill.copyWith(isPaid: true),
-    );
+    await updateBill(bill.copyWith(isPaid: true));
   }
 
   // ==========================================================
@@ -364,9 +322,7 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   Future<void> markAsUnpaid(String billId) async {
-    final index = bills.indexWhere(
-      (bill) => bill.id == billId,
-    );
+    final index = bills.indexWhere((bill) => bill.id == billId);
 
     if (index == -1) {
       _showError('Bill not found.');
@@ -375,22 +331,15 @@ class BillsRemindersController extends GetxController {
 
     final bill = bills[index];
 
-    await updateBill(
-      bill.copyWith(isPaid: false),
-    );
+    await updateBill(bill.copyWith(isPaid: false));
   }
 
   // ==========================================================
   // TOGGLE REMINDER
   // ==========================================================
 
-  Future<void> toggleReminder(
-    String billId,
-    bool enabled,
-  ) async {
-    final index = bills.indexWhere(
-      (bill) => bill.id == billId,
-    );
+  Future<void> toggleReminder(String billId, bool enabled) async {
+    final index = bills.indexWhere((bill) => bill.id == billId);
 
     if (index == -1) {
       _showError('Bill not found.');
@@ -399,11 +348,7 @@ class BillsRemindersController extends GetxController {
 
     final bill = bills[index];
 
-    await updateBill(
-      bill.copyWith(
-        reminderEnabled: enabled,
-      ),
-    );
+    await updateBill(bill.copyWith(reminderEnabled: enabled));
   }
 
   // ==========================================================
@@ -427,18 +372,12 @@ class BillsRemindersController extends GetxController {
           .eq('id', billId)
           .eq('user_id', user.id);
 
-      bills.removeWhere(
-        (bill) => bill.id == billId,
-      );
+      bills.removeWhere((bill) => bill.id == billId);
 
       try {
-        await notificationService.cancelNotification(
-          _notificationId(billId),
-        );
+        await notificationService.cancelNotification(_notificationId(billId));
       } catch (e) {
-        print(
-          'DELETE NOTIFICATION ERROR: $e',
-        );
+        print('DELETE NOTIFICATION ERROR: $e');
       }
 
       Get.snackbar(
@@ -449,9 +388,7 @@ class BillsRemindersController extends GetxController {
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Unable to delete bill. Please try again.',
-      );
+      _showError('Unable to delete bill. Please try again.');
     } finally {
       isLoading.value = false;
     }
@@ -472,19 +409,14 @@ class BillsRemindersController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase
-          .from('bills_reminders')
-          .delete()
-          .eq('user_id', user.id);
+      await _supabase.from('bills_reminders').delete().eq('user_id', user.id);
 
       bills.clear();
 
       try {
         await notificationService.cancelAllNotifications();
       } catch (e) {
-        print(
-          'CLEAR NOTIFICATIONS ERROR: $e',
-        );
+        print('CLEAR NOTIFICATIONS ERROR: $e');
       }
 
       Get.snackbar(
@@ -495,9 +427,7 @@ class BillsRemindersController extends GetxController {
     } on PostgrestException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError(
-        'Unable to clear bills. Please try again.',
-      );
+      _showError('Unable to clear bills. Please try again.');
     } finally {
       isLoading.value = false;
     }
@@ -507,10 +437,7 @@ class BillsRemindersController extends GetxController {
   // DATE HELPER
   // ==========================================================
 
-  bool isSameDay(
-    DateTime first,
-    DateTime second,
-  ) {
+  bool isSameDay(DateTime first, DateTime second) {
     return first.year == second.year &&
         first.month == second.month &&
         first.day == second.day;
@@ -521,10 +448,6 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
   }
 }

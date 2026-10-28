@@ -42,10 +42,7 @@ class HomeController extends GetxController {
     // - added
     // - edited
     // - deleted
-    ever(
-      transactionsController.transactions,
-      (_) => loadDashboardData(),
-    );
+    ever(transactionsController.transactions, (_) => loadDashboardData());
 
     loadDashboardData();
   }
