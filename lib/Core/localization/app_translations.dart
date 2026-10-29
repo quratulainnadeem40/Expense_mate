@@ -183,6 +183,13 @@ class AppTranslations extends Translations {
         'Wallets, budgets, savings goals, bill reminders and your committee all live behind this menu.',
     'Skip': 'Skip',
     'Got it': 'Got it',
+    'Adjust Month Start Date': 'Adjust Month Start Date',
+    'Choose the day your monthly budget cycle starts.':
+        'Choose the day your monthly budget cycle starts.',
+    'You can edit it from your profile screen.':
+        'You can edit it from your profile screen.',
+    'Month Start': 'Month Start',
+    'Budget cycle': 'Budget cycle',
   };
 
   static const _urdu = {
@@ -347,6 +354,13 @@ class AppTranslations extends Translations {
         'والٹس، بجٹ، بچت کے اہداف، بل کی یاددہانیاں اور کمیٹی اس مینو میں موجود ہیں۔',
     'Skip': 'چھوڑیں',
     'Got it': 'سمجھ گیا',
+    'Adjust Month Start Date': 'مہینے کی شروعات کی تاریخ تبدیل کریں',
+    'Choose the day your monthly budget cycle starts.':
+        'منتخب کریں کہ آپ کا ماہانہ بجٹ سائیکل کس دن شروع ہو۔',
+    'You can edit it from your profile screen.':
+        'آپ اسے اپنی پروفائل اسکرین سے تبدیل کر سکتے ہیں۔',
+    'Month Start': 'مہینے کا آغاز',
+    'Budget cycle': 'بجٹ سائیکل',
   };
 
   static const _pashto = {
@@ -433,6 +447,14 @@ class AppTranslations extends Translations {
     'Enter your name': 'خپل نوم ولیکئ',
     'Create a password': 'پټنوم جوړ کړئ',
     'Already have an account?': 'له مخکې حساب لرئ؟',
+    'Skip': 'پرېښودل',
+    'Adjust Month Start Date': 'د میاشتې د پیل نېټه بدله کړئ',
+    'Choose the day your monthly budget cycle starts.':
+        'هغه ورځ وټاکئ چې ستاسو د میاشتني بودیجې دوره پرې پیلېږي.',
+    'You can edit it from your profile screen.':
+        'تاسو یې د خپل پروفایل له پاڼې بدلولی شئ.',
+    'Month Start': 'د میاشتې پیل',
+    'Budget cycle': 'د بودیجې دوره',
   };
 
   static const _sindhi = {
@@ -524,6 +546,14 @@ class AppTranslations extends Translations {
     'Enter your name': 'پنهنجو نالو داخل ڪريو',
     'Create a password': 'پاسورڊ ٺاهيو',
     'Already have an account?': 'اڳ ۾ اڪائونٽ آهي؟',
+    'Skip': 'ڇڏي ڏيو',
+    'Adjust Month Start Date': 'مهيني جي شروعات جي تاريخ تبديل ڪريو',
+    'Choose the day your monthly budget cycle starts.':
+        'اهو ڏينهن چونڊيو جڏهن توهان جو ماهوار بجيٽ چڪر شروع ٿئي.',
+    'You can edit it from your profile screen.':
+        'توهان ان کي پنهنجي پروفائل اسڪرين تان تبديل ڪري سگهو ٿا.',
+    'Month Start': 'مهيني جي شروعات',
+    'Budget cycle': 'بجيٽ چڪر',
   };
 
   static const _arabic = {
@@ -610,6 +640,14 @@ class AppTranslations extends Translations {
     'Enter your name': 'أدخل اسمك',
     'Create a password': 'أنشئ كلمة مرور',
     'Already have an account?': 'لديك حساب بالفعل؟',
+    'Skip': 'تخطي',
+    'Adjust Month Start Date': 'تعديل تاريخ بداية الشهر',
+    'Choose the day your monthly budget cycle starts.':
+        'اختر اليوم الذي تبدأ فيه دورة ميزانيتك الشهرية.',
+    'You can edit it from your profile screen.':
+        'يمكنك تعديل ذلك من شاشة ملفك الشخصي.',
+    'Month Start': 'بداية الشهر',
+    'Budget cycle': 'دورة الميزانية',
   };
 
   static const _hindi = {
@@ -700,6 +738,14 @@ class AppTranslations extends Translations {
     'Enter your name': 'अपना नाम दर्ज करें',
     'Create a password': 'पासवर्ड बनाएँ',
     'Already have an account?': 'पहले से खाता है?',
+    'Skip': 'छोड़ें',
+    'Adjust Month Start Date': 'महीने की शुरुआत की तारीख बदलें',
+    'Choose the day your monthly budget cycle starts.':
+        'वह दिन चुनें जिससे आपका मासिक बजट चक्र शुरू होता है।',
+    'You can edit it from your profile screen.':
+        'आप इसे अपनी प्रोफ़ाइल स्क्रीन से बदल सकते हैं।',
+    'Month Start': 'महीने की शुरुआत',
+    'Budget cycle': 'बजट चक्र',
   };
 
   @override

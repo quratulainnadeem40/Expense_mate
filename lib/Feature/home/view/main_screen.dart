@@ -2,6 +2,8 @@ import 'package:expense_mate/Core/widgets/coach_mark.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
+import 'package:expense_mate/Feature/Budgets/widgets/budget_cycle_setup_sheet.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
@@ -35,8 +37,30 @@ class _MainScreenState extends State<MainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      CoachMarkController.instance.start(context, expenseMateTour());
+      final budgetController = Get.find<BudgetController>();
+      if (CoachMarkController.instance.hasSeenTour) {
+        _showFirstTimeBudgetSetup(budgetController);
+        return;
+      }
+
+      CoachMarkController.instance.start(
+        context,
+        expenseMateTour(),
+        onFinished: () => _showFirstTimeBudgetSetup(budgetController),
+      );
     });
+  }
+
+  Future<void> _showFirstTimeBudgetSetup(
+    BudgetController budgetController,
+  ) async {
+    if (!mounted || budgetController.isCycleConfigured.value) return;
+
+    await showBudgetCycleSetupSheet(
+      context,
+      controller: budgetController,
+      canSkip: true,
+    );
   }
 
   @override
@@ -58,6 +82,10 @@ class _MainScreenState extends State<MainScreen> {
         Get.isRegistered<TransactionsController>()
         ? Get.find<TransactionsController>()
         : Get.put(TransactionsController());
+
+    if (!Get.isRegistered<BudgetController>()) {
+      Get.put<BudgetController>(BudgetController(), permanent: true);
+    }
 
     // IMPORTANT:
     // Reports is inside IndexedStack, so ReportBindings()

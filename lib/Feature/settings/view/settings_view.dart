@@ -6,14 +6,23 @@ import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
+import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
+import 'package:expense_mate/Feature/Budgets/widgets/budget_cycle_setup_sheet.dart';
 
 import '../controller/settings_controller.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
-
   SettingsController get controller => Get.find<SettingsController>();
+
+  Future<void> _showBudgetCycleSetup(BuildContext context) async {
+    final budgetController = Get.isRegistered<BudgetController>()
+        ? Get.find<BudgetController>()
+        : Get.put<BudgetController>(BudgetController(), permanent: true);
+
+    await showBudgetCycleSetupSheet(context, controller: budgetController);
+  }
 
   Future<void> _showAddCurrencyDialog() async {
     final currencyController = TextEditingController();
@@ -414,6 +423,44 @@ class SettingsView extends StatelessWidget {
                   onTap: () {
                     _showCurrencyListDialog(context);
                   },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            _SectionHeader(
+              title: 'Budget cycle'.tr,
+              isDark: isDark,
+              icon: Icons.calendar_month_outlined,
+            ),
+
+            const SizedBox(height: 10),
+
+            _SettingsCard(
+              isDark: isDark,
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.calendar_month_rounded,
+                    isDark: isDark,
+                  ),
+                  title: Text(
+                    'Adjust Month Start Date'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Choose the day your monthly budget cycle starts.'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => _showBudgetCycleSetup(context),
                 ),
               ],
             ),

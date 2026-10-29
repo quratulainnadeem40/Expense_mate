@@ -1141,6 +1141,7 @@ class _CategoriesViewState extends State<CategoriesView>
           children: [
             GestureDetector(
               onTap: () {
+                
                 if (isSelectionMode) {
                   _exitSelectionMode();
                 }

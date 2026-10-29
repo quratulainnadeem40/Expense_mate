@@ -50,6 +50,7 @@ class CoachMarkController {
 
   OverlayEntry? _entry;
   List<CoachStep> _steps = const [];
+  VoidCallback? _onFinished;
 
   /// Drives the overlay. Changing it rebuilds the card in place instead
   /// of tearing the overlay down and inserting a new one.
@@ -80,11 +81,13 @@ class CoachMarkController {
     BuildContext context,
     List<CoachStep> steps, {
     bool force = false,
+    VoidCallback? onFinished,
   }) {
     if (isRunning || steps.isEmpty) return;
     if (!force && hasSeenTour) return;
 
     _steps = steps;
+    _onFinished = onFinished;
     _index.value = 0;
 
     // Marked here, not when the tour ends. Writing it at the end meant
@@ -132,6 +135,9 @@ class CoachMarkController {
   void finish() {
     _entry?.remove();
     _entry = null;
+    final onFinished = _onFinished;
+    _onFinished = null;
+    onFinished?.call();
   }
 }
 
