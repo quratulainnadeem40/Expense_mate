@@ -92,10 +92,7 @@ class WalletSyncRepository {
     );
 
     // Update local database immediately.
-    await localRepository.updateWallet(
-      id,
-      wallet,
-    );
+    await localRepository.updateWallet(id, wallet);
 
     // Queue cloud synchronization.
     await syncQueue.enqueue(
@@ -132,9 +129,7 @@ class WalletSyncRepository {
       entityTable: 'wallets',
       recordId: id,
       operation: 'delete',
-      payload: {
-        'id': id,
-      },
+      payload: {'id': id},
     );
   }
 }

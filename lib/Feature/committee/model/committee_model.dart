@@ -37,8 +37,7 @@ class CommitteeModel {
     return CommitteeModel(
       id: map['id'] ?? '',
       name: map['name'] ?? '',
-      monthlyContribution:
-          (map['monthlyContribution'] ?? 0).toDouble(),
+      monthlyContribution: (map['monthlyContribution'] ?? 0).toDouble(),
       totalMembers: map['totalMembers'] ?? 0,
       startDate: DateTime.parse(
         map['startDate'] ?? DateTime.now().toIso8601String(),

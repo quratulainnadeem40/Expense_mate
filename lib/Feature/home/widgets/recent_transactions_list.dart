@@ -4,21 +4,19 @@ import 'package:get/get.dart';
 class RecentTransactionsList extends StatelessWidget {
   final RxList<Map<dynamic, dynamic>> transactions;
 
-  const RecentTransactionsList({
-    Key? key,
-    required this.transactions,
-  }) : super(key: key);
+  const RecentTransactionsList({Key? key, required this.transactions})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       if (transactions.isEmpty) {
-        return Center(
+        return const Center(
           child: Padding(
             padding: EdgeInsets.all(20.0),
             child: Text(
-              'No transactions yet.'.tr,
-              style: const TextStyle(color: Colors.grey),
+              'No transactions yet.',
+              style: TextStyle(color: Colors.grey),
             ),
           ),
         );
@@ -37,8 +35,8 @@ class RecentTransactionsList extends StatelessWidget {
                 isIncome ? Icons.arrow_downward : Icons.arrow_upward,
                 color: isIncome ? Colors.green : Colors.red,
               ),
-              title: Text(tx['title'] ?? 'Transaction'.tr),
-              subtitle: Text(tx['category'] ?? 'General'.tr),
+              title: Text(tx['title'] ?? 'Transaction'),
+              subtitle: Text(tx['category'] ?? 'General'),
               trailing: Text(
                 '${isIncome ? '+' : '-'}\$${(tx['amount'] ?? 0.0).toStringAsFixed(2)}',
                 style: TextStyle(

@@ -1,4 +1,3 @@
-import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,10 +9,7 @@ import '../widgets/wallet_type_selector.dart';
 class EditWalletView extends StatefulWidget {
   final WalletModel wallet;
 
-  const EditWalletView({
-    super.key,
-    required this.wallet,
-  });
+  const EditWalletView({super.key, required this.wallet});
 
   @override
   State<EditWalletView> createState() => _EditWalletViewState();
@@ -32,9 +28,7 @@ class _EditWalletViewState extends State<EditWalletView> {
   void initState() {
     super.initState();
 
-    nameController = TextEditingController(
-      text: widget.wallet.name,
-    );
+    nameController = TextEditingController(text: widget.wallet.name);
 
     balanceController = TextEditingController(
       text: widget.wallet.balance.toStringAsFixed(2),
@@ -56,9 +50,7 @@ class _EditWalletViewState extends State<EditWalletView> {
       return;
     }
 
-    final balance = double.tryParse(
-      balanceController.text.trim(),
-    );
+    final balance = double.tryParse(balanceController.text.trim());
 
     if (balance == null) {
       return;
@@ -67,25 +59,21 @@ class _EditWalletViewState extends State<EditWalletView> {
     final controller = Get.find<WalletsController>();
 
     await controller.updateWallet(
-  walletId: widget.wallet.id,
-  name: nameController.text.trim(),
-  type: selectedType,
-  balance: balance,
-  currency: selectedCurrency,
-);
+      walletId: widget.wallet.id,
+      name: nameController.text.trim(),
+      type: selectedType,
+      balance: balance,
+      currency: selectedCurrency,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Edit Wallet',
-          style: AppTextStyles.headingMedium(isDark),
-        ),
+        title: Text('Edit Wallet', style: AppTextStyles.headingMedium(isDark)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -108,9 +96,7 @@ class _EditWalletViewState extends State<EditWalletView> {
                   decoration: const InputDecoration(
                     labelText: 'Wallet Name',
                     hintText: 'e.g. Cash Wallet',
-                    prefixIcon: Icon(
-                      Icons.account_balance_wallet_outlined,
-                    ),
+                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
@@ -137,8 +123,7 @@ class _EditWalletViewState extends State<EditWalletView> {
 
                 TextFormField(
                   controller: balanceController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(
+                  keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
                   decoration: const InputDecoration(
@@ -152,9 +137,7 @@ class _EditWalletViewState extends State<EditWalletView> {
                       return 'Please enter balance';
                     }
 
-                    final amount = double.tryParse(
-                      value.trim(),
-                    );
+                    final amount = double.tryParse(value.trim());
 
                     if (amount == null) {
                       return 'Please enter a valid amount';
@@ -185,10 +168,7 @@ class _EditWalletViewState extends State<EditWalletView> {
                       value: 'USD',
                       child: Text('USD - US Dollar'),
                     ),
-                    DropdownMenuItem(
-                      value: 'EUR',
-                      child: Text('EUR - Euro'),
-                    ),
+                    DropdownMenuItem(value: 'EUR', child: Text('EUR - Euro')),
                     DropdownMenuItem(
                       value: 'GBP',
                       child: Text('GBP - British Pound'),

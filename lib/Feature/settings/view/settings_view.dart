@@ -1,10 +1,8 @@
+import 'package:expense_mate/Core/service/biometric_service.dart';
+import 'package:expense_mate/Core/routes/app_routes.dart';
+import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
-import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
-import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
-import 'package:expense_mate/Feature/onboarding/controller/onboarding_controller.dart';
-import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
-import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -14,7 +12,6 @@ import '../controller/settings_controller.dart';
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
-  static const String _addCurrencyOption = '__add_currency__';
 
   SettingsController get controller => Get.find<SettingsController>();
 
@@ -262,65 +259,6 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  Future<void> _showLanguageListDialog(BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    await Get.dialog<void>(
-      AlertDialog(
-        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-        title: Text(
-          'Select Language'.tr,
-          style: AppTextStyles.headingMedium(
-            isDark,
-          ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
-        ),
-        content: SizedBox(
-          width: 400,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 390),
-            child: SingleChildScrollView(
-              child: Obx(
-                () => Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: OnboardingController.languages.map((language) {
-                    final code = language.code.toLowerCase();
-                    final isSelected =
-                        controller.selectedLanguage.value == code;
-
-                    return ListTile(
-                      leading: Icon(
-                        isSelected
-                            ? Icons.radio_button_checked_rounded
-                            : Icons.radio_button_off_rounded,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textSecondary(isDark),
-                      ),
-                      title: Text(language.nativeName),
-                      subtitle: Text(language.englishName),
-                      onTap: () async {
-                        await controller.changeLanguage(code);
-                        Get.back<void>();
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          OutlinedButton(
-            onPressed: () => Get.back<void>(),
-            child: Text('Close'.tr),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _confirmDeleteCurrency(
     BuildContext context,
     String currency,
@@ -355,13 +293,6 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final walletsController = Get.isRegistered<WalletsController>()
-        ? Get.find<WalletsController>()
-        : Get.put(WalletsController());
-    final goalsController = Get.isRegistered<GoalsController>()
-        ? Get.find<GoalsController>()
-        : Get.put(GoalsController());
-    final transactionsController = Get.find<TransactionsController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -377,20 +308,18 @@ class SettingsView extends StatelessWidget {
         () => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
           children: [
-            _buildProfileHeader(
-              context,
-              isDark,
-              walletsController,
-              transactionsController,
-              goalsController,
-            ),
+            _buildProfileHeader(context, isDark),
 
             const SizedBox(height: 28),
 
             // =====================================================
             // APPEARANCE
             // =====================================================
-            _SectionHeader(title: 'APPEARANCE', isDark: isDark),
+            _SectionHeader(
+              title: 'Appearance',
+              isDark: isDark,
+              icon: Icons.palette_outlined,
+            ),
 
             const SizedBox(height: 10),
 
@@ -407,7 +336,6 @@ class SettingsView extends StatelessWidget {
                         ? Icons.dark_mode_rounded
                         : Icons.light_mode_rounded,
                     isDark: isDark,
-                    color: AppColors.primary,
                   ),
                   title: Text(
                     'Dark Mode',
@@ -429,7 +357,14 @@ class SettingsView extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            _SectionHeader(title: 'MONEY', isDark: isDark),
+            // =====================================================
+            // CURRENCY
+            // =====================================================
+            _SectionHeader(
+              title: 'Currency',
+              isDark: isDark,
+              icon: Icons.currency_exchange_rounded,
+            ),
 
             const SizedBox(height: 10),
 
@@ -444,7 +379,6 @@ class SettingsView extends StatelessWidget {
                   leading: _IconContainer(
                     icon: Icons.currency_exchange_rounded,
                     isDark: isDark,
-                    color: const Color(0xFF2979FF),
                   ),
                   title: Text(
                     'Default Currency',
@@ -481,102 +415,19 @@ class SettingsView extends StatelessWidget {
                     _showCurrencyListDialog(context);
                   },
                 ),
-                Divider(
-                  height: 1,
-                  indent: 74,
-                  endIndent: 16,
-                  color: isDark ? Colors.white12 : Colors.black12,
-                ),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  leading: _IconContainer(
-                    icon: Icons.language_rounded,
-                    isDark: isDark,
-                    color: const Color(0xFF2979FF),
-                  ),
-                  title: Text(
-                    'Language'.tr,
-                    style: AppTextStyles.bodyLarge(
-                      isDark,
-                    ).copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Obx(() {
-                    final language = OnboardingController.languages
-                        .where(
-                          (item) =>
-                              item.code.toLowerCase() ==
-                              controller.selectedLanguage.value,
-                        )
-                        .firstOrNull;
-
-                    return Text(
-                      language?.nativeName ?? 'English',
-                      style: AppTextStyles.bodyMedium(isDark),
-                    );
-                  }),
-                  trailing: Obx(
-                    () => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        controller.selectedLanguage.value.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  onTap: () => _showLanguageListDialog(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 74,
-                  endIndent: 16,
-                  color: isDark ? Colors.white12 : Colors.black12,
-                ),
-                SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  secondary: _IconContainer(
-                    icon: controller.hideAmounts.value
-                        ? Icons.visibility_off_rounded
-                        : Icons.visibility_rounded,
-                    isDark: isDark,
-                    color: const Color(0xFFE0A000),
-                  ),
-                  title: Text(
-                    'Hide amounts',
-                    style: AppTextStyles.bodyLarge(
-                      isDark,
-                    ).copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    controller.hideAmounts.value
-                        ? 'Balances are hidden on the home screen'
-                        : 'Balances are visible on the home screen',
-                    style: AppTextStyles.bodyMedium(isDark),
-                  ),
-                  value: controller.hideAmounts.value,
-                  onChanged: (_) => controller.toggleHideAmounts(),
-                ),
               ],
             ),
 
             const SizedBox(height: 24),
 
-            _SectionHeader(title: 'ACCOUNT', isDark: isDark),
+            // =====================================================
+            // NOTIFICATIONS
+            // =====================================================
+            _SectionHeader(
+              title: 'Notifications',
+              isDark: isDark,
+              icon: Icons.notifications_outlined,
+            ),
 
             const SizedBox(height: 10),
 
@@ -591,7 +442,6 @@ class SettingsView extends StatelessWidget {
                   secondary: _IconContainer(
                     icon: Icons.notifications_active_outlined,
                     isDark: isDark,
-                    color: const Color(0xFF2979FF),
                   ),
                   title: Text(
                     'Bill Notifications',
@@ -606,12 +456,167 @@ class SettingsView extends StatelessWidget {
                   value: controller.notificationsEnabled.value,
                   onChanged: controller.toggleNotifications,
                 ),
-                Divider(
-                  height: 1,
-                  indent: 74,
-                  endIndent: 16,
-                  color: isDark ? Colors.white12 : Colors.black12,
+
+                // ---------------------------------------------
+                // APP LOCK
+                // ---------------------------------------------
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: _IconContainer(
+                    icon: PinService.instance.isPinSet
+                        ? Icons.lock_rounded
+                        : Icons.lock_open_rounded,
+                    isDark: isDark,
+                  ),
+                  title: Text(
+                    PinService.instance.isPinSet
+                        ? 'Change app PIN'
+                        : 'Set an app PIN',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    PinService.instance.isPinSet
+                        ? 'Asked for each time the app opens'
+                        : 'Lock the app with four digits',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                  onTap: () async {
+                    await Get.toNamed(AppRoutes.pinSetup);
+                    controller.update();
+                  },
                 ),
+
+                // Only offered once a PIN exists, because biometrics
+                // always need the PIN as a fallback.
+                if (PinService.instance.isPinSet)
+                  FutureBuilder<bool>(
+                    future: BiometricService.instance.isAvailable(),
+                    builder: (context, snapshot) {
+                      if (snapshot.data != true) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return SwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        secondary: _IconContainer(
+                          icon: Icons.fingerprint_rounded,
+                          isDark: isDark,
+                        ),
+                        title: Text(
+                          'Unlock with fingerprint',
+                          style: AppTextStyles.bodyLarge(
+                            isDark,
+                          ).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          'Your PIN still works if it fails',
+                          style: AppTextStyles.bodyMedium(isDark),
+                        ),
+                        value: BiometricService.instance.isEnabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            // Checked once here, so a switch that was
+                            // turned on can be trusted at the lock
+                            // screen.
+                            final ok = await BiometricService.instance
+                                .hasEnrolled();
+
+                            if (!ok) {
+                              Get.snackbar(
+                                'Nothing enrolled',
+                                'Add a fingerprint in your phone '
+                                    'settings first.',
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+                          }
+
+                          await BiometricService.instance.setEnabled(value);
+                          controller.update();
+                        },
+                      );
+                    },
+                  ),
+
+                if (PinService.instance.isPinSet)
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    leading: _IconContainer(
+                      icon: Icons.lock_open_rounded,
+                      isDark: isDark,
+                    ),
+                    title: Text(
+                      'Remove app PIN',
+                      style: AppTextStyles.bodyLarge(
+                        isDark,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      'The app will open without asking',
+                      style: AppTextStyles.bodyMedium(isDark),
+                    ),
+                    onTap: () => _confirmRemovePin(context, isDark),
+                  ),
+
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  secondary: _IconContainer(
+                    icon: controller.transactionSound.value
+                        ? Icons.volume_up_rounded
+                        : Icons.volume_off_rounded,
+                    isDark: isDark,
+                  ),
+                  title: Text(
+                    'Transaction Sound',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Play a short tone when an entry is saved',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  value: controller.transactionSound.value,
+                  onChanged: controller.toggleTransactionSound,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // =====================================================
+            // ACCOUNT
+            // =====================================================
+            _SectionHeader(
+              title: 'Account',
+              isDark: isDark,
+              icon: Icons.person_outline_rounded,
+            ),
+
+            const SizedBox(height: 10),
+
+            _SettingsCard(
+              isDark: isDark,
+              children: [
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -620,9 +625,6 @@ class SettingsView extends StatelessWidget {
                   leading: _IconContainer(
                     icon: Icons.logout_rounded,
                     isDark: isDark,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
                   ),
                   title: Text(
                     'Logout',
@@ -686,12 +688,25 @@ class SettingsView extends StatelessWidget {
                     _showDeleteAccountDialog(context);
                   },
                 ),
-                Divider(
-                  height: 1,
-                  indent: 74,
-                  endIndent: 16,
-                  color: isDark ? Colors.white12 : Colors.black12,
-                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // =====================================================
+            // ABOUT
+            // =====================================================
+            _SectionHeader(
+              title: 'About',
+              isDark: isDark,
+              icon: Icons.info_outline_rounded,
+            ),
+
+            const SizedBox(height: 10),
+
+            _SettingsCard(
+              isDark: isDark,
+              children: [
                 ListTile(
                   onTap: () => Get.to(() => const AboutView()),
                   contentPadding: const EdgeInsets.symmetric(
@@ -701,7 +716,6 @@ class SettingsView extends StatelessWidget {
                   leading: _IconContainer(
                     icon: Icons.account_balance_wallet_rounded,
                     isDark: isDark,
-                    color: AppColors.primary,
                   ),
                   title: Text(
                     'ExpenseMate',
@@ -743,13 +757,7 @@ class SettingsView extends StatelessWidget {
   // PROFILE HEADER
   // =============================================================
 
-  Widget _buildProfileHeader(
-    BuildContext context,
-    bool isDark,
-    WalletsController walletsController,
-    TransactionsController transactionsController,
-    GoalsController goalsController,
-  ) {
+  Widget _buildProfileHeader(BuildContext context, bool isDark) {
     // IMPORTANT:
     // Use the controller's observable values here.
     // Do not read authUser directly for the displayed name/email.
@@ -762,245 +770,176 @@ class SettingsView extends StatelessWidget {
         : 'No email available';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2E7D32), Color(0xFF174D2A)],
-        ),
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: isDark ? 0.28 : 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.65),
-                        width: 2,
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 37,
-                      backgroundColor: Colors.white.withValues(alpha: 0.16),
-                      backgroundImage:
-                          controller.profilePictureUrl.value.isNotEmpty
-                          ? NetworkImage(controller.profilePictureUrl.value)
-                          : null,
-                      child: controller.profilePictureUrl.value.isEmpty
-                          ? Text(
-                              displayName.isNotEmpty
-                                  ? displayName[0].toUpperCase()
-                                  : 'U',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Material(
-                      color: Colors.white,
-                      shape: const CircleBorder(),
-                      elevation: 3,
-                      child: InkWell(
-                        onTap: controller.pickProfilePicture,
-                        customBorder: const CircleBorder(),
-                        child: Container(
-                          width: 29,
-                          height: 29,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF2E7D32),
-                              width: 2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt_rounded,
-                            color: Color(0xFF2E7D32),
-                            size: 14,
-                          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 50),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          width: 2,
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.headingMedium(isDark).copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.primary,
+                        backgroundImage:
+                            controller.profilePictureUrl.value.isNotEmpty
+                            ? NetworkImage(controller.profilePictureUrl.value)
+                            : null,
+                        child: controller.profilePictureUrl.value.isEmpty
+                            ? Text(
+                                displayName.isNotEmpty
+                                    ? displayName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 29,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      displayEmail,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyMedium(
-                        isDark,
-                      ).copyWith(color: Colors.white.withValues(alpha: 0.82)),
-                    ),
-                    const SizedBox(height: 9),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'ExpenseMate Account',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Material(
+                        color: AppColors.primary,
+                        shape: const CircleBorder(),
+                        elevation: 3,
+                        child: InkWell(
+                          onTap: controller.pickProfilePicture,
+                          customBorder: const CircleBorder(),
+                          child: Container(
+                            width: 31,
+                            height: 31,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : AppColors.surfaceLight,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 15,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Material(
-                color: Colors.white.withValues(alpha: 0.14),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => _showEditProfileDialog(context),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.edit_rounded,
-                      color: Colors.white,
-                      size: 17,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildProfileStat(
-                  icon: Icons.account_balance_wallet_rounded,
-                  label: 'Wallets',
-                  count: () => walletsController.wallets.length,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildProfileStat(
-                  icon: Icons.receipt_long_rounded,
-                  label: 'Entries',
-                  count: () => transactionsController.transactions.length,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildProfileStat(
-                  icon: Icons.flag_rounded,
-                  label: 'Goals',
-                  count: () => goalsController.goals.length,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildProfileStat({
-    required IconData icon,
-    required String label,
-    required int Function() count,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.13),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: Obx(
-        () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 15,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 18),
+
                 Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.headingMedium(
+                          isDark,
+                        ).copyWith(fontWeight: FontWeight.bold),
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      Text(
+                        displayEmail,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMedium(isDark),
+                      ),
+
+                      const SizedBox(height: 9),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'ExpenseMate Account',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 7),
-            Text(
-              '${count()}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 19,
-                height: 1,
-                fontWeight: FontWeight.w700,
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Material(
+              color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.09),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _showEditProfileDialog(context),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.16),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1364,6 +1303,49 @@ class SettingsView extends StatelessWidget {
   // LOGOUT
   // =============================================================
 
+  /// Removing the lock is destructive enough to be worth confirming.
+  void _confirmRemovePin(BuildContext context, bool isDark) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Remove the PIN?'),
+        content: Text(
+          'Anyone who picks up this phone will be able to open Expense '
+          'Mate and see your records.',
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              Get.back();
+              await PinService.instance.clearPin();
+
+              // Biometrics lean on the PIN, so they go with it.
+              await BiometricService.instance.setEnabled(false);
+
+              controller.update();
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1590,21 +1572,33 @@ class SettingsView extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final bool isDark;
+  final IconData icon;
 
-  const _SectionHeader({required this.title, required this.isDark});
+  const _SectionHeader({
+    required this.title,
+    required this.isDark,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Icon(icon, size: 17, color: AppColors.primary),
+        ),
+        const SizedBox(width: 10),
         Text(
           title,
-          style: AppTextStyles.caption(isDark).copyWith(
-            fontSize: 11,
-            letterSpacing: 1.25,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textSecondary(isDark),
-          ),
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -1655,13 +1649,8 @@ class _SettingsCard extends StatelessWidget {
 class _IconContainer extends StatelessWidget {
   final IconData icon;
   final bool isDark;
-  final Color color;
 
-  const _IconContainer({
-    required this.icon,
-    required this.isDark,
-    this.color = AppColors.primary,
-  });
+  const _IconContainer({required this.icon, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -1669,10 +1658,10 @@ class _IconContainer extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: AppColors.primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(13),
       ),
-      child: Icon(icon, color: color),
+      child: Icon(icon, color: AppColors.primary),
     );
   }
 }

@@ -18,10 +18,8 @@ class OnboardingView extends GetView<OnboardingController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final background = isDark ? const Color(0xFF101010) : Colors.white;
-    final primaryText =
-        isDark ? Colors.white : const Color(0xFF1C1C1C);
-    final secondaryText =
-        isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final primaryText = isDark ? Colors.white : const Color(0xFF1C1C1C);
+    final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     return Scaffold(
       backgroundColor: background,
@@ -98,7 +96,7 @@ class OnboardingView extends GetView<OnboardingController> {
                       ),
                     ),
                     child: Text(
-                      (controller.isLastPage ? 'Get started' : 'Next').tr,
+                      controller.isLastPage ? 'Get started' : 'Next',
                       style: const TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w700,
@@ -147,7 +145,8 @@ class OnboardingView extends GetView<OnboardingController> {
         return _MessagePage(
           icon: Icons.phonelink_lock_rounded,
           title: 'Your money, on your phone',
-          body: 'Every entry is stored on this device first and synced '
+          body:
+              'Every entry is stored on this device first and synced '
               'to your account, so the app keeps working even when the '
               'signal does not.',
           primaryText: primaryText,
@@ -158,7 +157,8 @@ class OnboardingView extends GetView<OnboardingController> {
         return _MessagePage(
           icon: Icons.bolt_rounded,
           title: 'An entry takes three taps',
-          body: 'Tap the green button, type the amount, pick a category '
+          body:
+              'Tap the green button, type the amount, pick a category '
               'and wallet. Budgets, goals and reports fill themselves in '
               'from there.',
           primaryText: primaryText,
@@ -200,7 +200,7 @@ class _LanguagePage extends GetView<OnboardingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Choose your language'.tr,
+                'Choose your language',
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
@@ -209,7 +209,7 @@ class _LanguagePage extends GetView<OnboardingController> {
               ),
               const SizedBox(height: 4),
               Text(
-                'You can change it later in Settings.'.tr,
+                'You can change it later in Settings.',
                 style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             ],
@@ -291,7 +291,7 @@ class _MessagePage extends StatelessWidget {
           const SizedBox(height: 32),
 
           Text(
-            title.tr,
+            title,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 22,
@@ -303,13 +303,9 @@ class _MessagePage extends StatelessWidget {
           const SizedBox(height: 12),
 
           Text(
-            body.tr,
+            body,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.6,
-              color: secondaryText,
-            ),
+            style: TextStyle(fontSize: 14, height: 1.6, color: secondaryText),
           ),
         ],
       ),
@@ -342,7 +338,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Choose your currency'.tr,
+                'Choose your currency',
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
@@ -351,7 +347,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Every amount in the app is shown in this currency.'.tr,
+                'Every amount in the app is shown in this currency.',
                 style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             ],
@@ -375,7 +371,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
                   isDark: isDark,
                   isActive: isActive,
                   badge: currency.symbol,
-                  title: currency.name.tr,
+                  title: currency.name,
                   subtitle: currency.code,
                   primaryText: primaryText,
                   secondaryText: secondaryText,
@@ -424,10 +420,7 @@ class _PickRow extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 11,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             decoration: BoxDecoration(
               color: isActive
                   ? _green.withOpacity(isDark ? 0.16 : 0.08)
@@ -479,10 +472,7 @@ class _PickRow extends StatelessWidget {
                       const SizedBox(height: 1),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: secondaryText,
-                        ),
+                        style: TextStyle(fontSize: 11.5, color: secondaryText),
                       ),
                     ],
                   ),

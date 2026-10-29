@@ -13,7 +13,8 @@ class SplashView extends GetView<SplashController> {
       body: SizedBox.expand(
         child: Image.asset(
           'assets/expense_mate.png', // Apni image ka exact path
-          fit: BoxFit.cover, // Yeh image ko poori screen par stretch bina distortion ke fit kar dega
+          fit: BoxFit
+              .cover, // Yeh image ko poori screen par stretch bina distortion ke fit kar dega
         ),
       ),
     );

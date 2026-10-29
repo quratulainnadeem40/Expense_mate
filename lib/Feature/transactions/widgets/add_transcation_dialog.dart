@@ -13,16 +13,12 @@ import 'package:uuid/uuid.dart';
 class AddTransactionDialog extends StatefulWidget {
   final TransactionModel? transaction;
 
-  const AddTransactionDialog({
-    super.key,
-    this.transaction,
-  });
+  const AddTransactionDialog({super.key, this.transaction});
 
   bool get isEdit => transaction != null;
 
   @override
-  State<AddTransactionDialog> createState() =>
-      _AddTransactionDialogState();
+  State<AddTransactionDialog> createState() => _AddTransactionDialogState();
 }
 
 class _AddTransactionDialogState extends State<AddTransactionDialog> {
@@ -66,32 +62,29 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       _selectedCategoryId = transaction.categoryId;
       _selectedWalletId = transaction.walletId;
 
-      _isIncome =
-          transaction.type.trim().toLowerCase() == 'income';
+      _isIncome = transaction.type.trim().toLowerCase() == 'income';
     }
 
     _loadData();
   }
 
+  Future<void> _loadData() async {
+    try {
+      // Load categories from the local database first.
+      await _categoryController.fetchCategories();
 
-Future<void> _loadData() async {
-  try {
-    // Load categories from the local database first.
-    await _categoryController.fetchCategories();
+      if (!mounted) return;
 
-    if (!mounted) return;
+      // Then load wallets.
+      await _walletController.loadWallets();
+    } catch (e) {
+      debugPrint('Unable to load transaction form data: $e');
+    }
 
-    // Then load wallets.
-    await _walletController.loadWallets();
-  } catch (e) {
-    debugPrint('Unable to load transaction form data: $e');
+    if (mounted) {
+      setState(() {});
+    }
   }
-
-  if (mounted) {
-    setState(() {});
-  }
-}
-
 
   @override
   void dispose() {
@@ -106,10 +99,7 @@ Future<void> _loadData() async {
   // ============================================================
 
   String _normalizeCategoryName(String? name) {
-    return (name ?? '')
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    return (name ?? '').trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   String _generateUuid() {
@@ -120,73 +110,72 @@ Future<void> _loadData() async {
   ///
   /// The controller should group categories too, but this provides
   /// an additional safeguard against duplicate dropdown entries.
- 
-List<CategoryModel> _getUniqueCategories(
-  List<CategoryModel> categories, {
-  required bool isIncome,
-}) {
-  final Map<String, CategoryModel> grouped = {};
-  final transactionType = isIncome ? 'income' : 'expense';
 
-  for (final category in categories) {
-    final categoryType = category.type.trim().toLowerCase();
-    if (categoryType != transactionType && categoryType != 'both') {
-      continue;
-    }
+  List<CategoryModel> _getUniqueCategories(
+    List<CategoryModel> categories, {
+    required bool isIncome,
+  }) {
+    final Map<String, CategoryModel> grouped = {};
+    final transactionType = isIncome ? 'income' : 'expense';
 
-    final nameKey = _normalizeCategoryName(category.name);
+    for (final category in categories) {
+      final categoryType = category.type.trim().toLowerCase();
+      if (categoryType != transactionType && categoryType != 'both') {
+        continue;
+      }
 
-    if (nameKey.isEmpty) continue;
+      final nameKey = _normalizeCategoryName(category.name);
 
-    final existing = grouped[nameKey];
+      if (nameKey.isEmpty) continue;
 
-    if (existing == null) {
-      final ids = <String>{
+      final existing = grouped[nameKey];
+
+      if (existing == null) {
+        final ids = <String>{
+          category.id,
+          ...category.linkedIds,
+        }.where((id) => id.isNotEmpty).toList();
+
+        grouped[nameKey] = CategoryModel(
+          id: category.id,
+          name: category.name.trim(),
+          icon: category.icon,
+          colorValue: category.colorValue,
+          isDefault: category.isDefault,
+          type: categoryType,
+          linkedIds: ids,
+        );
+
+        continue;
+      }
+
+      final mergedIds = <String>{
+        existing.id,
+        ...existing.linkedIds,
         category.id,
         ...category.linkedIds,
       }.where((id) => id.isNotEmpty).toList();
 
       grouped[nameKey] = CategoryModel(
-        id: category.id,
-        name: category.name.trim(),
-        icon: category.icon,
-        colorValue: category.colorValue,
-        isDefault: category.isDefault,
+        id: existing.id,
+        name: existing.name,
+        icon: existing.icon,
+        colorValue: existing.colorValue,
+        isDefault: existing.isDefault || category.isDefault,
         type: categoryType,
-        linkedIds: ids,
+        linkedIds: mergedIds,
       );
-
-      continue;
     }
 
-    final mergedIds = <String>{
-      existing.id,
-      ...existing.linkedIds,
-      category.id,
-      ...category.linkedIds,
-    }.where((id) => id.isNotEmpty).toList();
-
-    grouped[nameKey] = CategoryModel(
-      id: existing.id,
-      name: existing.name,
-      icon: existing.icon,
-      colorValue: existing.colorValue,
-      isDefault: existing.isDefault || category.isDefault,
-      type: categoryType,
-      linkedIds: mergedIds,
-    );
+    return grouped.values.toList();
   }
-
-  return grouped.values.toList();
-}
 
   /// Finds an existing visible category without filtering by type.
   CategoryModel? _findVisibleCategory(String name) {
     final normalizedName = _normalizeCategoryName(name);
 
     for (final category in _categoryController.categoryList) {
-      if (_normalizeCategoryName(category.name) ==
-          normalizedName) {
+      if (_normalizeCategoryName(category.name) == normalizedName) {
         return category;
       }
     }
@@ -234,12 +223,10 @@ List<CategoryModel> _getUniqueCategories(
 
     if (name.isEmpty) return;
 
-    final String normalizedName =
-        _normalizeCategoryName(name);
+    final String normalizedName = _normalizeCategoryName(name);
 
     // Check for an existing category regardless of its type.
-    final existingCategory =
-        _findVisibleCategory(name);
+    final existingCategory = _findVisibleCategory(name);
 
     if (existingCategory != null) {
       setState(() {
@@ -257,25 +244,23 @@ List<CategoryModel> _getUniqueCategories(
 
     // Check the controller/local database too, in case a category
     // exists locally but is not currently displayed.
-    final existingLocalCategory =
-        await _categoryController.findCategoryByName(name);
+    final existingLocalCategory = await _categoryController.findCategoryByName(
+      name,
+    );
 
     if (!mounted) return;
 
-   if (existingLocalCategory != null) {
-  final resolvedId = _resolveCategoryId(
-    existingLocalCategory.id,
-  );
+    if (existingLocalCategory != null) {
+      final resolvedId = _resolveCategoryId(existingLocalCategory.id);
 
-  setState(() {
-    _selectedCategoryId =
-        resolvedId ?? existingLocalCategory.id;
-  });
+      setState(() {
+        _selectedCategoryId = resolvedId ?? existingLocalCategory.id;
+      });
 
-  // Local database mein category already hai.
-  // Nayi category create nahi karni.
-  return;
-}
+      // Local database mein category already hai.
+      // Nayi category create nahi karni.
+      return;
+    }
     final String categoryId = _generateUuid();
 
     // Keep the stored category type valid.
@@ -292,21 +277,16 @@ List<CategoryModel> _getUniqueCategories(
     );
 
     try {
-      await _categoryController.addCategory(
-        newCategory,
-        closeDialog: false,
-      );
+      await _categoryController.addCategory(newCategory, closeDialog: false);
 
       if (!mounted) return;
 
       // Reload/refresh category state through the controller's
       // existing addCategory implementation.
-      final createdCategory =
-          _findVisibleCategory(normalizedName);
+      final createdCategory = _findVisibleCategory(normalizedName);
 
       setState(() {
-        _selectedCategoryId =
-            createdCategory?.id ?? categoryId;
+        _selectedCategoryId = createdCategory?.id ?? categoryId;
       });
     } catch (e) {
       debugPrint('Category creation failed: $e');
@@ -331,26 +311,18 @@ List<CategoryModel> _getUniqueCategories(
     final String amountText = _amountController.text.trim();
 
     if (title.isEmpty) {
-      await _showMessage(
-        'Missing title',
-        'Please enter a transaction title.',
-      );
+      await _showMessage('Missing title', 'Please enter a transaction title.');
       return;
     }
 
     if (amountText.isEmpty) {
-      await _showMessage(
-        'Missing amount',
-        'Please enter an amount.',
-      );
+      await _showMessage('Missing amount', 'Please enter an amount.');
       return;
     }
 
     final double? amount = double.tryParse(amountText);
 
-    if (amount == null ||
-        !amount.isFinite ||
-        amount <= 0) {
+    if (amount == null || !amount.isFinite || amount <= 0) {
       await _showMessage(
         'Invalid amount',
         'Please enter a valid amount greater than zero.',
@@ -359,29 +331,20 @@ List<CategoryModel> _getUniqueCategories(
     }
 
     // Both Income and Expense transactions must have a category.
-    if (_selectedCategoryId == null ||
-        _selectedCategoryId!.trim().isEmpty) {
-      await _showMessage(
-        'Missing category',
-        'Please select a category.',
-      );
+    if (_selectedCategoryId == null || _selectedCategoryId!.trim().isEmpty) {
+      await _showMessage('Missing category', 'Please select a category.');
       return;
     }
 
-    if (_selectedWalletId == null ||
-        _selectedWalletId!.trim().isEmpty) {
-      await _showMessage(
-        'Missing wallet',
-        'Please select a wallet.',
-      );
+    if (_selectedWalletId == null || _selectedWalletId!.trim().isEmpty) {
+      await _showMessage('Missing wallet', 'Please select a wallet.');
       return;
     }
 
     // Resolve a legacy category ID to the displayed category ID
     // whenever the grouped category is already available.
     final String resolvedCategoryId =
-        _resolveCategoryId(_selectedCategoryId) ??
-            _selectedCategoryId!;
+        _resolveCategoryId(_selectedCategoryId) ?? _selectedCategoryId!;
 
     setState(() {
       _isSaving = true;
@@ -405,25 +368,19 @@ List<CategoryModel> _getUniqueCategories(
         type: _isIncome ? 'income' : 'expense',
 
         // Preserve the existing date/note behavior.
-        transactionDate:
-            existingTransaction?.transactionDate ??
-                DateTime.now(),
+        transactionDate: existingTransaction?.transactionDate ?? DateTime.now(),
 
         note: existingTransaction?.note ?? title,
 
-        createdAt:
-            existingTransaction?.createdAt ??
-                DateTime.now(),
+        createdAt: existingTransaction?.createdAt ?? DateTime.now(),
       );
 
       final bool success;
 
       if (widget.isEdit) {
-        success = await _transactionController
-            .updateTransaction(transaction);
+        success = await _transactionController.updateTransaction(transaction);
       } else {
-        success = await _transactionController
-            .addTransaction(transaction);
+        success = await _transactionController.addTransaction(transaction);
       }
 
       if (!mounted) return;
@@ -457,10 +414,7 @@ List<CategoryModel> _getUniqueCategories(
   // MESSAGE DIALOG
   // ============================================================
 
-  Future<void> _showMessage(
-    String title,
-    String message,
-  ) async {
+  Future<void> _showMessage(String title, String message) async {
     if (!mounted) return;
 
     await showDialog<void>(
@@ -488,14 +442,11 @@ List<CategoryModel> _getUniqueCategories(
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
       title: Text(
-        widget.isEdit
-            ? 'Edit Transaction'
-            : 'Add Transaction',
+        widget.isEdit ? 'Edit Transaction' : 'Add Transaction',
         style: AppTextStyles.headingMedium(isDark),
       ),
 
@@ -509,7 +460,6 @@ List<CategoryModel> _getUniqueCategories(
               // --------------------------------------------------
               // TRANSACTION TYPE
               // --------------------------------------------------
-
               Row(
                 children: [
                   Expanded(
@@ -547,7 +497,6 @@ List<CategoryModel> _getUniqueCategories(
               // --------------------------------------------------
               // TITLE
               // --------------------------------------------------
-
               TextField(
                 controller: _titleController,
                 enabled: !_isSaving,
@@ -564,12 +513,10 @@ List<CategoryModel> _getUniqueCategories(
               // --------------------------------------------------
               // AMOUNT
               // --------------------------------------------------
-
               TextField(
                 controller: _amountController,
                 enabled: !_isSaving,
-                keyboardType:
-                    const TextInputType.numberWithOptions(
+                keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
                 decoration: const InputDecoration(
@@ -584,7 +531,6 @@ List<CategoryModel> _getUniqueCategories(
               // --------------------------------------------------
               // CATEGORY
               // --------------------------------------------------
-
               Obx(() {
                 final categories = _getUniqueCategories(
                   _categoryController.categoriesForType(
@@ -593,19 +539,18 @@ List<CategoryModel> _getUniqueCategories(
                   isIncome: _isIncome,
                 );
 
-debugPrint(
-  'TRANSACTION FORM: '
-  'type=${_isIncome ? "income" : "expense"}, '
-  'categories=${categories.length}',
-);
+                debugPrint(
+                  'TRANSACTION FORM: '
+                  'type=${_isIncome ? "income" : "expense"}, '
+                  'categories=${categories.length}',
+                );
                 // Resolve the selected ID, including an old ID
                 // associated with a grouped category.
                 String? dropdownValue;
 
                 for (final category in categories) {
                   if (category.id == _selectedCategoryId ||
-                      category.linkedIds
-                          .contains(_selectedCategoryId)) {
+                      category.linkedIds.contains(_selectedCategoryId)) {
                     dropdownValue = category.id;
                     break;
                   }
@@ -647,16 +592,12 @@ debugPrint(
               // --------------------------------------------------
               // ADD CUSTOM CATEGORY
               // --------------------------------------------------
-
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed:
-                      _isSaving ? null : _openMoreCategoryDialog,
+                  onPressed: _isSaving ? null : _openMoreCategoryDialog,
                   icon: const Icon(Icons.add),
-                  label: const Text(
-                    'Add your own category',
-                  ),
+                  label: const Text('Add your own category'),
                 ),
               ),
 
@@ -665,15 +606,11 @@ debugPrint(
               // --------------------------------------------------
               // WALLET
               // --------------------------------------------------
-
               Obx(() {
-                final wallets =
-                    _walletController.wallets.toList();
+                final wallets = _walletController.wallets.toList();
 
-                final walletValue = wallets.any(
-                  (wallet) =>
-                      wallet.id == _selectedWalletId,
-                )
+                final walletValue =
+                    wallets.any((wallet) => wallet.id == _selectedWalletId)
                     ? _selectedWalletId
                     : null;
 
@@ -692,10 +629,7 @@ debugPrint(
                   items: wallets.map((wallet) {
                     return DropdownMenuItem<String>(
                       value: wallet.id,
-                      child: Text(
-                        wallet.name,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(wallet.name, overflow: TextOverflow.ellipsis),
                     );
                   }).toList(),
                   onChanged: _isSaving
@@ -715,7 +649,6 @@ debugPrint(
       // ----------------------------------------------------------
       // ACTIONS
       // ----------------------------------------------------------
-
       actions: [
         TextButton(
           onPressed: _isSaving
@@ -726,19 +659,14 @@ debugPrint(
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed:
-              _isSaving ? null : _saveTransaction,
+          onPressed: _isSaving ? null : _saveTransaction,
           child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(
-                  widget.isEdit ? 'Update' : 'Save',
-                ),
+              : Text(widget.isEdit ? 'Update' : 'Save'),
         ),
       ],
     );
@@ -753,12 +681,10 @@ class _CustomCategoryDialog extends StatefulWidget {
   const _CustomCategoryDialog();
 
   @override
-  State<_CustomCategoryDialog> createState() =>
-      _CustomCategoryDialogState();
+  State<_CustomCategoryDialog> createState() => _CustomCategoryDialogState();
 }
 
-class _CustomCategoryDialogState
-    extends State<_CustomCategoryDialog> {
+class _CustomCategoryDialogState extends State<_CustomCategoryDialog> {
   late final TextEditingController _controller;
 
   @override
@@ -807,10 +733,7 @@ class _CustomCategoryDialogState
           },
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _useName,
-          child: const Text('Use Name'),
-        ),
+        ElevatedButton(onPressed: _useName, child: const Text('Use Name')),
       ],
     );
   }

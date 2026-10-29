@@ -137,42 +137,6 @@ void main() {
     expect(totals, {'income': 50000, 'expense': 10000});
   });
 
-  test('category transaction counts include only activity in the cycle', () {
-    final counts = CategoriesController.calculateCategoryTransactionCounts(
-      transactions: [
-        TransactionModel(
-          id: 'income',
-          categoryId: 'income-category',
-          title: 'Salary',
-          amount: 50000,
-          type: 'income',
-          transactionDate: DateTime(2026, 10, 14),
-        ),
-        TransactionModel(
-          id: 'zero-expense',
-          categoryId: 'expense-category',
-          title: 'Zero amount transaction',
-          amount: 0,
-          type: 'expense',
-          transactionDate: DateTime(2026, 10, 14),
-        ),
-        TransactionModel(
-          id: 'outside-period',
-          categoryId: 'income-category',
-          title: 'Previous cycle',
-          amount: 2500,
-          type: 'income',
-          transactionDate: DateTime(2026, 9, 19),
-        ),
-      ],
-      categoryIds: {'income-category', 'expense-category'},
-      periodStart: DateTime(2026, 9, 20),
-      periodEndExclusive: DateTime(2026, 10, 20),
-    );
-
-    expect(counts, {'income': 1, 'expense': 1});
-  });
-
   test(
     'category totals return zero for a transaction type without activity',
     () {

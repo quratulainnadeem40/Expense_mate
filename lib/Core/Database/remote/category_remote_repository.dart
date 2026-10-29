@@ -30,9 +30,7 @@ class CategoryRemoteRepository {
   // ================================
   // GET CATEGORY BY ID
   // ================================
-  Future<Map<String, dynamic>?> getCategoryById(
-    String categoryId,
-  ) async {
+  Future<Map<String, dynamic>?> getCategoryById(String categoryId) async {
     try {
       final response = await supabase
           .from('categories')
@@ -54,9 +52,7 @@ class CategoryRemoteRepository {
   // ================================
   // INSERT CATEGORY
   // ================================
-  Future<void> insertCategory(
-    Map<String, dynamic> category,
-  ) async {
+  Future<void> insertCategory(Map<String, dynamic> category) async {
     try {
       print('================================');
       print('SUPABASE CATEGORY INSERT START');
@@ -92,10 +88,7 @@ class CategoryRemoteRepository {
     Map<String, dynamic> category,
   ) async {
     try {
-      await supabase
-          .from('categories')
-          .update(category)
-          .eq('id', categoryId);
+      await supabase.from('categories').update(category).eq('id', categoryId);
 
       print('================================');
       print('SUPABASE CATEGORY UPDATED');
@@ -115,14 +108,9 @@ class CategoryRemoteRepository {
   // ================================
   // DELETE CATEGORY
   // ================================
-  Future<void> deleteCategory(
-    String categoryId,
-  ) async {
+  Future<void> deleteCategory(String categoryId) async {
     try {
-      await supabase
-          .from('categories')
-          .delete()
-          .eq('id', categoryId);
+      await supabase.from('categories').delete().eq('id', categoryId);
 
       print('================================');
       print('SUPABASE CATEGORY DELETED');

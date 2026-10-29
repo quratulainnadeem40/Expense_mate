@@ -6,7 +6,10 @@ import '../controller/home_controller.dart';
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<TransactionsController>(() => TransactionsController(), fenix: true);
+    Get.lazyPut<TransactionsController>(
+      () => TransactionsController(),
+      fenix: true,
+    );
     Get.lazyPut<ReportController>(() => ReportController(), fenix: true);
     Get.lazyPut<HomeController>(() => HomeController(), fenix: true);
   }

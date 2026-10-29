@@ -26,7 +26,7 @@ class BudgetSummaryCard extends GetView<BudgetController> {
               ),
               const SizedBox(height: 8),
               Text(
-                '\${Formatters.code} \${controller.totalSpent.toStringAsFixed(0)} / ${Formatters.code} ${controller.totalAllocated.toStringAsFixed(0)}',
+                '${Formatters.code} ${controller.totalSpent.toStringAsFixed(0)} / ${Formatters.code} ${controller.totalAllocated.toStringAsFixed(0)}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

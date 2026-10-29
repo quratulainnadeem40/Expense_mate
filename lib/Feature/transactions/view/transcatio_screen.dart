@@ -12,7 +12,6 @@ import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_bin
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
-import 'package:expense_mate/Feature/home/controller/home_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/committee/view/committee_view.dart';
@@ -191,28 +190,6 @@ class _TransactionsViewState extends State<TransactionsView>
   // BACK
   // ==========================================================
 
-  void _handleBack() {
-    // First exit selection mode.
-    if (_isSelectionMode) {
-      _clearSelection();
-      return;
-    }
-
-    if (searchQuery.value.isNotEmpty) {
-      _closeSearch();
-      return;
-    }
-
-    if (Navigator.of(context).canPop()) {
-      Get.back();
-      return;
-    }
-
-    if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().changePage(0);
-    }
-  }
-
   // ==========================================================
   // SEARCH
   // ==========================================================
@@ -242,28 +219,6 @@ class _TransactionsViewState extends State<TransactionsView>
     setState(() {
       selectedTransactionIds.clear();
     });
-  }
-
-  void _selectAll(List<TransactionModel> visibleTransactions) {
-    if (visibleTransactions.isEmpty) {
-      return;
-    }
-
-    final visibleIds = visibleTransactions
-        .map((transaction) => transaction.id)
-        .toSet();
-
-    final allVisibleSelected = visibleIds.every(
-      selectedTransactionIds.contains,
-    );
-
-    if (allVisibleSelected) {
-      // Unselect all currently visible transactions.
-      selectedTransactionIds.removeWhere((id) => visibleIds.contains(id));
-    } else {
-      // Select all currently visible transactions.
-      selectedTransactionIds.addAll(visibleIds);
-    }
   }
 
   // ==========================================================
@@ -463,10 +418,10 @@ class _TransactionsViewState extends State<TransactionsView>
             ],
           ],
         ),
+
         // ======================================================
         // BODY
         // ======================================================
-
         body: Stack(
           children: [
             Column(
@@ -474,7 +429,6 @@ class _TransactionsViewState extends State<TransactionsView>
                 // ==================================================
                 // INCOME / EXPENSE SUMMARY
                 // ==================================================
-
                 Obx(() {
                   final list = transactionsController.transactions;
 
@@ -692,10 +646,10 @@ class _TransactionsViewState extends State<TransactionsView>
                     ),
                   );
                 }),
+
                 // ==================================================
                 // TRANSACTION LIST
                 // ==================================================
-
                 Expanded(
                   child: Obx(() {
                     final query = searchQuery.value.toLowerCase().trim();
@@ -923,7 +877,11 @@ class _TransactionsViewState extends State<TransactionsView>
                               // ====================================
                               trailing: _isSelectionMode
                                   ? Text(
-                                      Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
+                                      Formatters.signedMoney(
+                                        transaction.amount,
+                                        isIncome: isIncome,
+                                        decimals: 2,
+                                      ),
                                       style:
                                           AppTextStyles.bodyMedium(
                                             isDarkMode,
@@ -938,7 +896,11 @@ class _TransactionsViewState extends State<TransactionsView>
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
+                                          Formatters.signedMoney(
+                                            transaction.amount,
+                                            isIncome: isIncome,
+                                            decimals: 2,
+                                          ),
                                           style:
                                               AppTextStyles.bodyMedium(
                                                 isDarkMode,

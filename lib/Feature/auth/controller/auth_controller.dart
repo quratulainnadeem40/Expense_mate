@@ -1,4 +1,5 @@
-
+import 'package:expense_mate/Feature/pin/view/pin_setup_view.dart';
+import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,7 +17,6 @@ class AuthController extends GetxController {
 
   User? get currentUser => _supabase.auth.currentUser;
 
-  
   Future<void> signUp() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
@@ -48,9 +48,7 @@ class AuthController extends GetxController {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'name': name,
-        },
+        data: {'name': name},
       );
 
       if (response.user != null) {
@@ -60,7 +58,20 @@ class AuthController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
 
-        Get.offAllNamed(AppRoutes.home);
+        // Straight in if a PIN already exists on this phone, otherwise
+        // offer to create one. Skipping is allowed, so signing in never
+        // becomes a two-step affair for someone who does not want it.
+        if (PinService.instance.isPinSet) {
+          Get.offAllNamed(AppRoutes.home);
+        } else {
+          Get.offAllNamed(
+            AppRoutes.pinSetup,
+            arguments: {
+              PinSetupView.argNextRoute: AppRoutes.home,
+              PinSetupView.argCanSkip: true,
+            },
+          );
+        }
       }
     } on AuthException catch (e) {
       _showError(e.message);
@@ -71,7 +82,6 @@ class AuthController extends GetxController {
     }
   }
 
- 
   Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -101,7 +111,20 @@ class AuthController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
 
-        Get.offAllNamed(AppRoutes.home);
+        // Straight in if a PIN already exists on this phone, otherwise
+        // offer to create one. Skipping is allowed, so signing in never
+        // becomes a two-step affair for someone who does not want it.
+        if (PinService.instance.isPinSet) {
+          Get.offAllNamed(AppRoutes.home);
+        } else {
+          Get.offAllNamed(
+            AppRoutes.pinSetup,
+            arguments: {
+              PinSetupView.argNextRoute: AppRoutes.home,
+              PinSetupView.argCanSkip: true,
+            },
+          );
+        }
       }
     } on AuthException catch (e) {
       _showError(e.message);
@@ -124,7 +147,6 @@ class AuthController extends GetxController {
     }
   }
 
-  
   Future<void> resetPassword(String email) async {
     final trimmedEmail = email.trim();
 
@@ -136,9 +158,7 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase.auth.resetPasswordForEmail(
-        trimmedEmail,
-      );
+      await _supabase.auth.resetPasswordForEmail(trimmedEmail);
 
       Get.snackbar(
         'Email Sent',
@@ -153,7 +173,6 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
-
 
   void togglePasswordVisibility() {
     obscurePassword.value = !obscurePassword.value;

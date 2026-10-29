@@ -3,6 +3,9 @@ class AppRoutes {
 
   static const String onboarding = '/onboarding';
 
+  static const String pinSetup = '/pin-setup';
+  static const String pinLock = '/pin-lock';
+
   static const String home = '/home';
 
   static const String transactions = '/transactions';
@@ -21,7 +24,7 @@ class AppRoutes {
 
   static const forgotPassword = '/forgot-password';
 
-static const String budget = '/budget';
+  static const String budget = '/budget';
 
   static const String goals = '/goals';
 
@@ -35,6 +38,5 @@ static const String budget = '/budget';
 
   static const String terms = '/terms';
 
-  
   static const String committeeHistory = '/committee-history';
 }

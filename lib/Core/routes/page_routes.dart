@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/pin/view/pin_lock_view.dart';
+import 'package:expense_mate/Feature/pin/view/pin_setup_view.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Feature/onboarding/binding/onboarding_binding.dart';
@@ -54,6 +56,10 @@ class AppPages {
       page: () => UdhaarView(),
       binding: UdhaarBinding(),
     ),
+
+    GetPage(name: AppRoutes.pinSetup, page: () => const PinSetupView()),
+
+    GetPage(name: AppRoutes.pinLock, page: () => const PinLockView()),
 
     GetPage(
       name: AppRoutes.splash,

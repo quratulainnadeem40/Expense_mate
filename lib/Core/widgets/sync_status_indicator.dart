@@ -4,10 +4,7 @@ import 'package:get/get.dart';
 import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 
 class SyncStatusIndicator extends StatelessWidget {
-  const SyncStatusIndicator({
-    super.key,
-    this.showLabel = true,
-  });
+  const SyncStatusIndicator({super.key, this.showLabel = true});
 
   final bool showLabel;
 
@@ -50,26 +47,16 @@ class SyncStatusIndicator extends StatelessWidget {
       }
 
       if (!showLabel) {
-        return Icon(
-          icon,
-          color: color,
-          size: 22,
-        );
+        return Icon(icon, color: color, size: 22);
       }
 
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 6),
           Text(
-            pending > 0 && status == 'Pending'
-                ? 'Pending ($pending)'
-                : status,
+            pending > 0 && status == 'Pending' ? 'Pending ($pending)' : status,
             style: TextStyle(
               color: color,
               fontSize: 13,
