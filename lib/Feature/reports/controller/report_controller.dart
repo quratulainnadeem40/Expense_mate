@@ -8,7 +8,8 @@ class ReportController extends GetxController {
   late final TransactionsController _txController;
   late final CategoriesController _categoriesController;
 
-  RxList<TransactionModel> get transactions => _txController.transactions;
+  RxList<TransactionModel> get transactions =>
+      _txController.transactions;
 
   // ==========================================================
   // MONTH & YEAR FILTERS
@@ -63,7 +64,10 @@ class ReportController extends GetxController {
   List<int> get availableYears {
     final int currentYear = DateTime.now().year;
 
-    final List<int> years = List.generate(6, (index) => currentYear - index);
+    final List<int> years = List.generate(
+      6,
+      (index) => currentYear - index,
+    );
 
     return years;
   }
@@ -84,7 +88,8 @@ class ReportController extends GetxController {
     final int? month = selectedMonth.value;
     final int? year = selectedYear.value;
 
-    final List<TransactionModel> data = _txController.transactions.toList();
+    final List<TransactionModel> data =
+        _txController.transactions.toList();
 
     // No filter selected
     if (month == null && year == null) {
@@ -92,9 +97,11 @@ class ReportController extends GetxController {
     }
 
     return data.where((transaction) {
-      final int transactionMonth = transaction.transactionDate.month;
+      final int transactionMonth =
+          transaction.transactionDate.month;
 
-      final int transactionYear = transaction.transactionDate.year;
+      final int transactionYear =
+          transaction.transactionDate.year;
 
       // Year filter
       if (year != null && transactionYear != year) {
@@ -175,7 +182,8 @@ class ReportController extends GetxController {
     // 1. First try custom category name
     // --------------------------------------------------------
 
-    final String customName = transaction.customCategoryName.trim();
+    final String customName =
+        transaction.customCategoryName.trim();
 
     if (customName.isNotEmpty) {
       return customName;
@@ -185,7 +193,8 @@ class ReportController extends GetxController {
     // 2. Get category ID
     // --------------------------------------------------------
 
-    final String categoryId = transaction.categoryId.trim();
+    final String categoryId =
+        transaction.categoryId.trim();
 
     if (categoryId.isEmpty) {
       return '';
@@ -195,13 +204,14 @@ class ReportController extends GetxController {
     // 3. Find category by ID
     // --------------------------------------------------------
 
-    final category = _categoriesController.categoryList.firstWhereOrNull((
-      item,
-    ) {
-      return item.linkedIds.any(
-        (id) => id.trim().toLowerCase() == categoryId.toLowerCase(),
-      );
-    });
+    final category =
+        _categoriesController.categoryList.firstWhereOrNull(
+      (item) {
+        return item.linkedIds.any(
+          (id) => id.trim().toLowerCase() == categoryId.toLowerCase(),
+        );
+      },
+    );
 
     if (category != null) {
       final String name = category.name.trim();
@@ -215,10 +225,12 @@ class ReportController extends GetxController {
     // 4. Try transaction category value
     // --------------------------------------------------------
 
-    final String categoryValue = transaction.category.trim();
+    final String categoryValue =
+        transaction.category.trim();
 
     if (categoryValue.isNotEmpty &&
-        categoryValue.toLowerCase() != categoryId.toLowerCase()) {
+        categoryValue.toLowerCase() !=
+            categoryId.toLowerCase()) {
       return categoryValue;
     }
 
@@ -227,10 +239,12 @@ class ReportController extends GetxController {
     // --------------------------------------------------------
 
     if (categoryId.toLowerCase().startsWith('default_')) {
-      final String defaultName = categoryId.substring('default_'.length).trim();
+      final String defaultName =
+          categoryId.substring('default_'.length).trim();
 
       if (defaultName.isNotEmpty) {
-        return defaultName[0].toUpperCase() + defaultName.substring(1);
+        return defaultName[0].toUpperCase() +
+            defaultName.substring(1);
       }
     }
 
@@ -249,14 +263,16 @@ class ReportController extends GetxController {
         continue;
       }
 
-      final String categoryName = _getCategoryName(transaction);
+      final String categoryName =
+          _getCategoryName(transaction);
 
       if (categoryName.isEmpty) {
         continue;
       }
 
       categoryTotals[categoryName] =
-          (categoryTotals[categoryName] ?? 0.0) + transaction.amount;
+          (categoryTotals[categoryName] ?? 0.0) +
+              transaction.amount;
     }
 
     return categoryTotals;
@@ -274,14 +290,16 @@ class ReportController extends GetxController {
         continue;
       }
 
-      final String categoryName = _getCategoryName(transaction);
+      final String categoryName =
+          _getCategoryName(transaction);
 
       if (categoryName.isEmpty) {
         continue;
       }
 
       categoryTotals[categoryName] =
-          (categoryTotals[categoryName] ?? 0.0) + transaction.amount;
+          (categoryTotals[categoryName] ?? 0.0) +
+              transaction.amount;
     }
 
     return categoryTotals;
@@ -293,7 +311,8 @@ class ReportController extends GetxController {
 
   Map<int, double> get monthlyExpenses {
     final Map<int, double> monthlyTotals = {
-      for (int month = 1; month <= 12; month++) month: 0.0,
+      for (int month = 1; month <= 12; month++)
+        month: 0.0,
     };
 
     for (final transaction in filteredTransactions) {
@@ -301,9 +320,12 @@ class ReportController extends GetxController {
         continue;
       }
 
-      final int month = transaction.transactionDate.month;
+      final int month =
+          transaction.transactionDate.month;
 
-      monthlyTotals[month] = (monthlyTotals[month] ?? 0.0) + transaction.amount;
+      monthlyTotals[month] =
+          (monthlyTotals[month] ?? 0.0) +
+              transaction.amount;
     }
 
     return monthlyTotals;
@@ -315,7 +337,8 @@ class ReportController extends GetxController {
 
   Map<int, double> get monthlyIncome {
     final Map<int, double> monthlyTotals = {
-      for (int month = 1; month <= 12; month++) month: 0.0,
+      for (int month = 1; month <= 12; month++)
+        month: 0.0,
     };
 
     for (final transaction in filteredTransactions) {
@@ -323,9 +346,12 @@ class ReportController extends GetxController {
         continue;
       }
 
-      final int month = transaction.transactionDate.month;
+      final int month =
+          transaction.transactionDate.month;
 
-      monthlyTotals[month] = (monthlyTotals[month] ?? 0.0) + transaction.amount;
+      monthlyTotals[month] =
+          (monthlyTotals[month] ?? 0.0) +
+              transaction.amount;
     }
 
     return monthlyTotals;
@@ -336,7 +362,9 @@ class ReportController extends GetxController {
   // ==========================================================
 
   List<TransactionModel> get filteredExpenses {
-    return filteredTransactions.where(_isExpense).toList();
+    return filteredTransactions
+        .where(_isExpense)
+        .toList();
   }
 
   // ==========================================================
@@ -344,7 +372,9 @@ class ReportController extends GetxController {
   // ==========================================================
 
   List<TransactionModel> get filteredIncome {
-    return filteredTransactions.where(_isIncome).toList();
+    return filteredTransactions
+        .where(_isIncome)
+        .toList();
   }
 
   // ==========================================================
@@ -440,26 +470,36 @@ class ReportController extends GetxController {
     super.onInit();
 
     if (Get.isRegistered<TransactionsController>()) {
-      _txController = Get.find<TransactionsController>();
+      _txController =
+          Get.find<TransactionsController>();
     } else {
-      _txController = Get.put(TransactionsController());
+      _txController =
+          Get.put(TransactionsController());
     }
 
     if (Get.isRegistered<CategoriesController>()) {
-      _categoriesController = Get.find<CategoriesController>();
+      _categoriesController =
+          Get.find<CategoriesController>();
     } else {
-      _categoriesController = Get.put(CategoriesController());
+      _categoriesController =
+          Get.put(CategoriesController());
     }
 
     // Refresh Reports whenever transactions change
-    ever(_txController.transactions, (_) {
-      update();
-    });
+    ever(
+      _txController.transactions,
+      (_) {
+        update();
+      },
+    );
 
     // Refresh Reports whenever categories change
-    ever(_categoriesController.categoryList, (_) {
-      update();
-    });
+    ever(
+      _categoriesController.categoryList,
+      (_) {
+        update();
+      },
+    );
 
     printReportData();
   }

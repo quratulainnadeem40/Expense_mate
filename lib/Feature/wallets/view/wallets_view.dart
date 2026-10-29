@@ -23,15 +23,15 @@ class _WalletsViewState extends State<WalletsView> {
   bool isSelectionMode = false;
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    if (Get.isRegistered<WalletsController>()) {
-      controller = Get.find<WalletsController>();
-    } else {
-      controller = Get.put(WalletsController());
-    }
+  if (Get.isRegistered<WalletsController>()) {
+    controller = Get.find<WalletsController>();
+  } else {
+    controller = Get.put(WalletsController());
   }
+}
 
   // ============================================================
   // ENTER SELECTION MODE
@@ -115,7 +115,10 @@ class _WalletsViewState extends State<WalletsView> {
             },
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -134,7 +137,9 @@ class _WalletsViewState extends State<WalletsView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isSelectionMode ? '${selectedWalletIds.length} selected' : 'Wallets',
+          isSelectionMode
+              ? '${selectedWalletIds.length} selected'
+              : 'Wallets',
           style: AppTextStyles.headingMedium(isDark),
         ),
 
@@ -152,14 +157,18 @@ class _WalletsViewState extends State<WalletsView> {
               onPressed: selectedWalletIds.isEmpty
                   ? null
                   : () => _deleteSelectedWallets(context),
-              icon: const Icon(Icons.delete_outline_rounded),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+              ),
             ),
         ],
       ),
 
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
         }
 
         return RefreshIndicator(
@@ -175,6 +184,7 @@ class _WalletsViewState extends State<WalletsView> {
               // ==================================================
               // TOTAL BALANCE
               // ==================================================
+
               WalletBalanceCard(
                 totalBalance: controller.totalBalance,
                 currency: controller.wallets.isNotEmpty
@@ -187,6 +197,7 @@ class _WalletsViewState extends State<WalletsView> {
               // ==================================================
               // MY WALLETS HEADER
               // ==================================================
+
               Row(
                 children: [
                   Text(
@@ -227,45 +238,56 @@ class _WalletsViewState extends State<WalletsView> {
               // ==================================================
               // EMPTY STATE
               // ==================================================
+
               if (controller.wallets.isEmpty)
                 _EmptyWalletState(isDark: isDark)
+
               // ==================================================
               // WALLET LIST
               // ==================================================
+
               else
-                ...controller.wallets.map((wallet) {
-                  final bool isSelected = selectedWalletIds.contains(wallet.id);
+                ...controller.wallets.map(
+                  (wallet) {
+                    final bool isSelected =
+                        selectedWalletIds.contains(wallet.id);
 
-                  return WalletCard(
-                    wallet: wallet,
+                    return WalletCard(
+                      wallet: wallet,
 
-                    isSelectionMode: isSelectionMode,
+                      isSelectionMode: isSelectionMode,
 
-                    isSelected: isSelected,
+                      isSelected: isSelected,
 
-                    // Normal tap
-                    onTap: () {
-                      if (isSelectionMode) {
-                        _toggleWalletSelection(wallet.id);
-                      } else {
-                        Get.to(() => WalletDetailsView(wallet: wallet));
-                      }
-                    },
+                      // Normal tap
+                      onTap: () {
+                        if (isSelectionMode) {
+                          _toggleWalletSelection(wallet.id);
+                        } else {
+                          Get.to(
+                            () => WalletDetailsView(
+                              wallet: wallet,
+                            ),
+                          );
+                        }
+                      },
 
-                    // Long press
-                    onLongPress: () {
-                      if (!isSelectionMode) {
-                        _enterSelectionMode(wallet.id);
-                      }
-                    },
-                  );
-                }),
+                      // Long press
+                      onLongPress: () {
+                        if (!isSelectionMode) {
+                          _enterSelectionMode(wallet.id);
+                        }
+                      },
+                    );
+                  },
+                ),
 
               const SizedBox(height: 80),
             ],
           ),
         );
       }),
+
     );
   }
 }
@@ -277,12 +299,16 @@ class _WalletsViewState extends State<WalletsView> {
 class _EmptyWalletState extends StatelessWidget {
   final bool isDark;
 
-  const _EmptyWalletState({required this.isDark});
+  const _EmptyWalletState({
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 70),
+      padding: const EdgeInsets.symmetric(
+        vertical: 70,
+      ),
       child: Column(
         children: [
           Icon(
@@ -293,7 +319,10 @@ class _EmptyWalletState extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          Text('No wallets yet', style: AppTextStyles.headingMedium(isDark)),
+          Text(
+            'No wallets yet',
+            style: AppTextStyles.headingMedium(isDark),
+          ),
 
           const SizedBox(height: 8),
 

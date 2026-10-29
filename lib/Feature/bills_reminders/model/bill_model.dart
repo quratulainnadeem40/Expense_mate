@@ -31,15 +31,18 @@ class BillModel {
   // FROM SUPABASE
   // ==========================================================
 
-  factory BillModel.fromMap(Map<String, dynamic> map) {
+  factory BillModel.fromMap(
+    Map<String, dynamic> map,
+  ) {
     return BillModel(
       id: map['id']?.toString() ?? '',
       userId: map['user_id']?.toString() ?? '',
       title: map['title']?.toString() ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
 
-      dueDate:
-          DateTime.tryParse(map['due_date']?.toString() ?? '') ??
+      dueDate: DateTime.tryParse(
+            map['due_date']?.toString() ?? '',
+          ) ??
           DateTime.now(),
 
       categoryId: map['category_id']?.toString(),
@@ -48,14 +51,18 @@ class BillModel {
 
       isPaid: map['is_paid'] == true,
 
-      reminderEnabled: map['reminder_enabled'] == true,
+      reminderEnabled:
+          map['reminder_enabled'] == true,
 
       reminderTime: map['reminder_time'] != null
-          ? DateTime.tryParse(map['reminder_time'].toString())
+          ? DateTime.tryParse(
+              map['reminder_time'].toString(),
+            )
           : null,
 
-      createdAt:
-          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
+      createdAt: DateTime.tryParse(
+            map['created_at']?.toString() ?? '',
+          ) ??
           DateTime.now(),
     );
   }
@@ -76,7 +83,8 @@ class BillModel {
       'note': note,
       'is_paid': isPaid,
       'reminder_enabled': reminderEnabled,
-      'reminder_time': reminderTime?.toIso8601String(),
+      'reminder_time':
+          reminderTime?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -109,8 +117,10 @@ class BillModel {
       walletId: walletId ?? this.walletId,
       note: note ?? this.note,
       isPaid: isPaid ?? this.isPaid,
-      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
-      reminderTime: reminderTime ?? this.reminderTime,
+      reminderEnabled:
+          reminderEnabled ?? this.reminderEnabled,
+      reminderTime:
+          reminderTime ?? this.reminderTime,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -29,18 +29,30 @@ class CommitteeMemberModel {
     };
   }
 
-  factory CommitteeMemberModel.fromMap(Map<String, dynamic> map) {
+  factory CommitteeMemberModel.fromMap(
+    Map<String, dynamic> map,
+  ) {
     return CommitteeMemberModel(
       id: map['id']?.toString() ?? '',
-      committeeId: map['committeeId']?.toString() ?? '',
-      name: map['name']?.toString() ?? '',
+      committeeId:
+          map['committeeId']?.toString() ?? '',
+      name:
+          map['name']?.toString() ?? '',
       fatherHusbandName:
-          map['fatherHusbandName']?.toString() ??
-          map['fatherName']?.toString() ??
-          '',
-      phone: map['phone']?.toString() ?? '',
-      contribution: (map['contribution'] ?? 0).toDouble(),
-      paymentStatus: map['paymentStatus']?.toString() ?? 'Pending',
+          map['fatherHusbandName']
+                  ?.toString() ??
+              map['fatherName']
+                  ?.toString() ??
+              '',
+      phone:
+          map['phone']?.toString() ?? '',
+      contribution:
+          (map['contribution'] ?? 0)
+              .toDouble(),
+      paymentStatus:
+          map['paymentStatus']
+                  ?.toString() ??
+              'Pending',
     );
   }
 
@@ -55,12 +67,20 @@ class CommitteeMemberModel {
   }) {
     return CommitteeMemberModel(
       id: id ?? this.id,
-      committeeId: committeeId ?? this.committeeId,
+      committeeId:
+          committeeId ?? this.committeeId,
       name: name ?? this.name,
-      fatherHusbandName: fatherHusbandName ?? this.fatherHusbandName,
-      phone: phone ?? this.phone,
-      contribution: contribution ?? this.contribution,
-      paymentStatus: paymentStatus ?? this.paymentStatus,
+      fatherHusbandName:
+          fatherHusbandName ??
+              this.fatherHusbandName,
+      phone:
+          phone ?? this.phone,
+      contribution:
+          contribution ??
+              this.contribution,
+      paymentStatus:
+          paymentStatus ??
+              this.paymentStatus,
     );
   }
 }

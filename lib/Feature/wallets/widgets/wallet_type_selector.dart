@@ -30,7 +30,10 @@ class WalletTypeSelector extends StatelessWidget {
         border: OutlineInputBorder(),
       ),
       items: walletTypes.map((type) {
-        return DropdownMenuItem<String>(value: type, child: Text(type));
+        return DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        );
       }).toList(),
       onChanged: (value) {
         if (value != null) {

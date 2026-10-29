@@ -19,14 +19,21 @@ class LoginView extends GetView<AuthController> {
           : const Color(0xFFF6F7F2),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 30,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 30),
 
               Center(
-                child: Image.asset('assets/logo.png', height: 90, width: 90),
+                child: Image.asset(
+                  'assets/logo.png',
+                  height: 90,
+                  width: 90,
+                ),
               ),
 
               const SizedBox(height: 28),

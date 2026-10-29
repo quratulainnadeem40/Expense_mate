@@ -19,9 +19,8 @@ class BiometricService {
 
   final LocalAuthentication _auth = LocalAuthentication();
 
-  Box? get _box => Hive.isBoxOpen(AppKeys.settingsBox)
-      ? Hive.box(AppKeys.settingsBox)
-      : null;
+  Box? get _box =>
+      Hive.isBoxOpen(AppKeys.settingsBox) ? Hive.box(AppKeys.settingsBox) : null;
 
   /// Whether the phone has a usable fingerprint or face sensor.
   Future<bool> isAvailable() async {

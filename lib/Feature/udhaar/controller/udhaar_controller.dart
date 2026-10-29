@@ -34,9 +34,7 @@ class UdhaarController extends GetxController {
     try {
       entries.assignAll(
         stored
-            .map(
-              (e) => UdhaarEntry.fromMap(Map<String, dynamic>.from(e as Map)),
-            )
+            .map((e) => UdhaarEntry.fromMap(Map<String, dynamic>.from(e as Map)))
             .toList(),
       );
       _sort();

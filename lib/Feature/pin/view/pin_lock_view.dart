@@ -1,3 +1,4 @@
+import '../../../Core/service/security_alert_service.dart';
 import '../../../Core/service/biometric_service.dart';
 import 'dart:async';
 
@@ -72,7 +73,8 @@ class _PinLockViewState extends State<PinLockView> {
 
   void _goOn() {
     final args = Get.arguments;
-    final next = args is Map ? args[PinLockView.argNextRoute] as String? : null;
+    final next =
+        args is Map ? args[PinLockView.argNextRoute] as String? : null;
 
     Get.offAllNamed(next ?? AppRoutes.home);
   }
@@ -134,8 +136,21 @@ class _PinLockViewState extends State<PinLockView> {
       return;
     }
 
+    final wasBlockedBefore = PinService.instance.isTemporarilyBlocked;
+
     await PinService.instance.recordFailure();
     if (!mounted) return;
+
+    // Only once the keypad actually locks, not on every mistyped digit.
+    // An email per wrong tap would be noise, and people stop reading
+    // alerts they get for nothing.
+    if (!wasBlockedBefore && PinService.instance.isTemporarilyBlocked) {
+      unawaited(
+        SecurityAlertService.instance.pinLockout(
+          attempts: PinService.maxAttempts,
+        ),
+      );
+    }
 
     final left = PinService.instance.attemptsLeft;
 
@@ -168,7 +183,9 @@ class _PinLockViewState extends State<PinLockView> {
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
         title: Text(
           'Forgot your PIN?',
           style: TextStyle(
@@ -196,7 +213,9 @@ class _PinLockViewState extends State<PinLockView> {
               controller: passwordController,
               obscureText: true,
               autofocus: true,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+              ),
               decoration: InputDecoration(
                 hintText: 'Account password',
                 filled: true,
@@ -209,7 +228,10 @@ class _PinLockViewState extends State<PinLockView> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: kPinGreen, width: 1.4),
+                  borderSide: const BorderSide(
+                    color: kPinGreen,
+                    width: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -230,7 +252,10 @@ class _PinLockViewState extends State<PinLockView> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
           Obx(() {
             return ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -252,7 +277,8 @@ class _PinLockViewState extends State<PinLockView> {
                       }
 
                       if (email.isEmpty) {
-                        error.value = 'No account signed in on this phone.';
+                        error.value =
+                            'No account signed in on this phone.';
                         return;
                       }
 
@@ -271,7 +297,8 @@ class _PinLockViewState extends State<PinLockView> {
                       } on AuthException catch (e) {
                         error.value = e.message;
                       } catch (_) {
-                        error.value = 'Could not check that. Try again.';
+                        error.value =
+                            'Could not check that. Try again.';
                       } finally {
                         busy.value = false;
                       }
@@ -298,7 +325,8 @@ class _PinLockViewState extends State<PinLockView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final primaryText = isDark ? Colors.white : const Color(0xFF1C1C1C);
-    final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final secondaryText =
+        isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     final seconds = _blockedFor.inSeconds;
 
@@ -342,7 +370,7 @@ class _PinLockViewState extends State<PinLockView> {
               Text(
                 _isBlocked && seconds > 0
                     ? 'Try again in $seconds '
-                          '${seconds == 1 ? 'second' : 'seconds'}'
+                        '${seconds == 1 ? 'second' : 'seconds'}'
                     : 'Expense Mate is locked',
                 style: TextStyle(fontSize: 13.5, color: secondaryText),
               ),

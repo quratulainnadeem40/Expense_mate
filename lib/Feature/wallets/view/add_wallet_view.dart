@@ -1,3 +1,5 @@
+
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -83,7 +85,9 @@ class _AddWalletViewState extends State<AddWalletView> {
       return;
     }
 
-    final balance = double.tryParse(balanceController.text.trim());
+    final balance = double.tryParse(
+      balanceController.text.trim(),
+    );
 
     if (balance == null) {
       return;
@@ -105,7 +109,10 @@ class _AddWalletViewState extends State<AddWalletView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Wallet', style: AppTextStyles.headingMedium(isDark)),
+        title: Text(
+          'Add Wallet',
+          style: AppTextStyles.headingMedium(isDark),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -128,7 +135,9 @@ class _AddWalletViewState extends State<AddWalletView> {
                   decoration: const InputDecoration(
                     labelText: 'Wallet Name',
                     hintText: 'e.g. Cash Wallet',
-                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                    prefixIcon: Icon(
+                      Icons.account_balance_wallet_outlined,
+                    ),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
@@ -265,3 +274,4 @@ class _AddWalletViewState extends State<AddWalletView> {
     );
   }
 }
+

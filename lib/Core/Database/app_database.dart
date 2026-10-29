@@ -30,9 +30,11 @@ class LocalTransactions extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version => integer().withDefault(const Constant(1))();
+  IntColumn get version =>
+      integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -49,19 +51,24 @@ class LocalWallets extends Table {
 
   TextColumn get name => text()();
 
-  RealColumn get balance => real().withDefault(const Constant(0.0))();
+  RealColumn get balance =>
+      real().withDefault(const Constant(0.0))();
 
-  TextColumn get currency => text().withDefault(const Constant('PKR'))();
+  TextColumn get currency =>
+      text().withDefault(const Constant('PKR'))();
 
-  TextColumn get type => text().withDefault(const Constant('Cash'))();
+  TextColumn get type =>
+      text().withDefault(const Constant('Cash'))();
 
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version => integer().withDefault(const Constant(1))();
+  IntColumn get version =>
+      integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -88,9 +95,11 @@ class LocalCategories extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version => integer().withDefault(const Constant(1))();
+  IntColumn get version =>
+      integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -109,9 +118,11 @@ class LocalBudgets extends Table {
 
   TextColumn get name => text()();
 
-  RealColumn get amount => real().withDefault(const Constant(0.0))();
+  RealColumn get amount =>
+      real().withDefault(const Constant(0.0))();
 
-  RealColumn get spent => real().withDefault(const Constant(0.0))();
+  RealColumn get spent =>
+      real().withDefault(const Constant(0.0))();
 
   DateTimeColumn get startDate => dateTime()();
 
@@ -121,9 +132,11 @@ class LocalBudgets extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
-  IntColumn get version => integer().withDefault(const Constant(1))();
+  IntColumn get version =>
+      integer().withDefault(const Constant(1))();
 
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDeleted =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -146,7 +159,8 @@ class SyncQueue extends Table {
 
   TextColumn get payload => text()();
 
-  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+  IntColumn get retryCount =>
+      integer().withDefault(const Constant(0))();
 
   TextColumn get lastError => text().nullable()();
 
@@ -156,8 +170,8 @@ class SyncQueue extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-    {userId, entityTable, recordId},
-  ];
+        {userId, entityTable, recordId},
+      ];
 }
 
 /// ------------------------------------------------------------
@@ -223,7 +237,9 @@ class AppDatabase extends _$AppDatabase {
   /// MIGRATION: VERSION 1 → VERSION 2
   /// ----------------------------------------------------------
 
-  Future<void> _migrateSyncQueueToVersion2(Migrator m) async {
+  Future<void> _migrateSyncQueueToVersion2(
+    Migrator m,
+  ) async {
     await customStatement(
       'ALTER TABLE sync_queue '
       'RENAME TO sync_queue_old',
@@ -276,7 +292,9 @@ class AppDatabase extends _$AppDatabase {
       FROM sync_queue_old
     ''');
 
-    await customStatement('DROP TABLE sync_queue_old');
+    await customStatement(
+      'DROP TABLE sync_queue_old',
+    );
   }
 }
 

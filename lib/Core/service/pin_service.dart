@@ -36,9 +36,8 @@ class PinService {
 
   DateTime? _backgroundedAt;
 
-  Box? get _box => Hive.isBoxOpen(AppKeys.settingsBox)
-      ? Hive.box(AppKeys.settingsBox)
-      : null;
+  Box? get _box =>
+      Hive.isBoxOpen(AppKeys.settingsBox) ? Hive.box(AppKeys.settingsBox) : null;
 
   bool get isPinSet => (_box?.get(_hashKey) as String?)?.isNotEmpty ?? false;
 

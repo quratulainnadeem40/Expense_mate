@@ -57,9 +57,15 @@ class AppPages {
       binding: UdhaarBinding(),
     ),
 
-    GetPage(name: AppRoutes.pinSetup, page: () => const PinSetupView()),
+    GetPage(
+      name: AppRoutes.pinSetup,
+      page: () => const PinSetupView(),
+    ),
 
-    GetPage(name: AppRoutes.pinLock, page: () => const PinLockView()),
+    GetPage(
+      name: AppRoutes.pinLock,
+      page: () => const PinLockView(),
+    ),
 
     GetPage(
       name: AppRoutes.splash,

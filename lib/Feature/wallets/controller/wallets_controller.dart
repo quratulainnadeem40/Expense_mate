@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:uuid/uuid.dart';
 import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
@@ -489,7 +490,7 @@ class WalletsController extends GetxController {
   // LOCAL UUID
   // ==========================================================
 
-  String _generateUuid() {
-    return const Uuid().v4();
-  }
+ String _generateUuid() {
+  return const Uuid().v4();
+}
 }

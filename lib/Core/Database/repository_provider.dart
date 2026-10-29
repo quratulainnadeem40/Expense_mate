@@ -29,29 +29,43 @@ class RepositoryProvider {
   TransactionLocalRepository get transactions =>
       TransactionLocalRepository(database);
 
-  WalletLocalRepository get wallets => WalletLocalRepository(database);
+  WalletLocalRepository get wallets =>
+      WalletLocalRepository(database);
 
-  CategoryLocalRepository get categories => CategoryLocalRepository(database);
+  CategoryLocalRepository get categories =>
+      CategoryLocalRepository(database);
 
-  BudgetLocalRepository get budgets => BudgetLocalRepository(database);
+  BudgetLocalRepository get budgets =>
+      BudgetLocalRepository(database);
 
-  SyncQueueRepository get syncQueue => SyncQueueRepository(database);
+  SyncQueueRepository get syncQueue =>
+      SyncQueueRepository(database);
 
   // ---------------------------------------------------------------------------
   // SYNC REPOSITORIES
   // ---------------------------------------------------------------------------
 
-  TransactionSyncRepository get transactionSync => TransactionSyncRepository(
-    localRepository: transactions,
-    syncQueue: syncQueue,
-  );
+  TransactionSyncRepository get transactionSync =>
+      TransactionSyncRepository(
+        localRepository: transactions,
+        syncQueue: syncQueue,
+      );
 
   WalletSyncRepository get walletSync =>
-      WalletSyncRepository(localRepository: wallets, syncQueue: syncQueue);
+      WalletSyncRepository(
+        localRepository: wallets,
+        syncQueue: syncQueue,
+      );
 
   CategorySyncRepository get categorySync =>
-      CategorySyncRepository(localRepository: categories, syncQueue: syncQueue);
+      CategorySyncRepository(
+        localRepository: categories,
+        syncQueue: syncQueue,
+      );
 
   BudgetSyncRepository get budgetSync =>
-      BudgetSyncRepository(localRepository: budgets, syncQueue: syncQueue);
+      BudgetSyncRepository(
+        localRepository: budgets,
+        syncQueue: syncQueue,
+      );
 }

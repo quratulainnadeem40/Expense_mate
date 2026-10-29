@@ -20,21 +20,24 @@ class MemberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     final bool isPaid =
         paymentStatus.toLowerCase() == 'paid' ||
         paymentStatus.toLowerCase() == 'received';
 
-    final bool isOverdue = paymentStatus.toLowerCase() == 'overdue';
+    final bool isOverdue =
+        paymentStatus.toLowerCase() == 'overdue';
 
-    final Color backgroundColor = isDark
-        ? const Color(0xFF0A0A0A)
-        : Colors.white;
+    final Color backgroundColor =
+        isDark ? const Color(0xFF0A0A0A) : Colors.white;
 
-    final Color primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final Color primaryTextColor =
+        isDark ? Colors.white : Colors.black87;
 
-    final Color secondaryTextColor = isDark ? Colors.white60 : Colors.black54;
+    final Color secondaryTextColor =
+        isDark ? Colors.white60 : Colors.black54;
 
     return Container(
       width: double.infinity,
@@ -43,7 +46,9 @@ class MemberCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black12,
+        ),
       ),
       child: Column(
         children: [
@@ -56,7 +61,8 @@ class MemberCard extends StatelessWidget {
                 height: 52,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark ? Colors.white10 : Colors.black12,
+                  color:
+                      isDark ? Colors.white10 : Colors.black12,
                 ),
                 child: Icon(
                   Icons.person_rounded,
@@ -70,7 +76,8 @@ class MemberCard extends StatelessWidget {
               // Member Information
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       memberName,
@@ -97,10 +104,12 @@ class MemberCard extends StatelessWidget {
                             child: Text(
                               phone,
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              overflow:
+                                  TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: secondaryTextColor,
+                                color:
+                                    secondaryTextColor,
                               ),
                             ),
                           ),
@@ -174,14 +183,17 @@ class MemberCard extends StatelessWidget {
           // Payment Status
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isPaid
                   ? Colors.green.withOpacity(0.10)
                   : isOverdue
-                  ? Colors.red.withOpacity(0.10)
-                  : Colors.orange.withOpacity(0.10),
+                      ? Colors.red.withOpacity(0.10)
+                      : Colors.orange.withOpacity(0.10),
             ),
             child: Row(
               children: [
@@ -189,21 +201,24 @@ class MemberCard extends StatelessWidget {
                   isPaid
                       ? Icons.check_circle_outline_rounded
                       : isOverdue
-                      ? Icons.warning_amber_rounded
-                      : Icons.pending_outlined,
+                          ? Icons.warning_amber_rounded
+                          : Icons.pending_outlined,
                   size: 18,
                   color: isPaid
                       ? Colors.green
                       : isOverdue
-                      ? Colors.red
-                      : Colors.orange,
+                          ? Colors.red
+                          : Colors.orange,
                 ),
 
                 const SizedBox(width: 8),
 
                 Text(
                   'Payment Status',
-                  style: TextStyle(fontSize: 12, color: secondaryTextColor),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: secondaryTextColor,
+                  ),
                 ),
 
                 const Spacer(),
@@ -216,8 +231,8 @@ class MemberCard extends StatelessWidget {
                     color: isPaid
                         ? Colors.green
                         : isOverdue
-                        ? Colors.red
-                        : Colors.orange,
+                            ? Colors.red
+                            : Colors.orange,
                   ),
                 ),
               ],

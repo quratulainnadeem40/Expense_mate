@@ -24,8 +24,8 @@ class SoundService {
   /// Off switch, so a user in a meeting can silence it.
   bool get isEnabled {
     if (!Hive.isBoxOpen(AppKeys.settingsBox)) return true;
-    return Hive.box(AppKeys.settingsBox).get(_enabledKey, defaultValue: true)
-        as bool;
+    return Hive.box(AppKeys.settingsBox)
+        .get(_enabledKey, defaultValue: true) as bool;
   }
 
   Future<void> setEnabled(bool value) async {

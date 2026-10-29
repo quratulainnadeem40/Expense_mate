@@ -5,7 +5,9 @@ class TransactionRemoteRepository {
 
   TransactionRemoteRepository(this.supabase);
 
-  Future<List<Map<String, dynamic>>> getTransactions(String userId) async {
+  Future<List<Map<String, dynamic>>> getTransactions(
+    String userId,
+  ) async {
     final response = await supabase
         .from('transactions')
         .select()
@@ -15,7 +17,9 @@ class TransactionRemoteRepository {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  Future<Map<String, dynamic>?> getTransactionById(String transactionId) async {
+  Future<Map<String, dynamic>?> getTransactionById(
+    String transactionId,
+  ) async {
     final response = await supabase
         .from('transactions')
         .select()
@@ -25,8 +29,12 @@ class TransactionRemoteRepository {
     return response;
   }
 
-  Future<void> insertTransaction(Map<String, dynamic> transaction) async {
-    await supabase.from('transactions').insert(transaction);
+  Future<void> insertTransaction(
+    Map<String, dynamic> transaction,
+  ) async {
+    await supabase
+        .from('transactions')
+        .insert(transaction);
   }
 
   Future<void> updateTransaction(
@@ -39,7 +47,12 @@ class TransactionRemoteRepository {
         .eq('id', transactionId);
   }
 
-  Future<void> deleteTransaction(String transactionId) async {
-    await supabase.from('transactions').delete().eq('id', transactionId);
+  Future<void> deleteTransaction(
+    String transactionId,
+  ) async {
+    await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionId);
   }
 }

@@ -24,7 +24,7 @@ class AppRoutes {
 
   static const forgotPassword = '/forgot-password';
 
-  static const String budget = '/budget';
+static const String budget = '/budget';
 
   static const String goals = '/goals';
 
@@ -38,5 +38,6 @@ class AppRoutes {
 
   static const String terms = '/terms';
 
+  
   static const String committeeHistory = '/committee-history';
 }

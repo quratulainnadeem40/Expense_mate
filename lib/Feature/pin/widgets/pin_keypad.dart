@@ -27,7 +27,9 @@ class PinDots extends StatelessWidget {
 
         final colour = isError
             ? const Color(0xFFE53935)
-            : (isOn ? kPinGreen : (isDark ? Colors.white24 : Colors.black26));
+            : (isOn
+                ? kPinGreen
+                : (isDark ? Colors.white24 : Colors.black26));
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -117,11 +119,8 @@ class PinKeypad extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      actionIcon ?? Icons.help_outline_rounded,
-                      size: 20,
-                      color: hint,
-                    ),
+                    Icon(actionIcon ?? Icons.help_outline_rounded,
+                        size: 20, color: hint),
                     if (actionLabel != null) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -157,7 +156,11 @@ class PinKeypad extends StatelessWidget {
 }
 
 class _Key extends StatelessWidget {
-  const _Key({required this.child, required this.onTap, required this.enabled});
+  const _Key({
+    required this.child,
+    required this.onTap,
+    required this.enabled,
+  });
 
   final Widget child;
   final VoidCallback? onTap;

@@ -4,7 +4,10 @@ import 'package:get/get.dart';
 class TransactionSuccessView extends StatelessWidget {
   final bool isIncome;
 
-  const TransactionSuccessView({super.key, this.isIncome = false});
+  const TransactionSuccessView({
+    super.key,
+    this.isIncome = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +29,11 @@ class TransactionSuccessView extends StatelessWidget {
                   color: Color(0xFF4CAF50),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check, color: Colors.white, size: 55),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 55,
+                ),
               ),
 
               const SizedBox(height: 28),
@@ -67,9 +74,7 @@ class TransactionSuccessView extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    Get.until(
-                      (route) => route.isFirst,
-                    ); // Dashboard / Home screen par wapas le jane ke liye
+                    Get.until((route) => route.isFirst); // Dashboard / Home screen par wapas le jane ke liye
                   },
                   child: const Text(
                     'View Dashboard',

@@ -52,6 +52,7 @@ class BudgetController extends GetxController {
 
   bool _autoResetChecked = false;
 
+  bool _databaseBudgetsLoaded = false;
   bool _didInitialize = false;
 
   // ================================================================
@@ -285,23 +286,17 @@ class BudgetController extends GetxController {
   Future<void> syncResetReminder() async {
     final service = NotificationService();
 
-    try {
-      if (!resetReminderOn.value || !isAutomaticReset.value) {
-        await service.cancelBudgetResetReminder();
-        return;
-      }
-
-      await service.scheduleBudgetResetReminder(
-        resetDate: nextResetDate,
-        daysBefore: reminderDaysBefore.value,
-        budgetAmount: totalAllocated,
-        spentAmount: totalSpent,
-      );
-    } catch (_) {
-      // Unit tests and startup paths that have not initialized the
-      // notification plugin can still complete a budget reset.
+    if (!resetReminderOn.value || !isAutomaticReset.value) {
+      await service.cancelBudgetResetReminder();
       return;
     }
+
+    await service.scheduleBudgetResetReminder(
+      resetDate: nextResetDate,
+      daysBefore: reminderDaysBefore.value,
+      budgetAmount: totalAllocated,
+      spentAmount: totalSpent,
+    );
   }
 
   // ================================================================
@@ -319,7 +314,17 @@ class BudgetController extends GetxController {
   Future<void> performReset({bool auto = false}) async {
     _archiveCurrentCycle(auto: auto);
 
-    lastResetDate.value = DateTime.now();
+    final now = DateTime.now();
+
+    lastResetDate.value = now;
+
+    // A reset the user asked for moves the cycle permanently. Start day
+    // 5, reset by hand on the 10th, and from now on every month turns
+    // over on the 10th. An automatic reset lands on the chosen day
+    // anyway, so it leaves the setting alone.
+    if (!auto) {
+      monthStartDay.value = now.day;
+    }
 
     savePersistedState();
 
@@ -417,17 +422,10 @@ class BudgetController extends GetxController {
       final linkedIds = category.linkedIds.isEmpty
           ? <String>{category.id}
           : category.linkedIds.toSet();
-      final mappedTypes = linkedIds
-          .map((id) => categoriesController.originalCategoryTypes[id])
-          .whereType<String>()
-          .toSet();
 
-      if (mappedTypes.isEmpty) {
-        final categoryType = category.type.trim().toLowerCase();
-        return categoryType == 'expense' || categoryType == 'both';
-      }
-
-      return mappedTypes.contains('expense') || mappedTypes.contains('both');
+      return linkedIds.any(
+        (id) => categoriesController.originalCategoryTypes[id] == 'expense',
+      );
     }).toList();
   }
   // ================================================================
@@ -509,6 +507,8 @@ class BudgetController extends GetxController {
     try {
       // First load the local database.
       await _loadBudgetsFromLocalDatabase(userId);
+
+      _databaseBudgetsLoaded = true;
 
       calculateBudgets();
 
@@ -981,6 +981,8 @@ class BudgetController extends GetxController {
 
     final transactionsList = transactionsController.transactions;
 
+    final cycleStart = cycleStartDate;
+
     final List<BudgetModel> tempList = categories.map((cat) {
       final spent = transactionsList
           .where((t) {
@@ -1049,8 +1051,8 @@ class BudgetController extends GetxController {
     return (totalSpent / totalAllocated).clamp(0.0, 1.0);
   }
 
-  Future<void> resetMonthlySpent() {
-    return performReset();
+  void resetMonthlySpent() {
+    performReset();
   }
 
   double get currentCategoryAllocationTotal {
@@ -1061,6 +1063,8 @@ class BudgetController extends GetxController {
   }
 
   double projectedAllocationAfterUpdate(String categoryName, double newLimit) {
+    final normalizedName = categoryName.trim().toLowerCase();
+
     final existingCategory = expenseBudgetCategories.firstWhereOrNull(
       (category) =>
           _normalizeName(category.name) == _normalizeName(categoryName),
@@ -1108,6 +1112,14 @@ class BudgetController extends GetxController {
     // Local-first:
     // save to Drift + queue Supabase sync.
     unawaited(_syncCurrentBudgetsToDatabase());
+  }
+
+  bool _isExpenseBudgetCategory(CategoryModel category) {
+    final type = category.type.trim().toLowerCase();
+
+    // "both" allows a category that exists as both
+    // Expense and Income, while excluding Income-only.
+    return type == 'expense' || type == 'both';
   }
 
   // ================================================================

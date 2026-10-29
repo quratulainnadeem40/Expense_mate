@@ -1,8 +1,10 @@
+import 'package:expense_mate/Feature/settings/view/month_cycle_view.dart';
 import 'package:expense_mate/Core/service/biometric_service.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -12,6 +14,7 @@ import '../controller/settings_controller.dart';
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
+  static const String _addCurrencyOption = '__add_currency__';
 
   SettingsController get controller => Get.find<SettingsController>();
 
@@ -303,6 +306,7 @@ class SettingsView extends StatelessWidget {
           ).copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
+       
       ),
       body: Obx(
         () => ListView(
@@ -458,6 +462,39 @@ class SettingsView extends StatelessWidget {
                 ),
 
                 // ---------------------------------------------
+                // MONTH CYCLE
+                //
+                // Used to be set from the Budgets and Categories
+                // screens. Both live here now, so the same kind of
+                // setting is not scattered across the app.
+                // ---------------------------------------------
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.calendar_month_rounded,
+                    isDark: isDark,
+                  ),
+                  title: Text(
+                    'Month Cycle',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'When your budget and categories reset',
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                  onTap: () => Get.to(() => const MonthCycleView()),
+                ),
+
+                // ---------------------------------------------
                 // APP LOCK
                 // ---------------------------------------------
                 ListTile(
@@ -544,7 +581,8 @@ class SettingsView extends StatelessWidget {
                             }
                           }
 
-                          await BiometricService.instance.setEnabled(value);
+                          await BiometricService.instance
+                              .setEnabled(value);
                           controller.update();
                         },
                       );
@@ -1052,6 +1090,7 @@ class SettingsView extends StatelessWidget {
                 // =================================================
                 // PROFILE PICTURE
                 // =================================================
+
                 Obx(
                   () => Container(
                     padding: const EdgeInsets.all(4),
@@ -1308,7 +1347,9 @@ class SettingsView extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
         title: const Text('Remove the PIN?'),
         content: Text(
           'Anyone who picks up this phone will be able to open Expense '
@@ -1320,7 +1361,10 @@ class SettingsView extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE53935),

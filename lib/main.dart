@@ -10,6 +10,7 @@ import 'package:expense_mate/Core/routes/page_routes.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:expense_mate/Core/service/storage_service.dart';
+import 'package:expense_mate/Core/Database/database_service.dart';
 import 'package:expense_mate/Core/theme/custom_theme.dart';
 
 import 'package:expense_mate/Core/Database/sync/sync_manager.dart';

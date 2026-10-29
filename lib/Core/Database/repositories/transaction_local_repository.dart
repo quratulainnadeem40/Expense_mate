@@ -11,16 +11,20 @@ class TransactionLocalRepository {
   // GET ALL ACTIVE TRANSACTIONS
   // ------------------------------------------------------------
 
-  Future<List<LocalTransaction>> getTransactions(String userId) {
+  Future<List<LocalTransaction>> getTransactions(
+    String userId,
+  ) {
     return (database.select(database.localTransactions)
           ..where(
-            (tbl) => tbl.userId.equals(userId) & tbl.isDeleted.equals(false),
+            (tbl) =>
+                tbl.userId.equals(userId) &
+                tbl.isDeleted.equals(false),
           )
           ..orderBy([
             (tbl) => OrderingTerm(
-              expression: tbl.transactionDate,
-              mode: OrderingMode.desc,
-            ),
+                  expression: tbl.transactionDate,
+                  mode: OrderingMode.desc,
+                ),
           ]))
         .get();
   }
@@ -29,18 +33,26 @@ class TransactionLocalRepository {
   // GET SINGLE TRANSACTION
   // ------------------------------------------------------------
 
-  Future<LocalTransaction?> getTransactionById(String transactionId) {
-    return (database.select(
-      database.localTransactions,
-    )..where((tbl) => tbl.id.equals(transactionId))).getSingleOrNull();
+  Future<LocalTransaction?> getTransactionById(
+    String transactionId,
+  ) {
+    return (database.select(database.localTransactions)
+          ..where(
+            (tbl) => tbl.id.equals(transactionId),
+          ))
+        .getSingleOrNull();
   }
 
   // ------------------------------------------------------------
   // INSERT TRANSACTION
   // ------------------------------------------------------------
 
-  Future<void> insertTransaction(LocalTransactionsCompanion transaction) async {
-    await database.into(database.localTransactions).insert(transaction);
+  Future<void> insertTransaction(
+    LocalTransactionsCompanion transaction,
+  ) async {
+    await database
+        .into(database.localTransactions)
+        .insert(transaction);
   }
 
   // ------------------------------------------------------------
@@ -53,46 +65,65 @@ class TransactionLocalRepository {
   ) async {
     return database
         .update(database.localTransactions)
-        .replace(transaction.copyWith(id: Value(transactionId)));
+        .replace(
+          transaction.copyWith(
+            id: Value(transactionId),
+          ),
+        );
   }
 
-  // ------------------------------------------------------------
-  // SOFT DELETE TRANSACTION
-  // ------------------------------------------------------------
+ 
 
-  Future<int> softDeleteTransaction(String transactionId) async {
-    return (database.update(
-      database.localTransactions,
-    )..where((tbl) => tbl.id.equals(transactionId))).write(
-      LocalTransactionsCompanion(
-        isDeleted: const Value(true),
-        updatedAt: Value(DateTime.now()),
-      ),
-    );
-  }
+ // ------------------------------------------------------------
+// SOFT DELETE TRANSACTION
+// ------------------------------------------------------------
 
-  // ------------------------------------------------------------
-  // RESTORE TRANSACTION
-  // ------------------------------------------------------------
+Future<int> softDeleteTransaction(
+  String transactionId,
+) async {
+  return (database.update(database.localTransactions)
+        ..where(
+          (tbl) => tbl.id.equals(transactionId),
+        ))
+      .write(
+    LocalTransactionsCompanion(
+      isDeleted: const Value(true),
+      updatedAt: Value(DateTime.now()),
+    ),
+  );
+}
 
-  Future<int> restoreTransaction(String transactionId) async {
-    return (database.update(
-      database.localTransactions,
-    )..where((tbl) => tbl.id.equals(transactionId))).write(
-      LocalTransactionsCompanion(
-        isDeleted: const Value(false),
-        updatedAt: Value(DateTime.now()),
-      ),
-    );
-  }
+// ------------------------------------------------------------
+// RESTORE TRANSACTION
+// ------------------------------------------------------------
+
+Future<int> restoreTransaction(
+  String transactionId,
+) async {
+  return (database.update(database.localTransactions)
+        ..where(
+          (tbl) => tbl.id.equals(transactionId),
+        ))
+      .write(
+    LocalTransactionsCompanion(
+      isDeleted: const Value(false),
+      updatedAt: Value(DateTime.now()),
+    ),
+  );
+}
   // ------------------------------------------------------------
   // GET DELETED TRANSACTIONS
   // ------------------------------------------------------------
 
-  Future<List<LocalTransaction>> getDeletedTransactions(String userId) {
-    return (database.select(database.localTransactions)..where(
-          (tbl) => tbl.userId.equals(userId) & tbl.isDeleted.equals(true),
-        ))
+  Future<List<LocalTransaction>> getDeletedTransactions(
+    String userId,
+  ) {
+    return (database.select(database.localTransactions)
+          ..where(
+            (tbl) =>
+                tbl.userId.equals(userId) &
+                tbl.isDeleted.equals(true),
+          ))
         .get();
   }
 
@@ -100,9 +131,13 @@ class TransactionLocalRepository {
   // PERMANENT DELETE TRANSACTION
   // ------------------------------------------------------------
 
-  Future<int> permanentlyDeleteTransaction(String transactionId) {
-    return (database.delete(
-      database.localTransactions,
-    )..where((tbl) => tbl.id.equals(transactionId))).go();
+  Future<int> permanentlyDeleteTransaction(
+    String transactionId,
+  ) {
+    return (database.delete(database.localTransactions)
+          ..where(
+            (tbl) => tbl.id.equals(transactionId),
+          ))
+        .go();
   }
 }

@@ -51,7 +51,8 @@ class WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     final isNegative = wallet.balance < 0;
 
@@ -60,13 +61,20 @@ class WalletCard extends StatelessWidget {
       elevation: 0,
 
       color: isSelected
-          ? (isDark ? const Color(0xFF263D2A) : const Color(0xFFE8F5E9))
-          : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+          ? (isDark
+              ? const Color(0xFF263D2A)
+              : const Color(0xFFE8F5E9))
+          : (isDark
+              ? AppColors.surfaceDark
+              : AppColors.surfaceLight),
 
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isSelected
-            ? const BorderSide(color: AppColors.primary, width: 2)
+            ? const BorderSide(
+                color: AppColors.primary,
+                width: 2,
+              )
             : BorderSide.none,
       ),
 
@@ -74,17 +82,27 @@ class WalletCard extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
 
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
 
         // ======================================================
         // WALLET ICON
         // ======================================================
+
         leading: Stack(
           alignment: Alignment.bottomRight,
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.secondary.withValues(alpha: 0.25),
-              child: Icon(_getWalletIcon(), color: AppColors.primary),
+              backgroundColor:
+                  AppColors.secondary.withValues(
+                alpha: 0.25,
+              ),
+              child: Icon(
+                _getWalletIcon(),
+                color: AppColors.primary,
+              ),
             ),
 
             if (isSelectionMode && isSelected)
@@ -95,7 +113,11 @@ class WalletCard extends StatelessWidget {
                   color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check, size: 14, color: Colors.white),
+                child: const Icon(
+                  Icons.check,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
           ],
         ),
@@ -103,21 +125,27 @@ class WalletCard extends StatelessWidget {
         // ======================================================
         // WALLET NAME
         // ======================================================
+
         title: Text(
           wallet.name,
-          style: AppTextStyles.bodyLarge(
-            isDark,
-          ).copyWith(fontWeight: FontWeight.w600),
+          style: AppTextStyles.bodyLarge(isDark).copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
 
         // ======================================================
         // WALLET TYPE
         // ======================================================
-        subtitle: Text(wallet.type, style: AppTextStyles.bodyMedium(isDark)),
+
+        subtitle: Text(
+          wallet.type,
+          style: AppTextStyles.bodyMedium(isDark),
+        ),
 
         // ======================================================
         // BALANCE + SELECTION
         // ======================================================
+
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -135,8 +163,12 @@ class WalletCard extends StatelessWidget {
               const SizedBox(width: 10),
 
               Icon(
-                isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                color: isSelected ? AppColors.primary : Colors.grey,
+                isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.circle_outlined,
+                color: isSelected
+                    ? AppColors.primary
+                    : Colors.grey,
                 size: 24,
               ),
             ],

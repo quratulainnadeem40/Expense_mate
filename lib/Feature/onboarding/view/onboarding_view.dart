@@ -18,8 +18,10 @@ class OnboardingView extends GetView<OnboardingController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final background = isDark ? const Color(0xFF101010) : Colors.white;
-    final primaryText = isDark ? Colors.white : const Color(0xFF1C1C1C);
-    final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final primaryText =
+        isDark ? Colors.white : const Color(0xFF1C1C1C);
+    final secondaryText =
+        isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     return Scaffold(
       backgroundColor: background,
@@ -145,8 +147,7 @@ class OnboardingView extends GetView<OnboardingController> {
         return _MessagePage(
           icon: Icons.phonelink_lock_rounded,
           title: 'Your money, on your phone',
-          body:
-              'Every entry is stored on this device first and synced '
+          body: 'Every entry is stored on this device first and synced '
               'to your account, so the app keeps working even when the '
               'signal does not.',
           primaryText: primaryText,
@@ -157,8 +158,7 @@ class OnboardingView extends GetView<OnboardingController> {
         return _MessagePage(
           icon: Icons.bolt_rounded,
           title: 'An entry takes three taps',
-          body:
-              'Tap the green button, type the amount, pick a category '
+          body: 'Tap the green button, type the amount, pick a category '
               'and wallet. Budgets, goals and reports fill themselves in '
               'from there.',
           primaryText: primaryText,
@@ -305,7 +305,11 @@ class _MessagePage extends StatelessWidget {
           Text(
             body,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, height: 1.6, color: secondaryText),
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.6,
+              color: secondaryText,
+            ),
           ),
         ],
       ),
@@ -420,7 +424,10 @@ class _PickRow extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 11,
+            ),
             decoration: BoxDecoration(
               color: isActive
                   ? _green.withOpacity(isDark ? 0.16 : 0.08)
@@ -472,7 +479,10 @@ class _PickRow extends StatelessWidget {
                       const SizedBox(height: 1),
                       Text(
                         subtitle,
-                        style: TextStyle(fontSize: 11.5, color: secondaryText),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: secondaryText,
+                        ),
                       ),
                     ],
                   ),

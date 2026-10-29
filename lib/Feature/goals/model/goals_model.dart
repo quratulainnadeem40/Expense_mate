@@ -72,8 +72,7 @@ class GoalModel {
   /// emoji instead of an icon key or omitted the creation date.
   factory GoalModel.fromMap(Map<String, dynamic> map) {
     return GoalModel(
-      id:
-          map['id']?.toString() ??
+      id: map['id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       title: map['title']?.toString() ?? 'Untitled goal',
       iconKey: goalIconKeyFromStoredValue(
@@ -81,20 +80,19 @@ class GoalModel {
       ),
       targetAmount: (map['targetAmount'] as num?)?.toDouble() ?? 0.0,
       savedAmount: (map['savedAmount'] as num?)?.toDouble() ?? 0.0,
-      targetDate:
-          DateTime.tryParse(map['targetDate']?.toString() ?? '') ??
+      targetDate: DateTime.tryParse(map['targetDate']?.toString() ?? '') ??
           DateTime.now().add(const Duration(days: 30)),
       createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? ''),
     );
   }
 
   GoalModel copy() => GoalModel(
-    id: id,
-    title: title,
-    iconKey: iconKey,
-    targetAmount: targetAmount,
-    savedAmount: savedAmount,
-    targetDate: targetDate,
-    createdAt: createdAt,
-  );
+        id: id,
+        title: title,
+        iconKey: iconKey,
+        targetAmount: targetAmount,
+        savedAmount: savedAmount,
+        targetDate: targetDate,
+        createdAt: createdAt,
+      );
 }

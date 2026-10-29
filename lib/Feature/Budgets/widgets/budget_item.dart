@@ -12,10 +12,7 @@ class BudgetItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       child: ListTile(
-        title: Text(
-          budget.categoryName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(budget.categoryName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -25,9 +22,7 @@ class BudgetItem extends StatelessWidget {
               color: budget.progress > 0.85 ? Colors.red : Colors.blue,
             ),
             const SizedBox(height: 4),
-            Text(
-              'Spent: ${Formatters.money(budget.spentAmount)} / ${Formatters.money(budget.allocatedAmount)}',
-            ),
+            Text('Spent: ${Formatters.money(budget.spentAmount)} / ${Formatters.money(budget.allocatedAmount)}'),
           ],
         ),
       ),

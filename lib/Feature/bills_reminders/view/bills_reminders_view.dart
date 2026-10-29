@@ -1,3 +1,4 @@
+
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,11 +13,13 @@ import 'edit_bill_view.dart';
 class BillsRemindersView extends GetView<BillsRemindersController> {
   const BillsRemindersView({super.key});
 
-  SettingsController get settingsController => Get.find<SettingsController>();
+  SettingsController get settingsController =>
+      Get.find<SettingsController>();
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -29,9 +32,12 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
       // ==========================================================
       // BODY
       // ==========================================================
+
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
         }
 
         return RefreshIndicator(
@@ -45,38 +51,42 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // ====================================================
               // SUMMARY
               // ====================================================
-              Column(
-                children: [
-                  _SummaryCard(
-                    title: 'Upcoming',
-                    count: controller.upcomingCount,
-                    currency: settingsController.selectedCurrency.value,
-                    amount: controller.upcomingAmount,
-                    icon: Icons.event_note_rounded,
-                    isDark: isDark,
-                    fullWidth: true,
-                  ),
 
-                  const SizedBox(height: 12),
+Column(
+  children: [
+    _SummaryCard(
+      title: 'Upcoming',
+      count: controller.upcomingCount,
+      currency:
+          settingsController.selectedCurrency.value,
+      amount: controller.upcomingAmount,
+      icon: Icons.event_note_rounded,
+      isDark: isDark,
+      fullWidth: true,
+    ),
 
-                  _SummaryCard(
-                    title: 'Overdue',
-                    count: controller.overdueCount,
-                    currency: settingsController.selectedCurrency.value,
-                    amount: controller.overdueAmount,
-                    icon: Icons.warning_amber_rounded,
-                    isDark: isDark,
-                    fullWidth: true,
-                  ),
-                ],
-              ),
+    const SizedBox(height: 12),
+
+    _SummaryCard(
+      title: 'Overdue',
+      count: controller.overdueCount,
+      currency:
+          settingsController.selectedCurrency.value,
+      amount: controller.overdueAmount,
+      icon: Icons.warning_amber_rounded,
+      isDark: isDark,
+      fullWidth: true,
+    ),
+  ],
+),
 
               const SizedBox(height: 12),
 
               _SummaryCard(
                 title: 'Paid',
                 count: controller.paidCount,
-                currency: settingsController.selectedCurrency.value,
+                currency:
+                    settingsController.selectedCurrency.value,
                 amount: controller.paidAmount,
                 icon: Icons.check_circle_outline_rounded,
                 isDark: isDark,
@@ -88,6 +98,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // ====================================================
               // DUE TODAY
               // ====================================================
+
               _SectionTitle(
                 title: 'Due Today',
                 count: controller.todayBills.length,
@@ -107,15 +118,22 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
                   (bill) => _BillTile(
                     bill: bill,
                     isDark: isDark,
-                    currency: settingsController.selectedCurrency.value,
+                    currency:
+                        settingsController.selectedCurrency.value,
                     onMarkPaid: () {
                       controller.markAsPaid(bill.id);
                     },
                     onDelete: () {
-                      _showDeleteDialog(context, bill.title, bill.id);
+                      _showDeleteDialog(
+                        context,
+                        bill.title,
+                        bill.id,
+                      );
                     },
                     onEdit: () {
-                      Get.to(() => EditBillView(bill: bill));
+                      Get.to(
+                        () => EditBillView(bill: bill),
+                      );
                     },
                   ),
                 ),
@@ -123,6 +141,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // ====================================================
               // UPCOMING BILLS
               // ====================================================
+
               const SizedBox(height: 24),
 
               _SectionTitle(
@@ -144,15 +163,22 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
                   (bill) => _BillTile(
                     bill: bill,
                     isDark: isDark,
-                    currency: settingsController.selectedCurrency.value,
+                    currency:
+                        settingsController.selectedCurrency.value,
                     onMarkPaid: () {
                       controller.markAsPaid(bill.id);
                     },
                     onDelete: () {
-                      _showDeleteDialog(context, bill.title, bill.id);
+                      _showDeleteDialog(
+                        context,
+                        bill.title,
+                        bill.id,
+                      );
                     },
                     onEdit: () {
-                      Get.to(() => EditBillView(bill: bill));
+                      Get.to(
+                        () => EditBillView(bill: bill),
+                      );
                     },
                   ),
                 ),
@@ -160,6 +186,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // ====================================================
               // OVERDUE BILLS
               // ====================================================
+
               const SizedBox(height: 24),
 
               _SectionTitle(
@@ -182,15 +209,22 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
                     bill: bill,
                     isDark: isDark,
                     isOverdue: true,
-                    currency: settingsController.selectedCurrency.value,
+                    currency:
+                        settingsController.selectedCurrency.value,
                     onMarkPaid: () {
                       controller.markAsPaid(bill.id);
                     },
                     onDelete: () {
-                      _showDeleteDialog(context, bill.title, bill.id);
+                      _showDeleteDialog(
+                        context,
+                        bill.title,
+                        bill.id,
+                      );
                     },
                     onEdit: () {
-                      Get.to(() => EditBillView(bill: bill));
+                      Get.to(
+                        () => EditBillView(bill: bill),
+                      );
                     },
                   ),
                 ),
@@ -198,6 +232,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
               // ====================================================
               // PAID BILLS
               // ====================================================
+
               const SizedBox(height: 24),
 
               _SectionTitle(
@@ -219,15 +254,22 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
                   (bill) => _BillTile(
                     bill: bill,
                     isDark: isDark,
-                    currency: settingsController.selectedCurrency.value,
+                    currency:
+                        settingsController.selectedCurrency.value,
                     onMarkPaid: () {
                       controller.markAsUnpaid(bill.id);
                     },
                     onDelete: () {
-                      _showDeleteDialog(context, bill.title, bill.id);
+                      _showDeleteDialog(
+                        context,
+                        bill.title,
+                        bill.id,
+                      );
                     },
                     onEdit: () {
-                      Get.to(() => EditBillView(bill: bill));
+                      Get.to(
+                        () => EditBillView(bill: bill),
+                      );
                     },
                   ),
                 ),
@@ -241,9 +283,12 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
       // ==========================================================
       // ADD BILL BUTTON
       // ==========================================================
+
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Get.to(() => const AddBillView());
+          Get.to(
+            () => const AddBillView(),
+          );
         },
         icon: const Icon(Icons.add),
         label: const Text('Add Bill'),
@@ -255,7 +300,11 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
   // DELETE DIALOG
   // ============================================================
 
-  void _showDeleteDialog(BuildContext context, String billName, String billId) {
+  void _showDeleteDialog(
+    BuildContext context,
+    String billName,
+    String billId,
+  ) {
     // Prevent multiple dialogs from opening.
     if (Get.isDialogOpen == true) {
       return;
@@ -264,7 +313,9 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
     Get.dialog(
       AlertDialog(
         title: const Text('Delete Bill'),
-        content: Text('Are you sure you want to delete "$billName"?'),
+        content: Text(
+          'Are you sure you want to delete "$billName"?',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -284,7 +335,9 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
             },
             child: const Text(
               'Delete',
-              style: TextStyle(color: AppColors.expenseRed),
+              style: TextStyle(
+                color: AppColors.expenseRed,
+              ),
             ),
           ),
         ],
@@ -321,9 +374,14 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 18,
+      ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        color: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -332,10 +390,16 @@ class _SummaryCard extends StatelessWidget {
           // ======================================================
           // ICON
           // ======================================================
+
           CircleAvatar(
             radius: 29,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.10),
-            child: Icon(icon, color: AppColors.primary, size: 30),
+            backgroundColor:
+                AppColors.primary.withValues(alpha: 0.10),
+            child: Icon(
+              icon,
+              color: AppColors.primary,
+              size: 30,
+            ),
           ),
 
           const SizedBox(width: 12),
@@ -343,6 +407,7 @@ class _SummaryCard extends StatelessWidget {
           // ======================================================
           // TITLE + AMOUNT
           // ======================================================
+
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -361,9 +426,9 @@ class _SummaryCard extends StatelessWidget {
                   '$currency ${amount.toStringAsFixed(2)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyLarge(
-                    isDark,
-                  ).copyWith(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.bodyLarge(isDark).copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -372,20 +437,22 @@ class _SummaryCard extends StatelessWidget {
           // ======================================================
           // SPACE BEFORE COUNT
           // ======================================================
+
           const SizedBox(width: 10),
 
           // ======================================================
           // COUNT
           // ======================================================
+
           SizedBox(
             width: 32,
             child: Text(
               '$count',
               textAlign: TextAlign.right,
               maxLines: 1,
-              style: AppTextStyles.headingMedium(
-                isDark,
-              ).copyWith(fontWeight: FontWeight.bold),
+              style: AppTextStyles.headingMedium(isDark).copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -414,12 +481,15 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: AppTextStyles.headingMedium(isDark)),
+        Text(
+          title,
+          style: AppTextStyles.headingMedium(isDark),
+        ),
         Text(
           '$count',
-          style: AppTextStyles.bodyMedium(
-            isDark,
-          ).copyWith(fontWeight: FontWeight.bold),
+          style: AppTextStyles.bodyMedium(isDark).copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -460,13 +530,19 @@ class _BillTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: 0,
-      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      color: isDark
+          ? AppColors.surfaceDark
+          : AppColors.surfaceLight,
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 6,
+        ),
 
         // ========================================================
         // LEADING ICON
         // ========================================================
+
         leading: CircleAvatar(
           backgroundColor: isOverdue
               ? AppColors.expenseRed.withValues(alpha: 0.10)
@@ -475,46 +551,55 @@ class _BillTile extends StatelessWidget {
             isOverdue
                 ? Icons.warning_amber_rounded
                 : Icons.receipt_long_rounded,
-            color: isOverdue ? AppColors.expenseRed : AppColors.primary,
+            color: isOverdue
+                ? AppColors.expenseRed
+                : AppColors.primary,
           ),
         ),
 
         // ========================================================
         // BILL TITLE
         // ========================================================
+
         title: Text(
           bill.title,
-          style: AppTextStyles.bodyLarge(
-            isDark,
-          ).copyWith(fontWeight: FontWeight.w600),
+          style: AppTextStyles.bodyLarge(isDark).copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
 
         // ========================================================
         // BILL DETAILS
         // ========================================================
+
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
 
-            if (bill.categoryId != null && bill.categoryId!.isNotEmpty)
+            if (bill.categoryId != null &&
+                bill.categoryId!.isNotEmpty)
               Text(
                 'Category selected',
                 style: AppTextStyles.bodyMedium(isDark),
               ),
 
-            if (bill.categoryId != null && bill.categoryId!.isNotEmpty)
+            if (bill.categoryId != null &&
+                bill.categoryId!.isNotEmpty)
               const SizedBox(height: 3),
 
-            Text('Due: $date', style: AppTextStyles.caption(isDark)),
+            Text(
+              'Due: $date',
+              style: AppTextStyles.caption(isDark),
+            ),
 
             const SizedBox(height: 3),
 
             Text(
               '$currency ${bill.amount.toStringAsFixed(2)}',
-              style: AppTextStyles.caption(
-                isDark,
-              ).copyWith(fontWeight: FontWeight.w600),
+              style: AppTextStyles.caption(isDark).copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
 
             if (bill.reminderEnabled) ...[
@@ -540,6 +625,7 @@ class _BillTile extends StatelessWidget {
         // ========================================================
         // MENU
         // ========================================================
+
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'edit') {
@@ -556,7 +642,10 @@ class _BillTile extends StatelessWidget {
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit_outlined, size: 20),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                    ),
                     SizedBox(width: 10),
                     Text('Edit'),
                   ],
@@ -572,7 +661,11 @@ class _BillTile extends StatelessWidget {
                           : Icons.check_circle_outline,
                     ),
                     const SizedBox(width: 8),
-                    Text(bill.isPaid ? 'Mark Unpaid' : 'Mark Paid'),
+                    Text(
+                      bill.isPaid
+                          ? 'Mark Unpaid'
+                          : 'Mark Paid',
+                    ),
                   ],
                 ),
               ),
@@ -580,7 +673,10 @@ class _BillTile extends StatelessWidget {
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, color: AppColors.expenseRed),
+                    Icon(
+                      Icons.delete_outline,
+                      color: AppColors.expenseRed,
+                    ),
                     SizedBox(width: 8),
                     Text('Delete'),
                   ],
@@ -615,18 +711,31 @@ class _EmptySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+      padding: const EdgeInsets.symmetric(
+        vertical: 28,
+        horizontal: 16,
+      ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        color: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 42, color: AppColors.primary),
+          Icon(
+            icon,
+            size: 42,
+            color: AppColors.primary,
+          ),
           const SizedBox(height: 10),
-          Text(message, style: AppTextStyles.bodyMedium(isDark)),
+          Text(
+            message,
+            style: AppTextStyles.bodyMedium(isDark),
+          ),
         ],
       ),
     );
   }
 }
+

@@ -27,17 +27,23 @@ class AuthTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: TextStyle(color: isDark ? Colors.white : Colors.black),
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.black,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
+        hintStyle: TextStyle(
+          color: isDark ? Colors.white54 : Colors.grey,
+        ),
         prefixIcon: Icon(
           prefixIcon,
           color: isDark ? Colors.white70 : Colors.grey,
         ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF2F4EF),
+        fillColor: isDark
+            ? const Color(0xFF1A1A1A)
+            : const Color(0xFFF2F4EF),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -48,7 +54,10 @@ class AuthTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(
+            color:AppColors.primary,
+            width: 1.5,
+          ),
         ),
       ),
     );

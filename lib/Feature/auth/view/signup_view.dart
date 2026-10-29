@@ -19,7 +19,10 @@ class SignupView extends GetView<AuthController> {
           : const Color(0xFFF6F7F2),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 30,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -36,7 +39,11 @@ class SignupView extends GetView<AuthController> {
               const SizedBox(height: 20),
 
               Center(
-                child: Image.asset('assets/logo.png', height: 80, width: 80),
+                child: Image.asset(
+                  'assets/logo.png',
+                  height: 80,
+                  width: 80,
+                ),
               ),
 
               const SizedBox(height: 24),

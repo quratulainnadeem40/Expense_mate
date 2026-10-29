@@ -21,6 +21,11 @@ class ReportModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'title': title, 'description': description, 'date': date};
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'date': date,
+    };
   }
 }

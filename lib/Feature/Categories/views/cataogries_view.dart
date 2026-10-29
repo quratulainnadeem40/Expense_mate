@@ -440,13 +440,15 @@ class _CategoriesViewState extends State<CategoriesView>
     );
     if (!confirmed || !mounted) return;
 
+    final now = DateTime.now();
+
+    // A reset done by hand moves the cycle for good: resetting on the
+    // 10th makes the 10th the new start day, so every month after this
+    // turns over then. Matches how the budget cycle behaves.
     final box = Hive.box(AppKeys.budgetBox);
-    await box.put(AppKeys.categoryCycleStartDayKey, day);
+    await box.put(AppKeys.categoryCycleStartDayKey, now.day);
     await box.put(AppKeys.categoryCycleAutomaticResetKey, false);
-    await box.put(
-      AppKeys.categoryCycleManualResetKey,
-      DateTime.now().toIso8601String(),
-    );
+    await box.put(AppKeys.categoryCycleManualResetKey, now.toIso8601String());
 
     if (sheetContext.mounted) {
       Navigator.pop(sheetContext);
@@ -1028,6 +1030,115 @@ class _CategoriesViewState extends State<CategoriesView>
     }
   }
 
+  IconData _getIconData(String iconName) {
+    switch (iconName.toLowerCase().trim()) {
+      case 'food':
+      case 'food & dining':
+      case 'restaurant':
+      case 'meal':
+        return Icons.restaurant_rounded;
+
+      case 'groceries':
+        return Icons.shopping_basket_rounded;
+
+      case 'rent':
+      case 'housing':
+      case 'home':
+        return Icons.home_work_rounded;
+
+      case 'bills':
+      case 'utilities':
+        return Icons.receipt_long_rounded;
+
+      case 'transport':
+      case 'transportation':
+      case 'directions_car':
+        return Icons.directions_car_rounded;
+
+      case 'fuel':
+        return Icons.local_gas_station_rounded;
+
+      case 'shopping':
+      case 'shopping_bag':
+        return Icons.shopping_bag_rounded;
+
+      case 'clothing':
+        return Icons.checkroom_rounded;
+
+      case 'health':
+      case 'healthcare':
+      case 'medicine':
+        return Icons.medical_services_rounded;
+
+      case 'education':
+      case 'school':
+        return Icons.school_rounded;
+
+      case 'mobile':
+      case 'phone':
+      case 'mobile & internet':
+        return Icons.phone_android_rounded;
+
+      case 'internet':
+      case 'wifi':
+        return Icons.wifi_rounded;
+
+      case 'entertainment':
+      case 'movie':
+        return Icons.movie_rounded;
+
+      case 'travel':
+      case 'flight':
+        return Icons.flight_rounded;
+
+      case 'beauty':
+      case 'personal care':
+        return Icons.face_retouching_natural_rounded;
+
+      case 'fitness':
+      case 'sports':
+        return Icons.fitness_center_rounded;
+
+      case 'pets':
+        return Icons.pets_rounded;
+
+      case 'gifts':
+      case 'gift':
+      case 'gifts & donations':
+        return Icons.card_giftcard_rounded;
+
+      case 'subscriptions':
+        return Icons.subscriptions_rounded;
+
+      case 'home maintenance':
+      case 'maintenance':
+      case 'tools':
+        return Icons.handyman_rounded;
+
+      // Existing categories
+      case 'work':
+      case 'salary':
+      case 'freelance':
+        return Icons.account_balance_wallet_rounded;
+
+      case 'business':
+        return Icons.business_center_rounded;
+
+      case 'investment':
+        return Icons.trending_up_rounded;
+
+      case 'bookmark':
+        return Icons.bookmark_rounded;
+
+      case 'other':
+        return Icons.more_horiz_rounded;
+
+      default:
+        return Icons.category_rounded;
+    }
+  }
+
+  // ============================================================
   // BUILD
   // ============================================================
 
@@ -1114,11 +1225,6 @@ class _CategoriesViewState extends State<CategoriesView>
                       });
                     },
                     child: const Text('Select'),
-                  ),
-                  IconButton(
-                    tooltip: 'Category cycle settings',
-                    onPressed: _showCycleSetupSheet,
-                    icon: const Icon(Icons.calendar_month_rounded),
                   ),
                   IconButton(
                     tooltip: 'Open navigation menu',

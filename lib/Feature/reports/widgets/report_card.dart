@@ -12,10 +12,7 @@ class ReportCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
       child: ListTile(
-        title: Text(
-          report.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(report.title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text("${report.description}\nDate: ${report.date}"),
         isThreeLine: true,
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),

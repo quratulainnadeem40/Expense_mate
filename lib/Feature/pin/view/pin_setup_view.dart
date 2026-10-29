@@ -112,7 +112,9 @@ class _PinSetupViewState extends State<PinSetupView> {
 
     final useIt = await Get.dialog<bool>(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
         title: Text('Use $label too?'),
         content: Text(
           'Unlock with $label instead of typing the PIN each time. '
@@ -164,7 +166,8 @@ class _PinSetupViewState extends State<PinSetupView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final primaryText = isDark ? Colors.white : const Color(0xFF1C1C1C);
-    final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final secondaryText =
+        isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF101010) : Colors.white,
@@ -177,10 +180,8 @@ class _PinSetupViewState extends State<PinSetupView> {
                 children: [
                   if (_isConfirming)
                     IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_rounded,
-                        color: secondaryText,
-                      ),
+                      icon: Icon(Icons.arrow_back_rounded,
+                          color: secondaryText),
                       onPressed: () => setState(() {
                         _first = '';
                         _entry = '';
@@ -240,7 +241,7 @@ class _PinSetupViewState extends State<PinSetupView> {
                 _isConfirming
                     ? 'Type the same four digits once more.'
                     : 'Four digits. You will enter this each time the '
-                          'app opens.',
+                        'app opens.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.5,
@@ -276,7 +277,10 @@ class _PinSetupViewState extends State<PinSetupView> {
 
             const Spacer(),
 
-            PinKeypad(onDigit: _onDigit, onBackspace: _onBackspace),
+            PinKeypad(
+              onDigit: _onDigit,
+              onBackspace: _onBackspace,
+            ),
 
             const Spacer(),
           ],

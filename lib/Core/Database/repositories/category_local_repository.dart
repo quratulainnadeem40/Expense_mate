@@ -7,28 +7,40 @@ class CategoryLocalRepository {
 
   CategoryLocalRepository(this.database);
 
-  Future<List<LocalCategory>> getCategories(String userId) {
+  Future<List<LocalCategory>> getCategories(
+    String userId,
+  ) {
     return (database.select(database.localCategories)
           ..where(
-            (tbl) => tbl.userId.equals(userId) & tbl.isDeleted.equals(false),
+            (tbl) =>
+                tbl.userId.equals(userId) &
+                tbl.isDeleted.equals(false),
           )
           ..orderBy([
             (tbl) => OrderingTerm(
-              expression: tbl.createdAt,
-              mode: OrderingMode.desc,
-            ),
+                  expression: tbl.createdAt,
+                  mode: OrderingMode.desc,
+                ),
           ]))
         .get();
   }
 
-  Future<LocalCategory?> getCategoryById(String categoryId) {
-    return (database.select(
-      database.localCategories,
-    )..where((tbl) => tbl.id.equals(categoryId))).getSingleOrNull();
+  Future<LocalCategory?> getCategoryById(
+    String categoryId,
+  ) {
+    return (database.select(database.localCategories)
+          ..where(
+            (tbl) => tbl.id.equals(categoryId),
+          ))
+        .getSingleOrNull();
   }
 
-  Future<void> insertCategory(LocalCategoriesCompanion category) async {
-    await database.into(database.localCategories).insert(category);
+  Future<void> insertCategory(
+    LocalCategoriesCompanion category,
+  ) async {
+    await database
+        .into(database.localCategories)
+        .insert(category);
   }
 
   Future<bool> updateCategory(
@@ -37,13 +49,21 @@ class CategoryLocalRepository {
   ) async {
     return database
         .update(database.localCategories)
-        .replace(category.copyWith(id: Value(categoryId)));
+        .replace(
+          category.copyWith(
+            id: Value(categoryId),
+          ),
+        );
   }
 
-  Future<int> softDeleteCategory(String categoryId) async {
-    return (database.update(
-      database.localCategories,
-    )..where((tbl) => tbl.id.equals(categoryId))).write(
+  Future<int> softDeleteCategory(
+    String categoryId,
+  ) async {
+    return (database.update(database.localCategories)
+          ..where(
+            (tbl) => tbl.id.equals(categoryId),
+          ))
+        .write(
       LocalCategoriesCompanion(
         isDeleted: const Value(true),
         updatedAt: Value(DateTime.now()),
@@ -51,10 +71,14 @@ class CategoryLocalRepository {
     );
   }
 
-  Future<int> restoreCategory(String categoryId) async {
-    return (database.update(
-      database.localCategories,
-    )..where((tbl) => tbl.id.equals(categoryId))).write(
+  Future<int> restoreCategory(
+    String categoryId,
+  ) async {
+    return (database.update(database.localCategories)
+          ..where(
+            (tbl) => tbl.id.equals(categoryId),
+          ))
+        .write(
       LocalCategoriesCompanion(
         isDeleted: const Value(false),
         updatedAt: Value(DateTime.now()),
@@ -62,16 +86,25 @@ class CategoryLocalRepository {
     );
   }
 
-  Future<List<LocalCategory>> getDeletedCategories(String userId) {
-    return (database.select(database.localCategories)..where(
-          (tbl) => tbl.userId.equals(userId) & tbl.isDeleted.equals(true),
-        ))
+  Future<List<LocalCategory>> getDeletedCategories(
+    String userId,
+  ) {
+    return (database.select(database.localCategories)
+          ..where(
+            (tbl) =>
+                tbl.userId.equals(userId) &
+                tbl.isDeleted.equals(true),
+          ))
         .get();
   }
 
-  Future<int> permanentlyDeleteCategory(String categoryId) {
-    return (database.delete(
-      database.localCategories,
-    )..where((tbl) => tbl.id.equals(categoryId))).go();
-  }
+  Future<int> permanentlyDeleteCategory(
+  String categoryId,
+) {
+  return (database.delete(database.localCategories)
+        ..where(
+          (tbl) => tbl.id.equals(categoryId),
+        ))
+      .go();
+}
 }

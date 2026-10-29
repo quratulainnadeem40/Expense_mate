@@ -942,7 +942,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     return;
                   }
 
-                  if (isEdit) {
+                  if (isEdit && editIndex != null) {
                     final bool updated = committeeController.updateMember(
                       index: editIndex,
                       name: name,

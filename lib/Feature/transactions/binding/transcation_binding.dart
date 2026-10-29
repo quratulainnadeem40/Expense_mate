@@ -4,9 +4,6 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 class TransactionsBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<TransactionsController>(
-      () => TransactionsController(),
-      fenix: true,
-    );
+    Get.lazyPut<TransactionsController>(() => TransactionsController(), fenix: true);
   }
 }

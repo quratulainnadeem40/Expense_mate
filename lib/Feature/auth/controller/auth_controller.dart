@@ -1,3 +1,6 @@
+
+import 'package:expense_mate/Core/service/security_alert_service.dart';
+import 'dart:async';
 import 'package:expense_mate/Feature/pin/view/pin_setup_view.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +20,7 @@ class AuthController extends GetxController {
 
   User? get currentUser => _supabase.auth.currentUser;
 
+  
   Future<void> signUp() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
@@ -48,7 +52,9 @@ class AuthController extends GetxController {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {'name': name},
+        data: {
+          'name': name,
+        },
       );
 
       if (response.user != null) {
@@ -82,6 +88,7 @@ class AuthController extends GetxController {
     }
   }
 
+ 
   Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -110,6 +117,10 @@ class AuthController extends GetxController {
           'Login successful',
           snackPosition: SnackPosition.BOTTOM,
         );
+
+        // Not awaited: the email is a notification, so it must not hold
+        // up the screen the user is waiting for.
+        unawaited(SecurityAlertService.instance.loginSucceeded());
 
         // Straight in if a PIN already exists on this phone, otherwise
         // offer to create one. Skipping is allowed, so signing in never
@@ -147,6 +158,7 @@ class AuthController extends GetxController {
     }
   }
 
+  
   Future<void> resetPassword(String email) async {
     final trimmedEmail = email.trim();
 
@@ -158,7 +170,9 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _supabase.auth.resetPasswordForEmail(trimmedEmail);
+      await _supabase.auth.resetPasswordForEmail(
+        trimmedEmail,
+      );
 
       Get.snackbar(
         'Email Sent',
@@ -173,6 +187,7 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
+
 
   void togglePasswordVisibility() {
     obscurePassword.value = !obscurePassword.value;
