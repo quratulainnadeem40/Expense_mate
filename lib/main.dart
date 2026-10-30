@@ -2,6 +2,7 @@ import 'package:expense_mate/Feature/pin/view/pin_lock_view.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/Database/repository_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +12,7 @@ import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:expense_mate/Core/service/storage_service.dart';
 import 'package:expense_mate/Core/theme/custom_theme.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 
 import 'package:expense_mate/Core/Database/sync/sync_manager.dart';
 // Controllers Imports
@@ -111,8 +113,20 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
   Widget build(BuildContext context) {
     return Obx(
       () => GetMaterialApp(
-        title: 'Expense Mate',
+        title: 'Expense Mate'.tr,
         debugShowCheckedModeBanner: false,
+        translations: AppTranslations(),
+        locale: Get.locale ?? Locale(settingsController.selectedLanguage.value),
+        fallbackLocale: const Locale('en'),
+        supportedLocales: AppTranslations.languageCodes
+            .map((code) => Locale(code))
+            .toList(),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        localeResolutionCallback: AppTranslations.resolveFrameworkLocale,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: settingsController.isDarkMode.value

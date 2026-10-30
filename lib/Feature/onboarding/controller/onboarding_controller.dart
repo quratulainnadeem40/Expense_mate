@@ -99,14 +99,19 @@ class OnboardingController extends GetxController {
     if (Hive.isBoxOpen(AppKeys.settingsBox)) {
       selectedCurrency.value =
           _box.get('currency', defaultValue: 'PKR') as String;
-      selectedLanguage.value =
-          _box.get(languageKey, defaultValue: 'en') as String;
+
+      final savedLanguage =
+          _box.get(languageKey, defaultValue: 'en').toString().trim().toLowerCase();
+      selectedLanguage.value = SettingsController.supportedLanguages.contains(savedLanguage)
+          ? savedLanguage
+          : 'en';
     }
   }
 
   bool get isLastPage => pageIndex.value == pageCount - 1;
 
-  void setLanguage(String code) => selectedLanguage.value = code;
+  void setLanguage(String code) =>
+      selectedLanguage.value = code.trim().toLowerCase();
 
   void setCurrency(String code) => selectedCurrency.value = code;
 
@@ -120,17 +125,22 @@ class OnboardingController extends GetxController {
 
   /// Saves both choices and marks onboarding done.
   Future<void> finish() async {
+    final normalizedLanguage = selectedLanguage.value.trim().toLowerCase();
+    selectedLanguage.value = normalizedLanguage;
+
     if (Hive.isBoxOpen(AppKeys.settingsBox)) {
-      await _box.put(languageKey, selectedLanguage.value);
+      await _box.put(languageKey, normalizedLanguage);
       await _box.put(seenKey, true);
     }
 
-    // Push the currency through the settings controller so every screen
-    // picks it up straight away, instead of only after a restart.
+    // Push both settings through the global settings controller so the
+    // whole app immediately switches to the selected language.
     final settings = Get.isRegistered<SettingsController>()
         ? Get.find<SettingsController>()
         : Get.put(SettingsController());
 
+    await settings.changeLanguage(normalizedLanguage);
     await settings.changeCurrency(selectedCurrency.value);
+    Get.forceAppUpdate();
   }
 }

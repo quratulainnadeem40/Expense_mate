@@ -21,7 +21,7 @@ class MoreView extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'More',
+          'More'.tr,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: isDarkMode ? Colors.white : Colors.black87,
@@ -39,8 +39,8 @@ class MoreView extends StatelessWidget {
             context: context,
             icon: Icons.account_balance_wallet_rounded,
             iconColor: const Color(0xFF2B82FB),
-            title: 'Wallets',
-            subtitle: 'Manage your cash, bank and other wallets',
+            title: 'Wallets'.tr,
+            subtitle: 'Manage your cash, bank and other wallets'.tr,
             onTap: () =>
                 Get.to(() => const WalletsView(), binding: WalletsBinding()),
           ),
@@ -49,8 +49,8 @@ class MoreView extends StatelessWidget {
             context: context,
             icon: Icons.notifications_active_rounded,
             iconColor: const Color(0xFF9C27B0),
-            title: 'Bills & Reminders',
-            subtitle: 'Manage upcoming bills and reminders',
+            title: 'Bills & Reminders'.tr,
+            subtitle: 'Manage upcoming bills and reminders'.tr,
             onTap: () => Get.to(
               () => const BillsRemindersView(),
               binding: BillsRemindersBinding(),
@@ -61,8 +61,8 @@ class MoreView extends StatelessWidget {
             context: context,
             icon: Icons.settings_rounded,
             iconColor: const Color(0xFF607D8B),
-            title: 'Settings',
-            subtitle: 'Manage app preferences and settings',
+            title: 'Settings'.tr,
+            subtitle: 'Manage app preferences and settings'.tr,
             onTap: () =>
                 Get.to(() => const SettingsView(), binding: SettingsBinding()),
           ),
@@ -88,7 +88,7 @@ class MoreView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -107,7 +107,7 @@ class MoreView extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(icon, color: iconColor, size: 24),

@@ -178,10 +178,10 @@ class MemberCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isPaid
-                  ? Colors.green.withOpacity(0.10)
+                  ? Colors.green.withValues(alpha: 0.10)
                   : isOverdue
-                  ? Colors.red.withOpacity(0.10)
-                  : Colors.orange.withOpacity(0.10),
+                  ? Colors.red.withValues(alpha: 0.10)
+                  : Colors.orange.withValues(alpha: 0.10),
             ),
             child: Row(
               children: [

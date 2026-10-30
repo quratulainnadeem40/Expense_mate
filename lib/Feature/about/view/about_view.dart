@@ -364,7 +364,7 @@ class _Header extends StatelessWidget {
             border: Border.all(color: AppColors.border(isDark)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.5 : 0.08),
+                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -375,7 +375,7 @@ class _Header extends StatelessWidget {
           child: Image.asset(
             'assets/logo.png',
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Icon(
+            errorBuilder: (_, _, _) => const Icon(
               Icons.account_balance_wallet_rounded,
               size: 44,
               color: Color(0xFF2EA44F),
@@ -405,7 +405,7 @@ class _Header extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFF2EA44F).withOpacity(isDark ? 0.18 : 0.10),
+            color: const Color(0xFF2EA44F).withValues(alpha: isDark ? 0.18 : 0.10),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -501,7 +501,7 @@ class _Feature extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: colour.withOpacity(isDark ? 0.20 : 0.12),
+              color: colour.withValues(alpha: isDark ? 0.20 : 0.12),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(icon, size: 20, color: colour),

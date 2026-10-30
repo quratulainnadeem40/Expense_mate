@@ -238,7 +238,7 @@ class GoalsController extends GetxController {
     if (!wasCompleted && goal.isCompleted) {
       _ok('🎉 Goal reached! ${goal.title} is complete.');
     } else {
-      _ok('${_currency} ${amount.toStringAsFixed(0)} added');
+      _ok('$_currency ${amount.toStringAsFixed(0)} added');
     }
   }
 
@@ -255,7 +255,7 @@ class GoalsController extends GetxController {
     final goal = goals[index];
     if (amount > goal.savedAmount) {
       _warn(
-        'You have only ${_currency} '
+        'You have only $_currency '
         '${goal.savedAmount.toStringAsFixed(0)} saved',
       );
       return;
@@ -267,7 +267,7 @@ class GoalsController extends GetxController {
 
     amountController.clear();
     Get.back();
-    _ok('${_currency} ${amount.toStringAsFixed(0)} withdrawn');
+    _ok('$_currency ${amount.toStringAsFixed(0)} withdrawn');
   }
 
   void deleteGoal(String id) {

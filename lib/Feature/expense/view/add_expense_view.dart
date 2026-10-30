@@ -26,14 +26,14 @@ class AddExpenseView extends GetView<ExpenseController> {
 
     final customName = await Get.dialog<String>(
       AlertDialog(
-        title: const Text('Custom category'),
+        title: Text('Custom category'.tr),
         content: TextField(
           controller: nameController,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Category name',
-            hintText: 'Enter a name for this transaction',
+          decoration: InputDecoration(
+            labelText: 'Category name'.tr,
+            hintText: 'Enter a name for this transaction'.tr,
           ),
           onSubmitted: (value) {
             final name = value.trim();
@@ -44,19 +44,19 @@ class AddExpenseView extends GetView<ExpenseController> {
           },
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel'.tr)),
           FilledButton(
             onPressed: () {
               final name = nameController.text.trim();
 
               if (name.isEmpty) {
-                Get.snackbar('Required', 'Enter a category name.');
+                Get.snackbar('Required'.tr, 'Enter a category name.'.tr);
                 return;
               }
 
               Get.back(result: name);
             },
-            child: const Text('Use name'),
+            child: Text('Use name'.tr),
           ),
         ],
       ),
@@ -79,14 +79,14 @@ class AddExpenseView extends GetView<ExpenseController> {
 
     final customName = await Get.dialog<String>(
       AlertDialog(
-        title: const Text('Other income source'),
+        title: Text('Other income source'.tr),
         content: TextField(
           controller: nameController,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Source of Income',
-            hintText: 'Enter a source of income',
+          decoration: InputDecoration(
+            labelText: 'Source of Income'.tr,
+            hintText: 'Enter a source of income'.tr,
           ),
           onSubmitted: (value) {
             final name = value.trim();
@@ -97,19 +97,19 @@ class AddExpenseView extends GetView<ExpenseController> {
           },
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel'.tr)),
           FilledButton(
             onPressed: () {
               final name = nameController.text.trim();
 
               if (name.isEmpty) {
-                Get.snackbar('Required', 'Enter a source of income.');
+                Get.snackbar('Required'.tr, 'Enter a source of income.'.tr);
                 return;
               }
 
               Get.back(result: name);
             },
-            child: const Text('Save'),
+            child: Text('Save'.tr),
           ),
         ],
       ),
@@ -138,7 +138,7 @@ class AddExpenseView extends GetView<ExpenseController> {
     if (normalizedName.isEmpty) {
       controller.selectedCategoryId.value = previousCategoryId;
 
-      Get.snackbar('Required', 'Please enter a category name.');
+    Get.snackbar('Required'.tr, 'Please enter a category name.'.tr);
 
       return;
     }
@@ -146,9 +146,12 @@ class AddExpenseView extends GetView<ExpenseController> {
     if (normalizedType != 'income' && normalizedType != 'expense') {
       controller.selectedCategoryId.value = previousCategoryId;
 
-      Get.snackbar('Invalid category', 'Please select a valid category type.');
+    Get.snackbar(
+      'Invalid category'.tr,
+      'Please select a valid category type.'.tr,
+    );
 
-      return;
+    return;
     }
 
     // Check duplicates only within the SAME type.
@@ -164,9 +167,10 @@ class AddExpenseView extends GetView<ExpenseController> {
       controller.customCategoryName.value = '';
 
       Get.snackbar(
-        'Category already exists',
-        'This category already exists in '
-            '${normalizedType == 'income' ? 'Income' : 'Expense'}.',
+        'Category already exists'.tr,
+        'This category already exists in '.tr +
+            (normalizedType == 'income' ? 'Income'.tr : 'Expense'.tr) +
+            '.',
       );
 
       return;
@@ -178,7 +182,7 @@ class AddExpenseView extends GetView<ExpenseController> {
         id: '',
         name: normalizedName,
         icon: 'category',
-        colorValue: const Color(0xFF2EA44F).value,
+        colorValue: const Color(0xFF2EA44F).toARGB32(),
         isDefault: false,
         type: normalizedType,
       ),
@@ -194,7 +198,7 @@ class AddExpenseView extends GetView<ExpenseController> {
     if (savedCategory == null) {
       controller.selectedCategoryId.value = previousCategoryId;
 
-      Get.snackbar('Unable to save category', 'Please try again.');
+      Get.snackbar('Unable to save category'.tr, 'Please try again.'.tr);
 
       return;
     }
@@ -220,8 +224,8 @@ class AddExpenseView extends GetView<ExpenseController> {
         title: Obx(
           () => Text(
             controller.isEditMode.value
-                ? 'Edit Transaction'
-                : 'Add Transaction',
+                ? 'Edit Transaction'.tr
+                : 'Add Transaction'.tr,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
@@ -271,8 +275,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     boxShadow: isExpense
                                         ? [
                                             BoxShadow(
-                                              color: expenseRed.withOpacity(
-                                                0.3,
+                                              color: expenseRed.withValues(
+                                                alpha: 0.3,
                                               ),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
@@ -295,7 +299,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        'Expense',
+                                        'Expense'.tr,
                                         style: TextStyle(
                                           color: isExpense
                                               ? Colors.white
@@ -325,8 +329,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     boxShadow: !isExpense
                                         ? [
                                             BoxShadow(
-                                              color: primaryGreen.withOpacity(
-                                                0.3,
+                                              color: primaryGreen.withValues(
+                                                alpha: 0.3,
                                               ),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
@@ -349,7 +353,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        'Income',
+                                        'Income'.tr,
                                         style: TextStyle(
                                           color: !isExpense
                                               ? Colors.white
@@ -392,10 +396,10 @@ class AddExpenseView extends GetView<ExpenseController> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? const Color(0xFF1E2421)
-                              : currentColor.withOpacity(0.06),
+                              : currentColor.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: currentColor.withOpacity(0.2),
+                            color: currentColor.withValues(alpha: 0.2),
                             width: 1.5,
                           ),
                         ),
@@ -421,7 +425,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
-                                      color: currentColor.withOpacity(0.7),
+                                      color: currentColor.withValues(alpha: 0.7),
                                     ),
                                   ),
                                 ),
@@ -456,7 +460,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                     decoration: InputDecoration(
                                       hintText: '0.00',
                                       hintStyle: TextStyle(
-                                        color: currentColor.withOpacity(0.4),
+                                        color: currentColor.withValues(alpha: 0.4),
                                       ),
                                       border: InputBorder.none,
                                       enabledBorder: InputBorder.none,
@@ -516,7 +520,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                 id: '$_incomeDefaultPrefix$name',
                                 name: name,
                                 icon: 'category',
-                                colorValue: const Color(0xFF2EA44F).value,
+                                colorValue: const Color(0xFF2EA44F).toARGB32(),
                                 isDefault: true,
                                 type: 'income',
                               ),
@@ -536,7 +540,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                         children: [
                           _buildFieldLabel(
                             theme,
-                            isExpense ? 'Category' : 'Source of Income',
+                            isExpense ? 'Category'.tr : 'Source of Income'.tr,
                           ),
 
                           const SizedBox(height: 6),
@@ -548,8 +552,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                               decoration: _inputBoxDecoration(theme, isDark),
                               child: Text(
                                 isExpense
-                                    ? 'No expense categories available.'
-                                    : 'No income sources available.',
+                                    ? 'No expense categories available.'.tr
+                                    : 'No income sources available.'.tr,
                                 style: TextStyle(color: theme.hintColor),
                               ),
                             )
@@ -559,7 +563,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                 '$selectedCategoryId:$customCategoryName:$isExpense',
                               ),
 
-                              value:
+                              initialValue:
                                   dropdownCategories.any(
                                     (category) =>
                                         category.id == selectedCategoryId,
@@ -569,10 +573,10 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                               hint: Text(
                                 customCategoryName.isEmpty
-                                    ? 'Select Category'
+                                    ? 'Select Category'.tr
                                     : customCategoryName,
                                 style: TextStyle(
-                                  color: theme.hintColor.withOpacity(0.6),
+                                  color: theme.hintColor.withValues(alpha: 0.6),
                                   fontSize: 14,
                                 ),
                               ),
@@ -588,7 +592,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                       ),
                                     );
                                   }),
-                                  Text(isExpense ? 'More...' : 'Other'),
+                                  Text(isExpense ? 'More...'.tr : 'Other'.tr),
                                 ];
                               },
 
@@ -630,7 +634,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                             const Icon(Icons.add_rounded),
                                             const SizedBox(width: 8),
                                             Text(
-                                              isExpense ? 'More...' : 'Other',
+                                              isExpense ? 'More...'.tr : 'Other'.tr,
                                             ),
                                           ],
                                         ),
@@ -683,7 +687,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                     // -------------------------------------------------------
                     // WALLET
                     // -------------------------------------------------------
-                    _buildFieldLabel(theme, 'Wallet'),
+                    _buildFieldLabel(theme, 'Wallet'.tr),
 
                     const SizedBox(height: 6),
 
@@ -696,7 +700,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                           padding: const EdgeInsets.all(14),
                           decoration: _inputBoxDecoration(theme, isDark),
                           child: Text(
-                            'No wallets available.',
+                            'No wallets available.'.tr,
                             style: TextStyle(color: theme.hintColor),
                           ),
                         );
@@ -710,12 +714,12 @@ class AddExpenseView extends GetView<ExpenseController> {
                           : null;
 
                       return DropdownButtonFormField<String>(
-                        value: selectedWalletVal,
+                        initialValue: selectedWalletVal,
 
                         hint: Text(
-                          'Select Wallet',
+                          'Select Wallet'.tr,
                           style: TextStyle(
-                            color: theme.hintColor.withOpacity(0.6),
+                            color: theme.hintColor.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
@@ -776,7 +780,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                     // -------------------------------------------------------
                     // NOTE
                     // -------------------------------------------------------
-                    _buildFieldLabel(theme, 'Note (Optional)'),
+                    _buildFieldLabel(theme, 'Note (Optional)'.tr),
 
                     const SizedBox(height: 6),
 
@@ -807,7 +811,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                             .copyWith(
                               hintText: _noteHint(selectedName, isExpense),
                               hintStyle: TextStyle(
-                                color: theme.hintColor.withOpacity(0.6),
+                                color: theme.hintColor.withValues(alpha: 0.6),
                                 fontSize: 13,
                               ),
                             ),
@@ -834,7 +838,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryGreen,
                           elevation: 2,
-                          shadowColor: primaryGreen.withOpacity(0.4),
+                          shadowColor: primaryGreen.withValues(alpha: 0.4),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -854,8 +858,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                                   Get.snackbar(
                                     'Warning',
                                     controller.isExpense.value
-                                        ? 'Please select an expense category'
-                                        : 'Please select an income category',
+                                        ? 'Please select an expense category'.tr
+                                        : 'Please select an income category'.tr,
                                     snackPosition: SnackPosition.BOTTOM,
                                   );
                                   return;
@@ -863,8 +867,8 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                                 if (controller.selectedWalletId.value.isEmpty) {
                                   Get.snackbar(
-                                    'Warning',
-                                    'Please select a wallet',
+                                    'Warning'.tr,
+                                    'Please select a wallet'.tr,
                                     snackPosition: SnackPosition.BOTTOM,
                                   );
                                   return;
@@ -884,8 +888,8 @@ class AddExpenseView extends GetView<ExpenseController> {
                             : Obx(
                                 () => Text(
                                   controller.isEditMode.value
-                                      ? 'Update Transaction'
-                                      : 'Save Transaction',
+                                      ? 'Update Transaction'.tr
+                                      : 'Save Transaction'.tr,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
@@ -902,7 +906,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                   TextButton(
                     onPressed: () => Get.back(),
                     child: Text(
-                      'Cancel',
+                      'Cancel'.tr,
                       style: TextStyle(
                         color: theme.hintColor,
                         fontSize: 14,
@@ -1098,7 +1102,7 @@ class AddExpenseView extends GetView<ExpenseController> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -1113,7 +1117,7 @@ class AddExpenseView extends GetView<ExpenseController> {
       color: isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
       ),
     );
   }

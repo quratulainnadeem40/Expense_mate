@@ -1,6 +1,7 @@
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
 
@@ -316,7 +317,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'Select Date';
+    if (date == null) return 'Select Date'.tr;
 
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
@@ -398,27 +399,27 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     final String durationText = durationController.text.trim();
 
     if (name.isEmpty) {
-      showMessage('Please enter committee name.');
+      showMessage('Please enter committee name.'.tr);
       return;
     }
 
     if (contributionText.isEmpty) {
-      showMessage('Please enter monthly contribution.');
+      showMessage('Please enter monthly contribution.'.tr);
       return;
     }
 
     if (membersText.isEmpty) {
-      showMessage('Please enter number of members.');
+      showMessage('Please enter number of members.'.tr);
       return;
     }
 
     if (durationText.isEmpty) {
-      showMessage('Please enter duration.');
+      showMessage('Please enter duration.'.tr);
       return;
     }
 
     if (startDate == null) {
-      showMessage('Please select start date.');
+      showMessage('Please select start date.'.tr);
       return;
     }
 
@@ -427,24 +428,24 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     final int? duration = int.tryParse(durationText);
 
     if (contribution == null || contribution <= 0) {
-      showMessage('Please enter a valid monthly contribution.');
+      showMessage('Please enter a valid monthly contribution.'.tr);
       return;
     }
 
     if (members == null || members <= 0) {
-      showMessage('Please enter a valid number of members.');
+      showMessage('Please enter a valid number of members.'.tr);
       return;
     }
 
     if (duration == null || duration <= 0) {
-      showMessage('Please enter a valid duration.');
+      showMessage('Please enter a valid duration.'.tr);
       return;
     }
 
     _calculateEndingDate();
 
     if (endingDate == null) {
-      showMessage('Please enter a valid duration.');
+      showMessage('Please enter a valid duration.'.tr);
       return;
     }
 
@@ -479,7 +480,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
         backgroundColor: cardBackground,
         foregroundColor: primaryText,
         elevation: 0,
-        title: const Text('Add Committee'),
+        title: Text('Add Committee'.tr),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -488,7 +489,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
             TextField(
               controller: nameController,
               style: TextStyle(color: primaryText),
-              decoration: _inputDecoration(label: 'Committee Name'),
+              decoration: _inputDecoration(label: 'Committee Name'.tr),
             ),
 
             const SizedBox(height: 16),
@@ -501,7 +502,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               ],
               style: TextStyle(color: primaryText),
               decoration: _inputDecoration(
-                label: 'Monthly Contribution',
+                label: 'Monthly Contribution'.tr,
                 prefixText: '${Formatters.code} ',
               ),
             ),
@@ -513,7 +514,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: TextStyle(color: primaryText),
-              decoration: _inputDecoration(label: 'Number of Members'),
+              decoration: _inputDecoration(label: 'Number of Members'.tr),
             ),
 
             const SizedBox(height: 16),
@@ -532,7 +533,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Total Committee Amount',
+                    'Total Committee Amount'.tr,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -563,7 +564,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     style: TextStyle(color: primaryText),
-                    decoration: _inputDecoration(label: 'Duration'),
+                    decoration: _inputDecoration(label: 'Duration'.tr),
                   ),
                 ),
 
@@ -571,8 +572,8 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: durationUnit,
-                    decoration: _inputDecoration(label: 'Unit'),
+                    initialValue: durationUnit,
+                    decoration: _inputDecoration(label: 'Unit'.tr),
                     dropdownColor: cardBackground,
                     iconEnabledColor: isDark
                         ? const Color(0xFF7DD6A8)
@@ -582,28 +583,28 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                       DropdownMenuItem(
                         value: 'Days',
                         child: Text(
-                          'Days',
+                          'Days'.tr,
                           style: TextStyle(color: primaryText),
                         ),
                       ),
                       DropdownMenuItem(
                         value: 'Weeks',
                         child: Text(
-                          'Weeks',
+                          'Weeks'.tr,
                           style: TextStyle(color: primaryText),
                         ),
                       ),
                       DropdownMenuItem(
                         value: 'Months',
                         child: Text(
-                          'Months',
+                          'Months'.tr,
                           style: TextStyle(color: primaryText),
                         ),
                       ),
                       DropdownMenuItem(
                         value: 'Years',
                         child: Text(
-                          'Years',
+                          'Years'.tr,
                           style: TextStyle(color: primaryText),
                         ),
                       ),
@@ -637,7 +638,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Total Amount for Duration',
+                    'Total Amount for Duration'.tr,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -660,13 +661,13 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
             const SizedBox(height: 16),
 
             _buildDateField(
-              label: 'Start Date',
+              label: 'Start Date'.tr,
               date: startDate,
               onTap: selectStartDate,
             ),
 
             _buildDateField(
-              label: 'Ending Date',
+              label: 'Ending Date'.tr,
               date: endingDate,
               onTap: () {},
               readOnly: true,
@@ -687,9 +688,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
                   ),
                 ),
                 onPressed: saveCommittee,
-                child: const Text(
-                  'Save Committee',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                child: Text(
+                  'Save Committee'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ),

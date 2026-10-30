@@ -32,7 +32,7 @@ int _normalizeSelectedDayForDateCalculation(
 }
 
 class BudgetView extends StatefulWidget {
-  const BudgetView({Key? key}) : super(key: key);
+  const BudgetView({super.key});
 
   @override
   State<BudgetView> createState() => _BudgetViewState();
@@ -329,7 +329,7 @@ class _BudgetViewState extends State<BudgetView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 12),
                 ),
@@ -1002,7 +1002,7 @@ class _BudgetViewState extends State<BudgetView> {
                                     ),
                                     Switch(
                                       value: controller.resetReminderOn.value,
-                                      activeColor: const Color(0xFF4CAF50),
+                                      activeThumbColor: const Color(0xFF4CAF50),
                                       onChanged: (value) {
                                         controller.setResetReminderOn(value);
                                         setSheetState(() {});
@@ -1343,7 +1343,7 @@ class _BudgetViewState extends State<BudgetView> {
                 decoration: BoxDecoration(
                   color: const Color(
                     0xFF4CAF50,
-                  ).withOpacity(isDark ? 0.14 : 0.10),
+                  ).withValues(alpha: isDark ? 0.14 : 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -1450,7 +1450,7 @@ class _BudgetViewState extends State<BudgetView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 12),
                 ),
@@ -1663,7 +1663,7 @@ class _BudgetViewState extends State<BudgetView> {
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 12),
                 ),
@@ -1767,7 +1767,7 @@ class _BudgetViewState extends State<BudgetView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 12),
                 ),
@@ -1906,7 +1906,7 @@ class _BudgetViewState extends State<BudgetView> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 12),
                 ),
@@ -2178,7 +2178,7 @@ class _BudgetViewState extends State<BudgetView> {
                         decoration: BoxDecoration(
                           color: const Color(
                             0xFFE53935,
-                          ).withOpacity(isDark ? 0.18 : 0.10),
+                          ).withValues(alpha: isDark ? 0.18 : 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -2248,7 +2248,7 @@ class _BudgetViewState extends State<BudgetView> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.red.withOpacity(0.22),
+                                color: Colors.red.withValues(alpha: 0.22),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
@@ -2273,7 +2273,7 @@ class _BudgetViewState extends State<BudgetView> {
                               BoxShadow(
                                 color: const Color(
                                   0xFF4CAF50,
-                                ).withOpacity(0.22),
+                                ).withValues(alpha: 0.22),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
@@ -2449,7 +2449,7 @@ class _BudgetViewState extends State<BudgetView> {
                                     ? const Color(0xFF1F1F1F)
                                     : Colors.white,
                                 elevation: 12,
-                                shadowColor: Colors.black.withOpacity(0.12),
+                                shadowColor: Colors.black.withValues(alpha: 0.12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                   side: BorderSide(
@@ -2810,7 +2810,7 @@ class _HistPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
+        color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -2871,7 +2871,7 @@ class _HistCycleCardState extends State<_HistCycleCard> {
         border: Border.all(
           color: widget.isDark
               ? Colors.white10
-              : Colors.black.withOpacity(0.06),
+              : Colors.black.withValues(alpha: 0.06),
         ),
       ),
       child: Column(
@@ -2930,7 +2930,7 @@ class _HistCycleCardState extends State<_HistCycleCard> {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: accent.withOpacity(widget.isDark ? 0.22 : 0.12),
+                  color: accent.withValues(alpha: widget.isDark ? 0.22 : 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -3164,7 +3164,7 @@ class _HistEmpty extends StatelessWidget {
               width: 92,
               height: 92,
               decoration: BoxDecoration(
-                color: _histGreen.withOpacity(0.10),
+                color: _histGreen.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

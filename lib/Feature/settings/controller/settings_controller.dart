@@ -588,14 +588,17 @@ class SettingsController extends GetxController {
     isDarkMode.value =
         settingsBox.get(AppKeys.isDarkModeKey, defaultValue: false) as bool;
 
-    final savedLanguage =
-        settingsBox.get('app_language', defaultValue: 'en').toString();
+    final savedLanguage = settingsBox
+        .get('app_language', defaultValue: 'en')
+        .toString()
+        .trim()
+        .toLowerCase();
 
     selectedLanguage.value = supportedLanguages.contains(savedLanguage)
         ? savedLanguage
         : 'en';
 
-    await Get.updateLocale(Locale(selectedLanguage.value));
+    await _applyLanguageLocale(selectedLanguage.value);
 
     await loadCurrencySettings();
 
@@ -709,6 +712,12 @@ class SettingsController extends GetxController {
 
   // LANGUAGE
 
+  Future<void> _applyLanguageLocale(String code) async {
+    final locale = Locale(code);
+    await Get.updateLocale(locale);
+    Get.forceAppUpdate();
+  }
+
   Future<void> changeLanguage(String languageCode) async {
     final code = languageCode.trim().toLowerCase();
 
@@ -720,7 +729,7 @@ class SettingsController extends GetxController {
 
     await settingsBox.put('app_language', code);
 
-    await Get.updateLocale(Locale(code));
+    await _applyLanguageLocale(code);
   }
 
   // CUSTOM CURRENCY

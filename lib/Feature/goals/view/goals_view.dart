@@ -47,8 +47,9 @@ class GoalsView extends GetView<GoalsController> {
       ),
       body: SafeArea(
         child: Obx(() {
-          if (controller.goals.isEmpty)
+          if (controller.goals.isEmpty) {
             return _EmptyState(onCreate: () => _openGoalSheet(context));
+          }
 
           final active = controller.activeGoals;
           final completed = controller.completedGoals;
@@ -226,7 +227,7 @@ class GoalsView extends GetView<GoalsController> {
                       key: ValueKey(current),
                       scrollDirection: Axis.horizontal,
                       itemCount: iconKeys.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final iconKey = iconKeys[i];
                         final selected = current == iconKey;
@@ -238,10 +239,10 @@ class GoalsView extends GetView<GoalsController> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: selected
-                                  ? kGoalGreen.withOpacity(0.15)
+                                  ? kGoalGreen.withValues(alpha: 0.15)
                                   : (isDark
                                         ? Colors.white10
-                                        : Colors.black.withOpacity(0.04)),
+                                        : Colors.black.withValues(alpha: 0.04)),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: selected
@@ -305,7 +306,7 @@ class GoalsView extends GetView<GoalsController> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? Colors.white10
-                                : Colors.black.withOpacity(0.04),
+                                : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -329,7 +330,7 @@ class GoalsView extends GetView<GoalsController> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white10
-                              : Colors.black.withOpacity(0.04),
+                              : Colors.black.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -384,12 +385,12 @@ class GoalsView extends GetView<GoalsController> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? Colors.white10
-                                : Colors.black.withOpacity(0.04),
+                                : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: date == null
                                   ? Colors.transparent
-                                  : kGoalGreen.withOpacity(0.4),
+                                  : kGoalGreen.withValues(alpha: 0.4),
                             ),
                           ),
                           child: Row(
@@ -629,7 +630,7 @@ class GoalsView extends GetView<GoalsController> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white10
-                              : Colors.black.withOpacity(0.04),
+                              : Colors.black.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -858,7 +859,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
+        color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -906,7 +907,7 @@ class _SectionLabel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: theme.hintColor.withOpacity(0.14),
+            color: theme.hintColor.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -1352,10 +1353,10 @@ class _Field extends StatelessWidget {
         hintStyle: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.normal,
-          color: theme.hintColor.withOpacity(0.6),
+          color: theme.hintColor.withValues(alpha: 0.6),
         ),
         filled: true,
-        fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+        fillColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -1393,7 +1394,7 @@ class _DateChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -1419,7 +1420,7 @@ class _SheetHandle extends StatelessWidget {
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: Theme.of(context).hintColor.withOpacity(0.35),
+          color: Theme.of(context).hintColor.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(999),
         ),
       ),
@@ -1446,7 +1447,7 @@ class _EmptyState extends StatelessWidget {
               width: 92,
               height: 92,
               decoration: BoxDecoration(
-                color: kGoalGreen.withOpacity(0.10),
+                color: kGoalGreen.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

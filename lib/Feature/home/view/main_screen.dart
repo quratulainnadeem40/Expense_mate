@@ -153,7 +153,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     _buildNavItem(
                       icon: Icons.home_rounded,
-                      label: 'Home',
+                      label: 'Home'.tr,
                       index: 0,
                       controller: controller,
                       context: context,
@@ -161,7 +161,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     _buildNavItem(
                       icon: Icons.swap_horiz_rounded,
-                      label: 'Transactions',
+                      label: 'Transactions'.tr,
                       tourKey: TourKeys.transactionsTab,
                       index: 1,
                       controller: controller,
@@ -185,7 +185,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     _buildNavItem(
                       icon: Icons.category_rounded,
-                      label: 'Categories',
+                      label: 'Categories'.tr,
                       tourKey: TourKeys.categoriesTab,
                       index: 2,
                       controller: controller,
@@ -194,7 +194,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     _buildNavItem(
                       icon: Icons.bar_chart_rounded,
-                      label: 'Reports',
+                      label: 'Reports'.tr,
                       tourKey: TourKeys.reportsTab,
                       index: 3,
                       controller: controller,
@@ -248,8 +248,8 @@ class _MainScreenState extends State<MainScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? (isDark
-                          ? activeColor.withOpacity(0.2)
-                          : activeColor.withOpacity(0.12))
+                          ? activeColor.withValues(alpha: 0.2)
+                          : activeColor.withValues(alpha: 0.12))
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
               ),

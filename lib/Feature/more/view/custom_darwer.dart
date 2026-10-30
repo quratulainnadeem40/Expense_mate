@@ -114,13 +114,13 @@ class CustomDrawer extends StatelessWidget {
               width: double.infinity,
               child: Stack(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Expense Mate',
-                        style: TextStyle(
+                        'Expense Mate'.tr,
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
