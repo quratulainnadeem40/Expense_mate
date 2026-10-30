@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class PaymentCard extends StatelessWidget {
   final String memberName;
@@ -104,7 +105,7 @@ class PaymentCard extends StatelessWidget {
                       : Colors.orange.withValues(alpha: 0.12),
                 ),
                 child: Text(
-                  status,
+                  status.tr,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -138,7 +139,7 @@ class PaymentCard extends StatelessWidget {
                 const SizedBox(width: 8),
 
                 Text(
-                  'Amount',
+                  'Amount'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     color: isDark ? Colors.white54 : Colors.black54,

@@ -14,21 +14,21 @@ class AddBudgetButton extends GetView<BudgetController> {
       child: const Icon(Icons.add),
       onPressed: () {
         Get.defaultDialog(
-          title: 'Add New Budget',
+          title: 'Add New Budget'.tr,
           content: Column(
             children: [
               TextField(
                 controller: categoryController,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: InputDecoration(labelText: 'Category'.tr),
               ),
               TextField(
                 controller: amountController,
-                decoration: const InputDecoration(labelText: 'Amount'),
+                decoration: InputDecoration(labelText: 'Amount'.tr),
                 keyboardType: TextInputType.number,
               ),
             ],
           ),
-          textConfirm: 'Add',
+          textConfirm: 'Add'.tr,
           onConfirm: () {
             if (categoryController.text.isNotEmpty &&
                 amountController.text.isNotEmpty) {

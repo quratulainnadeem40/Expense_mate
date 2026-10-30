@@ -210,7 +210,7 @@ class MemberCard extends StatelessWidget {
                 const Spacer(),
 
                 Text(
-                  paymentStatus,
+                  paymentStatus.tr,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,

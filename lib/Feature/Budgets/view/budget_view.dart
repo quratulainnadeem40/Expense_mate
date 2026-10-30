@@ -248,10 +248,10 @@ class _BudgetViewState extends State<BudgetView> {
 
                         Text(
                           (automatic
-                              ? 'Your budget will reset automatically on '
-                                    'the selected date every month.'
-                              : 'You will reset the budget yourself '
-                                    'whenever you want.')
+                                  ? 'Your budget will reset automatically on '
+                                        'the selected date every month.'
+                                  : 'You will reset the budget yourself '
+                                        'whenever you want.')
                               .tr,
                           style: TextStyle(
                             fontSize: 13.5,
@@ -341,7 +341,7 @@ class _BudgetViewState extends State<BudgetView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Monthly budget exceeded',
+                  'Monthly budget exceeded'.tr,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -350,7 +350,12 @@ class _BudgetViewState extends State<BudgetView> {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'This category would push your total monthly budget from ${Formatters.money(monthlyLimit)} to ${Formatters.money(projectedTotal)}.\n\nYou are over by ${Formatters.money(amountOver)}.',
+                  'This category would push your total monthly budget from @current to @projected.\n\nYou are over by @amount.'
+                      .trParams({
+                        'current': Formatters.money(monthlyLimit),
+                        'projected': Formatters.money(projectedTotal),
+                        'amount': Formatters.money(amountOver),
+                      }),
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.5,
@@ -363,8 +368,8 @@ class _BudgetViewState extends State<BudgetView> {
                   children: [
                     TextButton(
                       onPressed: () => Get.back(result: false),
-                      child: const Text(
-                        'Cancel',
+                      child: Text(
+                        'Cancel'.tr,
                         style: TextStyle(
                           color: Color(0xFF4B5563),
                           fontWeight: FontWeight.w600,
@@ -385,8 +390,8 @@ class _BudgetViewState extends State<BudgetView> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                         ),
-                        child: const Text(
-                          'Edit Monthly Limit',
+                        child: Text(
+                          'Edit Monthly Limit'.tr,
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -435,10 +440,9 @@ class _BudgetViewState extends State<BudgetView> {
 
             final nextResetText =
                 '${candidateResetDate.day} ${_monthName(candidateResetDate.month)} ${candidateResetDate.year}';
-            // 1th / 2th / 3th read badly, so the suffix follows the
-            // usual English rule.
-            final monthStartLabel =
-                '${_ordinal(selectedMonthStartDay)} of every month';
+            final monthStartLabel = 'Every month on day @day'.trParams({
+              'day': '$selectedMonthStartDay',
+            });
 
             return Container(
               margin: const EdgeInsets.only(top: 18),
@@ -775,8 +779,8 @@ class _BudgetViewState extends State<BudgetView> {
                                                                 Navigator.pop(
                                                                   dialogContext,
                                                                 ),
-                                                            child: const Text(
-                                                              'Cancel',
+                                                            child: Text(
+                                                              'Cancel'.tr,
                                                             ),
                                                           ),
                                                           const SizedBox(
@@ -802,8 +806,8 @@ class _BudgetViewState extends State<BudgetView> {
                                                                     ),
                                                               ),
                                                             ),
-                                                            child: const Text(
-                                                              'Save',
+                                                            child: Text(
+                                                              'Save'.tr,
                                                             ),
                                                           ),
                                                         ],
@@ -1246,8 +1250,8 @@ class _BudgetViewState extends State<BudgetView> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    child: const Text(
-                                      'Reset Budget Now',
+                                    child: Text(
+                                      'Reset Budget Now'.tr,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 15,
@@ -1292,7 +1296,7 @@ class _BudgetViewState extends State<BudgetView> {
             borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
-            'Change Budget Start Date?',
+            'Change Budget Start Date?'.tr,
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w700,
@@ -1304,7 +1308,7 @@ class _BudgetViewState extends State<BudgetView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Your current budget cycle will become:',
+                'Your current budget cycle will become:'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.white70 : const Color(0xFF4B5563),
@@ -1321,7 +1325,7 @@ class _BudgetViewState extends State<BudgetView> {
               ),
               const SizedBox(height: 14),
               Text(
-                'The cycle after that:',
+                'The cycle after that:'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.white70 : const Color(0xFF4B5563),
@@ -1394,22 +1398,6 @@ class _BudgetViewState extends State<BudgetView> {
     );
   }
 
-  /// 1 -> 1st, 2 -> 2nd, 3 -> 3rd, 11 -> 11th, 21 -> 21st.
-  String _ordinal(int day) {
-    if (day >= 11 && day <= 13) return '${day}th';
-
-    switch (day % 10) {
-      case 1:
-        return '${day}st';
-      case 2:
-        return '${day}nd';
-      case 3:
-        return '${day}rd';
-      default:
-        return '${day}th';
-    }
-  }
-
   String _monthName(int month) {
     const months = [
       '',
@@ -1426,7 +1414,7 @@ class _BudgetViewState extends State<BudgetView> {
       'November',
       'December',
     ];
-    return months[month];
+    return months[month].tr;
   }
 
   Future<void> _showAddCategoryDialog(BuildContext context) async {
@@ -1460,7 +1448,7 @@ class _BudgetViewState extends State<BudgetView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Add Custom Category',
+                  'Add Custom Category'.tr,
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
@@ -1472,8 +1460,8 @@ class _BudgetViewState extends State<BudgetView> {
                   controller: nameController,
                   style: TextStyle(color: isDark ? Colors.white : Colors.black),
                   decoration: InputDecoration(
-                    labelText: 'Category Name',
-                    hintText: 'e.g., Travel',
+                    labelText: 'Category Name'.tr,
+                    hintText: 'e.g., Travel'.tr,
                     labelStyle: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
                     ),
@@ -1498,8 +1486,8 @@ class _BudgetViewState extends State<BudgetView> {
                     }
                   },
                   decoration: InputDecoration(
-                    labelText: 'Monthly Limit',
-                    hintText: 'e.g., 20000',
+                    labelText: 'Monthly Limit'.tr,
+                    hintText: 'e.g., 20000'.tr,
                     labelStyle: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
                     ),
@@ -1519,8 +1507,8 @@ class _BudgetViewState extends State<BudgetView> {
                   children: [
                     TextButton(
                       onPressed: () => Get.back(result: false),
-                      child: const Text(
-                        'Cancel',
+                      child: Text(
+                        'Cancel'.tr,
                         style: TextStyle(
                           color: Color(0xFF4B5563),
                           fontWeight: FontWeight.w600,
@@ -1539,8 +1527,8 @@ class _BudgetViewState extends State<BudgetView> {
 
                           if (categoryName.isEmpty) {
                             Get.snackbar(
-                              'Required',
-                              'Please enter a category name.',
+                              'Required'.tr,
+                              'Please enter a category name.'.tr,
                               snackPosition: SnackPosition.BOTTOM,
                             );
                             return;
@@ -1577,8 +1565,8 @@ class _BudgetViewState extends State<BudgetView> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 22),
                         ),
-                        child: const Text(
-                          'Add',
+                        child: Text(
+                          'Add'.tr,
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1594,8 +1582,8 @@ class _BudgetViewState extends State<BudgetView> {
 
     if (result == true && context.mounted) {
       Get.snackbar(
-        'Success',
-        'Custom category added.',
+        'Success'.tr,
+        'Custom category added.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -1618,8 +1606,8 @@ class _BudgetViewState extends State<BudgetView> {
       _selectedCategoryIds.clear();
       _isSelectionMode = false;
       Get.snackbar(
-        'Protected',
-        'Default categories cannot be deleted.',
+        'Protected'.tr,
+        'Default categories cannot be deleted.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -1637,8 +1625,8 @@ class _BudgetViewState extends State<BudgetView> {
   ) {
     if (isDefault) {
       Get.snackbar(
-        'Protected',
-        'This default category cannot be deleted.',
+        'Protected'.tr,
+        'This default category cannot be deleted.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -1673,7 +1661,7 @@ class _BudgetViewState extends State<BudgetView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Delete Category',
+                  'Delete Category'.tr,
                   style: TextStyle(
                     color: isDark ? Colors.white : const Color(0xFF1F2937),
                     fontSize: 24,
@@ -1684,7 +1672,9 @@ class _BudgetViewState extends State<BudgetView> {
                 Text(
                   linkedTransactions > 0
                       ? 'This will permanently delete this category and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
-                      : 'This will permanently delete this category.\n\nDo you want to continue?',
+                            .tr
+                      : 'This will permanently delete this category.\n\nDo you want to continue?'
+                            .tr,
                   style: TextStyle(
                     color: isDark ? Colors.white70 : const Color(0xFF4B5563),
                     fontSize: 16,
@@ -1697,8 +1687,8 @@ class _BudgetViewState extends State<BudgetView> {
                   children: [
                     TextButton(
                       onPressed: () => Get.back(),
-                      child: const Text(
-                        'Cancel',
+                      child: Text(
+                        'Cancel'.tr,
                         style: TextStyle(
                           color: Color(0xFF4B5563),
                           fontWeight: FontWeight.w600,
@@ -1723,8 +1713,8 @@ class _BudgetViewState extends State<BudgetView> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                         ),
-                        child: const Text(
-                          'Delete',
+                        child: Text(
+                          'Delete'.tr,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -1795,8 +1785,8 @@ class _BudgetViewState extends State<BudgetView> {
                     }
                   },
                   decoration: InputDecoration(
-                    labelText: 'Monthly Limit',
-                    hintText: 'e.g., 20000',
+                    labelText: 'Monthly Limit'.tr,
+                    hintText: 'e.g., 20000'.tr,
                     labelStyle: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
                     ),
@@ -1819,8 +1809,8 @@ class _BudgetViewState extends State<BudgetView> {
                   children: [
                     TextButton(
                       onPressed: () => Get.back(),
-                      child: const Text(
-                        'Cancel',
+                      child: Text(
+                        'Cancel'.tr,
                         style: TextStyle(
                           color: Color(0xFF4B5563),
                           fontWeight: FontWeight.w600,
@@ -1866,8 +1856,8 @@ class _BudgetViewState extends State<BudgetView> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 22),
                         ),
-                        child: const Text(
-                          'Update',
+                        child: Text(
+                          'Update'.tr,
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1934,8 +1924,8 @@ class _BudgetViewState extends State<BudgetView> {
                     }
                   },
                   decoration: InputDecoration(
-                    labelText: 'Total Limit',
-                    hintText: 'e.g., 60000',
+                    labelText: 'Total Limit'.tr,
+                    hintText: 'e.g., 60000'.tr,
                     labelStyle: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
                     ),
@@ -1958,8 +1948,8 @@ class _BudgetViewState extends State<BudgetView> {
                   children: [
                     TextButton(
                       onPressed: () => Get.back(),
-                      child: const Text(
-                        'Cancel',
+                      child: Text(
+                        'Cancel'.tr,
                         style: TextStyle(
                           color: Color(0xFF4B5563),
                           fontWeight: FontWeight.w600,
@@ -1987,8 +1977,8 @@ class _BudgetViewState extends State<BudgetView> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 22),
                         ),
-                        child: const Text(
-                          'Update',
+                        child: Text(
+                          'Update'.tr,
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -2192,8 +2182,8 @@ class _BudgetViewState extends State<BudgetView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Budget Exceeded',
+                                  Text(
+                                    'Budget Exceeded'.tr,
                                     style: TextStyle(
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w700,
@@ -2202,7 +2192,11 @@ class _BudgetViewState extends State<BudgetView> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${Formatters.money(controller.overspentAmount)} over budget',
+                                    '@amount over budget'.trParams({
+                                      'amount': Formatters.money(
+                                        controller.overspentAmount,
+                                      ),
+                                    }),
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       color: secondaryTextColor,
@@ -2448,7 +2442,9 @@ class _BudgetViewState extends State<BudgetView> {
                                     ? const Color(0xFF1F1F1F)
                                     : Colors.white,
                                 elevation: 12,
-                                shadowColor: Colors.black.withValues(alpha: 0.12),
+                                shadowColor: Colors.black.withValues(
+                                  alpha: 0.12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                   side: BorderSide(
@@ -2507,8 +2503,8 @@ class _BudgetViewState extends State<BudgetView> {
                                           color: Colors.red,
                                         ),
                                         const SizedBox(width: 10),
-                                        const Text(
-                                          'Delete',
+                                        Text(
+                                          'Delete'.tr,
                                           style: TextStyle(
                                             color: Colors.red,
                                             fontWeight: FontWeight.w600,
@@ -2784,11 +2780,11 @@ class _HistSummary extends StatelessWidget {
             children: [
               _HistPill(
                 icon: Icons.check_circle_rounded,
-                text: '$savedCount within budget',
+                text: '@count within budget'.trParams({'count': '$savedCount'}),
               ),
               _HistPill(
                 icon: Icons.warning_amber_rounded,
-                text: '$overCount over budget',
+                text: '@count over budget'.trParams({'count': '$overCount'}),
               ),
             ],
           ),
@@ -2997,12 +2993,8 @@ class _HistCycleCardState extends State<_HistCycleCard> {
                 child: Row(
                   children: [
                     Text(
-                      (expanded
-                              ? 'Hide categories'
-                              : 'Show @count categories')
-                          .trParams({
-                            'count': '${cycle.categories.length}',
-                          }),
+                      (expanded ? 'Hide categories' : 'Show @count categories')
+                          .trParams({'count': '${cycle.categories.length}'}),
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,

@@ -312,7 +312,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             const SizedBox(height: 12),
             _buildFeatureCard(
               icon: '👥',
-              title: 'Members',
+              title: 'Members'.tr,
               description: 'Manage committee members and their details.',
               onTap: _openMembers,
               iconBackground: isDark
@@ -324,7 +324,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
             _buildFeatureCard(
               icon: '💳',
-              title: 'Payment Tracking',
+              title: 'Payment Tracking'.tr,
               description:
                   'Track paid, pending and overdue committee payments.',
               onTap: _openPaymentTracking,
@@ -333,7 +333,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
             _buildFeatureCard(
               icon: '📅',
-              title: 'Monthly Schedule',
+              title: 'Monthly Schedule'.tr,
               description: 'Manage monthly schedule and receiving order.',
               onTap: _openMonthlySchedule,
               iconBackground: isDark
@@ -345,7 +345,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
             _buildFeatureCard(
               icon: '🔔',
-              title: 'Reminders & Notifications',
+              title: 'Reminders & Notifications'.tr,
               description: 'Manage payment due dates and monthly reminders.',
               onTap: _openReminders,
               iconBackground: isDark
@@ -357,7 +357,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
             _buildFeatureCard(
               icon: '🕘',
-              title: 'Committee History',
+              title: 'Committee History'.tr,
               description: 'View completed committees and payment history.',
               onTap: _openHistory,
               iconBackground: isDark

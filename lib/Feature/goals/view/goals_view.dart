@@ -405,7 +405,7 @@ class GoalsView extends GetView<GoalsController> {
                               const SizedBox(width: 12),
                               Text(
                                 date == null
-                                    ? 'Choose a date'
+                                    ? 'Choose a date'.tr
                                     : '${date.day}/${date.month}/${date.year}',
                                 style: TextStyle(
                                   fontSize: 14,
@@ -454,7 +454,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     child: Text(
-                      goal == null ? 'Create goal' : 'Save changes',
+                      (goal == null ? 'Create goal' : 'Save changes').tr,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -544,7 +544,7 @@ class GoalsView extends GetView<GoalsController> {
                         children: [
                           const SizedBox(height: 8),
                           Text(
-                            isDeposit ? 'Add money' : 'Withdraw money',
+                            (isDeposit ? 'Add money' : 'Withdraw money').tr,
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -559,10 +559,22 @@ class GoalsView extends GetView<GoalsController> {
                               Expanded(
                                 child: Text(
                                   isDeposit
-                                      ? '${goal.title} — $goalCurrency '
-                                            '${formatMoney(goal.remaining)} still needed'
-                                      : '${goal.title} — $goalCurrency '
-                                            '${formatMoney(goal.savedAmount)} available',
+                                      ? '@title — @currency @amount still needed'
+                                            .trParams({
+                                              'title': goal.title,
+                                              'currency': goalCurrency,
+                                              'amount': formatMoney(
+                                                goal.remaining,
+                                              ),
+                                            })
+                                      : '@title — @currency @amount available'
+                                            .trParams({
+                                              'title': goal.title,
+                                              'currency': goalCurrency,
+                                              'amount': formatMoney(
+                                                goal.savedAmount,
+                                              ),
+                                            }),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -577,7 +589,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: 'Close'.tr,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
                         minWidth: 40,
@@ -666,7 +678,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     child: Text(
-                      isDeposit ? 'Add to goal' : 'Withdraw',
+                      (isDeposit ? 'Add to goal' : 'Withdraw').tr,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -731,10 +743,7 @@ class GoalsView extends GetView<GoalsController> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'Cancel'.tr,
-              style: TextStyle(color: theme.hintColor),
-            ),
+            child: Text('Cancel'.tr, style: TextStyle(color: theme.hintColor)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -840,15 +849,11 @@ class _SummaryCard extends StatelessWidget {
             children: [
               _Pill(
                 icon: Icons.trending_up_rounded,
-                text: '@count in progress'.trParams({
-                  'count': '$activeCount',
-                }),
+                text: '@count in progress'.trParams({'count': '$activeCount'}),
               ),
               _Pill(
                 icon: Icons.check_circle_rounded,
-                text: '@count completed'.trParams({
-                  'count': '$completedCount',
-                }),
+                text: '@count completed'.trParams({'count': '$completedCount'}),
               ),
             ],
           ),
@@ -1178,7 +1183,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                                 GoalIconBadge(iconKey: option.key, size: 34),
                                 const SizedBox(height: 5),
                                 Text(
-                                  option.label,
+                                  option.label.tr,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1272,7 +1277,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                                       horizontal: 4,
                                     ),
                                     child: Text(
-                                      option.label,
+                                      option.label.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -1309,7 +1314,7 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
+      text.tr,
       style: TextStyle(
         fontSize: 12.5,
         fontWeight: FontWeight.w600,
@@ -1368,7 +1373,9 @@ class _Field extends StatelessWidget {
           color: theme.hintColor.withValues(alpha: 0.6),
         ),
         filled: true,
-        fillColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
+        fillColor: isDark
+            ? Colors.white10
+            : Colors.black.withValues(alpha: 0.04),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -1410,7 +1417,7 @@ class _DateChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
-          label,
+          label.tr,
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,

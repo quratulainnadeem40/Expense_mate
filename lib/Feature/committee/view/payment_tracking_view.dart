@@ -357,7 +357,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 const SizedBox(height: 18),
                 _statusOption(
                   context: sheetContext,
-                  title: 'Received',
+                  title: 'Received'.tr,
                   icon: Icons.check_circle_outline_rounded,
                   color: isDark
                       ? const Color(0xFF65D6A0)
@@ -367,7 +367,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 _statusOption(
                   context: sheetContext,
-                  title: 'Pending',
+                  title: 'Pending'.tr,
                   icon: Icons.pending_outlined,
                   color: isDark
                       ? const Color(0xFFFFCA70)
@@ -377,7 +377,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 _statusOption(
                   context: sheetContext,
-                  title: 'Overdue',
+                  title: 'Overdue'.tr,
                   icon: Icons.warning_amber_rounded,
                   color: isDark
                       ? const Color(0xFFFF8585)
@@ -429,9 +429,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
 
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(
-          this.context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(this.context).showSnackBar(
           SnackBar(
             content: Text(
               'Payment marked as @title.'.trParams({'title': title.tr}),
@@ -739,7 +737,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
             children: [
               Expanded(
                 child: _summaryItem(
-                  title: 'Received',
+                  title: 'Received'.tr,
                   value: '$receivedCount',
                   icon: Icons.check_circle_outline_rounded,
                   color: isDark
@@ -752,7 +750,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
-                  title: 'Pending',
+                  title: 'Pending'.tr,
                   value: '$pendingCount',
                   icon: Icons.pending_outlined,
                   color: isDark
@@ -765,7 +763,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
-                  title: 'Overdue',
+                  title: 'Overdue'.tr,
                   value: '$overdueCount',
                   icon: Icons.warning_amber_rounded,
                   color: isDark

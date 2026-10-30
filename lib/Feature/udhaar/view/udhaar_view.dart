@@ -48,10 +48,10 @@ class UdhaarView extends GetView<UdhaarController> {
   ];
 
   /// "10 Oct" for the card rows, where the year only adds noise.
-  static String _shortDate(DateTime d) => '${d.day} ${_months[d.month - 1]}';
+  static String _shortDate(DateTime d) => '${d.day} ${_months[d.month - 1].tr}';
 
   static String _date(DateTime d) =>
-      '${d.day} ${_months[d.month - 1]} ${d.year}';
+      '${d.day} ${_months[d.month - 1].tr} ${d.year}';
 
   @override
   Widget build(BuildContext context) {

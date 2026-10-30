@@ -1,5 +1,6 @@
 import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:expense_mate/Feature/onboarding/controller/onboarding_controller.dart';
+import 'package:expense_mate/Feature/goals/model/goal_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -167,6 +168,71 @@ void main() {
     ]) {
       expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
       expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+  });
+
+  test('Urdu covers drawer screens and nested budget, goal, and bill UI', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Monthly budget exceeded',
+      'Edit Monthly Limit',
+      'Change Budget Start Date?',
+      'Category Name',
+      'Monthly Limit',
+      'Total Limit',
+      'Custom category added.',
+      'Delete Category',
+      'Budget Exceeded',
+      'Reset Budget Now',
+      'In progress',
+      'Pick an icon',
+      'Goal name',
+      'Target amount',
+      'Target date',
+      'Already saved (optional)',
+      'Choose a date',
+      '3 months',
+      '6 months',
+      '1 year',
+      'Withdraw money',
+      'Add to goal',
+      'Goal created',
+      'Goal updated',
+      'Goal deleted',
+      'Create goal',
+      'Bill added successfully.',
+      'Bill updated successfully.',
+      'Bill deleted successfully.',
+      'Unable to load bills. Please try again.',
+      'Monthly',
+      'Reminders & Notifications',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+
+    expect(urdu['@title — @currency @amount still needed'], contains('@title'));
+    expect(
+      urdu['This category would push your total monthly budget from @current to @projected.\n\nYou are over by @amount.'],
+      contains('@projected'),
+    );
+  });
+
+  test('Urdu translates every goal icon label', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final option in goalIconOptions) {
+      expect(
+        urdu[option.label],
+        isNotNull,
+        reason: 'Missing Urdu goal icon label: ${option.label}',
+      );
+      expect(
+        urdu[option.label],
+        isNot(option.label),
+        reason: 'Untranslated Urdu goal icon label: ${option.label}',
+      );
     }
   });
 
