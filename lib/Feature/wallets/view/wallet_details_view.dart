@@ -1,9 +1,9 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/wallets_controller.dart';
-import '../model/wallet_model.dart';
 import 'edit_wallet_view.dart';
 
 class WalletDetailsView extends StatelessWidget {
@@ -49,7 +49,7 @@ class WalletDetailsView extends StatelessWidget {
                       const SizedBox(height: 14),
 
                       Text(
-                        currentWallet.name,
+                        currentWallet.name.tr,
                         style: AppTextStyles.headingMedium(isDark),
                         textAlign: TextAlign.center,
                       ),
@@ -57,7 +57,7 @@ class WalletDetailsView extends StatelessWidget {
                       const SizedBox(height: 6),
 
                       Text(
-                        currentWallet.displayType,
+                        currentWallet.displayType.tr,
                         style: AppTextStyles.bodyMedium(isDark),
                       ),
 
@@ -140,9 +140,7 @@ class WalletDetailsView extends StatelessWidget {
 
     final amount = await Get.dialog<double>(
       AlertDialog(
-        title: Text(
-          isAdd ? 'Add Money'.tr : 'Withdraw Money'.tr,
-        ),
+        title: Text(isAdd ? 'Add Money'.tr : 'Withdraw Money'.tr),
         content: TextField(
           controller: amountController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),

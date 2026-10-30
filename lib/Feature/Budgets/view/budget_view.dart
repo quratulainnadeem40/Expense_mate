@@ -2412,7 +2412,7 @@ class _BudgetViewState extends State<BudgetView> {
                                     ),
                                   Expanded(
                                     child: Text(
-                                      item.categoryName,
+                                      item.categoryName.tr,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,

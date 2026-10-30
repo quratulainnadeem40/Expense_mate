@@ -561,7 +561,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                     return DropdownMenuItem<String>(
                       value: category.id,
                       child: Text(
-                        category.name,
+                        category.name.tr,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -614,7 +614,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                     return DropdownMenuItem<String>(
                       value: wallet.id,
                       child: Text(
-                        wallet.name,
+                        wallet.name.tr,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );

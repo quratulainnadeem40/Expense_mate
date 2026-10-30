@@ -141,6 +141,35 @@ void main() {
     }
   });
 
+  test('Urdu translates category and wallet picker values', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Education',
+      'Food',
+      'Bills',
+      'Transport',
+      'Health',
+      'Salary',
+      'Freelance',
+      'Business',
+      'Gift',
+      'Profit',
+      'Cash',
+      'Bank',
+      'Bank Account',
+      'JazzCash',
+      'Jazzcash',
+      'Easypaisa',
+      'Credit Card',
+      'Other',
+      'More...',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+  });
+
   testWidgets(
     'text fields have framework localizations for Pashto and Sindhi',
     (tester) async {

@@ -129,7 +129,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               // CATEGORY ID
               // ------------------------------------------------
               Text(
-                _categoryName,
+                _categoryName.tr,
                 style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
 

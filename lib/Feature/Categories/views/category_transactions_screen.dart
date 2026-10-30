@@ -247,8 +247,11 @@ class _CategoryTransactionsScreenState
 
           final transactionTitle =
               transaction['title']?.toString().trim().isNotEmpty == true
-                  ? transaction['title'].toString()
-                  : widget.categoryName;
+                      ? transaction['title'].toString().trim().toLowerCase() ==
+                              widget.categoryName.trim().toLowerCase()
+                          ? widget.categoryName.tr
+                          : transaction['title'].toString()
+                      : widget.categoryName.tr;
 
           final transactionDate = DateTime.tryParse(
             transaction['transaction_date']?.toString() ?? '',
@@ -342,7 +345,7 @@ class _CategoryTransactionsScreenState
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(widget.categoryName),
+            Text(widget.categoryName.tr),
             if (widget.periodStart != null && widget.periodEnd != null)
               Text(
                 _formatPeriod(),

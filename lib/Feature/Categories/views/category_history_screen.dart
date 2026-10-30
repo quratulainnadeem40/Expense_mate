@@ -111,8 +111,11 @@ class CategoryHistoryScreen extends StatelessWidget {
                 categoriesController,
               );
               final title = transaction.title.trim().isNotEmpty
-                  ? transaction.title.trim()
-                  : categoryName;
+                  ? transaction.title.trim().toLowerCase() ==
+                          categoryName.trim().toLowerCase()
+                      ? categoryName.tr
+                      : transaction.title.trim()
+                  : categoryName.tr;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -150,7 +153,7 @@ class CategoryHistoryScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$categoryName • '
+                            '${categoryName.tr} • '
                             '${Formatters.formatDate(transaction.transactionDate)}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

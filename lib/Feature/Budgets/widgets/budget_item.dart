@@ -14,7 +14,7 @@ class BudgetItem extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       child: ListTile(
         title: Text(
-          budget.categoryName,
+          budget.categoryName.tr,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(

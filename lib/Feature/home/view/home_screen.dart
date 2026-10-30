@@ -510,7 +510,10 @@ class HomeScreen extends StatelessWidget {
 
                         final String displayTitle =
                             transaction.title.trim().isEmpty
-                                ? categoryName
+                                ? categoryName.tr
+                                : transaction.title.trim().toLowerCase() ==
+                                      categoryName.trim().toLowerCase()
+                                ? categoryName.tr
                                 : transaction.title;
 
                         return Card(
@@ -562,7 +565,7 @@ class HomeScreen extends StatelessWidget {
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
-                                  "$categoryName • ${_getFormattedDate(transaction.date)}",
+                                  "${categoryName.tr} • ${_getFormattedDate(transaction.date)}",
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

@@ -1312,7 +1312,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                           children: [
                                             Text(
-                                              category.name,
+                                              category.name.tr,
                                               style:
                                                   AppTextStyles.bodyLarge(
                                                     isDark,

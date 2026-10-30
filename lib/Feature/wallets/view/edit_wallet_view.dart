@@ -1,9 +1,9 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/wallets_controller.dart';
-import '../model/wallet_model.dart';
 import '../widgets/wallet_type_selector.dart';
 
 class EditWalletView extends StatefulWidget {
@@ -73,7 +73,10 @@ class _EditWalletViewState extends State<EditWalletView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Wallet'.tr, style: AppTextStyles.headingMedium(isDark)),
+        title: Text(
+          'Edit Wallet'.tr,
+          style: AppTextStyles.headingMedium(isDark),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

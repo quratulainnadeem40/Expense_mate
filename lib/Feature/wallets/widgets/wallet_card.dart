@@ -105,7 +105,7 @@ class WalletCard extends StatelessWidget {
         // WALLET NAME
         // ======================================================
         title: Text(
-          wallet.name,
+          wallet.name.tr,
           style: AppTextStyles.bodyLarge(
             isDark,
           ).copyWith(fontWeight: FontWeight.w600),

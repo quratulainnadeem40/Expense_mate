@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../../Categories/model/categories_model.dart';
+import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
+
 import '../../settings/controller/settings_controller.dart';
 import '../controller/expense_controller.dart';
 
@@ -585,7 +586,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                 return [
                                   ...dropdownCategories.map<Widget>((category) {
                                     return Text(
-                                      category.name,
+                                      category.name.tr,
                                       style: TextStyle(
                                         color: theme.textTheme.bodyLarge?.color,
                                         fontWeight: FontWeight.w500,
@@ -615,7 +616,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                         return DropdownMenuItem<String>(
                                           value: category.id,
                                           child: Text(
-                                            category.name,
+                                            category.name.tr,
                                             style: TextStyle(
                                               color: theme
                                                   .textTheme
@@ -727,7 +728,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                         selectedItemBuilder: (BuildContext context) {
                           return wallets.map<Widget>((wallet) {
                             return Text(
-                              wallet.name,
+                              wallet.name.tr,
                               style: TextStyle(
                                 color: theme.textTheme.bodyLarge?.color,
                                 fontWeight: FontWeight.w500,
@@ -759,7 +760,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  wallet.name,
+                                  wallet.name.tr,
                                   style: TextStyle(
                                     color: theme.textTheme.bodyMedium?.color,
                                   ),
