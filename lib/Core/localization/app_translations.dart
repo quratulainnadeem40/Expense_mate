@@ -238,6 +238,11 @@ class AppTranslations extends Translations {
     'Custom currency': 'Custom currency',
     'Default currency': 'Default currency',
     'Delete currency': 'Delete currency',
+    'Set an app PIN': 'Set an app PIN',
+    'Lock the app with four digits': 'Lock the app with four digits',
+    'Transaction Sound': 'Transaction Sound',
+    'Play a short tone when an entry is saved':
+        'Play a short tone when an entry is saved',
     'Select Currency': 'Select Currency',
     'Choose your preferred currency': 'Choose your preferred currency',
     'APPEARANCE': 'APPEARANCE',
@@ -310,6 +315,11 @@ class AppTranslations extends Translations {
     'Custom currency': 'کسٹم کرنسی',
     'Default currency': 'ڈیفالٹ کرنسی',
     'Delete currency': 'کرنسی حذف کریں',
+    'Set an app PIN': 'ایپ کا PIN سیٹ کریں',
+    'Lock the app with four digits': 'ایپ کو چار ہندسوں والے PIN سے لاک کریں',
+    'Transaction Sound': 'لین دین کی آواز',
+    'Play a short tone when an entry is saved':
+        'اندراج محفوظ ہونے پر مختصر آواز چلائیں',
     'Select Currency': 'کرنسی منتخب کریں',
     'Choose your preferred currency': 'اپنی پسندیدہ کرنسی منتخب کریں',
     'APPEARANCE': 'ظاہری شکل',
@@ -1593,6 +1603,73 @@ class AppTranslations extends Translations {
     'CONTENTS': 'CONTENTS',
     'Jump to any section': 'Jump to any section',
     'Made with Flutter': 'Made with Flutter',
+    'Live Budget': 'Live Budget',
+    'Total Monthly Budget Spent': 'Total Monthly Budget Spent',
+    '@cycle · @count days left': '@cycle · @count days left',
+    'Category Budgets': 'Category Budgets',
+    'Over by @amount': 'Over by @amount',
+    'No categories found.': 'No categories found.',
+    'No upcoming bills': 'No upcoming bills',
+    'No overdue bills': 'No overdue bills',
+    'No paid bills yet': 'No paid bills yet',
+    'e.g. @icon goal': 'e.g. @icon goal',
+    '@amount lakh': '@amount lakh',
+    '@amount thousand': '@amount thousand',
+    '@count months left': '@count months left',
+    '@count weeks left': '@count weeks left',
+    '1 day left': '1 day left',
+    '@count days left': '@count days left',
+    'Track • Save • Grow': 'Track • Save • Grow',
+    'What is Expense Mate?': 'What is Expense Mate?',
+    'Expense Mate is a personal money manager that helps you see exactly where your money goes. Record every income and expense, set a budget for the month, keep your cash and bank accounts separate, and get a clear picture of your spending at the end of every month.':
+        'Expense Mate is a personal money manager that helps you see exactly where your money goes. Record every income and expense, set a budget for the month, keep your cash and bank accounts separate, and get a clear picture of your spending at the end of every month.',
+    'What each screen does': 'What each screen does',
+    'Your starting point. Shows the total balance, income and expense for the month, and the latest transactions.':
+        'Your starting point. Shows the total balance, income and expense for the month, and the latest transactions.',
+    'The full record of every income and expense. Search it, edit an entry, or delete one or several at once.':
+        'The full record of every income and expense. Search it, edit an entry, or delete one or several at once.',
+    'Record money in or out. Pick a category and wallet for an expense, add a note, and the wallet balance updates on its own.':
+        'Record money in or out. Pick a category and wallet for an expense, add a note, and the wallet balance updates on its own.',
+    'Keep cash, bank account, JazzCash, Easypaisa and credit card apart, each with its own balance, so you know where the money actually sits.':
+        'Keep cash, bank account, JazzCash, Easypaisa and credit card apart, each with its own balance, so you know where the money actually sits.',
+    'Decide what your spending is sorted into. Use the built-in ones or add your own, and tap any category to see its transactions.':
+        'Decide what your spending is sorted into. Use the built-in ones or add your own, and tap any category to see its transactions.',
+    'Set a spending limit for the month, overall and per category, and watch how much is left. The budget resets on the day you choose, and past cycles are kept in the history.':
+        'Set a spending limit for the month, overall and per category, and watch how much is left. The budget resets on the day you choose, and past cycles are kept in the history.',
+    'Save towards something specific. Set the amount and date, add money whenever you can, and see how much is still needed each month.':
+        'Save towards something specific. Set the amount and date, add money whenever you can, and see how much is still needed each month.',
+    'Keep track of what is due and when. The app notifies you before the date so a bill is never missed.':
+        'Keep track of what is due and when. The app notifies you before the date so a bill is never missed.',
+    'Run a committee without a register. Add members, track who has paid each month, and see whose turn it is to collect.':
+        'Run a committee without a register. Add members, track who has paid each month, and see whose turn it is to collect.',
+    'See where the money went. Income against expense, a breakdown by category, and the trend across the last six months.':
+        'See where the money went. Income against expense, a breakdown by category, and the trend across the last six months.',
+    'Your account, the currency the app displays, light or dark theme, and notification settings.':
+        'Your account, the currency the app displays, light or dark theme, and notification settings.',
+    'Profile & Settings': 'Profile & Settings',
+    'Your data': 'Your data',
+    'Your transactions are tied to your account and synced securely to the cloud, so you keep your history even if you change your phone. Only you can see your data — it is never sold or shared with advertisers.':
+        'Your transactions are tied to your account and synced securely to the cloud, so you keep your history even if you change your phone. Only you can see your data — it is never sold or shared with advertisers.',
+    'Password protected account': 'Password protected account',
+    'Automatic cloud backup': 'Automatic cloud backup',
+    'No ads, no data selling': 'No ads, no data selling',
+    'App information': 'App information',
+    'Version': 'Version',
+    'Developer': 'Developer',
+    'Package': 'Package',
+    'Support & legal': 'Support & legal',
+    'Contact support': 'Contact support',
+    'Website': 'Website',
+    'Privacy policy': 'Privacy policy',
+    'Terms of service': 'Terms of service',
+    'Read the privacy policy': 'Read the privacy policy',
+    'Read the terms and conditions': 'Read the terms and conditions',
+    'Version @version': 'Version @version',
+    '© @year @developer. All rights reserved.':
+        '© @year @developer. All rights reserved.',
+    'Copied': 'Copied',
+    'Email address copied': 'Email address copied',
+    'Link copied': 'Link copied',
     'Monthly budget exceeded': 'Monthly budget exceeded',
     'This category would push your total monthly budget from @current to @projected.\n\nYou are over by @amount.':
         'This category would push your total monthly budget from @current to @projected.\n\nYou are over by @amount.',
@@ -1962,7 +2039,7 @@ class AppTranslations extends Translations {
     'Completed': 'مکمل',
     'Edit goal': 'ہدف میں ترمیم کریں',
     'Pick an icon': 'آئیکن منتخب کریں',
-    'Target': 'ہدف',
+    'Target': 'مقصد',
     'Savings': 'بچت',
     'Car': 'گاڑی',
     'Phone': 'فون',
@@ -2366,6 +2443,73 @@ class AppTranslations extends Translations {
     'CONTENTS': 'فہرست',
     'Jump to any section': 'کسی بھی حصے پر جائیں',
     'Made with Flutter': 'Flutter سے بنایا گیا',
+    'Live Budget': 'لائیو بجٹ',
+    'Total Monthly Budget Spent': 'کل ماہانہ بجٹ میں سے خرچ',
+    '@cycle · @count days left': '@cycle · @count دن باقی',
+    'Category Budgets': 'زمرہ وار بجٹ',
+    'Over by @amount': '@amount زیادہ خرچ',
+    'No categories found.': 'کوئی زمرہ نہیں ملا۔',
+    'No upcoming bills': 'کوئی آنے والا بل نہیں',
+    'No overdue bills': 'کوئی تاخیر شدہ بل نہیں',
+    'No paid bills yet': 'ابھی تک کوئی بل ادا نہیں ہوا',
+    'e.g. @icon goal': 'مثلاً @icon کے لیے بچت',
+    '@amount lakh': '@amount لاکھ',
+    '@amount thousand': '@amount ہزار',
+    '@count months left': '@count ماہ باقی',
+    '@count weeks left': '@count ہفتے باقی',
+    '1 day left': '1 دن باقی',
+    '@count days left': '@count دن باقی',
+    'Track • Save • Grow': 'حساب رکھیں • بچائیں • ترقی کریں',
+    'What is Expense Mate?': 'Expense Mate کیا ہے؟',
+    'Expense Mate is a personal money manager that helps you see exactly where your money goes. Record every income and expense, set a budget for the month, keep your cash and bank accounts separate, and get a clear picture of your spending at the end of every month.':
+        'Expense Mate ذاتی مالیات کا منتظم ہے جو آپ کو دکھاتا ہے کہ آپ کی رقم کہاں خرچ ہوتی ہے۔ ہر آمدنی اور خرچ درج کریں، ماہانہ بجٹ مقرر کریں، نقد رقم اور بینک اکاؤنٹس الگ رکھیں، اور ہر ماہ کے آخر میں اپنے اخراجات کی مکمل تفصیل دیکھیں۔',
+    'What each screen does': 'ہر اسکرین کا کام',
+    'Your starting point. Shows the total balance, income and expense for the month, and the latest transactions.':
+        'یہ آپ کی ابتدائی اسکرین ہے۔ یہاں کل بیلنس، اس ماہ کی آمدنی اور خرچ، اور حالیہ لین دین دکھائی دیتے ہیں۔',
+    'The full record of every income and expense. Search it, edit an entry, or delete one or several at once.':
+        'ہر آمدنی اور خرچ کا مکمل ریکارڈ۔ تلاش کریں، کسی اندراج میں ترمیم کریں یا ایک یا کئی اندراجات حذف کریں۔',
+    'Record money in or out. Pick a category and wallet for an expense, add a note, and the wallet balance updates on its own.':
+        'آمدنی یا خرچ درج کریں۔ خرچ کے لیے زمرہ اور والٹ منتخب کریں، نوٹ لکھیں، اور والٹ کا بیلنس خود اپ ڈیٹ ہو جائے گا۔',
+    'Keep cash, bank account, JazzCash, Easypaisa and credit card apart, each with its own balance, so you know where the money actually sits.':
+        'نقد رقم، بینک اکاؤنٹ، JazzCash، Easypaisa اور کریڈٹ کارڈ الگ رکھیں۔ ہر ایک کا اپنا بیلنس ہوگا تاکہ آپ کو رقم کی جگہ معلوم رہے۔',
+    'Decide what your spending is sorted into. Use the built-in ones or add your own, and tap any category to see its transactions.':
+        'اپنے اخراجات کی درجہ بندی کریں۔ پہلے سے موجود زمرے استعمال کریں یا اپنے زمرے بنائیں، اور لین دین دیکھنے کے لیے کسی زمرے پر ٹیپ کریں۔',
+    'Set a spending limit for the month, overall and per category, and watch how much is left. The budget resets on the day you choose, and past cycles are kept in the history.':
+        'پورے مہینے اور ہر زمرے کے لیے خرچ کی حد مقرر کریں اور باقی رقم دیکھیں۔ بجٹ آپ کے منتخب کردہ دن ری سیٹ ہوگا اور پچھلے سائیکل ہسٹری میں محفوظ رہیں گے۔',
+    'Save towards something specific. Set the amount and date, add money whenever you can, and see how much is still needed each month.':
+        'کسی خاص مقصد کے لیے بچت کریں۔ رقم اور تاریخ مقرر کریں، جب ممکن ہو رقم شامل کریں، اور دیکھیں کہ ہر ماہ کتنا مزید درکار ہے۔',
+    'Keep track of what is due and when. The app notifies you before the date so a bill is never missed.':
+        'واجب الادا بلوں اور ان کی تاریخوں کا حساب رکھیں۔ ایپ مقررہ تاریخ سے پہلے اطلاع دے گی تاکہ کوئی بل رہ نہ جائے۔',
+    'Run a committee without a register. Add members, track who has paid each month, and see whose turn it is to collect.':
+        'رجسٹر کے بغیر کمیٹی چلائیں۔ ارکان شامل کریں، ہر ماہ ادائیگی کا حساب رکھیں، اور دیکھیں کہ رقم وصول کرنے کی باری کس کی ہے۔',
+    'See where the money went. Income against expense, a breakdown by category, and the trend across the last six months.':
+        'دیکھیں رقم کہاں خرچ ہوئی۔ آمدنی اور خرچ کا موازنہ، زمرے کے لحاظ سے تفصیل اور گزشتہ چھ ماہ کا رجحان دیکھیں۔',
+    'Your account, the currency the app displays, light or dark theme, and notification settings.':
+        'اپنا اکاؤنٹ، ایپ کی کرنسی، لائٹ یا ڈارک تھیم اور اطلاعات کی ترتیبات یہاں سنبھالیں۔',
+    'Profile & Settings': 'پروفائل اور ترتیبات',
+    'Your data': 'آپ کا ڈیٹا',
+    'Your transactions are tied to your account and synced securely to the cloud, so you keep your history even if you change your phone. Only you can see your data — it is never sold or shared with advertisers.':
+        'آپ کے لین دین آپ کے اکاؤنٹ سے منسلک اور محفوظ طریقے سے کلاؤڈ پر ہم آہنگ ہوتے ہیں، اس لیے فون تبدیل کرنے کے باوجود آپ کی ہسٹری محفوظ رہتی ہے۔ آپ کا ڈیٹا صرف آپ دیکھ سکتے ہیں؛ اسے کبھی فروخت یا اشتہارات کے لیے شیئر نہیں کیا جاتا۔',
+    'Password protected account': 'پاس ورڈ سے محفوظ اکاؤنٹ',
+    'Automatic cloud backup': 'کلاؤڈ میں خودکار بیک اپ',
+    'No ads, no data selling': 'نہ اشتہارات، نہ ڈیٹا کی فروخت',
+    'App information': 'ایپ کی معلومات',
+    'Version': 'ورژن',
+    'Developer': 'ڈیولپر',
+    'Package': 'پیکیج',
+    'Support & legal': 'مدد اور قانونی معلومات',
+    'Contact support': 'سپورٹ سے رابطہ کریں',
+    'Website': 'ویب سائٹ',
+    'Privacy policy': 'رازداری کی پالیسی',
+    'Terms of service': 'استعمال کی شرائط',
+    'Read the privacy policy': 'رازداری کی پالیسی پڑھیں',
+    'Read the terms and conditions': 'شرائط و ضوابط پڑھیں',
+    'Version @version': 'ورژن @version',
+    '© @year @developer. All rights reserved.':
+        '© @year @developer۔ جملہ حقوق محفوظ ہیں۔',
+    'Copied': 'کاپی ہو گیا',
+    'Email address copied': 'ای میل ایڈریس کاپی ہو گیا',
+    'Link copied': 'لنک کاپی ہو گیا',
     'Monthly budget exceeded': 'ماہانہ بجٹ سے تجاوز ہو گیا',
     'This category would push your total monthly budget from @current to @projected.\n\nYou are over by @amount.':
         'یہ زمرہ آپ کا کل ماہانہ بجٹ @current سے بڑھا کر @projected کر دے گا۔\n\nآپ @amount زیادہ خرچ کر رہے ہیں۔',

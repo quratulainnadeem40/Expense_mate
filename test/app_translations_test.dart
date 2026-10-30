@@ -236,6 +236,46 @@ void main() {
     }
   });
 
+  test('Urdu covers the drawer strings visible in the screenshots', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Live Budget',
+      'Total Monthly Budget Spent',
+      '@cycle · @count days left',
+      'Category Budgets',
+      'Spent: @spent / @allocated',
+      'Over by @amount',
+      'No upcoming bills',
+      'No paid bills yet',
+      'e.g. @icon goal',
+      '3 months',
+      '6 months',
+      '1 year',
+      '@amount lakh',
+      '@amount thousand',
+      'Create goal',
+      'Set an app PIN',
+      'Lock the app with four digits',
+      'Transaction Sound',
+      'Play a short tone when an entry is saved',
+      'About',
+      'What is Expense Mate?',
+      'What each screen does',
+      'Your data',
+      'App information',
+      'Support & legal',
+      'Profile & Settings',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+
+    expect(urdu['@cycle · @count days left'], contains('@count'));
+    expect(urdu['@cycle · @count days left'], contains('@cycle'));
+    expect(urdu['@amount lakh'], contains('@amount'));
+  });
+
   testWidgets(
     'text fields have framework localizations for Pashto and Sindhi',
     (tester) async {

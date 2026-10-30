@@ -26,10 +26,14 @@ String goalMoney(double value) => '$goalCurrency ${formatMoney(value)}';
 
 /// "8 months left" reads better than "243 days left".
 String _timeLeft(int days) {
-  if (days >= 60) return '${(days / 30).round()} months left';
-  if (days >= 14) return '${(days / 7).round()} weeks left';
-  if (days == 1) return '1 day left';
-  return '$days days left';
+  if (days >= 60) {
+    return '@count months left'.trParams({'count': '${(days / 30).round()}'});
+  }
+  if (days >= 14) {
+    return '@count weeks left'.trParams({'count': '${(days / 7).round()}'});
+  }
+  if (days == 1) return '1 day left'.tr;
+  return '@count days left'.trParams({'count': '$days'});
 }
 
 class GoalsCard extends StatelessWidget {
@@ -63,7 +67,9 @@ class GoalsCard extends StatelessWidget {
         border: Border.all(
           color: done
               ? kGoalGreen.withValues(alpha: 0.45)
-              : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06)),
+              : (isDark
+                    ? Colors.white10
+                    : Colors.black.withValues(alpha: 0.06)),
         ),
         boxShadow: isDark
             ? null
@@ -228,7 +234,9 @@ class GoalsCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: Container(
               height: 9,
-              color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07),
+              color: isDark
+                  ? Colors.white12
+                  : Colors.black.withValues(alpha: 0.07),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: goal.progress.clamp(0.0, 1.0),
@@ -300,11 +308,10 @@ class GoalsCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         goal.daysLeft > 0
-                            ? 'Save about @currency @amount a month'
-                                  .trParams({
-                                    'currency': goalCurrency,
-                                    'amount': formatMoney(goal.monthlyTarget),
-                                  })
+                            ? 'Save about @currency @amount a month'.trParams({
+                                'currency': goalCurrency,
+                                'amount': formatMoney(goal.monthlyTarget),
+                              })
                             : 'Target date has passed'.tr,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

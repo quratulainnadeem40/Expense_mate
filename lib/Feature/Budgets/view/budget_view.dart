@@ -420,6 +420,18 @@ class _BudgetViewState extends State<BudgetView> {
     return '${date.day} ${_monthName(date.month)} ${date.year}';
   }
 
+  String _localizedCategoryName(String name) {
+    final normalizedName = name.trim().toLowerCase();
+    final defaultNames = {
+      'education': 'Education',
+      'food': 'Food',
+      'bills': 'Bills',
+      'transport': 'Transport',
+      'health': 'Health',
+    };
+    return (defaultNames[normalizedName] ?? name).tr;
+  }
+
   Future<void> _showBudgetCycleBottomSheet(BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Read from the controller so these choices are remembered.
@@ -2022,7 +2034,7 @@ class _BudgetViewState extends State<BudgetView> {
 
       appBar: AppBar(
         title: Text(
-          'Live Budget',
+          'Live Budget'.tr,
           style: TextStyle(
             color: primaryTextColor,
             fontWeight: FontWeight.bold,
@@ -2062,7 +2074,7 @@ class _BudgetViewState extends State<BudgetView> {
         if (budgets.isEmpty) {
           return Center(
             child: Text(
-              'No categories found.',
+              'No categories found.'.tr,
               style: TextStyle(color: secondaryTextColor),
             ),
           );
@@ -2093,7 +2105,7 @@ class _BudgetViewState extends State<BudgetView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Total Monthly Budget Spent',
+                                'Total Monthly Budget Spent'.tr,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -2103,8 +2115,10 @@ class _BudgetViewState extends State<BudgetView> {
                               const SizedBox(height: 2),
                               // Which cycle these figures belong to.
                               Text(
-                                '${controller.cycleLabel}  ·  '
-                                '${controller.daysLeftInCycle} days left',
+                                '@cycle · @count days left'.trParams({
+                                  'cycle': controller.cycleLabel,
+                                  'count': '${controller.daysLeftInCycle}',
+                                }),
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: secondaryTextColor,
@@ -2222,7 +2236,7 @@ class _BudgetViewState extends State<BudgetView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Category Budgets',
+                    'Category Budgets'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -2406,7 +2420,7 @@ class _BudgetViewState extends State<BudgetView> {
                                     ),
                                   Expanded(
                                     child: Text(
-                                      item.categoryName.tr,
+                                      _localizedCategoryName(item.categoryName),
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
@@ -2537,7 +2551,12 @@ class _BudgetViewState extends State<BudgetView> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Spent: ${Formatters.money(item.spentAmount)} / ${Formatters.money(item.allocatedAmount)}',
+                                'Spent: @spent / @allocated'.trParams({
+                                  'spent': Formatters.money(item.spentAmount),
+                                  'allocated': Formatters.money(
+                                    item.allocatedAmount,
+                                  ),
+                                }),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: secondaryTextColor,
@@ -2547,7 +2566,11 @@ class _BudgetViewState extends State<BudgetView> {
                             if (item.allocatedAmount > 0 &&
                                 item.spentAmount > item.allocatedAmount)
                               Text(
-                                'Over by ${Formatters.money(item.spentAmount - item.allocatedAmount)}',
+                                'Over by @amount'.trParams({
+                                  'amount': Formatters.money(
+                                    item.spentAmount - item.allocatedAmount,
+                                  ),
+                                }),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,

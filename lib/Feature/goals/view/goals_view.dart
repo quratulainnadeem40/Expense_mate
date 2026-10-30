@@ -491,11 +491,13 @@ class GoalsView extends GetView<GoalsController> {
     if (amount >= 100000) {
       final lakhs = amount / 100000;
       return lakhs == lakhs.roundToDouble()
-          ? '${lakhs.toStringAsFixed(0)} lakh'
-          : '${lakhs.toStringAsFixed(1)} lakh';
+          ? '@amount lakh'.trParams({'amount': lakhs.toStringAsFixed(0)})
+          : '@amount lakh'.trParams({'amount': lakhs.toStringAsFixed(1)});
     }
 
-    if (amount >= 1000) return '${amount ~/ 1000}k';
+    if (amount >= 1000) {
+      return '@amount thousand'.trParams({'amount': '${amount ~/ 1000}'});
+    }
 
     return '$amount';
   }
