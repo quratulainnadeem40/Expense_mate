@@ -1,10 +1,11 @@
-
 import 'package:expense_mate/Core/service/biometric_service.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
+import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
+import 'package:expense_mate/Feature/Budgets/widgets/budget_cycle_setup_sheet.dart';
 import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
@@ -47,10 +48,7 @@ class SettingsView extends StatelessWidget {
           },
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'.tr),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel'.tr)),
           FilledButton(
             onPressed: () {
               final code = currencyController.text.trim();
@@ -76,9 +74,7 @@ class SettingsView extends StatelessWidget {
       AlertDialog(
         backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
         contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
@@ -89,9 +85,7 @@ class SettingsView extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
-                  alpha: isDark ? 0.2 : 0.1,
-                ),
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: const Icon(
@@ -106,10 +100,9 @@ class SettingsView extends StatelessWidget {
                 children: [
                   Text(
                     'Select Currency'.tr,
-                    style: AppTextStyles.headingMedium(isDark).copyWith(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.headingMedium(
+                      isDark,
+                    ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -168,14 +161,12 @@ class SettingsView extends StatelessWidget {
                       ),
                       title: Text(
                         currency,
-                        style: AppTextStyles.bodyLarge(isDark).copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppTextStyles.bodyLarge(
+                          isDark,
+                        ).copyWith(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        isCustom
-                            ? 'Custom currency'.tr
-                            : 'Default currency'.tr,
+                        isCustom ? 'Custom currency'.tr : 'Default currency'.tr,
                         style: AppTextStyles.caption(isDark),
                       ),
                       onTap: () async {
@@ -190,10 +181,7 @@ class SettingsView extends StatelessWidget {
                                 color: AppColors.expenseRed,
                               ),
                               onPressed: () async {
-                                await _confirmDeleteCurrency(
-                                  context,
-                                  currency,
-                                );
+                                await _confirmDeleteCurrency(context, currency);
                               },
                             )
                           : null,
@@ -205,10 +193,8 @@ class SettingsView extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ...defaultCurrencies.map(
-                      (currency) => currencyTile(
-                        currency: currency,
-                        isCustom: false,
-                      ),
+                      (currency) =>
+                          currencyTile(currency: currency, isCustom: false),
                     ),
                     if (customCurrencies.isNotEmpty) ...[
                       Padding(
@@ -216,9 +202,7 @@ class SettingsView extends StatelessWidget {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Divider(
-                                color: AppColors.border(isDark),
-                              ),
+                              child: Divider(color: AppColors.border(isDark)),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
@@ -233,18 +217,14 @@ class SettingsView extends StatelessWidget {
                               ),
                             ),
                             Expanded(
-                              child: Divider(
-                                color: AppColors.border(isDark),
-                              ),
+                              child: Divider(color: AppColors.border(isDark)),
                             ),
                           ],
                         ),
                       ),
                       ...customCurrencies.map(
-                        (currency) => currencyTile(
-                          currency: currency,
-                          isCustom: true,
-                        ),
+                        (currency) =>
+                            currencyTile(currency: currency, isCustom: true),
                       ),
                     ],
                   ],
@@ -268,10 +248,7 @@ class SettingsView extends StatelessWidget {
               ),
               elevation: 0,
               shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 13,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
               textStyle: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -281,10 +258,7 @@ class SettingsView extends StatelessWidget {
               foregroundColor: AppColors.textSecondary(isDark),
               side: BorderSide(color: AppColors.border(isDark)),
               shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 13,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
               textStyle: const TextStyle(fontWeight: FontWeight.w600),
             ),
             child: Text('Close'.tr),
@@ -326,9 +300,7 @@ class SettingsView extends StatelessWidget {
     }
   }
 
-  Future<void> _showLanguageListDialog(
-    BuildContext context,
-  ) async {
+  Future<void> _showLanguageListDialog(BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     const languages = <String, String>{
@@ -344,9 +316,7 @@ class SettingsView extends StatelessWidget {
       AlertDialog(
         backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Text(
           'Select Language'.tr,
           style: AppTextStyles.headingMedium(isDark),
@@ -357,8 +327,7 @@ class SettingsView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: languages.entries.map((entry) {
-                final selected =
-                    controller.selectedLanguage.value == entry.key;
+                final selected = controller.selectedLanguage.value == entry.key;
 
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -386,10 +355,7 @@ class SettingsView extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Close'.tr),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('Close'.tr)),
         ],
       ),
     );
@@ -413,9 +379,9 @@ class SettingsView extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Profile'.tr,
-          style: AppTextStyles.headingMedium(isDark).copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
       ),
@@ -454,9 +420,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Dark Mode'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     controller.isDarkMode.value
@@ -492,9 +458,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Default Currency'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     controller.selectedCurrency.value,
@@ -532,9 +498,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Language'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     _languageName(controller.selectedLanguage.value),
@@ -574,9 +540,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Hide amounts'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     controller.hideAmounts.value
@@ -612,9 +578,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Bill Notifications'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Receive reminders for upcoming bills'.tr,
@@ -638,9 +604,9 @@ class SettingsView extends StatelessWidget {
                     PinService.instance.isPinSet
                         ? 'Change app PIN'.tr
                         : 'Set an app PIN'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     PinService.instance.isPinSet
@@ -676,9 +642,9 @@ class SettingsView extends StatelessWidget {
                         ),
                         title: Text(
                           'Unlock with fingerprint'.tr,
-                          style: AppTextStyles.bodyLarge(isDark).copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTextStyles.bodyLarge(
+                            isDark,
+                          ).copyWith(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
                           'Your PIN still works if it fails'.tr,
@@ -687,8 +653,8 @@ class SettingsView extends StatelessWidget {
                         value: BiometricService.instance.isEnabled,
                         onChanged: (value) async {
                           if (value) {
-                            final ok =
-                                await BiometricService.instance.hasEnrolled();
+                            final ok = await BiometricService.instance
+                                .hasEnrolled();
 
                             if (!ok) {
                               Get.snackbar(
@@ -719,9 +685,9 @@ class SettingsView extends StatelessWidget {
                     ),
                     title: Text(
                       'Remove app PIN'.tr,
-                      style: AppTextStyles.bodyLarge(isDark).copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.bodyLarge(
+                        isDark,
+                      ).copyWith(fontWeight: FontWeight.w600),
                     ),
                     subtitle: Text(
                       'The app will open without asking'.tr,
@@ -742,9 +708,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Transaction Sound'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Play a short tone when an entry is saved'.tr,
@@ -778,9 +744,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'Logout'.tr,
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Sign out from your ExpenseMate account'.tr,
@@ -853,9 +819,9 @@ class SettingsView extends StatelessWidget {
                   ),
                   title: Text(
                     'ExpenseMate',
-                    style: AppTextStyles.bodyLarge(isDark).copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     'Expense management made simple'.tr,
@@ -867,10 +833,7 @@ class SettingsView extends StatelessWidget {
 
             const SizedBox(height: 30),
             Center(
-              child: Text(
-                'ExpenseMate',
-                style: AppTextStyles.caption(isDark),
-              ),
+              child: Text('ExpenseMate', style: AppTextStyles.caption(isDark)),
             ),
             const SizedBox(height: 4),
             Center(
@@ -939,8 +902,8 @@ class SettingsView extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 40,
                       backgroundColor: AppColors.primary,
-                      backgroundImage: controller.profilePictureUrl.value
-                              .isNotEmpty
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
                           ? NetworkImage(controller.profilePictureUrl.value)
                           : null,
                       child: controller.profilePictureUrl.value.isEmpty
@@ -999,9 +962,9 @@ class SettingsView extends StatelessWidget {
                       displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.headingMedium(isDark).copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.headingMedium(
+                        isDark,
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 5),
                     Text(
@@ -1034,9 +997,7 @@ class SettingsView extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Material(
-                color: AppColors.primary.withValues(
-                  alpha: isDark ? 0.2 : 0.09,
-                ),
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.09),
                 shape: const CircleBorder(),
                 child: InkWell(
                   customBorder: const CircleBorder(),
@@ -1115,9 +1076,9 @@ class SettingsView extends StatelessWidget {
           const SizedBox(height: 7),
           Text(
             '$count',
-            style: AppTextStyles.headingMedium(isDark).copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.headingMedium(
+              isDark,
+            ).copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 3),
           Text(
@@ -1185,10 +1146,7 @@ class SettingsView extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: radius,
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       );
     }
@@ -1197,9 +1155,7 @@ class SettingsView extends StatelessWidget {
       AlertDialog(
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         titlePadding: const EdgeInsets.fromLTRB(24, 22, 16, 6),
         contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -1210,9 +1166,7 @@ class SettingsView extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
-                  alpha: isDark ? 0.2 : 0.1,
-                ),
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
@@ -1228,9 +1182,9 @@ class SettingsView extends StatelessWidget {
                 children: [
                   Text(
                     'Edit profile'.tr,
-                    style: AppTextStyles.headingMedium(isDark).copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.headingMedium(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -1278,15 +1232,15 @@ class SettingsView extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 41,
                       backgroundColor: AppColors.primary,
-                      backgroundImage: controller.profilePictureUrl.value
-                              .isNotEmpty
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
                           ? NetworkImage(controller.profilePictureUrl.value)
                           : null,
                       child: controller.profilePictureUrl.value.isEmpty
                           ? Text(
                               controller.profileName.value.isNotEmpty
                                   ? controller.profileName.value[0]
-                                      .toUpperCase()
+                                        .toUpperCase()
                                   : 'U',
                               style: const TextStyle(
                                 color: Colors.white,
@@ -1424,8 +1378,7 @@ class SettingsView extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Leave password empty if you do not want to change it.'
-                        .tr,
+                    'Leave password empty if you do not want to change it.'.tr,
                     style: AppTextStyles.caption(isDark),
                   ),
                 ),
@@ -1438,10 +1391,7 @@ class SettingsView extends StatelessWidget {
             onPressed: () => Get.back(),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary(isDark),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 13,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
             ),
             child: Text('Cancel'.tr),
           ),
@@ -1490,9 +1440,7 @@ class SettingsView extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text('Remove the PIN?'.tr),
         content: Text(
           'Anyone who picks up this phone will be able to open Expense '
@@ -1505,10 +1453,7 @@ class SettingsView extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'.tr),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel'.tr)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE53935),
@@ -1538,9 +1483,7 @@ class SettingsView extends StatelessWidget {
       AlertDialog(
         backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
         contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
         actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
@@ -1564,10 +1507,9 @@ class SettingsView extends StatelessWidget {
             Expanded(
               child: Text(
                 'Logout?'.tr,
-                style: AppTextStyles.headingMedium(isDark).copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -1627,9 +1569,7 @@ class SettingsView extends StatelessWidget {
       AlertDialog(
         backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
         contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
         actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
@@ -1653,10 +1593,9 @@ class SettingsView extends StatelessWidget {
             Expanded(
               child: Text(
                 'Delete Account?'.tr,
-                style: AppTextStyles.headingMedium(isDark).copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -1780,9 +1719,9 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           title,
-          style: AppTextStyles.headingMedium(isDark).copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -1793,10 +1732,7 @@ class _SettingsCard extends StatelessWidget {
   final List<Widget> children;
   final bool isDark;
 
-  const _SettingsCard({
-    required this.children,
-    required this.isDark,
-  });
+  const _SettingsCard({required this.children, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -1830,11 +1766,7 @@ class _IconContainer extends StatelessWidget {
   final bool isDark;
   final Color? color;
 
-  const _IconContainer({
-    required this.icon,
-    required this.isDark,
-    this.color,
-  });
+  const _IconContainer({required this.icon, required this.isDark, this.color});
 
   @override
   Widget build(BuildContext context) {
