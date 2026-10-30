@@ -1686,16 +1686,14 @@ class _CategoriesViewState extends State<CategoriesView>
                   onPressed: _openAddCategoryDialog,
 
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
-
-                  label: const Text(
-                    'Add',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-
+label: Text(
+  'Add'.tr,
+  style: const TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w600,
+    fontSize: 14,
+  ),
+),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
@@ -1990,7 +1988,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                     children: [
                       Text(
-                        title,
+                        title.tr,
 
                         style: TextStyle(
                           fontSize: 15,

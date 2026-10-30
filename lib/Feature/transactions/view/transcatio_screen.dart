@@ -1,3 +1,4 @@
+
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
@@ -19,12 +20,9 @@ import 'package:expense_mate/Feature/settings/controller/settings_controller.dar
 import 'package:expense_mate/Feature/transactions/widgets/add_transcation_dialog.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// Feature Controllers & Models
 
 class TransactionsView extends StatefulWidget {
   const TransactionsView({super.key});
@@ -37,23 +35,20 @@ class _TransactionsViewState extends State<TransactionsView>
     with WidgetsBindingObserver {
   final RxBool isDrawerOpen = false.obs;
   final RxString searchQuery = ''.obs;
+
   late final TransactionsController transactionsController;
   late final RxBool isSearchFocused = false.obs;
-  // Transaction Filter
+
+  // Keep filter values unchanged internally so filter logic continues working.
   final RxString selectedFilter = 'All'.obs;
   final TextEditingController _searchController = TextEditingController();
 
   late final FocusNode _searchFocusNode = FocusNode();
 
-  // ==========================================================
-  // MULTIPLE SELECTION
-  // ==========================================================
-
   final Set<String> selectedTransactionIds = {};
 
   bool get _isSelectionMode => selectedTransactionIds.isNotEmpty;
 
-  @override
   @override
   void initState() {
     super.initState();
@@ -61,14 +56,12 @@ class _TransactionsViewState extends State<TransactionsView>
     transactionsController = Get.find<TransactionsController>();
 
     WidgetsBinding.instance.addObserver(this);
-
     _searchFocusNode.addListener(_handleSearchFocusChange);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-
     _searchFocusNode.removeListener(_handleSearchFocusChange);
 
     _searchFocusNode.dispose();
@@ -88,9 +81,7 @@ class _TransactionsViewState extends State<TransactionsView>
     }
   }
 
-  // ==========================================================
   // USER NAME
-  // ==========================================================
 
   String get _userName {
     final user = Supabase.instance.client.auth.currentUser;
@@ -99,23 +90,21 @@ class _TransactionsViewState extends State<TransactionsView>
       final nameFromMetaData =
           user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null &&
+          nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
       if (user.email != null && user.email!.contains('@')) {
         final emailPrefix = user.email!.split('@').first;
-
         return emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
       }
     }
 
-    return 'User';
+    return 'User'.tr;
   }
 
-  // ==========================================================
   // CATEGORY NAME
-  // ==========================================================
 
   String _getCategoryName(String categoryId, {String customCategory = ''}) {
     if (customCategory.trim().isNotEmpty) {
@@ -145,25 +134,21 @@ class _TransactionsViewState extends State<TransactionsView>
           customCategory: customCategory,
         );
   }
-  // ==========================================================
+
   // TRANSACTION FILTER LOGIC
-  // ==========================================================
 
   bool _matchesSelectedFilter(TransactionModel transaction) {
     switch (selectedFilter.value) {
       case 'Income':
         return transaction.isIncome;
-
       case 'Expense':
         return !transaction.isIncome;
-
       default:
         return true;
     }
   }
-  // ==========================================================
+
   // DATE FORMAT
-  // ==========================================================
 
   String _getFormattedDate(DateTime date) {
     final months = [
@@ -181,30 +166,21 @@ class _TransactionsViewState extends State<TransactionsView>
       'Dec',
     ];
 
-    return "${months[date.month - 1]} "
-        "${date.day.toString().padLeft(2, '0')}, "
-        "${date.year}";
+    return '${months[date.month - 1].tr} '
+        '${date.day.toString().padLeft(2, '0')}, '
+        '${date.year}';
   }
 
-  // ==========================================================
-  // BACK
-  // ==========================================================
-
-  // ==========================================================
   // SEARCH
-  // ==========================================================
 
   void _closeSearch() {
     searchQuery.value = '';
-
     _searchController.clear();
-
     FocusScope.of(context).unfocus();
   }
 
-  // ==========================================================
   // SELECTION
-  // ==========================================================
+
   void _toggleTransactionSelection(String transactionId) {
     setState(() {
       if (selectedTransactionIds.contains(transactionId)) {
@@ -221,11 +197,11 @@ class _TransactionsViewState extends State<TransactionsView>
     });
   }
 
-  // ==========================================================
   // DELETE MULTIPLE
-  // ==========================================================
 
-  Future<void> _confirmDeleteSelected(TransactionsController controller) async {
+  Future<void> _confirmDeleteSelected(
+    TransactionsController controller,
+  ) async {
     if (selectedTransactionIds.isEmpty) {
       return;
     }
@@ -239,25 +215,24 @@ class _TransactionsViewState extends State<TransactionsView>
         final isDark = theme.brightness == Brightness.dark;
 
         return AlertDialog(
-          title: const Text('Delete Transactions'),
+          title: Text('Delete Transactions'.tr),
           content: Text(
-            'Are you sure you want to delete '
-            '$count selected transaction'
-            '${count == 1 ? '' : 's'}?',
+            'Are you sure you want to delete @count selected transaction(s)?'
+                .trParams({'count': count.toString()}),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(false);
               },
-              child: const Text('Cancel'),
+              child: Text('Cancel'.tr),
             ),
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(dialogContext).pop(true);
               },
               icon: const Icon(Icons.delete_outline),
-              label: const Text('Delete'),
+              label: Text('Delete'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark ? Colors.red.shade800 : Colors.red,
                 foregroundColor: Colors.white,
@@ -273,7 +248,6 @@ class _TransactionsViewState extends State<TransactionsView>
     }
 
     final idsToDelete = selectedTransactionIds.toList();
-
     final success = await controller.deleteMultipleTransactions(idsToDelete);
 
     if (success) {
@@ -281,11 +255,12 @@ class _TransactionsViewState extends State<TransactionsView>
     }
   }
 
-  // ==========================================================
   // DRAWER NAVIGATION
-  // ==========================================================
 
-  void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
+  void _closeDrawerAndNavigate(
+    Widget Function() page, {
+    Bindings? binding,
+  }) {
     Get.back();
 
     Future.delayed(const Duration(milliseconds: 150), () {
@@ -296,13 +271,12 @@ class _TransactionsViewState extends State<TransactionsView>
   void _selectAllVisibleTransactions() {
     final query = searchQuery.value.toLowerCase().trim();
 
-    final visibleTransactions = transactionsController.transactions.where((tx) {
-      // Apply Income / Expense filter first.
+    final visibleTransactions =
+        transactionsController.transactions.where((tx) {
       if (!_matchesSelectedFilter(tx)) {
         return false;
       }
 
-      // Apply search filter.
       if (query.isNotEmpty) {
         final categoryName = _getCategoryName(
           tx.categoryId,
@@ -310,7 +284,6 @@ class _TransactionsViewState extends State<TransactionsView>
         ).toLowerCase();
 
         final title = tx.title.toLowerCase();
-
         final matchesSearch =
             title.contains(query) || categoryName.contains(query);
 
@@ -332,22 +305,21 @@ class _TransactionsViewState extends State<TransactionsView>
       final allSelected = visibleIds.every(selectedTransactionIds.contains);
 
       if (allSelected) {
-        selectedTransactionIds.removeWhere((id) => visibleIds.contains(id));
+        selectedTransactionIds.removeWhere(
+          (id) => visibleIds.contains(id),
+        );
       } else {
         selectedTransactionIds.addAll(visibleIds);
       }
     });
   }
-  // ==========================================================
+
   // BUILD
-  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
     final settingsController = Get.find<SettingsController>();
-
     final theme = Theme.of(context);
-
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return WillPopScope(
@@ -366,30 +338,28 @@ class _TransactionsViewState extends State<TransactionsView>
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-
         endDrawer: _buildNavigationDrawer(
           context,
           isDarkMode,
           settingsController,
         ),
-
-        // ======================================================
-        // APP BAR
-        // ======================================================
         appBar: AppBar(
           title: _isSelectionMode
-              ? Text('${selectedTransactionIds.length} Selected')
-              : const Text('Transactions'),
-
+              ? Text(
+                  '@count Selected'.trParams({
+                    'count': selectedTransactionIds.length.toString(),
+                  }),
+                )
+              : Text('Transactions'.tr),
           actions: [
             if (_isSelectionMode) ...[
               IconButton(
-                tooltip: 'Select All',
+                tooltip: 'Select All'.tr,
                 icon: const Icon(Icons.select_all_rounded),
                 onPressed: _selectAllVisibleTransactions,
               ),
               IconButton(
-                tooltip: 'Delete Selected',
+                tooltip: 'Delete Selected'.tr,
                 icon: const Icon(Icons.delete_outline_rounded),
                 onPressed: () {
                   _confirmDeleteSelected(transactionsController);
@@ -400,7 +370,6 @@ class _TransactionsViewState extends State<TransactionsView>
                 padding: EdgeInsets.only(right: 4),
                 child: SyncStatusIndicator(),
               ),
-
               Builder(
                 builder: (scaffoldContext) {
                   return IconButton(
@@ -418,36 +387,30 @@ class _TransactionsViewState extends State<TransactionsView>
             ],
           ],
         ),
-
-        // ======================================================
-        // BODY
-        // ======================================================
         body: Stack(
           children: [
             Column(
               children: [
-                // ==================================================
-                // INCOME / EXPENSE SUMMARY
-                // ==================================================
                 Obx(() {
                   final list = transactionsController.transactions;
 
-                  double totalIncome = list
+                  final totalIncome = list
                       .where((tx) => tx.isIncome == true)
                       .fold(0.0, (sum, tx) => sum + tx.amount);
 
-                  double totalExpense = list
+                  final totalExpense = list
                       .where((tx) => tx.isIncome == false)
                       .fold(0.0, (sum, tx) => sum + tx.amount);
 
-                  final safeIncome = totalIncome.isNaN || totalIncome.isInfinite
-                      ? 0.0
-                      : totalIncome;
+                  final safeIncome =
+                      totalIncome.isNaN || totalIncome.isInfinite
+                          ? 0.0
+                          : totalIncome;
 
                   final safeExpense =
                       totalExpense.isNaN || totalExpense.isInfinite
-                      ? 0.0
-                      : totalExpense;
+                          ? 0.0
+                          : totalExpense;
 
                   return Container(
                     margin: const EdgeInsets.symmetric(
@@ -465,8 +428,8 @@ class _TransactionsViewState extends State<TransactionsView>
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(
-                            isDarkMode ? 0.3 : 0.05,
+                          color: Colors.black.withValues(
+                            alpha: isDarkMode ? 0.3 : 0.05,
                           ),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
@@ -479,7 +442,7 @@ class _TransactionsViewState extends State<TransactionsView>
                           child: Column(
                             children: [
                               Text(
-                                'Income',
+                                'Income'.tr,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode
@@ -489,7 +452,10 @@ class _TransactionsViewState extends State<TransactionsView>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                Formatters.money(safeIncome, decimals: 2),
+                                Formatters.money(
+                                  safeIncome,
+                                  decimals: 2,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -499,7 +465,6 @@ class _TransactionsViewState extends State<TransactionsView>
                             ],
                           ),
                         ),
-
                         Container(
                           height: 35,
                           width: 1,
@@ -507,12 +472,11 @@ class _TransactionsViewState extends State<TransactionsView>
                               ? Colors.grey.shade700
                               : Colors.grey.shade300,
                         ),
-
                         Expanded(
                           child: Column(
                             children: [
                               Text(
-                                'Expense',
+                                'Expense'.tr,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode
@@ -522,7 +486,10 @@ class _TransactionsViewState extends State<TransactionsView>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                Formatters.money(safeExpense, decimals: 2),
+                                Formatters.money(
+                                  safeExpense,
+                                  decimals: 2,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -537,9 +504,8 @@ class _TransactionsViewState extends State<TransactionsView>
                   );
                 }),
 
-                // ==================================================
                 // SEARCH
-                // ==================================================
+
                 Obx(
                   () => Padding(
                     padding: const EdgeInsets.symmetric(
@@ -574,14 +540,15 @@ class _TransactionsViewState extends State<TransactionsView>
                                     : Colors.grey.shade600,
                               ),
                         suffixIcon:
-                            searchQuery.value.isEmpty && !isSearchFocused.value
-                            ? null
-                            : IconButton(
-                                tooltip: 'Cancel search',
-                                onPressed: _closeSearch,
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                        hintText: 'Search title or category...',
+                            searchQuery.value.isEmpty &&
+                                    !isSearchFocused.value
+                                ? null
+                                : IconButton(
+                                    tooltip: 'Cancel search'.tr,
+                                    onPressed: _closeSearch,
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                        hintText: 'Search title or category...'.tr,
                         hintStyle: TextStyle(
                           fontSize: 15,
                           color: Colors.grey.shade500,
@@ -614,9 +581,8 @@ class _TransactionsViewState extends State<TransactionsView>
                   ),
                 ),
 
-                // ==================================================
                 // TRANSACTION FILTER
-                // ==================================================
+
                 Obx(() {
                   final filters = ['All', 'Income', 'Expense'];
 
@@ -631,9 +597,11 @@ class _TransactionsViewState extends State<TransactionsView>
 
                         return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                            ),
                             child: ChoiceChip(
-                              label: Text(filter),
+                              label: Text(filter.tr),
                               selected: isSelected,
                               showCheckmark: false,
                               onSelected: (_) {
@@ -647,22 +615,16 @@ class _TransactionsViewState extends State<TransactionsView>
                   );
                 }),
 
-                // ==================================================
-                // TRANSACTION LIST
-                // ==================================================
                 Expanded(
                   child: Obx(() {
                     final query = searchQuery.value.toLowerCase().trim();
 
-                    final list = transactionsController.transactions.where((
-                      tx,
-                    ) {
-                      // 1. Apply Income / Expense filter.
+                    final list =
+                        transactionsController.transactions.where((tx) {
                       if (!_matchesSelectedFilter(tx)) {
                         return false;
                       }
 
-                      // 2. Apply search filter.
                       if (query.isEmpty) {
                         return true;
                       }
@@ -692,7 +654,7 @@ class _TransactionsViewState extends State<TransactionsView>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'No transactions found.',
+                              'No transactions found.'.tr,
                               style: TextStyle(
                                 color: isDarkMode
                                     ? Colors.grey.shade400
@@ -705,8 +667,6 @@ class _TransactionsViewState extends State<TransactionsView>
                       );
                     }
 
-                    // Keep your existing ListView.builder code here.
-
                     return ListView.builder(
                       padding: EdgeInsets.fromLTRB(
                         16,
@@ -717,12 +677,10 @@ class _TransactionsViewState extends State<TransactionsView>
                       itemCount: list.length,
                       itemBuilder: (context, index) {
                         final TransactionModel transaction = list[index];
-
                         final bool isIncome = transaction.isIncome;
 
-                        final bool isSelected = selectedTransactionIds.contains(
-                          transaction.id,
-                        );
+                        final bool isSelected =
+                            selectedTransactionIds.contains(transaction.id);
 
                         final String categoryName = _getCategoryName(
                           transaction.categoryId,
@@ -731,8 +689,8 @@ class _TransactionsViewState extends State<TransactionsView>
 
                         final String displayTitle =
                             transaction.title.trim().isEmpty
-                            ? categoryName
-                            : transaction.title;
+                                ? categoryName
+                                : transaction.title;
 
                         return GestureDetector(
                           onLongPress: () {
@@ -740,7 +698,9 @@ class _TransactionsViewState extends State<TransactionsView>
                           },
                           onTap: _isSelectionMode
                               ? () {
-                                  _toggleTransactionSelection(transaction.id);
+                                  _toggleTransactionSelection(
+                                    transaction.id,
+                                  );
                                 }
                               : null,
                           child: AnimatedContainer(
@@ -749,11 +709,11 @@ class _TransactionsViewState extends State<TransactionsView>
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? (isDarkMode
-                                        ? const Color(0xFF183D1C)
-                                        : const Color(0xFFE8F5E9))
+                                      ? const Color(0xFF183D1C)
+                                      : const Color(0xFFE8F5E9))
                                   : (isDarkMode
-                                        ? const Color(0xFF121212)
-                                        : Colors.white),
+                                      ? const Color(0xFF121212)
+                                      : Colors.white),
                               borderRadius: BorderRadius.circular(16),
                               border: isSelected
                                   ? Border.all(
@@ -763,8 +723,8 @@ class _TransactionsViewState extends State<TransactionsView>
                                   : null,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(
-                                    isDarkMode ? 0.2 : 0.04,
+                                  color: Colors.black.withValues(
+                                    alpha: isDarkMode ? 0.2 : 0.04,
                                   ),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
@@ -776,10 +736,6 @@ class _TransactionsViewState extends State<TransactionsView>
                                 horizontal: 16,
                                 vertical: 6,
                               ),
-
-                              // ====================================
-                              // LEADING
-                              // ====================================
                               leading: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -801,8 +757,8 @@ class _TransactionsViewState extends State<TransactionsView>
                                             color: isSelected
                                                 ? const Color(0xFF4CAF50)
                                                 : (isDarkMode
-                                                      ? Colors.grey.shade600
-                                                      : Colors.grey.shade400),
+                                                    ? Colors.grey.shade600
+                                                    : Colors.grey.shade400),
                                             width: 2,
                                           ),
                                         ),
@@ -815,16 +771,15 @@ class _TransactionsViewState extends State<TransactionsView>
                                             : null,
                                       ),
                                     ),
-
                                   CircleAvatar(
                                     radius: 22,
                                     backgroundColor: isIncome
                                         ? (isDarkMode
-                                              ? const Color(0xFF1E382B)
-                                              : const Color(0xFFEBF9EE))
+                                            ? const Color(0xFF1E382B)
+                                            : const Color(0xFFEBF9EE))
                                         : (isDarkMode
-                                              ? const Color(0xFF3B1E1E)
-                                              : const Color(0xFFFDEEEE)),
+                                            ? const Color(0xFF3B1E1E)
+                                            : const Color(0xFFFDEEEE)),
                                     child: Icon(
                                       isIncome
                                           ? Icons.arrow_downward_rounded
@@ -837,10 +792,6 @@ class _TransactionsViewState extends State<TransactionsView>
                                   ),
                                 ],
                               ),
-
-                              // ====================================
-                              // TITLE
-                              // ====================================
                               title: Text(
                                 displayTitle,
                                 maxLines: 1,
@@ -853,14 +804,10 @@ class _TransactionsViewState extends State<TransactionsView>
                                       : Colors.black87,
                                 ),
                               ),
-
-                              // ====================================
-                              // SUBTITLE
-                              // ====================================
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
-                                  "$categoryName • ${_getFormattedDate(transaction.date)}",
+                                  '$categoryName • ${_getFormattedDate(transaction.date)}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -871,10 +818,6 @@ class _TransactionsViewState extends State<TransactionsView>
                                   ),
                                 ),
                               ),
-
-                              // ====================================
-                              // TRAILING
-                              // ====================================
                               trailing: _isSelectionMode
                                   ? Text(
                                       Formatters.signedMoney(
@@ -882,15 +825,14 @@ class _TransactionsViewState extends State<TransactionsView>
                                         isIncome: isIncome,
                                         decimals: 2,
                                       ),
-                                      style:
-                                          AppTextStyles.bodyMedium(
-                                            isDarkMode,
-                                          ).copyWith(
-                                            color: isIncome
-                                                ? Colors.green
-                                                : Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                      style: AppTextStyles.bodyMedium(
+                                        isDarkMode,
+                                      ).copyWith(
+                                        color: isIncome
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     )
                                   : Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -901,17 +843,15 @@ class _TransactionsViewState extends State<TransactionsView>
                                             isIncome: isIncome,
                                             decimals: 2,
                                           ),
-                                          style:
-                                              AppTextStyles.bodyMedium(
-                                                isDarkMode,
-                                              ).copyWith(
-                                                color: isIncome
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                          style: AppTextStyles.bodyMedium(
+                                            isDarkMode,
+                                          ).copyWith(
+                                            color: isIncome
+                                                ? Colors.green
+                                                : Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-
                                         PopupMenuButton<String>(
                                           icon: const Icon(Icons.more_vert),
                                           onSelected: (value) async {
@@ -929,58 +869,63 @@ class _TransactionsViewState extends State<TransactionsView>
                                             if (value == 'delete') {
                                               final shouldDelete =
                                                   await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (dialogContext) {
-                                                      return AlertDialog(
-                                                        title: const Text(
-                                                          'Delete Transaction',
+                                                context: context,
+                                                builder: (dialogContext) {
+                                                  return AlertDialog(
+                                                    title: Text(
+                                                      'Delete Transaction'.tr,
+                                                    ),
+                                                    content: Text(
+                                                      'Are you sure you want to delete "@title"?'
+                                                          .trParams({
+                                                        'title':
+                                                            transaction.title,
+                                                      }),
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(
+                                                            dialogContext,
+                                                          ).pop(false);
+                                                        },
+                                                        child: Text(
+                                                          'Cancel'.tr,
                                                         ),
-                                                        content: Text(
-                                                          'Are you sure you want to delete '
-                                                          '"${transaction.title}"?',
+                                                      ),
+                                                      ElevatedButton(
+                                                        onPressed: () {
+                                                          Navigator.of(
+                                                            dialogContext,
+                                                          ).pop(true);
+                                                        },
+                                                        child: Text(
+                                                          'Delete'.tr,
                                                         ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              Navigator.of(
-                                                                dialogContext,
-                                                              ).pop(false);
-                                                            },
-                                                            child: const Text(
-                                                              'Cancel',
-                                                            ),
-                                                          ),
-                                                          ElevatedButton(
-                                                            onPressed: () {
-                                                              Navigator.of(
-                                                                dialogContext,
-                                                              ).pop(true);
-                                                            },
-                                                            child: const Text(
-                                                              'Delete',
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
+                                                      ),
+                                                    ],
                                                   );
+                                                },
+                                              );
 
                                               if (shouldDelete == true) {
                                                 await transactionsController
                                                     .deleteTransaction(
-                                                      transaction.id,
-                                                    );
+                                                  transaction.id,
+                                                );
                                               }
                                             }
                                           },
-                                          itemBuilder: (context) => const [
+                                          itemBuilder: (context) => [
                                             PopupMenuItem<String>(
                                               value: 'edit',
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.edit_outlined),
-                                                  SizedBox(width: 10),
-                                                  Text('Edit'),
+                                                  const Icon(
+                                                    Icons.edit_outlined,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text('Edit'.tr),
                                                 ],
                                               ),
                                             ),
@@ -988,9 +933,11 @@ class _TransactionsViewState extends State<TransactionsView>
                                               value: 'delete',
                                               child: Row(
                                                 children: [
-                                                  Icon(Icons.delete_outline),
-                                                  SizedBox(width: 10),
-                                                  Text('Delete'),
+                                                  const Icon(
+                                                    Icons.delete_outline,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text('Delete'.tr),
                                                 ],
                                               ),
                                             ),
@@ -1008,9 +955,8 @@ class _TransactionsViewState extends State<TransactionsView>
               ],
             ),
 
-            // ====================================================
             // CUSTOM FLOATING DRAWER OVERLAY
-            // ====================================================
+
             Obx(() {
               if (!isDrawerOpen.value) {
                 return const SizedBox.shrink();
@@ -1020,9 +966,10 @@ class _TransactionsViewState extends State<TransactionsView>
                 children: [
                   GestureDetector(
                     onTap: () => isDrawerOpen.value = false,
-                    child: Container(color: Colors.black.withOpacity(0.5)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.5),
+                    ),
                   ),
-
                   Align(
                     alignment: Alignment.centerRight,
                     child: Container(
@@ -1042,7 +989,7 @@ class _TransactionsViewState extends State<TransactionsView>
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -1060,7 +1007,9 @@ class _TransactionsViewState extends State<TransactionsView>
                                   right: 6,
                                 ),
                                 child: IconButton(
-                                  onPressed: () => isDrawerOpen.value = false,
+                                  onPressed: () {
+                                    isDrawerOpen.value = false;
+                                  },
                                   icon: Icon(
                                     Icons.close,
                                     size: 28,
@@ -1071,7 +1020,6 @@ class _TransactionsViewState extends State<TransactionsView>
                                 ),
                               ),
                             ),
-
                             UserAccountsDrawerHeader(
                               margin: EdgeInsets.zero,
                               decoration: BoxDecoration(
@@ -1145,20 +1093,15 @@ class _TransactionsViewState extends State<TransactionsView>
                                 ),
                               ),
                               accountEmail: Text(
-                                Supabase
-                                        .instance
-                                        .client
-                                        .auth
-                                        .currentUser
+                                Supabase.instance.client.auth.currentUser
                                         ?.email ??
                                     '',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                 ),
                               ),
                             ),
-
                             Expanded(
                               child: ListView(
                                 padding: const EdgeInsets.symmetric(
@@ -1172,86 +1115,83 @@ class _TransactionsViewState extends State<TransactionsView>
                                     icon: Icons.account_balance_wallet_rounded,
                                     iconColor: const Color(0xFF3A5BA0),
                                     emoji: '💳',
-                                    title: 'Wallets',
+                                    title: 'Wallets'.tr,
                                     subtitle:
-                                        'Manage your cash, bank and other wallets',
+                                        'Manage your cash, bank and other wallets'
+                                            .tr,
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const WalletsView(),
                                       binding: WalletsBinding(),
                                     ),
                                   ),
-
                                   const SizedBox(height: 12),
-
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.donut_small_rounded,
                                     iconColor: const Color(0xFF2E7D32),
                                     emoji: '📊',
-                                    title: 'Budgets',
+                                    title: 'Budgets'.tr,
                                     subtitle:
-                                        'Set and track monthly spending limits',
+                                        'Set and track monthly spending limits'
+                                            .tr,
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const BudgetView(),
                                       binding: BudgetBinding(),
                                     ),
                                   ),
-
                                   const SizedBox(height: 12),
-
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.flag_rounded,
                                     iconColor: const Color(0xFFB26A00),
                                     emoji: '🎯',
-                                    title: 'Goals',
+                                    title: 'Goals'.tr,
                                     subtitle:
-                                        'Track your financial targets and savings',
+                                        'Track your financial targets and savings'
+                                            .tr,
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const GoalsView(),
                                       binding: GoalsBinding(),
                                     ),
                                   ),
-
                                   const SizedBox(height: 12),
-
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.receipt_long_rounded,
                                     iconColor: const Color(0xFF7A4EAB),
                                     emoji: '🧾',
-                                    title: 'Bills & Reminders',
+                                    title: 'Bills & Reminders'.tr,
                                     subtitle:
-                                        'Manage upcoming bills and reminders',
+                                        'Manage upcoming bills and reminders'
+                                            .tr,
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const BillsRemindersView(),
                                       binding: BillsRemindersBinding(),
                                     ),
                                   ),
-
                                   const SizedBox(height: 12),
-
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.groups_rounded,
                                     iconColor: const Color(0xFF00695C),
                                     emoji: '🤝',
-                                    title: 'Digital Committee',
+                                    title: 'Digital Committee'.tr,
                                     subtitle:
-                                        'Manage your committee and member payments',
+                                        'Manage your committee and member payments'
+                                            .tr,
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => CommitteeView(),
                                     ),
                                   ),
-
                                   const SizedBox(height: 12),
-
                                   _buildDrawerOption(
                                     context: context,
                                     icon: Icons.person_rounded,
                                     iconColor: const Color(0xFFF2C14E),
-                                    title: 'Profile',
-                                    subtitle: 'Manage your profile and acc...',
+                                    title: 'Profile'.tr,
+                                    subtitle:
+                                        'Manage your profile and account settings'
+                                            .tr,
                                     onTap: () => _closeDrawerAndNavigate(
                                       () => const SettingsView(),
                                       binding: SettingsBinding(),
@@ -1274,9 +1214,7 @@ class _TransactionsViewState extends State<TransactionsView>
     );
   }
 
-  // ==========================================================
   // NAVIGATION DRAWER
-  // ==========================================================
 
   Widget _buildNavigationDrawer(
     BuildContext context,
@@ -1285,7 +1223,11 @@ class _TransactionsViewState extends State<TransactionsView>
   ) {
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
+        margin: const EdgeInsets.only(
+          top: 12,
+          bottom: 16,
+          right: 12,
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: Drawer(
@@ -1301,8 +1243,9 @@ class _TransactionsViewState extends State<TransactionsView>
                     padding: const EdgeInsets.only(top: 6, right: 6),
                     child: Builder(
                       builder: (drawerContext) => IconButton(
-                        onPressed: () =>
-                            Scaffold.of(drawerContext).closeEndDrawer(),
+                        onPressed: () {
+                          Scaffold.of(drawerContext).closeEndDrawer();
+                        },
                         icon: Icon(
                           Icons.close,
                           size: 28,
@@ -1312,32 +1255,40 @@ class _TransactionsViewState extends State<TransactionsView>
                     ),
                   ),
                 ),
-
                 UserAccountsDrawerHeader(
                   margin: EdgeInsets.zero,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDarkMode
-                          ? const [Color(0xFF2E7D32), Color(0xFF1B5E20)]
-                          : const [Color(0xFF4CAF50), Color(0xFF388E3C)],
+                          ? const [
+                              Color(0xFF2E7D32),
+                              Color(0xFF1B5E20),
+                            ]
+                          : const [
+                              Color(0xFF4CAF50),
+                              Color(0xFF388E3C),
+                            ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                   ),
                   currentAccountPictureSize: const Size.square(64),
                   currentAccountPicture: Obx(() {
-                    final imageUrl = settingsController.profilePictureUrl.value;
+                    final imageUrl =
+                        settingsController.profilePictureUrl.value;
 
                     final name = settingsController.profileName.value;
 
-                    final firstLetter = name.isNotEmpty
-                        ? name[0].toUpperCase()
-                        : 'U';
+                    final firstLetter =
+                        name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
                     return Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.15),
@@ -1348,9 +1299,8 @@ class _TransactionsViewState extends State<TransactionsView>
                       ),
                       child: CircleAvatar(
                         backgroundColor: Colors.white,
-                        backgroundImage: imageUrl.isNotEmpty
-                            ? NetworkImage(imageUrl)
-                            : null,
+                        backgroundImage:
+                            imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
                         child: imageUrl.isEmpty
                             ? Text(
                                 firstLetter,
@@ -1376,11 +1326,10 @@ class _TransactionsViewState extends State<TransactionsView>
                     Supabase.instance.client.auth.currentUser?.email ?? '',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
-
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(
@@ -1394,95 +1343,83 @@ class _TransactionsViewState extends State<TransactionsView>
                         icon: Icons.account_balance_wallet_rounded,
                         iconColor: const Color(0xFF3A5BA0),
                         emoji: '💳',
-                        title: 'Wallets',
-                        subtitle: 'Manage your cash, bank and other wallets',
+                        title: 'Wallets'.tr,
+                        subtitle: 'Manage your cash, bank and other wallets'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const WalletsView(),
                           binding: WalletsBinding(),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.donut_small_rounded,
                         iconColor: const Color(0xFF2E7D32),
                         emoji: '📊',
-                        title: 'Budgets',
-                        subtitle: 'Set and track monthly spending limits',
+                        title: 'Budgets'.tr,
+                        subtitle: 'Set and track monthly spending limits'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const BudgetView(),
                           binding: BudgetBinding(),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.flag_rounded,
                         iconColor: const Color(0xFFB26A00),
                         emoji: '🎯',
-                        title: 'Goals',
-                        subtitle: 'Track your financial targets and savings',
+                        title: 'Goals'.tr,
+                        subtitle: 'Track your financial targets and savings'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const GoalsView(),
                           binding: GoalsBinding(),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.receipt_long_rounded,
                         iconColor: const Color(0xFF7A4EAB),
                         emoji: '🧾',
-                        title: 'Bills & Reminders',
-                        subtitle: 'Manage upcoming bills and reminders',
+                        title: 'Bills & Reminders'.tr,
+                        subtitle: 'Manage upcoming bills and reminders'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const BillsRemindersView(),
                           binding: BillsRemindersBinding(),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.groups_rounded,
                         iconColor: const Color(0xFF00695C),
                         emoji: '🤝',
-                        title: 'Digital Committee',
-                        subtitle: 'Manage your committee and member payments',
+                        title: 'Digital Committee'.tr,
+                        subtitle: 'Manage your committee and member payments'.tr,
                         onTap: () =>
                             _closeDrawerAndNavigate(() => CommitteeView()),
                       ),
-
                       const SizedBox(height: 12),
-
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.account_balance_wallet_rounded,
                         iconColor: const Color(0xFF3A5BA0),
                         emoji: '🧮',
-                        title: 'Udhaar',
-                        subtitle: 'Money you lent out and money you owe',
+                        title: 'Udhaar'.tr,
+                        subtitle: 'Money you lent out and money you owe'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => UdhaarView(),
                           binding: UdhaarBinding(),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       _buildDrawerOption(
                         context: context,
                         icon: Icons.person_rounded,
                         iconColor: const Color(0xFFF2C14E),
-                        title: 'Profile',
-                        subtitle: 'Manage your profile and account settings',
+                        title: 'Profile'.tr,
+                        subtitle: 'Manage your profile and account settings'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const SettingsView(),
                           binding: SettingsBinding(),
@@ -1499,9 +1436,7 @@ class _TransactionsViewState extends State<TransactionsView>
     );
   }
 
-  // ==========================================================
   // DRAWER OPTION
-  // ==========================================================
 
   Widget _buildDrawerOption({
     required BuildContext context,
@@ -1513,7 +1448,6 @@ class _TransactionsViewState extends State<TransactionsView>
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
@@ -1522,7 +1456,7 @@ class _TransactionsViewState extends State<TransactionsView>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1534,24 +1468,28 @@ class _TransactionsViewState extends State<TransactionsView>
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
                   child: emoji == null
                       ? Icon(icon, color: iconColor, size: 24)
-                      : Text(emoji, style: const TextStyle(fontSize: 23)),
+                      : Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 23),
+                        ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1566,9 +1504,7 @@ class _TransactionsViewState extends State<TransactionsView>
                               : const Color(0xFF212121),
                         ),
                       ),
-
                       const SizedBox(height: 2),
-
                       Text(
                         subtitle,
                         maxLines: 1,
@@ -1583,7 +1519,6 @@ class _TransactionsViewState extends State<TransactionsView>
                     ],
                   ),
                 ),
-
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,

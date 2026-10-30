@@ -1,25 +1,917 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 class AppTranslations extends Translations {
   static const languageCodes = ['en', 'ur', 'ps', 'sd', 'ar', 'hi'];
-
   static Locale resolveFrameworkLocale(
     Locale? locale,
     Iterable<Locale> supportedLocales,
   ) {
     final languageCode = locale?.languageCode ?? 'en';
     final frameworkLanguageCode =
-        const {'en', 'ur', 'ar', 'hi'}.contains(languageCode)
+        const {'en', 'ur', 'ps', 'sd', 'ar', 'hi'}.contains(languageCode)
         ? languageCode
         : 'en';
-
     return supportedLocales.firstWhere(
       (supportedLocale) =>
           supportedLocale.languageCode == frameworkLanguageCode,
       orElse: () => const Locale('en'),
     );
   }
+  static const _reportEnglish = {
+    'Total Income': 'Total Income',
+    'Total Expense': 'Total Expense',
+    'Saved Balance': 'Saved Balance',
+    'Monthly Income': 'Monthly Income',
+    'Income Categories': 'Income Categories',
+    'Monthly Expenses': 'Monthly Expenses',
+    'Expense Categories': 'Expense Categories',
+    'Income vs Expense': 'Income vs Expense',
+    'Select Year': 'Select Year',
+    'Select Month': 'Select Month',
+    'Year': 'Year',
+    'Month': 'Month',
+    'Clear filters': 'Clear filters',
+    'Refresh Reports': 'Refresh Reports',
+    'No category data available': 'No category data available',
+    'January': 'January',
+    'February': 'February',
+    'March': 'March',
+    'April': 'April',
+    'May': 'May',
+    'June': 'June',
+    'July': 'July',
+    'August': 'August',
+    'September': 'September',
+    'October': 'October',
+    'November': 'November',
+    'December': 'December',
+  };
+
+  // Reports translations: Urdu
+  static const _reportUrdu = {
+    'Total Income': 'کل آمدنی',
+    'Total Expense': 'کل اخراجات',
+    'Saved Balance': 'باقی بیلنس',
+    'Monthly Income': 'ماہانہ آمدنی',
+    'Income Categories': 'آمدنی کے زمرے',
+    'Monthly Expenses': 'ماہانہ اخراجات',
+    'Expense Categories': 'اخراجات کے زمرے',
+    'Income vs Expense': 'آمدنی بمقابلہ اخراجات',
+    'Select Year': 'سال منتخب کریں',
+    'Select Month': 'مہینہ منتخب کریں',
+    'Year': 'سال',
+    'Month': 'مہینہ',
+    'Clear filters': 'فلٹر ختم کریں',
+    'Refresh Reports': 'رپورٹس تازہ کریں',
+    'No category data available': 'زمرے کا کوئی ڈیٹا دستیاب نہیں',
+    'January': 'جنوری',
+    'February': 'فروری',
+    'March': 'مارچ',
+    'April': 'اپریل',
+    'May': 'مئی',
+    'June': 'جون',
+    'July': 'جولائی',
+    'August': 'اگست',
+    'September': 'ستمبر',
+    'October': 'اکتوبر',
+    'November': 'نومبر',
+    'December': 'دسمبر',
+    'Education': 'تعلیم',
+    'Food': 'کھانا',
+    'Bills': 'بل',
+    'Transport': 'آمدورفت',
+    'Health': 'صحت',
+  };
+  static const _reportPashto = {
+    'Total Income': 'ټول عاید',
+    'Total Expense': 'ټول لګښتونه',
+    'Saved Balance': 'پاتې بیلانس',
+    'Monthly Income': 'میاشتنی عاید',
+    'Income Categories': 'د عاید کټګورۍ',
+    'Monthly Expenses': 'میاشتني لګښتونه',
+    'Expense Categories': 'د لګښت کټګورۍ',
+    'Income vs Expense': 'عاید او لګښتونه',
+    'Select Year': 'کال وټاکئ',
+    'Select Month': 'میاشت وټاکئ',
+    'Year': 'کال',
+    'Month': 'میاشت',
+    'Clear filters': 'فلټرونه پاک کړئ',
+    'Refresh Reports': 'راپورونه تازه کړئ',
+    'No category data available': 'د کټګورۍ معلومات نشته',
+    'January': 'جنوري',
+    'February': 'فبروري',
+    'March': 'مارچ',
+    'April': 'اپرېل',
+    'May': 'مې',
+    'June': 'جون',
+    'July': 'جولای',
+    'August': 'اګست',
+    'September': 'سپتمبر',
+    'October': 'اکتوبر',
+    'November': 'نومبر',
+    'December': 'دسمبر',
+    'Education': 'زده کړه',
+    'Food': 'خواړه',
+    'Bills': 'بلونه',
+    'Transport': 'ترانسپورت',
+    'Health': 'روغتیا',
+  };
+  static const _reportSindhi = {
+    'Total Income': 'ڪل آمدني',
+    'Total Expense': 'ڪل خرچ',
+    'Saved Balance': 'بچيل بيلنس',
+    'Monthly Income': 'ماهوار آمدني',
+    'Income Categories': 'آمدني جا درجا',
+    'Monthly Expenses': 'ماهوار خرچ',
+    'Expense Categories': 'خرچ جا درجا',
+    'Income vs Expense': 'آمدني بمقابلي خرچ',
+    'Select Year': 'سال چونڊيو',
+    'Select Month': 'مهينو چونڊيو',
+    'Year': 'سال',
+    'Month': 'مهينو',
+    'Clear filters': 'فلٽر صاف ڪريو',
+    'Refresh Reports': 'رپورٽون تازيون ڪريو',
+    'No category data available': 'درجي جي ڪا به معلومات موجود ناهي',
+    'January': 'جنوري',
+    'February': 'فيبروري',
+    'March': 'مارچ',
+    'April': 'اپريل',
+    'May': 'مئي',
+    'June': 'جون',
+    'July': 'جولاءِ',
+    'August': 'آگسٽ',
+    'September': 'سيپٽمبر',
+    'October': 'آڪٽوبر',
+    'November': 'نومبر',
+    'December': 'ڊسمبر',
+    'Education': 'تعليم',
+    'Food': 'کاڌو',
+    'Bills': 'بل',
+    'Transport': 'آمدورفت',
+    'Health': 'صحت',
+  };
+
+  // Reports translations: Arabic
+  static const _reportArabic = {
+    'Total Income': 'إجمالي الدخل',
+    'Total Expense': 'إجمالي المصروفات',
+    'Saved Balance': 'الرصيد المتبقي',
+    'Monthly Income': 'الدخل الشهري',
+    'Income Categories': 'فئات الدخل',
+    'Monthly Expenses': 'المصروفات الشهرية',
+    'Expense Categories': 'فئات المصروفات',
+    'Income vs Expense': 'الدخل مقابل المصروفات',
+    'Select Year': 'اختر السنة',
+    'Select Month': 'اختر الشهر',
+    'Year': 'السنة',
+    'Month': 'الشهر',
+    'Clear filters': 'مسح عوامل التصفية',
+    'Refresh Reports': 'تحديث التقارير',
+    'No category data available': 'لا توجد بيانات للفئات',
+    'January': 'يناير',
+    'February': 'فبراير',
+    'March': 'مارس',
+    'April': 'أبريل',
+    'May': 'مايو',
+    'June': 'يونيو',
+    'July': 'يوليو',
+    'August': 'أغسطس',
+    'September': 'سبتمبر',
+    'October': 'أكتوبر',
+    'November': 'نوفمبر',
+    'December': 'ديسمبر',
+    'Education': 'التعليم',
+    'Food': 'الطعام',
+    'Bills': 'الفواتير',
+    'Transport': 'المواصلات',
+    'Health': 'الصحة',
+  };
+  static const _reportHindi = {
+    'Total Income': 'कुल आय',
+    'Total Expense': 'कुल खर्च',
+    'Saved Balance': 'बाकी बैलेंस',
+    'Monthly Income': 'मासिक आय',
+    'Income Categories': 'आय की श्रेणियाँ',
+    'Monthly Expenses': 'मासिक खर्च',
+    'Expense Categories': 'खर्च की श्रेणियाँ',
+    'Income vs Expense': 'आय बनाम खर्च',
+    'Select Year': 'वर्ष चुनें',
+    'Select Month': 'महीना चुनें',
+    'Year': 'वर्ष',
+    'Month': 'महीना',
+    'Clear filters': 'फ़िल्टर हटाएँ',
+    'Refresh Reports': 'रिपोर्ट रीफ़्रेश करें',
+    'No category data available': 'श्रेणी का कोई डेटा उपलब्ध नहीं है',
+    'January': 'जनवरी',
+    'February': 'फ़रवरी',
+    'March': 'मार्च',
+    'April': 'अप्रैल',
+    'May': 'मई',
+    'June': 'जून',
+    'July': 'जुलाई',
+    'August': 'अगस्त',
+    'September': 'सितंबर',
+    'October': 'अक्टूबर',
+    'November': 'नवंबर',
+    'December': 'दिसंबर',
+    'Education': 'शिक्षा',
+    'Food': 'खाना',
+    'Bills': 'बिल',
+    'Transport': 'यातायात',
+    'Health': 'स्वास्थ्य',
+  };
+
+  // Settings translations: English
+  static const _settingsEnglish = {
+    'Add Currency': 'Add Currency',
+    'Currency code or symbol': 'Currency code or symbol',
+    'e.g. AED': 'e.g. AED',
+    'MY CURRENCIES': 'MY CURRENCIES',
+    'Custom currency': 'Custom currency',
+    'Default currency': 'Default currency',
+    'Delete currency': 'Delete currency',
+    'Select Currency': 'Select Currency',
+    'Choose your preferred currency': 'Choose your preferred currency',
+    'APPEARANCE': 'APPEARANCE',
+    'Appearance': 'Appearance',
+    'Dark Mode': 'Dark Mode',
+    'Dark theme is enabled': 'Dark theme is enabled',
+    'Light theme is enabled': 'Light theme is enabled',
+    'MONEY': 'MONEY',
+    'Hide amounts': 'Hide amounts',
+    'Balances are hidden on the home screen':
+        'Balances are hidden on the home screen',
+    'Balances are visible on the home screen':
+        'Balances are visible on the home screen',
+    'ACCOUNT': 'ACCOUNT',
+    'Bill Notifications': 'Bill Notifications',
+    'Receive reminders for upcoming bills':
+        'Receive reminders for upcoming bills',
+    'Delete Account': 'Delete Account',
+    'Permanently delete your account and data':
+        'Permanently delete your account and data',
+    'Expense management made simple': 'Expense management made simple',
+    'Version 1.0.0': 'Version 1.0.0',
+    'User': 'User',
+    'No email available': 'No email available',
+    'ExpenseMate Account': 'ExpenseMate Account',
+    'Entries': 'Entries',
+    'Edit profile': 'Edit profile',
+    'Update your account details': 'Update your account details',
+    'Change': 'Change',
+    'Clear': 'Clear',
+    'ACCOUNT DETAILS': 'ACCOUNT DETAILS',
+    'New Password': 'New Password',
+    'Leave empty to keep current password':
+        'Leave empty to keep current password',
+    'Leave password empty if you do not want to change it.':
+        'Leave password empty if you do not want to change it.',
+    'Save changes': 'Save changes',
+    'Logout?': 'Logout?',
+    'Are you sure you want to logout from your ExpenseMate account?':
+        'Are you sure you want to logout from your ExpenseMate account?',
+    'Delete Account?': 'Delete Account?',
+    'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
+        'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.',
+    'This cannot be undone.': 'This cannot be undone.',
+    'Please enter your name.': 'Please enter your name.',
+    'Password must be at least 6 characters.':
+        'Password must be at least 6 characters.',
+    'No logged-in account found.': 'No logged-in account found.',
+    'No Changes': 'No Changes',
+    'There are no changes to save.': 'There are no changes to save.',
+    'Profile updated successfully.': 'Profile updated successfully.',
+    'Profile picture updated successfully.':
+        'Profile picture updated successfully.',
+    'Profile picture removed successfully.':
+        'Profile picture removed successfully.',
+    'Failed to update profile.': 'Failed to update profile.',
+    'Failed to update profile picture.': 'Failed to update profile picture.',
+    'Are you sure you want to delete your account?':
+        'Are you sure you want to delete your account?',
+    'Account deleted successfully.': 'Account deleted successfully.',
+    'Failed to delete account.': 'Failed to delete account.',
+    'Logged out successfully.': 'Logged out successfully.',
+    'Failed to logout.': 'Failed to logout.',
+  };
+  static const _settingsUrdu = {
+    'Add Currency': 'کرنسی شامل کریں',
+    'Currency code or symbol': 'کرنسی کا کوڈ یا علامت',
+    'e.g. AED': 'مثلاً AED',
+    'MY CURRENCIES': 'میری کرنسیاں',
+    'Custom currency': 'کسٹم کرنسی',
+    'Default currency': 'ڈیفالٹ کرنسی',
+    'Delete currency': 'کرنسی حذف کریں',
+    'Select Currency': 'کرنسی منتخب کریں',
+    'Choose your preferred currency': 'اپنی پسندیدہ کرنسی منتخب کریں',
+    'APPEARANCE': 'ظاہری شکل',
+    'Appearance': 'ظاہری شکل',
+    'Dark Mode': 'ڈارک موڈ',
+    'Dark theme is enabled': 'ڈارک تھیم فعال ہے',
+    'Light theme is enabled': 'لائٹ تھیم فعال ہے',
+    'MONEY': 'رقم',
+    'Hide amounts': 'رقمیں چھپائیں',
+    'Balances are hidden on the home screen':
+        'ہوم اسکرین پر بیلنس چھپے ہوئے ہیں',
+    'Balances are visible on the home screen':
+        'ہوم اسکرین پر بیلنس نظر آ رہے ہیں',
+    'ACCOUNT': 'اکاؤنٹ',
+    'Bill Notifications': 'بل کی اطلاعات',
+    'Receive reminders for upcoming bills':
+        'آنے والے بلوں کی یاددہانیاں حاصل کریں',
+    'Delete Account': 'اکاؤنٹ حذف کریں',
+    'Permanently delete your account and data':
+        'اپنا اکاؤنٹ اور ڈیٹا مستقل حذف کریں',
+    'Expense management made simple': 'اخراجات کا آسان انتظام',
+    'Version 1.0.0': 'ورژن 1.0.0',
+    'User': 'صارف',
+    'No email available': 'ای میل دستیاب نہیں',
+    'ExpenseMate Account': 'ExpenseMate اکاؤنٹ',
+    'Entries': 'اندراجات',
+    'Edit profile': 'پروفائل میں ترمیم کریں',
+    'Update your account details': 'اپنے اکاؤنٹ کی تفصیلات اپ ڈیٹ کریں',
+    'Change': 'تبدیل کریں',
+    'Clear': 'صاف کریں',
+    'ACCOUNT DETAILS': 'اکاؤنٹ کی تفصیلات',
+    'New Password': 'نیا پاس ورڈ',
+    'Leave empty to keep current password':
+        'موجودہ پاس ورڈ برقرار رکھنے کے لیے خالی چھوڑیں',
+    'Leave password empty if you do not want to change it.':
+        'اگر پاس ورڈ تبدیل نہیں کرنا تو اسے خالی چھوڑ دیں۔',
+    'Save changes': 'تبدیلیاں محفوظ کریں',
+    'Logout?': 'لاگ آؤٹ کریں؟',
+    'Are you sure you want to logout from your ExpenseMate account?':
+        'کیا آپ واقعی اپنے ExpenseMate اکاؤنٹ سے لاگ آؤٹ کرنا چاہتے ہیں؟',
+    'Delete Account?': 'اکاؤنٹ حذف کریں؟',
+    'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
+        'یہ عمل مستقل ہے۔ آپ کا ExpenseMate اکاؤنٹ اور اس سے متعلق ڈیٹا حذف ہو جائے گا۔ آپ اپنا اکاؤنٹ واپس حاصل نہیں کر سکیں گے۔',
+    'This cannot be undone.': 'اس عمل کو واپس نہیں کیا جا سکتا۔',
+    'Please enter your name.': 'براہِ کرم اپنا نام درج کریں۔',
+    'Password must be at least 6 characters.':
+        'پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے۔',
+    'No logged-in account found.': 'کوئی لاگ اِن اکاؤنٹ نہیں ملا۔',
+    'No Changes': 'کوئی تبدیلی نہیں',
+    'There are no changes to save.': 'محفوظ کرنے کے لیے کوئی تبدیلی نہیں۔',
+    'Profile updated successfully.': 'پروفائل کامیابی سے اپ ڈیٹ ہو گئی۔',
+    'Profile picture updated successfully.':
+        'پروفائل تصویر کامیابی سے اپ ڈیٹ ہو گئی۔',
+    'Profile picture removed successfully.':
+        'پروفائل تصویر کامیابی سے ہٹا دی گئی۔',
+    'Failed to update profile.': 'پروفائل اپ ڈیٹ نہیں ہو سکی۔',
+    'Failed to update profile picture.': 'پروفائل تصویر اپ ڈیٹ نہیں ہو سکی۔',
+    'Are you sure you want to delete your account?':
+        'کیا آپ واقعی اپنا اکاؤنٹ حذف کرنا چاہتے ہیں؟',
+    'Account deleted successfully.': 'اکاؤنٹ کامیابی سے حذف ہو گیا۔',
+    'Failed to delete account.': 'اکاؤنٹ حذف نہیں ہو سکا۔',
+    'Logged out successfully.': 'کامیابی سے لاگ آؤٹ ہو گئے۔',
+    'Failed to logout.': 'لاگ آؤٹ نہیں ہو سکا۔',
+  };
+  static const _settingsPashto = {
+    'Add Currency': 'اسعار زیات کړئ',
+    'Currency code or symbol': 'د اسعارو کوډ یا نښه',
+    'e.g. AED': 'لکه AED',
+    'MY CURRENCIES': 'زما اسعار',
+    'Custom currency': 'دودیز اسعار',
+    'Default currency': 'اصلي اسعار',
+    'Delete currency': 'اسعار ړنګ کړئ',
+    'Select Currency': 'اسعار وټاکئ',
+    'Choose your preferred currency': 'خپل خوښ اسعار وټاکئ',
+    'APPEARANCE': 'بڼه',
+    'Appearance': 'بڼه',
+    'Dark Mode': 'تیاره بڼه',
+    'Dark theme is enabled': 'تیاره بڼه فعاله ده',
+    'Light theme is enabled': 'روښانه بڼه فعاله ده',
+    'MONEY': 'پیسې',
+    'Hide amounts': 'اندازې پټې کړئ',
+    'Balances are hidden on the home screen':
+        'په کور پاڼه کې بیلانسونه پټ دي',
+    'Balances are visible on the home screen':
+        'په کور پاڼه کې بیلانسونه ښکاري',
+    'ACCOUNT': 'حساب',
+    'Bill Notifications': 'د بل خبرتیاوې',
+    'Receive reminders for upcoming bills':
+        'د راتلونکو بلونو یادونې ترلاسه کړئ',
+    'Delete Account': 'حساب ړنګ کړئ',
+    'Permanently delete your account and data':
+        'خپل حساب او معلومات د تل لپاره ړنګ کړئ',
+    'Expense management made simple': 'د لګښتونو اسانه اداره',
+    'Version 1.0.0': 'نسخه 1.0.0',
+    'User': 'کاروونکی',
+    'No email available': 'برېښنالیک نشته',
+    'ExpenseMate Account': 'ExpenseMate حساب',
+    'Entries': 'ثبتونه',
+    'Edit profile': 'پروفایل سم کړئ',
+    'Update your account details': 'د حساب معلومات تازه کړئ',
+    'Change': 'بدلول',
+    'Clear': 'پاکول',
+    'ACCOUNT DETAILS': 'د حساب معلومات',
+    'New Password': 'نوی پټنوم',
+    'Leave empty to keep current password':
+        'د اوسني پټنوم ساتلو لپاره یې تش پرېږدئ',
+    'Leave password empty if you do not want to change it.':
+        'که پټنوم نه بدلوئ، تش یې پرېږدئ.',
+    'Save changes': 'بدلونونه خوندي کړئ',
+    'Logout?': 'ووځئ؟',
+    'Are you sure you want to logout from your ExpenseMate account?':
+        'ایا ډاډه یاست چې له خپل ExpenseMate حساب څخه ووځئ؟',
+    'Delete Account?': 'حساب ړنګ کړئ؟',
+    'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
+        'دا عمل د تل لپاره دی. ستاسو د ExpenseMate حساب او اړوند معلومات به ړنګ شي او بېرته به یې ترلاسه نه شئ کړای.',
+    'This cannot be undone.': 'دا عمل بېرته نه شي ګرځېدای.',
+    'Please enter your name.': 'مهرباني وکړئ خپل نوم ولیکئ.',
+    'Password must be at least 6 characters.':
+        'پټنوم باید لږ تر لږه ۶ توري ولري.',
+    'No logged-in account found.': 'ننوتل شوی حساب ونه موندل شو.',
+    'No Changes': 'بدلون نشته',
+    'There are no changes to save.': 'د خوندي کولو لپاره بدلون نشته.',
+    'Profile updated successfully.': 'پروفایل په بریالیتوب تازه شو.',
+    'Profile picture updated successfully.':
+        'د پروفایل انځور په بریالیتوب تازه شو.',
+    'Profile picture removed successfully.':
+        'د پروفایل انځور په بریالیتوب لرې شو.',
+    'Failed to update profile.': 'د پروفایل تازه کول ناکام شول.',
+    'Failed to update profile picture.': 'د پروفایل انځور تازه کول ناکام شول.',
+    'Are you sure you want to delete your account?':
+        'ایا ډاډه یاست چې خپل حساب ړنګ کړئ؟',
+    'Account deleted successfully.': 'حساب په بریالیتوب ړنګ شو.',
+    'Failed to delete account.': 'د حساب ړنګول ناکام شول.',
+    'Logged out successfully.': 'په بریالیتوب ووتلئ.',
+    'Failed to logout.': 'وتل ناکام شول.',
+  };
+  static const _settingsSindhi = {
+    'Add Currency': 'ڪرنسي شامل ڪريو',
+    'Currency code or symbol': 'ڪرنسي جو ڪوڊ يا نشان',
+    'e.g. AED': 'مثال طور AED',
+    'MY CURRENCIES': 'منهنجون ڪرنسيون',
+    'Custom currency': 'ڪسٽم ڪرنسي',
+    'Default currency': 'ڊفالٽ ڪرنسي',
+    'Delete currency': 'ڪرنسي ختم ڪريو',
+    'Select Currency': 'ڪرنسي چونڊيو',
+    'Choose your preferred currency': 'پنهنجي پسنديده ڪرنسي چونڊيو',
+    'APPEARANCE': 'ظاهر',
+    'Appearance': 'ظاهر',
+    'Dark Mode': 'اونداهو موڊ',
+    'Dark theme is enabled': 'اونداهو ٿيم فعال آهي',
+    'Light theme is enabled': 'هلڪو ٿيم فعال آهي',
+    'MONEY': 'رقم',
+    'Hide amounts': 'رقمون لڪايو',
+    'Balances are hidden on the home screen':
+        'هوم اسڪرين تي بيلنس لڪل آهن',
+    'Balances are visible on the home screen':
+        'هوم اسڪرين تي بيلنس نظر اچن ٿا',
+    'ACCOUNT': 'اڪائونٽ',
+    'Bill Notifications': 'بل جون اطلاعون',
+    'Receive reminders for upcoming bills':
+        'ايندڙ بلن جون ياد ڏيارڻيون حاصل ڪريو',
+    'Delete Account': 'اڪائونٽ ختم ڪريو',
+    'Permanently delete your account and data':
+        'پنهنجو اڪائونٽ ۽ ڊيٽا هميشه لاءِ ختم ڪريو',
+    'Expense management made simple': 'خرچن جو آسان انتظام',
+    'Version 1.0.0': 'ورزن 1.0.0',
+    'User': 'استعمال ڪندڙ',
+    'No email available': 'اي ميل موجود ناهي',
+    'ExpenseMate Account': 'ExpenseMate اڪائونٽ',
+    'Entries': 'داخلا',
+    'Edit profile': 'پروفائل ۾ تبديلي آڻيو',
+    'Update your account details': 'پنهنجي اڪائونٽ جا تفصيل اپڊيٽ ڪريو',
+    'Change': 'تبديل ڪريو',
+    'Clear': 'صاف ڪريو',
+    'ACCOUNT DETAILS': 'اڪائونٽ جا تفصيل',
+    'New Password': 'نئون پاسورڊ',
+    'Leave empty to keep current password':
+        'موجوده پاسورڊ رکڻ لاءِ خالي ڇڏيو',
+    'Leave password empty if you do not want to change it.':
+        'جيڪڏهن پاسورڊ تبديل نه ڪرڻو هجي ته خالي ڇڏيو.',
+    'Save changes': 'تبديليون محفوظ ڪريو',
+    'Logout?': 'لاگ آئوٽ ڪجي؟',
+    'Are you sure you want to logout from your ExpenseMate account?':
+        'ڇا توهان پڪ سان پنهنجي ExpenseMate اڪائونٽ مان لاگ آئوٽ ڪرڻ چاهيو ٿا؟',
+    'Delete Account?': 'اڪائونٽ ختم ڪجي؟',
+    'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
+        'هي عمل مستقل آهي. توهان جو ExpenseMate اڪائونٽ ۽ لاڳاپيل ڊيٽا ختم ٿي ويندي ۽ توهان ان کي واپس حاصل نه ڪري سگهندا.',
+    'This cannot be undone.': 'هي عمل واپس نٿو ڪري سگهجي.',
+    'Please enter your name.': 'مهرباني ڪري پنهنجو نالو داخل ڪريو.',
+    'Password must be at least 6 characters.':
+        'پاسورڊ گهٽ ۾ گهٽ 6 اکرن جو هجڻ گهرجي.',
+    'No logged-in account found.': 'لاگ اِن ٿيل اڪائونٽ نه مليو.',
+    'No Changes': 'ڪا تبديلي ناهي',
+    'There are no changes to save.': 'محفوظ ڪرڻ لاءِ ڪا تبديلي ناهي.',
+    'Profile updated successfully.': 'پروفائل ڪاميابيءَ سان اپڊيٽ ٿي.',
+    'Profile picture updated successfully.':
+        'پروفائل تصوير ڪاميابيءَ سان اپڊيٽ ٿي.',
+    'Profile picture removed successfully.':
+        'پروفائل تصوير ڪاميابيءَ سان هٽائي وئي.',
+    'Failed to update profile.': 'پروفائل اپڊيٽ نه ٿي سگهي.',
+    'Failed to update profile picture.': 'پروفائل تصوير اپڊيٽ نه ٿي سگهي.',
+    'Are you sure you want to delete your account?':
+        'ڇا توهان پڪ سان پنهنجو اڪائونٽ ختم ڪرڻ چاهيو ٿا؟',
+    'Account deleted successfully.': 'اڪائونٽ ڪاميابيءَ سان ختم ٿيو.',
+    'Failed to delete account.': 'اڪائونٽ ختم نه ٿي سگهيو.',
+    'Logged out successfully.': 'ڪاميابيءَ سان لاگ آئوٽ ٿيو.',
+    'Failed to logout.': 'لاگ آئوٽ نه ٿي سگهيو.',
+  };
+  static const _settingsArabic = {
+    'Add Currency': 'إضافة عملة',
+    'Currency code or symbol': 'رمز العملة أو علامتها',
+    'e.g. AED': 'مثال: AED',
+    'MY CURRENCIES': 'عملاتي',
+    'Custom currency': 'عملة مخصصة',
+    'Default currency': 'العملة الافتراضية',
+    'Delete currency': 'حذف العملة',
+    'Select Currency': 'اختر العملة',
+    'Choose your preferred currency': 'اختر العملة المفضلة لديك',
+    'APPEARANCE': 'المظهر',
+    'Appearance': 'المظهر',
+    'Dark Mode': 'الوضع الداكن',
+    'Dark theme is enabled': 'الوضع الداكن مفعّل',
+    'Light theme is enabled': 'الوضع الفاتح مفعّل',
+    'MONEY': 'المال',
+    'Hide amounts': 'إخفاء المبالغ',
+    'Balances are hidden on the home screen':
+        'الأرصدة مخفية في الشاشة الرئيسية',
+    'Balances are visible on the home screen':
+        'الأرصدة ظاهرة في الشاشة الرئيسية',
+    'ACCOUNT': 'الحساب',
+    'Bill Notifications': 'إشعارات الفواتير',
+    'Receive reminders for upcoming bills':
+        'تلقي تذكيرات بالفواتير القادمة',
+    'Delete Account': 'حذف الحساب',
+    'Permanently delete your account and data':
+        'حذف حسابك وبياناتك نهائيًا',
+    'Expense management made simple': 'إدارة المصروفات بسهولة',
+    'Version 1.0.0': 'الإصدار 1.0.0',
+    'User': 'المستخدم',
+    'No email available': 'لا يوجد بريد إلكتروني',
+    'ExpenseMate Account': 'حساب ExpenseMate',
+    'Entries': 'القيود',
+    'Edit profile': 'تعديل الملف الشخصي',
+    'Update your account details': 'تحديث تفاصيل حسابك',
+    'Change': 'تغيير',
+    'Clear': 'مسح',
+    'ACCOUNT DETAILS': 'تفاصيل الحساب',
+    'New Password': 'كلمة مرور جديدة',
+    'Leave empty to keep current password':
+        'اتركه فارغًا للاحتفاظ بكلمة المرور الحالية',
+    'Leave password empty if you do not want to change it.':
+        'اترك كلمة المرور فارغة إذا كنت لا تريد تغييرها.',
+    'Save changes': 'حفظ التغييرات',
+    'Logout?': 'تسجيل الخروج؟',
+    'Are you sure you want to logout from your ExpenseMate account?':
+        'هل أنت متأكد أنك تريد تسجيل الخروج من حساب ExpenseMate؟',
+    'Delete Account?': 'حذف الحساب؟',
+    'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
+        'هذا الإجراء نهائي. سيتم حذف حساب ExpenseMate والبيانات المرتبطة به، ولن تتمكن من استعادة حسابك.',
+    'This cannot be undone.': 'لا يمكن التراجع عن هذا الإجراء.',
+    'Please enter your name.': 'يرجى إدخال اسمك.',
+    'Password must be at least 6 characters.':
+        'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.',
+    'No logged-in account found.': 'لم يتم العثور على حساب مسجل الدخول.',
+    'No Changes': 'لا توجد تغييرات',
+    'There are no changes to save.': 'لا توجد تغييرات لحفظها.',
+    'Profile updated successfully.': 'تم تحديث الملف الشخصي بنجاح.',
+    'Profile picture updated successfully.':
+        'تم تحديث صورة الملف الشخصي بنجاح.',
+    'Profile picture removed successfully.':
+        'تمت إزالة صورة الملف الشخصي بنجاح.',
+    'Failed to update profile.': 'تعذر تحديث الملف الشخصي.',
+    'Failed to update profile picture.': 'تعذر تحديث صورة الملف الشخصي.',
+    'Are you sure you want to delete your account?':
+        'هل أنت متأكد أنك تريد حذف حسابك؟',
+    'Account deleted successfully.': 'تم حذف الحساب بنجاح.',
+    'Failed to delete account.': 'تعذر حذف الحساب.',
+    'Logged out successfully.': 'تم تسجيل الخروج بنجاح.',
+    'Failed to logout.': 'تعذر تسجيل الخروج.',
+  };
+
+  // Settings translations: Hindi
+  static const _settingsHindi = {
+    'Add Currency': 'मुद्रा जोड़ें',
+    'Currency code or symbol': 'मुद्रा कोड या प्रतीक',
+    'e.g. AED': 'जैसे AED',
+    'MY CURRENCIES': 'मेरी मुद्राएँ',
+    'Custom currency': 'कस्टम मुद्रा',
+    'Default currency': 'डिफ़ॉल्ट मुद्रा',
+    'Delete currency': 'मुद्रा हटाएँ',
+    'Select Currency': 'मुद्रा चुनें',
+    'Choose your preferred currency': 'अपनी पसंदीदा मुद्रा चुनें',
+    'APPEARANCE': 'दिखावट',
+    'Appearance': 'दिखावट',
+    'Dark Mode': 'डार्क मोड',
+    'Dark theme is enabled': 'डार्क थीम चालू है',
+    'Light theme is enabled': 'लाइट थीम चालू है',
+    'MONEY': 'पैसा',
+    'Hide amounts': 'राशियाँ छिपाएँ',
+    'Balances are hidden on the home screen':
+        'होम स्क्रीन पर बैलेंस छिपे हुए हैं',
+    'Balances are visible on the home screen':
+        'होम स्क्रीन पर बैलेंस दिखाई दे रहे हैं',
+    'ACCOUNT': 'खाता',
+    'Bill Notifications': 'बिल सूचनाएँ',
+    'Receive reminders for upcoming bills':
+        'आने वाले बिलों के रिमाइंडर पाएँ',
+    'Delete Account': 'खाता हटाएँ',
+    'Permanently delete your account and data':
+        'अपना खाता और डेटा हमेशा के लिए हटाएँ',
+    'Expense management made simple': 'खर्चों का आसान प्रबंधन',
+    'Version 1.0.0': 'संस्करण 1.0.0',
+    'User': 'उपयोगकर्ता',
+    'No email available': 'ईमेल उपलब्ध नहीं है',
+    'ExpenseMate Account': 'ExpenseMate खाता',
+    'Entries': 'प्रविष्टियाँ',
+    'Edit profile': 'प्रोफ़ाइल संपादित करें',
+    'Update your account details': 'अपने खाते की जानकारी अपडेट करें',
+    'Change': 'बदलें',
+    'Clear': 'साफ़ करें',
+    'ACCOUNT DETAILS': 'खाते का विवरण',
+    'New Password': 'नया पासवर्ड',
+    'Leave empty to keep current password':
+        'मौजूदा पासवर्ड रखने के लिए खाली छोड़ें',
+    'Leave password empty if you do not want to change it.':
+        'यदि पासवर्ड नहीं बदलना चाहते, तो इसे खाली छोड़ दें।',
+    'Save changes': 'बदलाव सहेजें',
+    'Logout?': 'लॉग आउट करें?',
+    'Are you sure you want to logout from your ExpenseMate account?':
+        'क्या आप वाकई अपने ExpenseMate खाते से लॉग आउट करना चाहते हैं?',
+    'Delete Account?': 'खाता हटाएँ?',
+    'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
+        'यह कार्रवाई स्थायी है। आपका ExpenseMate खाता और उससे जुड़ा डेटा हटा दिया जाएगा। आप अपना खाता वापस नहीं पा सकेंगे।',
+    'This cannot be undone.': 'इसे वापस नहीं किया जा सकता।',
+    'Please enter your name.': 'कृपया अपना नाम दर्ज करें।',
+    'Password must be at least 6 characters.':
+        'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।',
+    'No logged-in account found.': 'कोई लॉग इन खाता नहीं मिला।',
+    'No Changes': 'कोई बदलाव नहीं',
+    'There are no changes to save.': 'सहेजने के लिए कोई बदलाव नहीं है।',
+    'Profile updated successfully.': 'प्रोफ़ाइल सफलतापूर्वक अपडेट हुई।',
+    'Profile picture updated successfully.':
+        'प्रोफ़ाइल तस्वीर सफलतापूर्वक अपडेट हुई।',
+    'Profile picture removed successfully.':
+        'प्रोफ़ाइल तस्वीर सफलतापूर्वक हटा दी गई।',
+    'Failed to update profile.': 'प्रोफ़ाइल अपडेट नहीं हो सकी।',
+    'Failed to update profile picture.': 'प्रोफ़ाइल तस्वीर अपडेट नहीं हो सकी।',
+    'Are you sure you want to delete your account?':
+        'क्या आप वाकई अपना खाता हटाना चाहते हैं?',
+    'Account deleted successfully.': 'खाता सफलतापूर्वक हटाया गया।',
+    'Failed to delete account.': 'खाता हटाया नहीं जा सका।',
+    'Logged out successfully.': 'सफलतापूर्वक लॉग आउट हुए।',
+    'Failed to logout.': 'लॉग आउट नहीं हो सका।',
+  };
+  static const _transactionEnglish = {
+    'Search title or category...': 'Search title or category...',
+    'No transactions found.': 'No transactions found.',
+    'Add Transaction': 'Add Transaction',
+    'Edit Transaction': 'Edit Transaction',
+    'Title': 'Title',
+    'e.g. Grocery shopping': 'e.g. Grocery shopping',
+    'Enter amount': 'Enter amount',
+    'Select category': 'Select category',
+    'Add your own category': 'Add your own category',
+    'Select wallet': 'Select wallet',
+    'Update': 'Update',
+    'Add Custom Category': 'Add Custom Category',
+    'Category name': 'Category name',
+    'e.g. Shopping': 'e.g. Shopping',
+    'Use Name': 'Use Name',
+    'Category already exists': 'Category already exists',
+    '@category is already available. The existing category has been selected.':
+        '@category is already available. The existing category has been selected.',
+    'Category Error': 'Category Error',
+    'Unable to create the category. Please try again.':
+        'Unable to create the category. Please try again.',
+    'Missing title': 'Missing title',
+    'Please enter a transaction title.':
+        'Please enter a transaction title.',
+    'Missing amount': 'Missing amount',
+    'Please enter an amount.': 'Please enter an amount.',
+    'Invalid amount': 'Invalid amount',
+    'Please enter a valid amount greater than zero.':
+        'Please enter a valid amount greater than zero.',
+    'Missing category': 'Missing category',
+    'Please select a category.': 'Please select a category.',
+    'Missing wallet': 'Missing wallet',
+    'Please select a wallet.': 'Please select a wallet.',
+    'Update failed': 'Update failed',
+    'Save failed': 'Save failed',
+    'Unable to update the transaction. Please try again.':
+        'Unable to update the transaction. Please try again.',
+    'Unable to save the transaction. Please try again.':
+        'Unable to save the transaction. Please try again.',
+    'OK': 'OK',
+  };
+  static const _transactionUrdu = {
+    'Search title or category...': 'عنوان یا زمرہ تلاش کریں...',
+    'No transactions found.': 'کوئی لین دین نہیں ملا۔',
+    'Add Transaction': 'لین دین شامل کریں',
+    'Edit Transaction': 'لین دین میں ترمیم کریں',
+    'Title': 'عنوان',
+    'e.g. Grocery shopping': 'مثلاً گھر کے راشن کی خریداری',
+    'Enter amount': 'رقم درج کریں',
+    'Select category': 'زمرہ منتخب کریں',
+    'Add your own category': 'اپنا زمرہ شامل کریں',
+    'Select wallet': 'والٹ منتخب کریں',
+    'Update': 'اپ ڈیٹ کریں',
+    'Add Custom Category': 'اپنا زمرہ شامل کریں',
+    'Category name': 'زمرے کا نام',
+    'e.g. Shopping': 'مثلاً خریداری',
+    'Use Name': 'یہ نام استعمال کریں',
+    'Category already exists': 'زمرہ پہلے سے موجود ہے',
+    '@category is already available. The existing category has been selected.':
+        '@category پہلے سے موجود ہے۔ موجودہ زمرہ منتخب کر لیا گیا ہے۔',
+    'Category Error': 'زمرے میں خرابی',
+    'Unable to create the category. Please try again.':
+        'زمرہ نہیں بنایا جا سکا۔ دوبارہ کوشش کریں۔',
+    'Missing title': 'عنوان درج نہیں کیا گیا',
+    'Please enter a transaction title.':
+        'براہِ کرم لین دین کا عنوان درج کریں۔',
+    'Missing amount': 'رقم درج نہیں کی گئی',
+    'Please enter an amount.': 'براہِ کرم رقم درج کریں۔',
+    'Invalid amount': 'غلط رقم',
+    'Please enter a valid amount greater than zero.':
+        'براہِ کرم صفر سے زیادہ درست رقم درج کریں۔',
+    'Missing category': 'زمرہ منتخب نہیں کیا گیا',
+    'Please select a category.': 'براہِ کرم زمرہ منتخب کریں۔',
+    'Missing wallet': 'والٹ منتخب نہیں کیا گیا',
+    'Please select a wallet.': 'براہِ کرم والٹ منتخب کریں۔',
+    'Update failed': 'اپ ڈیٹ ناکام',
+    'Save failed': 'محفوظ کرنا ناکام',
+    'Unable to update the transaction. Please try again.':
+        'لین دین اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    'Unable to save the transaction. Please try again.':
+        'لین دین محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    'OK': 'ٹھیک ہے',
+  };
+  static const _transactionPashto = {
+    'Search title or category...': 'سرلیک یا کټګوري ولټوئ...',
+    'No transactions found.': 'هیڅ معامله ونه موندل شوه.',
+    'Add Transaction': 'معامله اضافه کړئ',
+    'Edit Transaction': 'معامله سم کړئ',
+    'Title': 'سرلیک',
+    'e.g. Grocery shopping': 'لکه د خوراکي توکو پېرود',
+    'Enter amount': 'اندازه ولیکئ',
+    'Select category': 'کټګوري وټاکئ',
+    'Add your own category': 'خپله کټګوري اضافه کړئ',
+    'Select wallet': 'بټوه وټاکئ',
+    'Update': 'تازه کول',
+    'Add Custom Category': 'ځانګړې کټګوري اضافه کړئ',
+    'Category name': 'د کټګورۍ نوم',
+    'e.g. Shopping': 'لکه پېرود',
+    'Use Name': 'دا نوم وکاروئ',
+    'Category already exists': 'کټګوري له مخکې شته',
+    '@category is already available. The existing category has been selected.':
+        '@category له مخکې شته. موجوده کټګوري وټاکل شوه.',
+    'Category Error': 'د کټګورۍ تېروتنه',
+    'Unable to create the category. Please try again.':
+        'کټګوري نه شي جوړېدای. بیا هڅه وکړئ.',
+    'Missing title': 'سرلیک نشته',
+    'Please enter a transaction title.':
+        'مهرباني وکړئ د معاملې سرلیک ولیکئ.',
+    'Missing amount': 'اندازه نشته',
+    'Please enter an amount.': 'مهرباني وکړئ اندازه ولیکئ.',
+    'Invalid amount': 'ناسمه اندازه',
+    'Please enter a valid amount greater than zero.':
+        'مهرباني وکړئ له صفر څخه زیاته سمه اندازه ولیکئ.',
+    'Missing category': 'کټګوري نه ده ټاکل شوې',
+    'Please select a category.': 'مهرباني وکړئ کټګوري وټاکئ.',
+    'Missing wallet': 'بټوه نه ده ټاکل شوې',
+    'Please select a wallet.': 'مهرباني وکړئ بټوه وټاکئ.',
+    'Update failed': 'تازه کول ناکام شول',
+    'Save failed': 'خوندي کول ناکام شول',
+    'Unable to update the transaction. Please try again.':
+        'معامله نه شي تازه کېدای. بیا هڅه وکړئ.',
+    'Unable to save the transaction. Please try again.':
+        'معامله نه شي خوندي کېدای. بیا هڅه وکړئ.',
+    'OK': 'سمه ده',
+  };
+
+  // Transaction translations: Sindhi
+  static const _transactionSindhi = {
+    'Search title or category...': 'عنوان يا درجو ڳوليو...',
+    'No transactions found.': 'ڪا به ڏيتي ليتي نه ملي.',
+    'Add Transaction': 'ڏيتي ليتي شامل ڪريو',
+    'Edit Transaction': 'ڏيتي ليتي ۾ ترميم ڪريو',
+    'Title': 'عنوان',
+    'e.g. Grocery shopping': 'مثال طور، گهر جو سامان خريد ڪرڻ',
+    'Enter amount': 'رقم داخل ڪريو',
+    'Select category': 'درجو چونڊيو',
+    'Add your own category': 'پنهنجو درجو شامل ڪريو',
+    'Select wallet': 'والٽ چونڊيو',
+    'Update': 'اپڊيٽ ڪريو',
+    'Add Custom Category': 'ڪسٽم درجو شامل ڪريو',
+    'Category name': 'درجي جو نالو',
+    'e.g. Shopping': 'مثال طور، خريداري',
+    'Use Name': 'هي نالو استعمال ڪريو',
+    'Category already exists': 'درجو اڳ ۾ موجود آهي',
+    '@category is already available. The existing category has been selected.':
+        '@category اڳ ۾ موجود آهي. موجوده درجو چونڊيو ويو آهي.',
+    'Category Error': 'درجي ۾ غلطي',
+    'Unable to create the category. Please try again.':
+        'درجو ٺاهي نه سگهيو. ٻيهر ڪوشش ڪريو.',
+    'Missing title': 'عنوان موجود ناهي',
+    'Please enter a transaction title.':
+        'مهرباني ڪري ڏيتي ليتي جو عنوان داخل ڪريو.',
+    'Missing amount': 'رقم موجود ناهي',
+    'Please enter an amount.': 'مهرباني ڪري رقم داخل ڪريو.',
+    'Invalid amount': 'غلط رقم',
+    'Please enter a valid amount greater than zero.':
+        'مهرباني ڪري صفر کان وڌيڪ صحيح رقم داخل ڪريو.',
+    'Missing category': 'درجو چونڊيل ناهي',
+    'Please select a category.': 'مهرباني ڪري درجو چونڊيو.',
+    'Missing wallet': 'والٽ چونڊيل ناهي',
+    'Please select a wallet.': 'مهرباني ڪري والٽ چونڊيو.',
+    'Update failed': 'اپڊيٽ ناڪام',
+    'Save failed': 'محفوظ ڪرڻ ناڪام',
+    'Unable to update the transaction. Please try again.':
+        'ڏيتي ليتي اپڊيٽ نه ٿي سگهي. ٻيهر ڪوشش ڪريو.',
+    'Unable to save the transaction. Please try again.':
+        'ڏيتي ليتي محفوظ نه ٿي سگهي. ٻيهر ڪوشش ڪريو.',
+    'OK': 'ٺيڪ آهي',
+  };
+
+  // Transaction translations: Arabic
+  static const _transactionArabic = {
+    'Search title or category...': 'ابحث عن العنوان أو الفئة...',
+    'No transactions found.': 'لم يتم العثور على معاملات.',
+    'Add Transaction': 'إضافة معاملة',
+    'Edit Transaction': 'تعديل المعاملة',
+    'Title': 'العنوان',
+    'e.g. Grocery shopping': 'مثال: شراء البقالة',
+    'Enter amount': 'أدخل المبلغ',
+    'Select category': 'اختر الفئة',
+    'Add your own category': 'إضافة فئة خاصة بك',
+    'Select wallet': 'اختر المحفظة',
+    'Update': 'تحديث',
+    'Add Custom Category': 'إضافة فئة مخصصة',
+    'Category name': 'اسم الفئة',
+    'e.g. Shopping': 'مثال: التسوق',
+    'Use Name': 'استخدام الاسم',
+    'Category already exists': 'الفئة موجودة بالفعل',
+    '@category is already available. The existing category has been selected.':
+        'الفئة @category موجودة بالفعل. تم اختيار الفئة الموجودة.',
+    'Category Error': 'خطأ في الفئة',
+    'Unable to create the category. Please try again.':
+        'تعذر إنشاء الفئة. يرجى المحاولة مرة أخرى.',
+    'Missing title': 'العنوان مطلوب',
+    'Please enter a transaction title.':
+        'يرجى إدخال عنوان المعاملة.',
+    'Missing amount': 'المبلغ مطلوب',
+    'Please enter an amount.': 'يرجى إدخال المبلغ.',
+    'Invalid amount': 'مبلغ غير صالح',
+    'Please enter a valid amount greater than zero.':
+        'يرجى إدخال مبلغ صحيح أكبر من صفر.',
+    'Missing category': 'الفئة مطلوبة',
+    'Please select a category.': 'يرجى اختيار فئة.',
+    'Missing wallet': 'المحفظة مطلوبة',
+    'Please select a wallet.': 'يرجى اختيار محفظة.',
+    'Update failed': 'فشل التحديث',
+    'Save failed': 'فشل الحفظ',
+    'Unable to update the transaction. Please try again.':
+        'تعذر تحديث المعاملة. يرجى المحاولة مرة أخرى.',
+    'Unable to save the transaction. Please try again.':
+        'تعذر حفظ المعاملة. يرجى المحاولة مرة أخرى.',
+    'OK': 'حسنًا',
+  };
+  static const _transactionHindi = {
+    'Search title or category...': 'शीर्षक या श्रेणी खोजें...',
+    'No transactions found.': 'कोई लेन-देन नहीं मिला।',
+    'Add Transaction': 'लेन-देन जोड़ें',
+    'Edit Transaction': 'लेन-देन संपादित करें',
+    'Title': 'शीर्षक',
+    'e.g. Grocery shopping': 'जैसे, किराने की खरीदारी',
+    'Enter amount': 'राशि दर्ज करें',
+    'Select category': 'श्रेणी चुनें',
+    'Add your own category': 'अपनी श्रेणी जोड़ें',
+    'Select wallet': 'वॉलेट चुनें',
+    'Update': 'अपडेट करें',
+    'Add Custom Category': 'कस्टम श्रेणी जोड़ें',
+    'Category name': 'श्रेणी का नाम',
+    'e.g. Shopping': 'जैसे, खरीदारी',
+    'Use Name': 'इस नाम का उपयोग करें',
+    'Category already exists': 'श्रेणी पहले से मौजूद है',
+    '@category is already available. The existing category has been selected.':
+        '@category पहले से मौजूद है। मौजूदा श्रेणी चुन ली गई है।',
+    'Category Error': 'श्रेणी में त्रुटि',
+    'Unable to create the category. Please try again.':
+        'श्रेणी नहीं बनाई जा सकी। कृपया फिर से कोशिश करें।',
+    'Missing title': 'शीर्षक दर्ज नहीं है',
+    'Please enter a transaction title.':
+        'कृपया लेन-देन का शीर्षक दर्ज करें।',
+    'Missing amount': 'राशि दर्ज नहीं है',
+    'Please enter an amount.': 'कृपया राशि दर्ज करें।',
+    'Invalid amount': 'अमान्य राशि',
+    'Please enter a valid amount greater than zero.':
+        'कृपया शून्य से अधिक सही राशि दर्ज करें।',
+    'Missing category': 'श्रेणी नहीं चुनी गई',
+    'Please select a category.': 'कृपया श्रेणी चुनें।',
+    'Missing wallet': 'वॉलेट नहीं चुना गया',
+    'Please select a wallet.': 'कृपया वॉलेट चुनें।',
+    'Update failed': 'अपडेट विफल',
+    'Save failed': 'सेव करना विफल',
+    'Unable to update the transaction. Please try again.':
+        'लेन-देन अपडेट नहीं हो सका। कृपया फिर से कोशिश करें।',
+    'Unable to save the transaction. Please try again.':
+        'लेन-देन सेव नहीं हो सका। कृपया फिर से कोशिश करें।',
+    'OK': 'ठीक है',
+  };
 
   static const _english = {
     'Choose your language': 'Choose your language',
@@ -93,7 +985,8 @@ class AppTranslations extends Translations {
     'Digital Committee': 'Digital Committee',
     'Udhaar': 'Udhaar',
     'Welcome Back!': 'Welcome Back!',
-    'Login to continue to Expense Mate': 'Login to continue to Expense Mate',
+    'Login to continue to Expense Mate':
+        'Login to continue to Expense Mate',
     'Email': 'Email',
     'Enter your email': 'Enter your email',
     'Password': 'Password',
@@ -184,7 +1077,6 @@ class AppTranslations extends Translations {
     'Skip': 'Skip',
     'Got it': 'Got it',
   };
-
   static const _urdu = {
     'Choose your language': 'اپنی زبان منتخب کریں',
     'You can change it later in Settings.':
@@ -348,7 +1240,6 @@ class AppTranslations extends Translations {
     'Skip': 'چھوڑیں',
     'Got it': 'سمجھ گیا',
   };
-
   static const _pashto = {
     'Choose your language': 'خپله ژبه وټاکئ',
     'You can change it later in Settings.': 'وروسته یې په امستنو کې بدلولی شئ.',
@@ -433,6 +1324,7 @@ class AppTranslations extends Translations {
     'Enter your name': 'خپل نوم ولیکئ',
     'Create a password': 'پټنوم جوړ کړئ',
     'Already have an account?': 'له مخکې حساب لرئ؟',
+    ..._reportPashto,
   };
 
   static const _sindhi = {
@@ -524,8 +1416,8 @@ class AppTranslations extends Translations {
     'Enter your name': 'پنهنجو نالو داخل ڪريو',
     'Create a password': 'پاسورڊ ٺاهيو',
     'Already have an account?': 'اڳ ۾ اڪائونٽ آهي؟',
+    ..._reportSindhi,
   };
-
   static const _arabic = {
     'Choose your language': 'اختر لغتك',
     'You can change it later in Settings.':
@@ -610,6 +1502,7 @@ class AppTranslations extends Translations {
     'Enter your name': 'أدخل اسمك',
     'Create a password': 'أنشئ كلمة مرور',
     'Already have an account?': 'لديك حساب بالفعل؟',
+    ..._reportArabic,
   };
 
   static const _hindi = {
@@ -700,15 +1593,61 @@ class AppTranslations extends Translations {
     'Enter your name': 'अपना नाम दर्ज करें',
     'Create a password': 'पासवर्ड बनाएँ',
     'Already have an account?': 'पहले से खाता है?',
+    ..._reportHindi,
   };
 
   @override
   Map<String, Map<String, String>> get keys => {
-    'en': _english,
-    'ur': _urdu,
-    'ps': _pashto,
-    'sd': _sindhi,
-    'ar': _arabic,
-    'hi': _hindi,
+    'en': {
+      ..._english,
+      ..._reportEnglish,
+      ..._settingsEnglish,
+      ..._transactionEnglish,
+    },
+    'ur': {
+      ..._english,
+      ..._urdu,
+      ..._reportUrdu,
+      ..._settingsEnglish,
+      ..._settingsUrdu,
+      ..._transactionEnglish,
+      ..._transactionUrdu,
+    },
+    'ps': {
+      ..._english,
+      ..._pashto,
+      ..._reportPashto,
+      ..._settingsEnglish,
+      ..._settingsPashto,
+      ..._transactionEnglish,
+      ..._transactionPashto,
+    },
+    'sd': {
+      ..._english,
+      ..._sindhi,
+      ..._reportSindhi,
+      ..._settingsEnglish,
+      ..._settingsSindhi,
+      ..._transactionEnglish,
+      ..._transactionSindhi,
+    },
+    'ar': {
+      ..._english,
+      ..._arabic,
+      ..._reportArabic,
+      ..._settingsEnglish,
+      ..._settingsArabic,
+      ..._transactionEnglish,
+      ..._transactionArabic,
+    },
+    'hi': {
+      ..._english,
+      ..._hindi,
+      ..._reportHindi,
+      ..._settingsEnglish,
+      ..._settingsHindi,
+      ..._transactionEnglish,
+      ..._transactionHindi,
+    },
   };
 }

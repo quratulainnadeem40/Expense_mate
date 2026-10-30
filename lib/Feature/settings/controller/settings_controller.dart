@@ -1,9 +1,10 @@
-import '../../../Core/service/sound_service.dart';
+
 import 'dart:async';
 
 import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/notification_service.dart';
+import '../../../Core/service/sound_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -13,27 +14,32 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SettingsController extends GetxController {
   StreamSubscription<AuthState>? _authSubscription;
 
-  // ============================================================
   // SETTINGS
-  // ============================================================
 
   late Box settingsBox;
 
   final isDarkMode = false.obs;
-
-  /// Hides the figures on the balance card. Starts on, so the amounts
-  /// are not sitting in plain view the first time the app opens.
   final hideAmounts = true.obs;
 
   /// Confirmation sound after a transaction is saved.
   final transactionSound = true.obs;
+
   final selectedCurrency = 'PKR'.obs;
   final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
 
-  // ============================================================
+  static const Set<String> supportedLanguages = {
+    'en',
+    'ur',
+    'ps',
+    'sd',
+    'ar',
+    'hi',
+  };
+
+  final selectedLanguage = 'en'.obs;
+
   // ACCOUNT
-  // ============================================================
 
   final isDeletingAccount = false.obs;
 
@@ -42,9 +48,7 @@ class SettingsController extends GetxController {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // ============================================================
   // PROFILE
-  // ============================================================
 
   final profileName = ''.obs;
   final profileEmail = ''.obs;
@@ -54,12 +58,9 @@ class SettingsController extends GetxController {
 
   final ImagePicker _imagePicker = ImagePicker();
 
-  // Prevent multiple profile requests at the same time.
   bool _isLoadingProfile = false;
 
-  // ============================================================
   // INIT
-  // ============================================================
 
   @override
   void onInit() {
@@ -69,36 +70,23 @@ class SettingsController extends GetxController {
 
     loadSettings();
 
-    // ----------------------------------------------------------
-    // Load profile once if a session already exists.
-    // ----------------------------------------------------------
-
     if (_supabase.auth.currentSession != null) {
       loadProfile();
     }
 
-    // ----------------------------------------------------------
-    // Listen ONLY for real login/logout events.
-    //
-    // Do NOT call loadProfile() for tokenRefreshed or
-    // userUpdated. That can create repeated requests and
-    // eventually cause Supabase 429 rate-limit errors.
-    // ----------------------------------------------------------
-
-    _authSubscription = _supabase.auth.onAuthStateChange.listen((authState) {
+    _authSubscription =
+        _supabase.auth.onAuthStateChange.listen((authState) {
       final event = authState.event;
       final session = authState.session;
 
       debugPrint('AUTH EVENT: $event | SESSION: ${session != null}');
 
-      // User logged in.
       if (event == AuthChangeEvent.signedIn) {
         if (session?.user != null) {
           loadProfile();
         }
       }
 
-      // User logged out.
       if (event == AuthChangeEvent.signedOut) {
         profileName.value = '';
         profileEmail.value = '';
@@ -107,15 +95,11 @@ class SettingsController extends GetxController {
     });
   }
 
-  // ============================================================
   // CURRENT USER
-  // ============================================================
 
   User? get currentUser => _supabase.auth.currentUser;
 
-  // ============================================================
   // LOAD PROFILE
-  // ============================================================
 
   Future<void> loadProfile() async {
     if (_isLoadingProfile) {
@@ -134,21 +118,11 @@ class SettingsController extends GetxController {
     _isLoadingProfile = true;
 
     try {
-      // --------------------------------------------------------
-      // AUTH DATA
-      // --------------------------------------------------------
-
       final metadata = user.userMetadata ?? {};
 
       final authName = metadata['name']?.toString().trim() ?? '';
-
       final authEmail = user.email?.trim() ?? '';
-
       final authAvatar = metadata['avatar_url']?.toString().trim() ?? '';
-
-      // --------------------------------------------------------
-      // PROFILE TABLE DATA
-      // --------------------------------------------------------
 
       String databaseName = '';
       String databaseEmail = '';
@@ -161,41 +135,30 @@ class SettingsController extends GetxController {
             .maybeSingle();
 
         if (profileResponse != null) {
-          databaseName = profileResponse['name']?.toString().trim() ?? '';
-
-          databaseEmail = profileResponse['email']?.toString().trim() ?? '';
+          databaseName =
+              profileResponse['name']?.toString().trim() ?? '';
+          databaseEmail =
+              profileResponse['email']?.toString().trim() ?? '';
         }
       } on PostgrestException catch (e) {
         debugPrint('Profiles table error: ${e.message}');
       }
 
-      // --------------------------------------------------------
-      // SELECT PROFILE VALUES
-      // --------------------------------------------------------
-
       final finalName = authName.isNotEmpty
           ? authName
           : databaseName.isNotEmpty
-          ? databaseName
-          : 'User';
+              ? databaseName
+              : 'User'.tr;
 
       final finalEmail = authEmail.isNotEmpty
           ? authEmail
           : databaseEmail.isNotEmpty
-          ? databaseEmail
-          : 'No Email';
-
-      // --------------------------------------------------------
-      // UPDATE CONTROLLER
-      // --------------------------------------------------------
+              ? databaseEmail
+              : 'No email available'.tr;
 
       profileName.value = finalName;
       profileEmail.value = finalEmail;
       profilePictureUrl.value = authAvatar;
-
-      // --------------------------------------------------------
-      // DEBUG
-      // --------------------------------------------------------
 
       debugPrint('================================');
       debugPrint('PROFILE LOADED');
@@ -216,17 +179,7 @@ class SettingsController extends GetxController {
     }
   }
 
-  // ============================================================
   // UPDATE PROFILE
-  // ============================================================
-
-  // ============================================================
-  // UPDATE PROFILE
-  // ============================================================
-
-  // ============================================================
-  // UPDATE PROFILE
-  // ============================================================
 
   Future<void> updateProfile({
     required String name,
@@ -237,28 +190,20 @@ class SettingsController extends GetxController {
     final newEmail = email?.trim() ?? '';
     final newPassword = password?.trim();
 
-    // ----------------------------------------------------------
-    // VALIDATION
-    // ----------------------------------------------------------
-
     if (newName.isEmpty) {
-      _showError('Please enter your name.');
+      _showError('Please enter your name.'.tr);
       return;
     }
 
     if (newPassword != null &&
         newPassword.isNotEmpty &&
         newPassword.length < 6) {
-      _showError('Password must be at least 6 characters.');
+      _showError('Password must be at least 6 characters.'.tr);
       return;
     }
 
     try {
       isUpdatingProfile.value = true;
-
-      // --------------------------------------------------------
-      // GET CURRENT AUTH USER
-      // --------------------------------------------------------
 
       final session = _supabase.auth.currentSession;
       final user = session?.user;
@@ -266,8 +211,7 @@ class SettingsController extends GetxController {
       if (user == null) {
         debugPrint('SESSION IS NULL');
         debugPrint('CURRENT USER: ${_supabase.auth.currentUser}');
-
-        _showError('No logged-in account found.');
+        _showError('No logged-in account found.'.tr);
         return;
       }
 
@@ -278,25 +222,15 @@ class SettingsController extends GetxController {
       debugPrint('NEW EMAIL FROM TEXT FIELD: $newEmail');
       debugPrint('================================');
 
-      // --------------------------------------------------------
-      // CURRENT VALUES
-      // --------------------------------------------------------
-
-      final currentName = user.userMetadata?['name']?.toString().trim() ?? '';
-
+      final currentName =
+          user.userMetadata?['name']?.toString().trim() ?? '';
       final currentEmail = user.email?.trim() ?? '';
-
       final finalEmail = newEmail.isEmpty ? currentEmail : newEmail;
 
       final nameChanged = newName != currentName;
-
       final emailChanged = finalEmail != currentEmail;
-
-      final passwordChanged = newPassword != null && newPassword.isNotEmpty;
-
-      // --------------------------------------------------------
-      // NOTHING CHANGED
-      // --------------------------------------------------------
+      final passwordChanged =
+          newPassword != null && newPassword.isNotEmpty;
 
       if (!nameChanged && !emailChanged && !passwordChanged) {
         if (Get.isDialogOpen == true) {
@@ -304,18 +238,14 @@ class SettingsController extends GetxController {
         }
 
         Get.snackbar(
-          'No Changes',
-          'There are no changes to save.',
+          'No Changes'.tr,
+          'There are no changes to save.'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
-
         return;
       }
 
-      // ========================================================
-      // 1. UPDATE EMAIL IN SUPABASE AUTH
-      // ========================================================
-
+      // 1. Update email.
       if (emailChanged) {
         debugPrint('================================');
         debugPrint('UPDATING AUTH EMAIL');
@@ -327,10 +257,6 @@ class SettingsController extends GetxController {
           UserAttributes(email: finalEmail),
         );
 
-        // ------------------------------------------------------
-        // GET THE USER AFTER EMAIL UPDATE
-        // ------------------------------------------------------
-
         final updatedUser = authResponse.user;
 
         debugPrint('================================');
@@ -339,13 +265,8 @@ class SettingsController extends GetxController {
         debugPrint('USER ID: ${updatedUser?.id}');
         debugPrint('================================');
 
-        // ------------------------------------------------------
-        // IMPORTANT:
-        // Only continue if Supabase Auth actually accepted
-        // the new email.
-        // ------------------------------------------------------
-
-        final authEmailAfterUpdate = updatedUser?.email?.trim() ?? '';
+        final authEmailAfterUpdate =
+            updatedUser?.email?.trim() ?? '';
 
         if (authEmailAfterUpdate != finalEmail) {
           debugPrint('EMAIL CHANGE IS PENDING CONFIRMATION');
@@ -355,45 +276,41 @@ class SettingsController extends GetxController {
           }
 
           Get.snackbar(
-            'Confirmation Required',
+            'Confirmation Required'.tr,
             'A confirmation email has been sent to your new email address. '
-                'Please confirm it before the email change becomes active.',
+                    'Please confirm it before the email change becomes active.'
+                .tr,
             snackPosition: SnackPosition.BOTTOM,
             duration: const Duration(seconds: 6),
           );
-
           return;
         }
       }
 
-      // ========================================================
-      // 2. UPDATE PASSWORD IN SUPABASE AUTH
-      // ========================================================
-
+      // 2. Update password.
       if (passwordChanged) {
         debugPrint('UPDATING AUTH PASSWORD');
 
-        await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+        await _supabase.auth.updateUser(
+          UserAttributes(password: newPassword),
+        );
       }
 
-      // ========================================================
-      // 3. UPDATE NAME IN SUPABASE AUTH
-      // ========================================================
-
+      // 3. Update name in Auth metadata.
       if (nameChanged) {
         debugPrint('UPDATING AUTH NAME');
 
-        final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
+        final metadata =
+            Map<String, dynamic>.from(user.userMetadata ?? {});
 
         metadata['name'] = newName;
 
-        await _supabase.auth.updateUser(UserAttributes(data: metadata));
+        await _supabase.auth.updateUser(
+          UserAttributes(data: metadata),
+        );
       }
 
-      // ========================================================
-      // 4. UPDATE PROFILES TABLE
-      // ========================================================
-
+      // 4. Update profiles table.
       final profileData = <String, dynamic>{'name': newName};
 
       if (emailChanged) {
@@ -403,24 +320,20 @@ class SettingsController extends GetxController {
       debugPrint('UPDATING PROFILES TABLE');
       debugPrint('PROFILE DATA: $profileData');
 
-      await _supabase.from('profiles').update(profileData).eq('id', user.id);
+      await _supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', user.id);
 
-      // ========================================================
-      // 5. REFRESH AUTH SESSION
-      // ========================================================
-
+      // 5. Refresh Auth session.
       try {
         await _supabase.auth.refreshSession();
       } catch (e) {
         debugPrint('Session refresh warning: $e');
       }
 
-      // ========================================================
-      // 6. GET FINAL AUTH USER
-      // ========================================================
-
+      // 6. Read final Auth user.
       final finalUser = _supabase.auth.currentUser;
-
       final verifiedEmail = finalUser?.email?.trim() ?? '';
 
       debugPrint('================================');
@@ -430,54 +343,44 @@ class SettingsController extends GetxController {
       debugPrint('FINAL PROFILE EMAIL: $finalEmail');
       debugPrint('================================');
 
-      // ========================================================
-      // 7. UPDATE LOCAL UI
-      // ========================================================
-
+      // 7. Update local UI.
       profileName.value = newName;
 
       if (emailChanged) {
-        profileEmail.value = verifiedEmail.isNotEmpty
-            ? verifiedEmail
-            : finalEmail;
+        profileEmail.value =
+            verifiedEmail.isNotEmpty ? verifiedEmail : finalEmail;
       } else {
         profileEmail.value = currentEmail;
       }
 
-      // ========================================================
-      // 8. CLOSE DIALOG
-      // ========================================================
-
+      // 8. Close dialog.
       if (Get.isDialogOpen == true) {
         Get.back();
       }
 
-      // ========================================================
-      // 9. SUCCESS MESSAGE
-      // ========================================================
-
+      // 9. Success message.
       if (nameChanged && emailChanged) {
         Get.snackbar(
-          'Profile Updated',
-          'Name and email updated successfully.',
+          'Profile Updated'.tr,
+          'Name and email updated successfully.'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else if (nameChanged) {
         Get.snackbar(
-          'Profile Updated',
-          'Name updated successfully.',
+          'Profile Updated'.tr,
+          'Name updated successfully.'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else if (emailChanged) {
         Get.snackbar(
-          'Profile Updated',
-          'Email updated successfully.',
+          'Profile Updated'.tr,
+          'Email updated successfully.'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else if (passwordChanged) {
         Get.snackbar(
-          'Profile Updated',
-          'Password updated successfully.',
+          'Profile Updated'.tr,
+          'Password updated successfully.'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -497,36 +400,31 @@ class SettingsController extends GetxController {
       debugPrint('Code: ${e.code}');
       debugPrint('================================');
 
-      _showError('Profile database update failed.');
+      _showError('Profile database update failed.'.tr);
     } catch (e) {
       debugPrint('================================');
       debugPrint('PROFILE UPDATE ERROR');
       debugPrint('Error: $e');
       debugPrint('================================');
 
-      _showError('Unable to update profile. Please try again.');
+      _showError('Unable to update profile. Please try again.'.tr);
     } finally {
       isUpdatingProfile.value = false;
     }
   }
-  // ============================================================
+
   // UPDATE NAME ONLY
-  // ============================================================
 
   Future<void> updateName(String name) async {
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
-      _showError('Please enter your name.');
+      _showError('Please enter your name.'.tr);
       return;
     }
 
     try {
       isUpdatingProfile.value = true;
-
-      // --------------------------------------------------------
-      // GET CURRENT AUTHENTICATED USER
-      // --------------------------------------------------------
 
       final session = _supabase.auth.currentSession;
       final user = session?.user;
@@ -534,64 +432,46 @@ class SettingsController extends GetxController {
       if (user == null) {
         debugPrint('SESSION IS NULL');
         debugPrint('CURRENT USER: ${_supabase.auth.currentUser}');
-
-        _showError('No logged-in account found.');
+        _showError('No logged-in account found.'.tr);
         return;
       }
 
       debugPrint('LOGGED IN USER ID: ${user.id}');
       debugPrint('LOGGED IN EMAIL: ${user.email}');
 
-      // --------------------------------------------------------
-      // UPDATE USER METADATA
-      // --------------------------------------------------------
-
-      final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
+      final metadata =
+          Map<String, dynamic>.from(user.userMetadata ?? {});
 
       metadata['name'] = trimmedName;
 
-      await _supabase.auth.updateUser(UserAttributes(data: metadata));
-
-      // --------------------------------------------------------
-      // UPDATE LOCAL UI
-      // --------------------------------------------------------
+      await _supabase.auth.updateUser(
+        UserAttributes(data: metadata),
+      );
 
       profileName.value = trimmedName;
-
-      // --------------------------------------------------------
-      // UPDATE PROFILES TABLE
-      // --------------------------------------------------------
 
       await _supabase
           .from('profiles')
           .update({'name': trimmedName})
           .eq('id', user.id);
 
-      // --------------------------------------------------------
-      // SUCCESS
-      // --------------------------------------------------------
-
       Get.snackbar(
-        'Success',
-        'Name updated successfully.',
+        'Success'.tr,
+        'Name updated successfully.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
       debugPrint('Update name auth error: ${e.message}');
-
       _showError(e.message);
     } catch (e) {
       debugPrint('Update name error: $e');
-
-      _showError('Unable to update name.');
+      _showError('Unable to update name.'.tr);
     } finally {
       isUpdatingProfile.value = false;
     }
   }
 
-  // ============================================================
   // PICK PROFILE PICTURE
-  // ============================================================
 
   Future<void> pickProfilePicture() async {
     try {
@@ -607,7 +487,7 @@ class SettingsController extends GetxController {
       final user = _supabase.auth.currentUser;
 
       if (user == null) {
-        _showError('No logged-in account found.');
+        _showError('No logged-in account found.'.tr);
         return;
       }
 
@@ -633,82 +513,89 @@ class SettingsController extends GetxController {
           .from('profile-pictures')
           .getPublicUrl(filePath);
 
-      final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
+      final metadata =
+          Map<String, dynamic>.from(user.userMetadata ?? {});
 
       metadata['avatar_url'] = imageUrl;
 
-      await _supabase.auth.updateUser(UserAttributes(data: metadata));
+      await _supabase.auth.updateUser(
+        UserAttributes(data: metadata),
+      );
 
       profilePictureUrl.value = imageUrl;
 
       Get.snackbar(
-        'Success',
-        'Profile picture updated successfully.',
+        'Success'.tr,
+        'Profile picture updated successfully.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on StorageException catch (e) {
       debugPrint('Storage error: ${e.message}');
-
       _showError(e.message);
     } on AuthException catch (e) {
       debugPrint('Auth error: ${e.message}');
-
       _showError(e.message);
     } catch (e) {
       debugPrint('Profile picture error: $e');
-
-      _showError('Unable to update profile picture.');
+      _showError('Unable to update profile picture.'.tr);
     } finally {
       isUpdatingProfile.value = false;
     }
   }
 
-  // ============================================================
   // CLEAR PROFILE PICTURE
-  // ============================================================
 
   Future<void> clearProfilePicture() async {
     final user = _supabase.auth.currentUser;
 
     if (user == null) {
-      _showError('No logged-in account found.');
+      _showError('No logged-in account found.'.tr);
       return;
     }
 
     try {
       isUpdatingProfile.value = true;
 
-      final metadata = Map<String, dynamic>.from(user.userMetadata ?? {});
+      final metadata =
+          Map<String, dynamic>.from(user.userMetadata ?? {});
 
       metadata.remove('avatar_url');
 
-      await _supabase.auth.updateUser(UserAttributes(data: metadata));
+      await _supabase.auth.updateUser(
+        UserAttributes(data: metadata),
+      );
 
       profilePictureUrl.value = '';
 
       Get.snackbar(
-        'Profile Picture Removed',
-        'Your profile picture has been cleared.',
+        'Profile Picture Removed'.tr,
+        'Your profile picture has been cleared.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
       debugPrint('Clear profile picture error: $e');
-
-      _showError('Unable to clear profile picture.');
+      _showError('Unable to clear profile picture.'.tr);
     } finally {
       isUpdatingProfile.value = false;
     }
   }
 
-  // ============================================================
   // LOAD SETTINGS
-  // ============================================================
 
   Future<void> loadSettings() async {
     isDarkMode.value =
         settingsBox.get(AppKeys.isDarkModeKey, defaultValue: false) as bool;
+
+    final savedLanguage =
+        settingsBox.get('app_language', defaultValue: 'en').toString();
+
+    selectedLanguage.value = supportedLanguages.contains(savedLanguage)
+        ? savedLanguage
+        : 'en';
+
+    await Get.updateLocale(Locale(selectedLanguage.value));
 
     await loadCurrencySettings();
 
@@ -723,9 +610,7 @@ class SettingsController extends GetxController {
             as bool;
   }
 
-  // ============================================================
   // DARK MODE
-  // ============================================================
 
   Future<void> toggleDarkMode(bool value) async {
     isDarkMode.value = value;
@@ -735,14 +620,20 @@ class SettingsController extends GetxController {
     Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
   }
 
-  // ============================================================
   // CURRENCY
-  // ============================================================
 
-  static const List<String> defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
+  static const List<String> defaultCurrencies = [
+    'PKR',
+    'USD',
+    'EUR',
+    'GBP',
+  ];
 
   Future<void> loadCurrencySettings() async {
-    final savedCurrency = settingsBox.get('currency', defaultValue: 'PKR');
+    final savedCurrency = settingsBox.get(
+      'currency',
+      defaultValue: 'PKR',
+    );
 
     final savedCurrencies = settingsBox.get(
       'custom_currencies',
@@ -772,38 +663,67 @@ class SettingsController extends GetxController {
 
     if (currency.isEmpty) {
       selectedCurrency.value = 'PKR';
-
       await settingsBox.put('currency', 'PKR');
     } else {
       selectedCurrency.value = currency;
     }
 
-    await settingsBox.put('custom_currencies', customCurrencies.toList());
+    await settingsBox.put(
+      'custom_currencies',
+      customCurrencies.toList(),
+    );
   }
 
-  /// Flips the balance card between the real figures and dots.
+  /// Enables/disables the transaction confirmation sound.
   Future<void> toggleTransactionSound(bool value) async {
     transactionSound.value = value;
+
+    await settingsBox.put(AppKeys.transactionSoundKey, value);
+
     await SoundService.instance.setEnabled(value);
 
     // A quick play so the user hears what they just switched on.
-    if (value) await SoundService.instance.playSuccess();
+    if (value) {
+      await SoundService.instance.playSuccess();
+    }
   }
 
+  /// Flips the balance card between real figures and dots.
   Future<void> toggleHideAmounts() async {
     hideAmounts.value = !hideAmounts.value;
+
     await settingsBox.put('hide_amounts', hideAmounts.value);
   }
 
   Future<void> changeCurrency(String currency) async {
     final code = currency.trim().toUpperCase();
 
-    if (code.isEmpty) return;
+    if (code.isEmpty) {
+      return;
+    }
 
     selectedCurrency.value = code;
 
     await settingsBox.put('currency', code);
   }
+
+  // LANGUAGE
+
+  Future<void> changeLanguage(String languageCode) async {
+    final code = languageCode.trim().toLowerCase();
+
+    if (!supportedLanguages.contains(code)) {
+      return;
+    }
+
+    selectedLanguage.value = code;
+
+    await settingsBox.put('app_language', code);
+
+    await Get.updateLocale(Locale(code));
+  }
+
+  // CUSTOM CURRENCY
 
   Future<void> addCustomCurrency(String currency) async {
     final code = currency.trim().toUpperCase();
@@ -812,13 +732,11 @@ class SettingsController extends GetxController {
       return;
     }
 
-    // Default currencies already exist.
     if (defaultCurrencies.contains(code)) {
       await changeCurrency(code);
       return;
     }
 
-    // Don't add duplicates.
     final alreadyExists = customCurrencies.any(
       (item) => item.toUpperCase() == code,
     );
@@ -826,10 +744,12 @@ class SettingsController extends GetxController {
     if (!alreadyExists) {
       customCurrencies.add(code);
 
-      await settingsBox.put('custom_currencies', customCurrencies.toList());
+      await settingsBox.put(
+        'custom_currencies',
+        customCurrencies.toList(),
+      );
     }
 
-    // Newly added currency becomes selected.
     await changeCurrency(code);
   }
 
@@ -840,25 +760,25 @@ class SettingsController extends GetxController {
       return;
     }
 
-    // Never allow default currencies to be deleted.
     if (defaultCurrencies.contains(code)) {
       return;
     }
 
-    customCurrencies.removeWhere((item) => item.toUpperCase() == code);
+    customCurrencies.removeWhere(
+      (item) => item.toUpperCase() == code,
+    );
 
-    await settingsBox.put('custom_currencies', customCurrencies.toList());
+    await settingsBox.put(
+      'custom_currencies',
+      customCurrencies.toList(),
+    );
 
-    // If deleted currency was selected,
-    // return to PKR.
     if (selectedCurrency.value.toUpperCase() == code) {
       await changeCurrency('PKR');
     }
   }
 
-  // ============================================================
   // NOTIFICATIONS
-  // ============================================================
 
   Future<void> toggleNotifications(bool value) async {
     notificationsEnabled.value = value;
@@ -874,13 +794,7 @@ class SettingsController extends GetxController {
     }
   }
 
-  // ============================================================
-  // RESET SETTINGS
-  // ============================================================
-
-  // ============================================================
   // LOGOUT
-  // ============================================================
 
   Future<void> logout() async {
     try {
@@ -889,20 +803,18 @@ class SettingsController extends GetxController {
       Get.offAllNamed(AppRoutes.login);
 
       Get.snackbar(
-        'Logged Out',
-        'You have been logged out successfully.',
+        'Logged Out'.tr,
+        'You have been logged out successfully.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError('Unable to logout. Please try again.');
+      _showError('Unable to logout. Please try again.'.tr);
     }
   }
 
-  // ============================================================
   // DELETE ACCOUNT
-  // ============================================================
 
   Future<void> deleteAccount() async {
     if (isDeletingAccount.value) {
@@ -913,18 +825,20 @@ class SettingsController extends GetxController {
       final user = _supabase.auth.currentUser;
 
       if (user == null) {
-        _showError('No logged-in account found.');
+        _showError('No logged-in account found.'.tr);
         return;
       }
 
       isDeletingAccount.value = true;
 
-      final response = await _supabase.functions.invoke('delete-account');
+      final response =
+          await _supabase.functions.invoke('delete-account');
 
       if (response.status != 200) {
-        String errorMessage = 'Unable to delete account.';
+        String errorMessage = 'Unable to delete account.'.tr;
 
-        if (response.data is Map && response.data['error'] != null) {
+        if (response.data is Map &&
+            response.data['error'] != null) {
           errorMessage = response.data['error'].toString();
         }
 
@@ -944,32 +858,31 @@ class SettingsController extends GetxController {
       Get.offAllNamed(AppRoutes.login);
 
       Get.snackbar(
-        'Account Deleted',
-        'Your ExpenseMate account has been permanently deleted.',
+        'Account Deleted'.tr,
+        'Your ExpenseMate account has been permanently deleted.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
       debugPrint('Delete account exception: $e');
-
-      _showError('Unable to delete account. Please try again.');
+      _showError('Unable to delete account. Please try again.'.tr);
     } finally {
       isDeletingAccount.value = false;
     }
   }
 
-  // ============================================================
   // ERROR
-  // ============================================================
 
   void _showError(String message) {
-    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      'Error'.tr,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
-  // ============================================================
   // CLOSE
-  // ============================================================
 
   @override
   void onClose() {
