@@ -54,14 +54,6 @@ class OnboardingController extends GetxController {
       nativeName: 'English',
       englishName: 'English',
     ),
-    OnboardingLanguage(code: 'PS', nativeName: 'پښتو', englishName: 'Pashto'),
-    OnboardingLanguage(code: 'SD', nativeName: 'سنڌي', englishName: 'Sindhi'),
-    OnboardingLanguage(
-      code: 'AR',
-      nativeName: 'العربية',
-      englishName: 'Arabic',
-    ),
-    OnboardingLanguage(code: 'HI', nativeName: 'हिन्दी', englishName: 'Hindi'),
   ];
 
   static const List<OnboardingCurrency> currencies = [

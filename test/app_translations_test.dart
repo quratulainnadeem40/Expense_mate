@@ -1,10 +1,18 @@
 import 'package:expense_mate/Core/localization/app_translations.dart';
+import 'package:expense_mate/Feature/onboarding/controller/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('onboarding offers only Urdu and English', () {
+    expect(
+      OnboardingController.languages.map((language) => language.code),
+      ['UR', 'EN'],
+    );
+  });
+
   const requiredKeys = [
     'Choose your language',
     'Home',
