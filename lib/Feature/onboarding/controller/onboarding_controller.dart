@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show Locale;
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -102,8 +103,15 @@ class OnboardingController extends GetxController {
 
   bool get isLastPage => pageIndex.value == pageCount - 1;
 
-  void setLanguage(String code) =>
-      selectedLanguage.value = code.trim().toLowerCase();
+  Future<void> setLanguage(String code) async {
+    final normalizedLanguage = code.trim().toLowerCase();
+    if (!SettingsController.supportedLanguages.contains(normalizedLanguage)) {
+      return;
+    }
+
+    selectedLanguage.value = normalizedLanguage;
+    await Get.updateLocale(Locale(normalizedLanguage));
+  }
 
   void setCurrency(String code) => selectedCurrency.value = code;
 

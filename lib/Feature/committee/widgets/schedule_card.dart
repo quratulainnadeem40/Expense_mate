@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class ScheduleCard extends StatelessWidget {
   final String title;
@@ -50,7 +51,7 @@ class ScheduleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  title.tr,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -71,7 +72,7 @@ class ScheduleCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      dueDate,
+                      dueDate.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white54 : Colors.black54,
@@ -105,7 +106,7 @@ class ScheduleCard extends StatelessWidget {
                   : Colors.orange.withValues(alpha: 0.12),
             ),
             child: Text(
-              status,
+              status.tr,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

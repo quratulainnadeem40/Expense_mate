@@ -74,7 +74,7 @@ class UdhaarView extends GetView<UdhaarController> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Udhaar',
+          'Udhaar'.tr,
           style: TextStyle(color: primaryText, fontWeight: FontWeight.bold),
         ),
       ),
@@ -84,7 +84,7 @@ class UdhaarView extends GetView<UdhaarController> {
         backgroundColor: _green,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add udhaar'),
+        label: Text('Add udhaar'.tr),
       ),
 
       body: Obx(() {
@@ -151,7 +151,7 @@ class UdhaarView extends GetView<UdhaarController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            positive ? 'You will receive overall' : 'You owe overall',
+            (positive ? 'You will receive overall' : 'You owe overall').tr,
             style: const TextStyle(fontSize: 12.5, color: Colors.white70),
           ),
           const SizedBox(height: 5),
@@ -174,9 +174,11 @@ class UdhaarView extends GetView<UdhaarController> {
           // Says which way the number leans, so the figure above does
           // not have to be read together with the card colour.
           Text(
-            '${positive ? 'in your favour' : 'you owe more'}'
-            ' · ${controller.people.length} '
-            '${controller.people.length == 1 ? 'person' : 'people'}',
+            '@balance · @count @people'.trParams({
+              'balance': (positive ? 'in your favour' : 'you owe more').tr,
+              'count': '${controller.people.length}',
+              'people': 'people'.tr,
+            }),
             style: const TextStyle(fontSize: 11.5, color: Colors.white70),
           ),
 
@@ -186,7 +188,7 @@ class UdhaarView extends GetView<UdhaarController> {
             children: [
               Expanded(
                 child: _summaryCell(
-                  'To receive',
+                  'To receive'.tr,
                   '$_symbol ${_money(receive)}',
                   Icons.south_west_rounded,
                 ),
@@ -194,7 +196,7 @@ class UdhaarView extends GetView<UdhaarController> {
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryCell(
-                  'To pay',
+                  'To pay'.tr,
                   '$_symbol ${_money(pay)}',
                   Icons.north_east_rounded,
                 ),
@@ -221,7 +223,7 @@ class UdhaarView extends GetView<UdhaarController> {
               Icon(icon, size: 13, color: Colors.white70),
               const SizedBox(width: 5),
               Text(
-                label,
+                label.tr,
                 style: const TextStyle(fontSize: 11.5, color: Colors.white70),
               ),
             ],
@@ -271,7 +273,7 @@ class UdhaarView extends GetView<UdhaarController> {
                   isDense: true,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                  hintText: 'Search a name',
+                  hintText: 'Search a name'.tr,
                   hintStyle: TextStyle(
                     color: secondaryText.withValues(alpha: 0.8),
                     fontSize: 14.5,
@@ -341,7 +343,7 @@ class UdhaarView extends GetView<UdhaarController> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      option.$2,
+                      option.$2.tr,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -466,9 +468,13 @@ class UdhaarView extends GetView<UdhaarController> {
 
           subtitle: Text(
             clear
-                ? 'Settled · last ${_shortDate(person.lastActivity)}'
-                : '${person.openCount} open · '
-                      'last ${_shortDate(person.lastActivity)}',
+                ? 'Settled · last @date'.trParams({
+                    'date': _shortDate(person.lastActivity),
+                  })
+                : '@count open · last @date'.trParams({
+                    'count': '${person.openCount}',
+                    'date': _shortDate(person.lastActivity),
+                  }),
             style: TextStyle(fontSize: 11.5, color: secondaryText),
           ),
 
@@ -499,7 +505,7 @@ class UdhaarView extends GetView<UdhaarController> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    person.theyOweYou ? 'YOU GET' : 'YOU GIVE',
+                    (person.theyOweYou ? 'YOU GET' : 'YOU GIVE').tr,
                     style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
@@ -535,7 +541,7 @@ class UdhaarView extends GetView<UdhaarController> {
                       onPressed: () =>
                           _confirmSettleAll(context, person, isDark),
                       icon: const Icon(Icons.done_all_rounded, size: 17),
-                      label: const Text('Settle all'),
+                      label: Text('Settle all'.tr),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: _green,
                         side: const BorderSide(color: _green),
@@ -555,7 +561,7 @@ class UdhaarView extends GetView<UdhaarController> {
                       presetPhone: person.phone,
                     ),
                     icon: const Icon(Icons.add_rounded, size: 17),
-                    label: const Text('Add'),
+                    label: Text('Add'.tr),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: secondaryText,
                       side: BorderSide(
@@ -636,7 +642,7 @@ class UdhaarView extends GetView<UdhaarController> {
               children: [
                 Text(
                   entry.note.isEmpty
-                      ? (entry.isLent ? 'You gave' : 'You took')
+                      ? (entry.isLent ? 'You gave' : 'You took').tr
                       : entry.note,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -685,15 +691,15 @@ class UdhaarView extends GetView<UdhaarController> {
               PopupMenuItem<String>(
                 value: 'settle',
                 child: Text(
-                  entry.isSettled ? 'Mark as open' : 'Mark as settled',
+                  (entry.isSettled ? 'Mark as open' : 'Mark as settled').tr,
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'delete',
-                child: Text('Delete', style: TextStyle(color: _red)),
+                child: Text('Delete'.tr, style: const TextStyle(color: _red)),
               ),
             ],
           ),
@@ -722,8 +728,7 @@ class UdhaarView extends GetView<UdhaarController> {
         ? 'No one by that name. Try part of the name instead.'
         : (hasAnyEntries
               ? 'Your records are under one of the other tabs above.'
-              : 'Record money you lent to someone, or took from them, '
-                    'and the balance with each person is kept for you.');
+              : 'Record money you lent to someone, or took from them, and the balance with each person is kept for you.');
 
     return Center(
       child: Padding(
@@ -746,7 +751,7 @@ class UdhaarView extends GetView<UdhaarController> {
             ),
             const SizedBox(height: 20),
             Text(
-              title,
+              title.tr,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -755,7 +760,7 @@ class UdhaarView extends GetView<UdhaarController> {
             ),
             const SizedBox(height: 8),
             Text(
-              body,
+              body.tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -787,13 +792,18 @@ class UdhaarView extends GetView<UdhaarController> {
     final date = DateTime.now().obs;
     final error = RxnString();
 
-    final fieldFill = isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04);
+    final fieldFill = isDark
+        ? Colors.white10
+        : Colors.black.withValues(alpha: 0.04);
     final primaryText = isDark ? Colors.white : const Color(0xFF1E1E1E);
     final secondaryText = isDark ? Colors.white70 : const Color(0xFF6B7280);
 
     InputDecoration decoration(String hint) => InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: secondaryText.withValues(alpha: 0.7), fontSize: 14),
+      hintText: hint.tr,
+      hintStyle: TextStyle(
+        color: secondaryText.withValues(alpha: 0.7),
+        fontSize: 14,
+      ),
       filled: true,
       fillColor: fieldFill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -844,7 +854,7 @@ class UdhaarView extends GetView<UdhaarController> {
                   children: [
                     Expanded(
                       child: Text(
-                        'New udhaar',
+                        'New udhaar'.tr,
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.bold,
@@ -903,7 +913,7 @@ class UdhaarView extends GetView<UdhaarController> {
                   controller: nameController,
                   textCapitalization: TextCapitalization.words,
                   style: TextStyle(color: primaryText),
-                  decoration: decoration('Person name'),
+                  decoration: decoration('Person name'.tr),
                 ),
 
                 // People already on record. Tapping one saves retyping
@@ -958,7 +968,7 @@ class UdhaarView extends GetView<UdhaarController> {
                     decimal: true,
                   ),
                   style: TextStyle(color: primaryText),
-                  decoration: decoration('Amount').copyWith(
+                  decoration: decoration('Amount'.tr).copyWith(
                     prefixText: '$_symbol ',
                     prefixStyle: TextStyle(
                       color: primaryText,
@@ -1023,7 +1033,7 @@ class UdhaarView extends GetView<UdhaarController> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'Clear',
+                          'Clear'.tr,
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -1041,7 +1051,7 @@ class UdhaarView extends GetView<UdhaarController> {
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
                   style: TextStyle(color: primaryText),
-                  decoration: decoration('Phone (optional)'),
+                  decoration: decoration('Phone (optional)'.tr),
                 ),
 
                 const SizedBox(height: 10),
@@ -1049,7 +1059,7 @@ class UdhaarView extends GetView<UdhaarController> {
                 TextField(
                   controller: noteController,
                   style: TextStyle(color: primaryText),
-                  decoration: decoration('Note (optional)'),
+                  decoration: decoration('Note (optional)'.tr),
                 ),
 
                 const SizedBox(height: 10),
@@ -1119,12 +1129,12 @@ class UdhaarView extends GetView<UdhaarController> {
                       );
 
                       if (name.isEmpty) {
-                        error.value = 'Please enter the person name.';
+                        error.value = 'Please enter the person name.'.tr;
                         return;
                       }
 
                       if (amount == null || amount <= 0) {
-                        error.value = 'Please enter a valid amount.';
+                        error.value = 'Please enter a valid amount.'.tr;
                         return;
                       }
 
@@ -1137,6 +1147,7 @@ class UdhaarView extends GetView<UdhaarController> {
                         note: noteController.text,
                       );
 
+                      if (!sheetContext.mounted) return;
                       Navigator.pop(sheetContext);
                     },
                     style: ElevatedButton.styleFrom(
@@ -1147,8 +1158,8 @@ class UdhaarView extends GetView<UdhaarController> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text(
-                      'Save',
+                    child: Text(
+                      'Save'.tr,
                       style: TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w700,
@@ -1186,7 +1197,7 @@ class UdhaarView extends GetView<UdhaarController> {
           child: Column(
             children: [
               Text(
-                label,
+                label.tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -1194,7 +1205,7 @@ class UdhaarView extends GetView<UdhaarController> {
                 ),
               ),
               Text(
-                caption,
+                caption.tr,
                 style: TextStyle(
                   fontSize: 10.5,
                   color: active ? Colors.white70 : secondaryText,
@@ -1219,7 +1230,7 @@ class UdhaarView extends GetView<UdhaarController> {
         backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          'Delete ${person.name}?',
+          'Delete @name?'.trParams({'name': person.name}),
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -1227,9 +1238,8 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
         ),
         content: Text(
-          '$count ${count == 1 ? 'entry' : 'entries'} with '
-          '${person.name} will be removed for good. If you only want '
-          'to close the account, use Settle instead.',
+          '@count entries with @name will be removed for good. If you only want to close the account, use Settle instead.'
+              .trParams({'count': '$count', 'name': person.name}),
           style: TextStyle(
             fontSize: 14,
             height: 1.5,
@@ -1237,7 +1247,7 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel'.tr)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _red,
@@ -1251,7 +1261,7 @@ class UdhaarView extends GetView<UdhaarController> {
               Get.back();
               controller.deletePerson(person.name);
             },
-            child: const Text('Delete'),
+            child: Text('Delete'.tr),
           ),
         ],
       ),
@@ -1268,7 +1278,7 @@ class UdhaarView extends GetView<UdhaarController> {
         backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          'Settle with ${person.name}?',
+          'Settle with @name?'.trParams({'name': person.name}),
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -1276,9 +1286,8 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
         ),
         content: Text(
-          'Every open entry with ${person.name} will be marked as '
-          'settled. Nothing is deleted, so you can reopen any of them '
-          'later.',
+          'Every open entry with @name will be marked as settled. Nothing is deleted, so you can reopen any of them later.'
+              .trParams({'name': person.name}),
           style: TextStyle(
             fontSize: 14,
             height: 1.5,
@@ -1286,7 +1295,7 @@ class UdhaarView extends GetView<UdhaarController> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel'.tr)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _green,
@@ -1300,7 +1309,7 @@ class UdhaarView extends GetView<UdhaarController> {
               Get.back();
               controller.settlePerson(person.name);
             },
-            child: const Text('Settle'),
+            child: Text('Settle'.tr),
           ),
         ],
       ),

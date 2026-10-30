@@ -106,7 +106,7 @@ class _BudgetViewState extends State<BudgetView> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Set Up Your Budget Cycle',
+                          'Set Up Your Budget Cycle'.tr,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -117,7 +117,7 @@ class _BudgetViewState extends State<BudgetView> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Choose when your monthly budget should start.',
+                          'Choose when your monthly budget should start.'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark ? Colors.white70 : Colors.black54,
@@ -127,7 +127,7 @@ class _BudgetViewState extends State<BudgetView> {
                         const SizedBox(height: 22),
 
                         Text(
-                          'Month Start',
+                          'Month Start'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -183,7 +183,7 @@ class _BudgetViewState extends State<BudgetView> {
                         const SizedBox(height: 22),
 
                         Text(
-                          'Reset Mode',
+                          'Reset Mode'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -226,7 +226,7 @@ class _BudgetViewState extends State<BudgetView> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        auto ? 'Automatic' : 'Manual',
+                                        (auto ? 'Automatic' : 'Manual').tr,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           color: active
@@ -247,11 +247,12 @@ class _BudgetViewState extends State<BudgetView> {
                         const SizedBox(height: 14),
 
                         Text(
-                          automatic
+                          (automatic
                               ? 'Your budget will reset automatically on '
                                     'the selected date every month.'
                               : 'You will reset the budget yourself '
-                                    'whenever you want.',
+                                    'whenever you want.')
+                              .tr,
                           style: TextStyle(
                             fontSize: 13.5,
                             height: 1.5,
@@ -279,8 +280,8 @@ class _BudgetViewState extends State<BudgetView> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Save Budget Cycle',
+                            child: Text(
+                              'Save Budget Cycle'.tr,
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -1185,12 +1186,10 @@ class _BudgetViewState extends State<BudgetView> {
                                               borderRadius:
                                                   BorderRadius.circular(20),
                                             ),
-                                            title: const Text('Reset Budget?'),
+                                            title: Text('Reset Budget?'.tr),
                                             content: Text(
-                                              "This will reset your current "
-                                              "cycle's spent amount to zero."
-                                              "\n\nYour transactions will not "
-                                              "be deleted.",
+                                              'This will reset your current cycle spent amount to zero. Your transactions will not be deleted.'
+                                                  .tr,
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 height: 1.5,
@@ -1205,7 +1204,7 @@ class _BudgetViewState extends State<BudgetView> {
                                                   dialogContext,
                                                   false,
                                                 ),
-                                                child: const Text('Cancel'),
+                                                child: Text('Cancel'.tr),
                                               ),
                                               ElevatedButton(
                                                 onPressed: () => Navigator.pop(
@@ -1224,7 +1223,7 @@ class _BudgetViewState extends State<BudgetView> {
                                                         ),
                                                   ),
                                                 ),
-                                                child: const Text('Reset'),
+                                                child: Text('Reset'.tr),
                                               ),
                                             ],
                                           );
@@ -1357,8 +1356,8 @@ class _BudgetViewState extends State<BudgetView> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Your spent amount, limits and transactions stay '
-                        'as they are. Only the reset date moves.',
+                        'Your spent amount, limits and transactions stay as they are. Only the reset date moves.'
+                            .tr,
                         style: TextStyle(
                           fontSize: 12.5,
                           height: 1.45,
@@ -1376,7 +1375,7 @@ class _BudgetViewState extends State<BudgetView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: Text('Cancel'.tr),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(dialogContext, true),
@@ -1387,7 +1386,7 @@ class _BudgetViewState extends State<BudgetView> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text('Continue'),
+              child: Text('Continue'.tr),
             ),
           ],
         );
@@ -2047,7 +2046,7 @@ class _BudgetViewState extends State<BudgetView> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Budget cycle settings',
+            tooltip: 'Budget cycle settings'.tr,
             onPressed: () => _showBudgetCycleBottomSheet(context),
             icon: Icon(
               Icons.calendar_month_rounded,
@@ -2056,7 +2055,7 @@ class _BudgetViewState extends State<BudgetView> {
             ),
           ),
           IconButton(
-            tooltip: 'Budget history',
+            tooltip: 'Budget history'.tr,
             onPressed: () => Get.to(() => const BudgetHistoryView()),
             icon: Icon(
               Icons.history_rounded,
@@ -2255,7 +2254,7 @@ class _BudgetViewState extends State<BudgetView> {
                             ],
                           ),
                           child: IconButton(
-                            tooltip: 'Delete selected categories',
+                            tooltip: 'Delete selected categories'.tr,
                             onPressed: _deleteSelectedCategories,
                             icon: const Icon(Icons.delete_outline_rounded),
                             color: Colors.white,
@@ -2280,7 +2279,7 @@ class _BudgetViewState extends State<BudgetView> {
                             ],
                           ),
                           child: IconButton(
-                            tooltip: 'Add category budget',
+                            tooltip: 'Add category budget'.tr,
                             onPressed: () => _showAddCategoryDialog(context),
                             icon: const Icon(Icons.add_rounded),
                             color: Colors.white,
@@ -2307,7 +2306,7 @@ class _BudgetViewState extends State<BudgetView> {
                                 _isSelectionMode = false;
                               });
                             },
-                            child: const Text('Done'),
+                            child: Text('Done'.tr),
                           ),
                         )
                       else
@@ -2329,7 +2328,7 @@ class _BudgetViewState extends State<BudgetView> {
                                 _isSelectionMode = true;
                               });
                             },
-                            child: const Text('Select'),
+                            child: Text('Select'.tr),
                           ),
                         ),
                     ],
@@ -2648,7 +2647,7 @@ class BudgetHistoryView extends GetView<BudgetController> {
             }
 
             return IconButton(
-              tooltip: 'Clear history',
+              tooltip: 'Clear history'.tr,
               icon: Icon(Icons.delete_sweep_outlined, color: secondaryText),
               onPressed: () =>
                   _confirmClearAll(card, primaryText, secondaryText),
@@ -2695,7 +2694,7 @@ class BudgetHistoryView extends GetView<BudgetController> {
         backgroundColor: card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          'Clear all history?',
+          'Clear all history?'.tr,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -2703,14 +2702,14 @@ class BudgetHistoryView extends GetView<BudgetController> {
           ),
         ),
         content: Text(
-          'Every past budget cycle will be removed. Your current budget, '
-          'categories and transactions are not affected.',
+          'Every past budget cycle will be removed. Your current budget, categories and transactions are not affected.'
+              .tr,
           style: TextStyle(fontSize: 14, height: 1.5, color: secondaryText),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: TextStyle(color: secondaryText)),
+            child: Text('Cancel'.tr, style: TextStyle(color: secondaryText)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -2722,7 +2721,7 @@ class BudgetHistoryView extends GetView<BudgetController> {
               Get.back();
               controller.clearHistory();
             },
-            child: const Text('Clear'),
+            child: Text('Clear'.tr),
           ),
         ],
       ),
@@ -2905,15 +2904,17 @@ class _HistCycleCardState extends State<_HistCycleCard> {
                         const SizedBox(width: 5),
                         Text(
                           cycle.wasAutomatic
-                              ? 'Automatic reset'
-                              : 'Manual reset',
+                              ? 'Automatic reset'.tr
+                              : 'Manual reset'.tr,
                           style: TextStyle(
                             fontSize: 11.5,
                             color: widget.secondaryText,
                           ),
                         ),
                         Text(
-                          '  ·  ${cycle.lengthInDays} days',
+                          ' · @days days'.trParams({
+                            'days': '${cycle.lengthInDays}',
+                          }),
                           style: TextStyle(
                             fontSize: 11.5,
                             color: widget.secondaryText,
@@ -2934,7 +2935,7 @@ class _HistCycleCardState extends State<_HistCycleCard> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  saved ? 'Saved' : 'Over',
+                  (saved ? 'Saved' : 'Over').tr,
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -2981,7 +2982,9 @@ class _HistCycleCardState extends State<_HistCycleCard> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${cycle.progressPercent}% of the budget used',
+            '@percent% of the budget used'.trParams({
+              'percent': '${cycle.progressPercent}',
+            }),
             style: TextStyle(fontSize: 11.5, color: widget.secondaryText),
           ),
           if (cycle.categories.isNotEmpty) ...[
@@ -2994,9 +2997,12 @@ class _HistCycleCardState extends State<_HistCycleCard> {
                 child: Row(
                   children: [
                     Text(
-                      expanded
-                          ? 'Hide categories'
-                          : 'Show ${cycle.categories.length} categories',
+                      (expanded
+                              ? 'Hide categories'
+                              : 'Show @count categories')
+                          .trParams({
+                            'count': '${cycle.categories.length}',
+                          }),
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -3065,7 +3071,7 @@ class _HistFigure extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 11, color: secondary)),
+          Text(label.tr, style: TextStyle(fontSize: 11, color: secondary)),
           const SizedBox(height: 3),
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -3175,7 +3181,7 @@ class _HistEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             Text(
-              'No history yet',
+              'No history yet'.tr,
               style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
@@ -3184,8 +3190,8 @@ class _HistEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Once your budget resets, that finished month is saved here '
-              'with its limit, what you spent, and what was left over.',
+              'Once your budget resets, that finished month is saved here with its limit, what you spent, and what was left over.'
+                  .tr,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, height: 1.6, color: secondaryText),
             ),

@@ -7,10 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('onboarding offers only Urdu and English', () {
-    expect(
-      OnboardingController.languages.map((language) => language.code),
-      ['UR', 'EN'],
-    );
+    expect(OnboardingController.languages.map((language) => language.code), [
+      'UR',
+      'EN',
+    ]);
   });
 
   const requiredKeys = [
@@ -78,6 +78,67 @@ void main() {
       urdu['Category totals roll over automatically on day @day each month. Your transactions remain saved.'],
       contains('@day'),
     );
+  });
+
+  test('Urdu translates committee schedule labels and dynamic messages', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Committee Schedule',
+      'Committee Allocated',
+      'Allocated Rounds',
+      'Allocating...',
+      'Spinning...',
+      'Already allocated',
+      'Allocate by added order',
+      'All members allocated',
+      'Spin & allocate',
+      'Spin & allocate a recipient for @month.',
+      'No recipients have been allocated yet. Use Spin & allocate to choose the first recipient.',
+      'Upcoming',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+
+    expect(
+      urdu['@name is set to receive the committee for @month.'],
+      contains('@month'),
+    );
+    expect(
+      urdu['@name is allocated to receive the committee for @month.'],
+      contains('@name'),
+    );
+  });
+
+  test('Urdu translates onboarding copy and currency names', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Choose your language',
+      'You can change it later in Settings.',
+      'Your money, on your phone',
+      'Every entry is stored on this device first and synced to your account, so the app keeps working even when the signal does not.',
+      'An entry takes three taps',
+      'Tap the green button, type the amount, pick a category and wallet. Budgets, goals and reports fill themselves in from there.',
+      'Choose your currency',
+      'Every amount in the app is shown in this currency.',
+      'Pakistani Rupee',
+      'US Dollar',
+      'UAE Dirham',
+      'Saudi Riyal',
+      'British Pound',
+      'Euro',
+      'Indian Rupee',
+      'Canadian Dollar',
+      'Australian Dollar',
+      'Turkish Lira',
+      'Next',
+      'Get started',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
   });
 
   testWidgets(

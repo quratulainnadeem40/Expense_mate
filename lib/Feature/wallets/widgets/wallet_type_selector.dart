@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class WalletTypeSelector extends StatelessWidget {
   final String selectedType;
@@ -25,12 +26,15 @@ class WalletTypeSelector extends StatelessWidget {
       initialValue: walletTypes.contains(selectedType)
           ? selectedType
           : walletTypes.first,
-      decoration: const InputDecoration(
-        labelText: 'Wallet Type',
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        labelText: 'Wallet Type'.tr,
+        border: const OutlineInputBorder(),
       ),
       items: walletTypes.map((type) {
-        return DropdownMenuItem<String>(value: type, child: Text(type));
+        return DropdownMenuItem<String>(
+          value: type,
+          child: Text(type.tr),
+        );
       }).toList(),
       onChanged: (value) {
         if (value != null) {

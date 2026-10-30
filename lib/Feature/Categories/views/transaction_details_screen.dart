@@ -67,7 +67,7 @@ class TransactionDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction Details'),
+        title: Text('Transaction Details'.tr),
         centerTitle: true,
       ),
       body: SafeArea(

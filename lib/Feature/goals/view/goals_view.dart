@@ -18,8 +18,8 @@ class GoalsView extends GetView<GoalsController> {
       appBar: AppBar(
         // No back arrow - the only way out is the cross on the right.
         automaticallyImplyLeading: false,
-        title: const Text(
-          'Savings Goals',
+        title: Text(
+          'Savings Goals'.tr,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
@@ -28,7 +28,7 @@ class GoalsView extends GetView<GoalsController> {
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            tooltip: 'Close',
+            tooltip: 'Close'.tr,
             icon: const Icon(Icons.close_rounded, size: 26),
             onPressed: () => Get.back(),
           ),
@@ -40,8 +40,8 @@ class GoalsView extends GetView<GoalsController> {
         foregroundColor: Colors.white,
         onPressed: () => _openGoalSheet(context),
         icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'New Goal',
+        label: Text(
+          'New Goal'.tr,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -151,7 +151,7 @@ class GoalsView extends GetView<GoalsController> {
                         children: [
                           const SizedBox(height: 8),
                           Text(
-                            goal == null ? 'New goal' : 'Edit goal',
+                            (goal == null ? 'New Goal' : 'Edit goal').tr,
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -160,7 +160,7 @@ class GoalsView extends GetView<GoalsController> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'What are you saving for?',
+                            'What are you saving for?'.tr,
                             style: TextStyle(
                               fontSize: 13,
                               color: theme.hintColor,
@@ -170,7 +170,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: 'Close'.tr,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
                         minWidth: 40,
@@ -196,7 +196,7 @@ class GoalsView extends GetView<GoalsController> {
                       onPressed: () =>
                           _showGoalIconPicker(context, isDark: isDark),
                       icon: const Icon(Icons.search_rounded, size: 18),
-                      label: const Text('Browse icons'),
+                      label: Text('Browse icons'.tr),
                       style: TextButton.styleFrom(
                         foregroundColor: kGoalGreen,
                         padding: const EdgeInsets.symmetric(
@@ -334,7 +334,7 @@ class GoalsView extends GetView<GoalsController> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'Clear',
+                          'Clear'.tr,
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -712,7 +712,7 @@ class GoalsView extends GetView<GoalsController> {
         backgroundColor: theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          'Delete this goal?',
+          'Delete this goal?'.tr,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
@@ -720,15 +720,21 @@ class GoalsView extends GetView<GoalsController> {
           ),
         ),
         content: Text(
-          '"${goal.title}" and its saved amount of $goalCurrency '
-          '${formatMoney(goal.savedAmount)} will be removed. '
-          'This cannot be undone.',
+          '@title and its saved amount of @currency @amount will be removed. This cannot be undone.'
+              .trParams({
+                'title': goal.title,
+                'currency': goalCurrency,
+                'amount': formatMoney(goal.savedAmount),
+              }),
           style: TextStyle(fontSize: 14, height: 1.5, color: theme.hintColor),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: TextStyle(color: theme.hintColor)),
+            child: Text(
+              'Cancel'.tr,
+              style: TextStyle(color: theme.hintColor),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -740,7 +746,7 @@ class GoalsView extends GetView<GoalsController> {
               Get.back();
               controller.deleteGoal(goal.id);
             },
-            child: const Text('Delete'),
+            child: Text('Delete'.tr),
           ),
         ],
       ),
@@ -782,9 +788,9 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            activeCount + completedCount == 1
-                ? 'Saved across 1 goal'
-                : 'Saved across ${activeCount + completedCount} goals',
+            'Saved across @count goals'.trParams({
+              'count': '${activeCount + completedCount}',
+            }),
             style: const TextStyle(fontSize: 12.5, color: Colors.white70),
           ),
           const SizedBox(height: 6),
@@ -808,7 +814,7 @@ class _SummaryCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    'of ${goalMoney(target)}',
+                    'of @target'.trParams({'target': goalMoney(target)}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 13, color: Colors.white70),
@@ -834,11 +840,15 @@ class _SummaryCard extends StatelessWidget {
             children: [
               _Pill(
                 icon: Icons.trending_up_rounded,
-                text: '$activeCount in progress',
+                text: '@count in progress'.trParams({
+                  'count': '$activeCount',
+                }),
               ),
               _Pill(
                 icon: Icons.check_circle_rounded,
-                text: '$completedCount completed',
+                text: '@count completed'.trParams({
+                  'count': '$completedCount',
+                }),
               ),
             ],
           ),
@@ -868,7 +878,7 @@ class _Pill extends StatelessWidget {
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 6),
           Text(
-            text,
+            text.tr,
             style: const TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
@@ -896,7 +906,7 @@ class _SectionLabel extends StatelessWidget {
     return Row(
       children: [
         Text(
-          text,
+          text.tr,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -1015,7 +1025,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Choose an icon',
+                          'Choose an icon'.tr,
                           style: TextStyle(
                             color: theme.textTheme.bodyLarge?.color,
                             fontSize: 19,
@@ -1024,7 +1034,9 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${goalIconOptions.length} icons · Search by name',
+                          '@count icons · Search by name'.trParams({
+                            'count': '${goalIconOptions.length}',
+                          }),
                           style: TextStyle(
                             color: theme.hintColor,
                             fontSize: 12,
@@ -1034,7 +1046,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close icon picker',
+                    tooltip: 'Close icon picker'.tr,
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(Icons.close_rounded, color: theme.hintColor),
                   ),
@@ -1048,12 +1060,12 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                 onChanged: (_) => setState(() {}),
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: 'Search home, travel, savings...',
+                  hintText: 'Search home, travel, savings...'.tr,
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: query.isEmpty
                       ? null
                       : IconButton(
-                          tooltip: 'Clear search',
+                          tooltip: 'Clear search'.tr,
                           onPressed: () {
                             _searchController.clear();
                             setState(() {});
@@ -1087,7 +1099,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
               child: Row(
                 children: [
                   Text(
-                    query.isEmpty ? 'ALL ICONS' : 'SEARCH RESULTS',
+                    (query.isEmpty ? 'ALL ICONS' : 'SEARCH RESULTS').tr,
                     style: TextStyle(
                       color: theme.hintColor,
                       fontSize: 11,
@@ -1097,7 +1109,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                   ),
                   const Spacer(),
                   Text(
-                    '${icons.length} found',
+                    '@count found'.trParams({'count': '${icons.length}'}),
                     style: TextStyle(
                       color: theme.hintColor,
                       fontSize: 11,
@@ -1113,7 +1125,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'RECENTLY USED',
+                    'RECENTLY USED'.tr,
                     style: TextStyle(
                       color: theme.hintColor,
                       fontSize: 11,
@@ -1203,7 +1215,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'No matching icons',
+                            'No matching icons'.tr,
                             style: TextStyle(
                               color: theme.hintColor,
                               fontWeight: FontWeight.w600,
@@ -1343,7 +1355,7 @@ class _Field extends StatelessWidget {
         color: theme.textTheme.bodyLarge?.color,
       ),
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: hint.tr,
         prefixText: prefix,
         prefixStyle: TextStyle(
           fontSize: fontSize,
@@ -1458,7 +1470,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             Text(
-              'No goals yet',
+              'No goals yet'.tr,
               style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
@@ -1467,8 +1479,8 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Saving for a phone, a trip, or an emergency fund? '
-              'Create a goal and add money to it whenever you can.',
+              'Saving for a phone, a trip, or an emergency fund? Create a goal and add money to it whenever you can.'
+                  .tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -1482,7 +1494,7 @@ class _EmptyState extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onCreate,
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('Create your first goal'),
+                label: Text('Create your first goal'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kGoalGreen,
                   foregroundColor: Colors.white,

@@ -176,7 +176,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
                   ),
                   const SizedBox(height: 22),
                   Text(
-                    'Session expired',
+                    'Session expired'.tr,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontSize: 22,
@@ -187,7 +187,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
               ),
               content: Text(
                 'For your security, you were signed out after 1 minute of '
-                'inactivity. Log in again to continue.',
+                'inactivity. Log in again to continue.'.tr,
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -200,9 +200,9 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
                   child: FilledButton.icon(
                     onPressed: Get.back,
                     icon: const Icon(Icons.login_rounded, size: 19),
-                    label: const Text(
-                      'Login again',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    label: Text(
+                      'Login again'.tr,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: colors.primary,
@@ -222,8 +222,8 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
     } catch (error) {
       debugPrint('Unable to expire the session: $error');
       Get.snackbar(
-        'Session expired',
-        'Unable to end your session. Please try logging in again.',
+        'Session expired'.tr,
+        'Unable to end your session. Please try logging in again.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {

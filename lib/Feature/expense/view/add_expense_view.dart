@@ -407,7 +407,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Amount',
+                              'Amount'.tr,
                               style: TextStyle(
                                 color: currentColor,
                                 fontSize: 12,

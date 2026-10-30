@@ -43,12 +43,12 @@ class CategoryHistoryScreen extends StatelessWidget {
         backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Back'.tr,
           icon: Icon(Icons.arrow_back, color: primaryText),
           onPressed: Get.back,
         ),
         title: Text(
-          'Category History',
+          'Category History'.tr,
           style: TextStyle(color: primaryText, fontWeight: FontWeight.bold),
         ),
       ),
@@ -75,7 +75,7 @@ class CategoryHistoryScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'No category history yet',
+                    'No category history yet'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -84,7 +84,7 @@ class CategoryHistoryScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Transactions from all categories will appear here.',
+                    'Transactions from all categories will appear here.'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: secondaryText),
                   ),

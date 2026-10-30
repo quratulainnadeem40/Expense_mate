@@ -1,5 +1,6 @@
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../model/budget_model.dart';
 
 class BudgetItem extends StatelessWidget {
@@ -26,7 +27,10 @@ class BudgetItem extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Spent: ${Formatters.money(budget.spentAmount)} / ${Formatters.money(budget.allocatedAmount)}',
+              'Spent: @spent / @allocated'.trParams({
+                'spent': Formatters.money(budget.spentAmount),
+                'allocated': Formatters.money(budget.allocatedAmount),
+              }),
             ),
           ],
         ),

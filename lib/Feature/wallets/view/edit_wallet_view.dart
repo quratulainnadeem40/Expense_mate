@@ -73,7 +73,7 @@ class _EditWalletViewState extends State<EditWalletView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Wallet', style: AppTextStyles.headingMedium(isDark)),
+        title: Text('Edit Wallet'.tr, style: AppTextStyles.headingMedium(isDark)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -84,7 +84,7 @@ class _EditWalletViewState extends State<EditWalletView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Wallet Details',
+                  'Wallet Details'.tr,
                   style: AppTextStyles.headingMedium(isDark),
                 ),
 
@@ -93,15 +93,17 @@ class _EditWalletViewState extends State<EditWalletView> {
                 TextFormField(
                   controller: nameController,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Wallet Name',
-                    hintText: 'e.g. Cash Wallet',
-                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Wallet Name'.tr,
+                    hintText: 'e.g. Cash Wallet'.tr,
+                    prefixIcon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                    ),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter wallet name';
+                      return 'Please enter wallet name'.tr;
                     }
 
                     return null;
@@ -126,25 +128,25 @@ class _EditWalletViewState extends State<EditWalletView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
-                    labelText: 'Balance',
+                  decoration: InputDecoration(
+                    labelText: 'Balance'.tr,
                     hintText: '0.00',
-                    prefixIcon: Icon(Icons.attach_money),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.attach_money),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter balance';
+                      return 'Please enter balance'.tr;
                     }
 
                     final amount = double.tryParse(value.trim());
 
                     if (amount == null) {
-                      return 'Please enter a valid amount';
+                      return 'Please enter a valid amount'.tr;
                     }
 
                     if (amount < 0) {
-                      return 'Balance cannot be negative';
+                      return 'Balance cannot be negative'.tr;
                     }
 
                     return null;
@@ -155,23 +157,26 @@ class _EditWalletViewState extends State<EditWalletView> {
 
                 DropdownButtonFormField<String>(
                   initialValue: selectedCurrency,
-                  decoration: const InputDecoration(
-                    labelText: 'Currency',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Currency'.tr,
+                    border: const OutlineInputBorder(),
                   ),
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                       value: 'PKR',
-                      child: Text('Uses the app currency'),
+                      child: Text('Uses the app currency'.tr),
                     ),
                     DropdownMenuItem(
                       value: 'USD',
-                      child: Text('USD - US Dollar'),
+                      child: Text('USD - US Dollar'.tr),
                     ),
-                    DropdownMenuItem(value: 'EUR', child: Text('EUR - Euro')),
+                    DropdownMenuItem(
+                      value: 'EUR',
+                      child: Text('EUR - Euro'.tr),
+                    ),
                     DropdownMenuItem(
                       value: 'GBP',
-                      child: Text('GBP - British Pound'),
+                      child: Text('GBP - British Pound'.tr),
                     ),
                   ],
                   onChanged: (value) {
@@ -191,7 +196,7 @@ class _EditWalletViewState extends State<EditWalletView> {
                   child: ElevatedButton.icon(
                     onPressed: updateWallet,
                     icon: const Icon(Icons.save_outlined),
-                    label: const Text('Update Wallet'),
+                    label: Text('Update Wallet'.tr),
                   ),
                 ),
               ],

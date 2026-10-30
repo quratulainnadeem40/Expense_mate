@@ -1,5 +1,6 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../Core/theme/custom_colors.dart';
 import '../model/wallet_model.dart';
@@ -113,7 +114,7 @@ class WalletCard extends StatelessWidget {
         // ======================================================
         // WALLET TYPE
         // ======================================================
-        subtitle: Text(wallet.type, style: AppTextStyles.bodyMedium(isDark)),
+        subtitle: Text(wallet.type.tr, style: AppTextStyles.bodyMedium(isDark)),
 
         // ======================================================
         // BALANCE + SELECTION

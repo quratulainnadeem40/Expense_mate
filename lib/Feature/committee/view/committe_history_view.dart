@@ -239,7 +239,10 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
               ),
               const SizedBox(height: 12),
               Text(
-                '$completedRounds/$roundCount rounds complete',
+                '@completed/@total rounds complete'.trParams({
+                  'completed': '$completedRounds',
+                  'total': '$roundCount',
+                }),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: secondaryTextColor,
                   fontWeight: FontWeight.w500,
@@ -465,11 +468,14 @@ class _CommitteeHistoryDetailView extends StatelessWidget {
         : const Color(0xFF218653);
 
     return Scaffold(
-      appBar: AppBar(title: Text('$committeeName History'), centerTitle: true),
+      appBar: AppBar(
+        title: Text('@name History'.trParams({'name': committeeName})),
+        centerTitle: true,
+      ),
       body: members.isEmpty
           ? Center(
               child: Text(
-                'No members have been added to this committee yet.',
+                'No members have been added to this committee yet.'.tr,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: secondaryText,
                 ),

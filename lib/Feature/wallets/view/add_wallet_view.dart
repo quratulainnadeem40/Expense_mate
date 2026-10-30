@@ -37,16 +37,16 @@ class _AddWalletViewState extends State<AddWalletView> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Add Custom Currency'),
+          title: Text('Add Custom Currency'.tr),
           content: TextField(
             controller: customCurrencyController,
             textCapitalization: TextCapitalization.characters,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Currency',
-              hintText: 'e.g. SAR, AED, CAD',
-              prefixIcon: Icon(Icons.currency_exchange_rounded),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: 'Currency'.tr,
+              hintText: 'e.g. SAR, AED, CAD'.tr,
+              prefixIcon: const Icon(Icons.currency_exchange_rounded),
+              border: const OutlineInputBorder(),
             ),
           ),
           actions: [
@@ -54,7 +54,7 @@ class _AddWalletViewState extends State<AddWalletView> {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Cancel'),
+              child: Text('Cancel'.tr),
             ),
             ElevatedButton(
               onPressed: () {
@@ -64,7 +64,7 @@ class _AddWalletViewState extends State<AddWalletView> {
                   Navigator.of(dialogContext).pop(currency);
                 }
               },
-              child: const Text('Add'),
+              child: Text('Add'.tr),
             ),
           ],
         );
@@ -105,7 +105,7 @@ class _AddWalletViewState extends State<AddWalletView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Wallet', style: AppTextStyles.headingMedium(isDark)),
+        title: Text('Add Wallet'.tr, style: AppTextStyles.headingMedium(isDark)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -116,7 +116,7 @@ class _AddWalletViewState extends State<AddWalletView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Wallet Details',
+                  'Wallet Details'.tr,
                   style: AppTextStyles.headingMedium(isDark),
                 ),
 
@@ -125,15 +125,17 @@ class _AddWalletViewState extends State<AddWalletView> {
                 TextFormField(
                   controller: nameController,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Wallet Name',
-                    hintText: 'e.g. Cash Wallet',
-                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Wallet Name'.tr,
+                    hintText: 'e.g. Cash Wallet'.tr,
+                    prefixIcon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                    ),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter wallet name';
+                      return 'Please enter wallet name'.tr;
                     }
 
                     return null;
@@ -162,21 +164,21 @@ class _AddWalletViewState extends State<AddWalletView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
-                    labelText: 'Initial Balance',
+                  decoration: InputDecoration(
+                    labelText: 'Initial Balance'.tr,
                     hintText: '0.00',
-                    prefixIcon: Icon(Icons.attach_money),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.attach_money),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter balance';
+                      return 'Please enter balance'.tr;
                     }
 
                     final amount = double.tryParse(value.trim());
 
                     if (amount == null) {
-                      return 'Please enter a valid amount';
+                      return 'Please enter a valid amount'.tr;
                     }
 
                     if (amount < 0) {
@@ -191,34 +193,34 @@ class _AddWalletViewState extends State<AddWalletView> {
 
                 DropdownButtonFormField<String>(
                   initialValue: selectedCurrency,
-                  decoration: const InputDecoration(
-                    labelText: 'Currency',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Currency'.tr,
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
-                    const DropdownMenuItem<String>(
+                    DropdownMenuItem<String>(
                       value: 'PKR',
-                      child: Text('Uses the app currency'),
+                      child: Text('Uses the app currency'.tr),
                     ),
-                    const DropdownMenuItem<String>(
+                    DropdownMenuItem<String>(
                       value: 'USD',
-                      child: Text('USD - US Dollar'),
+                      child: Text('USD - US Dollar'.tr),
                     ),
-                    const DropdownMenuItem<String>(
+                    DropdownMenuItem<String>(
                       value: 'EUR',
-                      child: Text('EUR - Euro'),
+                      child: Text('EUR - Euro'.tr),
                     ),
-                    const DropdownMenuItem<String>(
+                    DropdownMenuItem<String>(
                       value: 'GBP',
-                      child: Text('GBP - British Pound'),
+                      child: Text('GBP - British Pound'.tr),
                     ),
                     DropdownMenuItem<String>(
                       value: 'MORE',
                       child: Row(
-                        children: const [
-                          Icon(Icons.add, size: 20),
-                          SizedBox(width: 8),
-                          Text('More'),
+                        children: [
+                          const Icon(Icons.add, size: 20),
+                          const SizedBox(width: 8),
+                          Text('More'.tr),
                         ],
                       ),
                     ),
@@ -254,7 +256,7 @@ class _AddWalletViewState extends State<AddWalletView> {
                   child: ElevatedButton.icon(
                     onPressed: saveWallet,
                     icon: const Icon(Icons.save_outlined),
-                    label: const Text('Save Wallet'),
+                    label: Text('Save Wallet'.tr),
                   ),
                 ),
               ],

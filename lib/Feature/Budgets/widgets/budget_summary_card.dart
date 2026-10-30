@@ -20,8 +20,8 @@ class BudgetSummaryCard extends GetView<BudgetController> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const Text(
-                'Total Monthly Budget',
+              Text(
+                'Total Monthly Budget'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),

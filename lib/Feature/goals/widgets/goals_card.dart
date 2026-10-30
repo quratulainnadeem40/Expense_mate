@@ -199,7 +199,9 @@ class GoalsCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 2),
                   child: Text(
-                    'of ${goalMoney(goal.targetAmount)}',
+                    'of @target'.trParams({
+                      'target': goalMoney(goal.targetAmount),
+                    }),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: theme.hintColor),
@@ -261,7 +263,9 @@ class GoalsCard extends StatelessWidget {
                   const SizedBox(width: 7),
                   Expanded(
                     child: Text(
-                      '${goalMoney(goal.savedAmount)} saved — goal reached',
+                      '@amount saved — goal reached'.trParams({
+                        'amount': goalMoney(goal.savedAmount),
+                      }),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -282,7 +286,9 @@ class GoalsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${goalMoney(goal.remaining)} to go',
+                        '@amount to go'.trParams({
+                          'amount': goalMoney(goal.remaining),
+                        }),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -294,9 +300,12 @@ class GoalsCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         goal.daysLeft > 0
-                            ? 'Save about $goalCurrency '
-                                  '${formatMoney(goal.monthlyTarget)} a month'
-                            : 'Target date has passed',
+                            ? 'Save about @currency @amount a month'
+                                  .trParams({
+                                    'currency': goalCurrency,
+                                    'amount': formatMoney(goal.monthlyTarget),
+                                  })
+                            : 'Target date has passed'.tr,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11, color: theme.hintColor),
@@ -309,7 +318,7 @@ class GoalsCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: onAddMoney,
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add money'),
+                    label: Text('Add money'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kGoalGreen,
                       foregroundColor: Colors.white,

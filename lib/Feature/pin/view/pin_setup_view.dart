@@ -113,16 +113,16 @@ class _PinSetupViewState extends State<PinSetupView> {
     final useIt = await Get.dialog<bool>(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text('Use $label too?'),
+        title: Text('Use @label too?'.trParams({'label': label})),
         content: Text(
-          'Unlock with $label instead of typing the PIN each time. '
-          'Your PIN still works whenever it fails.',
+          'Unlock with @label instead of typing the PIN each time. Your PIN still works whenever it fails.'
+              .trParams({'label': label}),
           style: const TextStyle(fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Not now'),
+            child: Text('Not now'.tr),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -134,7 +134,7 @@ class _PinSetupViewState extends State<PinSetupView> {
               ),
             ),
             onPressed: () => Get.back(result: true),
-            child: const Text('Turn on'),
+            child: Text('Turn on'.tr),
           ),
         ],
       ),
@@ -197,7 +197,7 @@ class _PinSetupViewState extends State<PinSetupView> {
                             : Get.back(result: false);
                       },
                       child: Text(
-                        'Skip',
+                        'Skip'.tr,
                         style: TextStyle(color: secondaryText),
                       ),
                     ),

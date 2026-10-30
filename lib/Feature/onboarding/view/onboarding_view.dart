@@ -147,8 +147,9 @@ class OnboardingView extends GetView<OnboardingController> {
           title: 'Your money, on your phone'.tr,
           body:
               'Every entry is stored on this device first and synced '
-              'to your account, so the app keeps working even when the '
-              'signal does not.'.tr,
+                      'to your account, so the app keeps working even when the '
+                      'signal does not.'
+                  .tr,
           primaryText: primaryText,
           secondaryText: secondaryText,
         );
@@ -159,8 +160,9 @@ class OnboardingView extends GetView<OnboardingController> {
           title: 'An entry takes three taps'.tr,
           body:
               'Tap the green button, type the amount, pick a category '
-              'and wallet. Budgets, goals and reports fill themselves in '
-              'from there.'.tr,
+                      'and wallet. Budgets, goals and reports fill themselves in '
+                      'from there.'
+                  .tr,
           primaryText: primaryText,
           secondaryText: secondaryText,
         );
@@ -238,7 +240,9 @@ class _LanguagePage extends GetView<OnboardingController> {
                   subtitle: language.englishName,
                   primaryText: primaryText,
                   secondaryText: secondaryText,
-                  onTap: () => controller.setLanguage(code),
+                  onTap: () async {
+                    await controller.setLanguage(code);
+                  },
                 );
               },
             );
@@ -338,7 +342,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Choose your currency',
+                'Choose your currency'.tr,
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
@@ -347,7 +351,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Every amount in the app is shown in this currency.',
+                'Every amount in the app is shown in this currency.'.tr,
                 style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             ],
@@ -371,7 +375,7 @@ class _CurrencyPage extends GetView<OnboardingController> {
                   isDark: isDark,
                   isActive: isActive,
                   badge: currency.symbol,
-                  title: currency.name,
+                  title: currency.name.tr,
                   subtitle: currency.code,
                   primaryText: primaryText,
                   secondaryText: secondaryText,

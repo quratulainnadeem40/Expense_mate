@@ -259,7 +259,14 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$count payments marked as $status.')),
+      SnackBar(
+        content: Text(
+          '@count payments marked as @status.'.trParams({
+            'count': '$count',
+            'status': status.tr,
+          }),
+        ),
+      ),
     );
   }
 
@@ -424,7 +431,13 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
 
         ScaffoldMessenger.of(
           this.context,
-        ).showSnackBar(SnackBar(content: Text('Payment marked as $title.')));
+        ).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Payment marked as @title.'.trParams({'title': title.tr}),
+            ),
+          ),
+        );
       },
     );
   }
@@ -538,8 +551,10 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                         ),
                         title: Text('Select all members'.tr),
                         subtitle: Text(
-                          '${_selectedPaymentIndices.length} of '
-                          '${payments.length} selected',
+                          '@count of @total selected'.trParams({
+                            'count': '${_selectedPaymentIndices.length}',
+                            'total': '${payments.length}',
+                          }),
                         ),
                         value: _selectedPaymentIndices.isEmpty
                             ? false
@@ -596,8 +611,10 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                             _ => Icons.warning_amber_rounded,
                           }),
                           label: Text(
-                            'Mark ${_selectedPaymentIndices.length} as '
-                            '$_bulkPaymentStatus',
+                            'Mark @count as @status'.trParams({
+                              'count': '${_selectedPaymentIndices.length}',
+                              'status': _bulkPaymentStatus.tr,
+                            }),
                           ),
                         ),
                       ),
@@ -710,7 +727,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Payment Summary',
+            'Payment Summary'.tr,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
@@ -812,7 +829,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
           Icon(Icons.payments_outlined, size: 55, color: secondaryTextColor),
           const SizedBox(height: 12),
           Text(
-            'No Payment Records Yet',
+            'No Payment Records Yet'.tr,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

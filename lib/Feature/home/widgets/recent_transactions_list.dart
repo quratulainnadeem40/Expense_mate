@@ -10,11 +10,11 @@ class RecentTransactionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (transactions.isEmpty) {
-        return const Center(
+        return Center(
           child: Padding(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             child: Text(
-              'No transactions yet.',
+              'No transactions yet.'.tr,
               style: TextStyle(color: Colors.grey),
             ),
           ),

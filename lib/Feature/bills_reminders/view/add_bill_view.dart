@@ -87,7 +87,7 @@ class _AddBillViewState extends State<AddBillView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Bill', style: AppTextStyles.headingMedium(isDark)),
+        title: Text('Add Bill'.tr, style: AppTextStyles.headingMedium(isDark)),
       ),
 
       body: SafeArea(
@@ -102,7 +102,7 @@ class _AddBillViewState extends State<AddBillView> {
                 // TITLE
                 // ==================================================
                 Text(
-                  'Bill Details',
+                  'Bill Details'.tr,
                   style: AppTextStyles.headingMedium(isDark),
                 ),
 
@@ -114,15 +114,15 @@ class _AddBillViewState extends State<AddBillView> {
                 TextFormField(
                   controller: titleController,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Bill Name',
-                    hintText: 'e.g. Electricity Bill',
-                    prefixIcon: Icon(Icons.receipt_long_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Bill Name'.tr,
+                    hintText: 'e.g. Electricity Bill'.tr,
+                    prefixIcon: const Icon(Icons.receipt_long_outlined),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter bill name';
+                      return 'Please enter bill name'.tr;
                     }
 
                     return null;
@@ -139,25 +139,25 @@ class _AddBillViewState extends State<AddBillView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
-                    labelText: 'Amount',
+                  decoration: InputDecoration(
+                    labelText: 'Amount'.tr,
                     hintText: '0.00',
-                    prefixIcon: Icon(Icons.payments_outlined),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter amount';
+                      return 'Please enter amount'.tr;
                     }
 
                     final amount = double.tryParse(value.trim());
 
                     if (amount == null) {
-                      return 'Please enter a valid amount';
+                      return 'Please enter a valid amount'.tr;
                     }
 
                     if (amount <= 0) {
-                      return 'Amount must be greater than 0';
+                      return 'Amount must be greater than 0'.tr;
                     }
 
                     return null;
@@ -170,7 +170,7 @@ class _AddBillViewState extends State<AddBillView> {
                 // DUE DATE
                 // ==================================================
                 Text(
-                  'Due Date',
+                  'Due Date'.tr,
                   style: AppTextStyles.bodyLarge(
                     isDark,
                   ).copyWith(fontWeight: FontWeight.w600),
@@ -218,11 +218,11 @@ class _AddBillViewState extends State<AddBillView> {
                 TextFormField(
                   controller: noteController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Note',
-                    hintText: 'Add a note (optional)',
-                    prefixIcon: Icon(Icons.notes_outlined),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Note'.tr,
+                    hintText: 'Add a note (optional)'.tr,
+                    prefixIcon: const Icon(Icons.notes_outlined),
+                    border: const OutlineInputBorder(),
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -238,7 +238,7 @@ class _AddBillViewState extends State<AddBillView> {
                   child: ElevatedButton.icon(
                     onPressed: saveBill,
                     icon: const Icon(Icons.save_outlined),
-                    label: const Text('Save Bill'),
+                    label: Text('Save Bill'.tr),
                   ),
                 ),
 

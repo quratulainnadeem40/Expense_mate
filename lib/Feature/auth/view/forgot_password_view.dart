@@ -51,7 +51,7 @@ class ForgotPasswordView extends GetView<AuthController> {
 
               Center(
                 child: Text(
-                  'Forgot Password?',
+                  'Forgot Password?'.tr,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -64,7 +64,8 @@ class ForgotPasswordView extends GetView<AuthController> {
 
               Center(
                 child: Text(
-                  'Enter your email and we will send you a link to reset your password.',
+                  'Enter your email and we will send you a link to reset your password.'
+                      .tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -77,7 +78,7 @@ class ForgotPasswordView extends GetView<AuthController> {
               const SizedBox(height: 40),
 
               Text(
-                'Email',
+                'Email'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -89,7 +90,7 @@ class ForgotPasswordView extends GetView<AuthController> {
 
               AuthTextField(
                 controller: controller.emailController,
-                hintText: 'Enter your email',
+                hintText: 'Enter your email'.tr,
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -98,7 +99,7 @@ class ForgotPasswordView extends GetView<AuthController> {
 
               Obx(
                 () => AuthButton(
-                  text: 'Send Reset Link',
+                  text: 'Send Reset Link'.tr,
                   isLoading: controller.isLoading.value,
                   onPressed: () {
                     controller.resetPassword(controller.emailController.text);
@@ -116,8 +117,8 @@ class ForgotPasswordView extends GetView<AuthController> {
                   onPressed: () {
                     Get.offNamed(AppRoutes.login);
                   },
-                  child: const Text(
-                    'Back to Login',
+                  child: Text(
+                    'Back to Login'.tr,
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,

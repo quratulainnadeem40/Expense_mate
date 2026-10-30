@@ -241,7 +241,7 @@ class _CommitteeViewState extends State<CommitteeView> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Create your first committee to get started.',
+                        'Create your first committee to get started.'.tr,
                         textAlign: TextAlign.center,
                         style: TextStyle(color: secondaryColor),
                       ),
@@ -270,14 +270,17 @@ class _CommitteeViewState extends State<CommitteeView> {
                         child: const Icon(Icons.groups_rounded),
                       ),
                       title: Text(
-                        committee['name']?.toString() ?? 'Committee',
+                        committee['name']?.toString() ?? 'Committee'.tr,
                         style: TextStyle(
                           color: mainTextColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       subtitle: Text(
-                        '${Formatters.code} ${committee['contribution'] ?? '0'} monthly',
+                        '@currency @amount monthly'.trParams({
+                          'currency': Formatters.code,
+                          'amount': '${committee['contribution'] ?? '0'}',
+                        }),
                         style: TextStyle(color: secondaryColor),
                       ),
                       trailing: Icon(
@@ -299,7 +302,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             }),
             const SizedBox(height: 28),
             Text(
-              'Committee Features',
+              'Committee Features'.tr,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -399,10 +402,10 @@ class _CommitteeViewState extends State<CommitteeView> {
           child: Text(icon, style: const TextStyle(fontSize: 28)),
         ),
         title: Text(
-          title,
+          title.tr,
           style: TextStyle(fontWeight: FontWeight.w600, color: mainTextColor),
         ),
-        subtitle: Text(description, style: TextStyle(color: secondaryColor)),
+        subtitle: Text(description.tr, style: TextStyle(color: secondaryColor)),
         trailing: Icon(
           Icons.arrow_forward_ios_rounded,
           size: 18,

@@ -29,12 +29,15 @@ class TransactionCard extends StatelessWidget {
   void _deleteTransaction() {
     Get.dialog(
       AlertDialog(
-        title: const Text('Delete Transaction'),
-        content: const Text(
-          'Are you sure you want to delete this transaction?',
+        title: Text('Delete Transaction'.tr),
+        content: Text(
+          'Are you sure you want to delete this transaction?'.tr,
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancel'.tr),
+          ),
           TextButton(
             onPressed: () async {
               Get.back();
@@ -53,7 +56,7 @@ class TransactionCard extends StatelessWidget {
                 );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete'.tr, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -126,7 +129,7 @@ class TransactionCard extends StatelessWidget {
                         const SizedBox(height: 2),
 
                         Text(
-                          '${_getCategoryName()} • ${Formatters.formatDate(transaction.date)}',
+                          '${_getCategoryName().tr} • ${Formatters.formatDate(transaction.date)}',
                           style: AppTextStyles.caption(isDark),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -167,14 +170,14 @@ class TransactionCard extends StatelessWidget {
                       _deleteTransaction();
                     }
                   },
-                  itemBuilder: (context) => const [
+                  itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 20),
-                          SizedBox(width: 10),
-                          Text('Edit'),
+                          const Icon(Icons.edit_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text('Edit'.tr),
                         ],
                       ),
                     ),
@@ -182,13 +185,16 @@ class TransactionCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.delete_outline,
                             size: 20,
                             color: Colors.red,
                           ),
-                          SizedBox(width: 10),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Delete'.tr,
+                            style: const TextStyle(color: Colors.red),
+                          ),
                         ],
                       ),
                     ),

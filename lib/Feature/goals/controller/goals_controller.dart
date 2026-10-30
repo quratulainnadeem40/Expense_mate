@@ -44,8 +44,9 @@ class GoalsController extends GetxController {
     'gift',
   ];
 
-  String get nameHint =>
-      'e.g. ${goalIconFor(selectedIconKey.value).label} goal';
+  String get nameHint => 'e.g. @icon goal'.trParams({
+    'icon': goalIconFor(selectedIconKey.value).label.tr,
+  });
 
   // ----------------------------------------------------------------
   // SUMMARY  (for the header card)

@@ -29,7 +29,7 @@ class TypeToggleSwitch extends GetView<ExpenseController> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Expense',
+                    'Expense'.tr,
                     style: TextStyle(
                       color: controller.isExpense.value
                           ? Colors.white
@@ -52,7 +52,7 @@ class TypeToggleSwitch extends GetView<ExpenseController> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Income',
+                    'Income'.tr,
                     style: TextStyle(
                       color: !controller.isExpense.value
                           ? Colors.white

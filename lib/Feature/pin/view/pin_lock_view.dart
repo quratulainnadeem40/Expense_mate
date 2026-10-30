@@ -170,7 +170,7 @@ class _PinLockViewState extends State<PinLockView> {
         backgroundColor: isDark ? const Color(0xFF1C1C1C) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          'Forgot your PIN?',
+          'Forgot your PIN?'.tr,
           style: TextStyle(
             fontSize: 17.5,
             fontWeight: FontWeight.w700,
@@ -183,8 +183,9 @@ class _PinLockViewState extends State<PinLockView> {
           children: [
             Text(
               email.isEmpty
-                  ? 'Enter your account password to set a new PIN.'
-                  : 'Enter the password for $email to set a new PIN.',
+                  ? 'Enter your account password to set a new PIN.'.tr
+                  : 'Enter the password for @email to set a new PIN.'
+                        .trParams({'email': email}),
               style: TextStyle(
                 fontSize: 13.5,
                 height: 1.5,
@@ -198,7 +199,7 @@ class _PinLockViewState extends State<PinLockView> {
               autofocus: true,
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
-                hintText: 'Account password',
+                hintText: 'Account password'.tr,
                 filled: true,
                 fillColor: isDark
                     ? Colors.white10
@@ -230,7 +231,10 @@ class _PinLockViewState extends State<PinLockView> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancel'.tr),
+          ),
           Obx(() {
             return ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -247,12 +251,12 @@ class _PinLockViewState extends State<PinLockView> {
                       final password = passwordController.text.trim();
 
                       if (password.isEmpty) {
-                        error.value = 'Please enter your password.';
+                        error.value = 'Please enter your password.'.tr;
                         return;
                       }
 
                       if (email.isEmpty) {
-                        error.value = 'No account signed in on this phone.';
+                        error.value = 'No account signed in on this phone.'.tr;
                         return;
                       }
 
@@ -271,7 +275,7 @@ class _PinLockViewState extends State<PinLockView> {
                       } on AuthException catch (e) {
                         error.value = e.message;
                       } catch (_) {
-                        error.value = 'Could not check that. Try again.';
+                        error.value = 'Could not check that. Try again.'.tr;
                       } finally {
                         busy.value = false;
                       }
@@ -285,7 +289,7 @@ class _PinLockViewState extends State<PinLockView> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Continue'),
+                  : Text('Continue'.tr),
             );
           }),
         ],
@@ -329,7 +333,7 @@ class _PinLockViewState extends State<PinLockView> {
               const SizedBox(height: 22),
 
               Text(
-                'Enter your PIN',
+                'Enter your PIN'.tr,
                 style: TextStyle(
                   fontSize: 21,
                   fontWeight: FontWeight.w700,
@@ -341,9 +345,11 @@ class _PinLockViewState extends State<PinLockView> {
 
               Text(
                 _isBlocked && seconds > 0
-                    ? 'Try again in $seconds '
-                          '${seconds == 1 ? 'second' : 'seconds'}'
-                    : 'Expense Mate is locked',
+                    ? (seconds == 1
+                          ? 'Try again in @seconds second'
+                          : 'Try again in @seconds seconds')
+                          .trParams({'seconds': '$seconds'})
+                    : 'Expense Mate is locked'.tr,
                 style: TextStyle(fontSize: 13.5, color: secondaryText),
               ),
 
@@ -382,7 +388,7 @@ class _PinLockViewState extends State<PinLockView> {
                       color: kPinGreen,
                     ),
                     label: Text(
-                      'Use $_biometricLabel',
+                      'Use @label'.trParams({'label': _biometricLabel}),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
