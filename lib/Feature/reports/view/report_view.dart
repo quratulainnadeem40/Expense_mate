@@ -1,3 +1,4 @@
+
 import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
@@ -12,13 +13,14 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 
 import 'package:expense_mate/Feature/Budgets/bindings/budget_bindings.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
-import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/wallets/binding/wallets_binding.dart';
 import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
 import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_binding.dart';
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
+import 'package:expense_mate/Feature/committee/binding/committee_binding.dart';
+import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 
@@ -28,7 +30,7 @@ class ReportView extends StatelessWidget {
   static final GlobalKey<ScaffoldState> _scaffoldKey =
       GlobalKey<ScaffoldState>();
 
-  static const List<String> _months = [
+  static const List<String> _monthKeys = [
     'January',
     'February',
     'March',
@@ -42,6 +44,25 @@ class ReportView extends StatelessWidget {
     'November',
     'December',
   ];
+
+  static const List<String> _shortMonthKeys = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  List<String> get _months => _monthKeys.map((month) => month.tr).toList();
+
+  String _shortMonth(int month) => _shortMonthKeys[month - 1].tr;
 
   String _formatAmount(double amount) {
     return '${Formatters.code} ${amount.toStringAsFixed(0)}';
@@ -64,10 +85,6 @@ class ReportView extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-
-      // ==========================================================
-      // DRAWER
-      // ==========================================================
       endDrawer: SafeArea(
         child: Container(
           margin: const EdgeInsets.only(top: 12, bottom: 16, right: 12),
@@ -101,7 +118,10 @@ class ReportView extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isDarkMode
-                            ? [const Color(0xFF2E7D32), const Color(0xFF1B5E20)]
+                            ? [
+                                const Color(0xFF2E7D32),
+                                const Color(0xFF1B5E20),
+                              ]
                             : [
                                 const Color(0xFF4CAF50),
                                 const Color(0xFF388E3C),
@@ -114,9 +134,7 @@ class ReportView extends StatelessWidget {
                     currentAccountPicture: Obx(() {
                       final imageUrl =
                           settingsController.profilePictureUrl.value;
-
                       final name = settingsController.profileName.value;
-
                       final firstLetter = name.isNotEmpty
                           ? name[0].toUpperCase()
                           : 'U';
@@ -127,7 +145,7 @@ class ReportView extends StatelessWidget {
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -166,7 +184,7 @@ class ReportView extends StatelessWidget {
                               .currentUser
                               ?.userMetadata?['name']
                               ?.toString() ??
-                          'User',
+                          'User'.tr,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -177,7 +195,7 @@ class ReportView extends StatelessWidget {
                       Supabase.instance.client.auth.currentUser?.email ?? '',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
@@ -193,8 +211,9 @@ class ReportView extends StatelessWidget {
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
                           emoji: '💳',
-                          title: 'Wallets',
-                          subtitle: 'Manage your cash, bank and other wallets',
+                          title: 'Wallets'.tr,
+                          subtitle:
+                              'Manage your cash, bank and other wallets'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(
@@ -209,8 +228,9 @@ class ReportView extends StatelessWidget {
                           icon: Icons.donut_small_rounded,
                           iconColor: const Color(0xFF2E7D32),
                           emoji: '📊',
-                          title: 'Budgets',
-                          subtitle: 'Set and track monthly spending limits',
+                          title: 'Budgets'.tr,
+                          subtitle:
+                              'Set and track monthly spending limits'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(
@@ -225,8 +245,9 @@ class ReportView extends StatelessWidget {
                           icon: Icons.flag_rounded,
                           iconColor: const Color(0xFFB26A00),
                           emoji: '🎯',
-                          title: 'Goals',
-                          subtitle: 'Track your financial targets and savings',
+                          title: 'Goals'.tr,
+                          subtitle:
+                              'Track your financial targets and savings'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(
@@ -241,8 +262,9 @@ class ReportView extends StatelessWidget {
                           icon: Icons.receipt_long_rounded,
                           iconColor: const Color(0xFF7A4EAB),
                           emoji: '🧾',
-                          title: 'Bills & Reminders',
-                          subtitle: 'Manage upcoming bills and reminders',
+                          title: 'Bills & Reminders'.tr,
+                          subtitle:
+                              'Manage upcoming bills and reminders'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(
@@ -257,11 +279,12 @@ class ReportView extends StatelessWidget {
                           icon: Icons.groups_rounded,
                           iconColor: const Color(0xFF00695C),
                           emoji: '🤝',
-                          title: 'Digital Committee',
-                          subtitle: 'Manage your committee and member payments',
+                          title: 'Digital Committee'.tr,
+                          subtitle:
+                              'Manage your committee and member payments'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
-                            Get.to(() => const CommitteeView());
+                            Get.to(() => const CommitteeView(), binding: CommitteeBinding());
                           },
                         ),
                         const SizedBox(height: 12),
@@ -270,8 +293,8 @@ class ReportView extends StatelessWidget {
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
                           emoji: '🧮',
-                          title: 'Udhaar',
-                          subtitle: 'Money you lent out and money you owe',
+                          title: 'Udhaar'.tr,
+                          subtitle: 'Money you lent out and money you owe'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(
@@ -285,8 +308,9 @@ class ReportView extends StatelessWidget {
                           context: context,
                           icon: Icons.person_rounded,
                           iconColor: const Color(0xFFF2C14E),
-                          title: 'Profile',
-                          subtitle: 'Manage your profile and account settings',
+                          title: 'Profile'.tr,
+                          subtitle:
+                              'Manage your profile and account settings'.tr,
                           onTap: () {
                             Navigator.of(context).pop();
                             Get.to(() => const SettingsView());
@@ -301,24 +325,22 @@ class ReportView extends StatelessWidget {
           ),
         ),
       ),
-
-      // ==========================================================
-      // APP BAR
-      // ==========================================================
       appBar: AppBar(
-        title: const Text('Reports'),
+        title: Text('Reports'.tr),
         centerTitle: false,
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         actions: [
           IconButton(
+            tooltip: 'Refresh Reports'.tr,
             icon: const Icon(Icons.refresh),
             onPressed: () {
               controller.refreshReports();
             },
           ),
           IconButton(
+            tooltip: 'Open navigation menu'.tr,
             icon: const Icon(Icons.menu),
             onPressed: () {
               _scaffoldKey.currentState?.openEndDrawer();
@@ -326,33 +348,32 @@ class ReportView extends StatelessWidget {
           ),
         ],
       ),
-
-      // ==========================================================
-      // BODY
-      // ==========================================================
       body: SafeArea(
         child: Obx(() {
           final double income = controller.totalIncome;
           final double expense = controller.totalExpense;
           final double balance = controller.totalBalance;
-
-          final Map<String, double> categoryData = controller.expenseCategories;
-
+          final Map<String, double> categoryData =
+              controller.expenseCategories;
           final Map<String, double> incomeCategoryData =
               controller.incomeCategories;
-
           final Map<int, double> monthlyData = controller.monthlyExpenses;
-
-          final Map<int, double> monthlyIncomeData = controller.monthlyIncome;
+          final Map<int, double> monthlyIncomeData =
+              controller.monthlyIncome;
+          final List<String> months = _months;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
                 // ==================================================
                 // YEAR & MONTH FILTERS
                 // ==================================================
+
+
+
                 Row(
                   children: [
                     Expanded(
@@ -366,13 +387,14 @@ class ReportView extends StatelessWidget {
                           ),
                         ),
                         child: PopupMenuButton<int>(
-                          tooltip: 'Select Year',
+                          tooltip: 'Select Year'.tr,
                           offset: const Offset(0, 50),
                           onSelected: (int year) {
                             controller.setYearFilter(year);
                           },
                           itemBuilder: (context) {
-                            final List<int> years = controller.availableYears;
+                            final List<int> years =
+                                controller.availableYears;
 
                             if (years.isEmpty) {
                               return [
@@ -399,7 +421,7 @@ class ReportView extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     controller.selectedYear.value?.toString() ??
-                                        'Year',
+                                        'Year'.tr,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -422,7 +444,7 @@ class ReportView extends StatelessWidget {
                           ),
                         ),
                         child: PopupMenuButton<int>(
-                          tooltip: 'Select Month',
+                          tooltip: 'Select Month'.tr,
                           offset: const Offset(0, 50),
                           onSelected: (int month) {
                             controller.setMonthFilter(month);
@@ -430,10 +452,9 @@ class ReportView extends StatelessWidget {
                           itemBuilder: (context) {
                             return List.generate(12, (index) {
                               final int month = index + 1;
-
                               return PopupMenuItem<int>(
                                 value: month,
-                                child: Text(_months[index]),
+                                child: Text(months[index]),
                               );
                             });
                           },
@@ -446,11 +467,10 @@ class ReportView extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     controller.selectedMonth.value != null
-                                        ? _months[controller
-                                                  .selectedMonth
-                                                  .value! -
-                                              1]
-                                        : 'Month',
+                                        ? months[
+                                            controller.selectedMonth.value! - 1
+                                          ]
+                                        : 'Month'.tr,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -463,12 +483,7 @@ class ReportView extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
-                // ==================================================
-                // SELECTED FILTER INFORMATION
-                // ==================================================
                 if (controller.selectedYear.value != null ||
                     controller.selectedMonth.value != null)
                   Container(
@@ -489,14 +504,15 @@ class ReportView extends StatelessWidget {
                           child: Text(
                             controller.selectedYear.value != null &&
                                     controller.selectedMonth.value != null
-                                ? '${_months[controller.selectedMonth.value! - 1]} ${controller.selectedYear.value}'
+                                ? '${months[controller.selectedMonth.value! - 1]} ${controller.selectedYear.value}'
                                 : controller.selectedYear.value != null
-                                ? 'Year ${controller.selectedYear.value}'
-                                : _months[controller.selectedMonth.value! - 1],
+                                ? '${'Year'.tr} ${controller.selectedYear.value}'
+                                : months[controller.selectedMonth.value! - 1],
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                         IconButton(
+                          tooltip: 'Clear filters'.tr,
                           visualDensity: VisualDensity.compact,
                           icon: const Icon(Icons.clear, size: 19),
                           onPressed: () {
@@ -507,18 +523,13 @@ class ReportView extends StatelessWidget {
                       ],
                     ),
                   ),
-
                 const SizedBox(height: 18),
-
-                // ==================================================
-                // SUMMARY CARDS
-                // ==================================================
                 Row(
                   children: [
                     Expanded(
                       child: _summaryCard(
                         context,
-                        title: 'Total Income',
+                        title: 'Total Income'.tr,
                         amount: income,
                         icon: Icons.south_west_rounded,
                         accentColor: const Color(0xFF16A085),
@@ -528,7 +539,7 @@ class ReportView extends StatelessWidget {
                     Expanded(
                       child: _summaryCard(
                         context,
-                        title: 'Total Expense',
+                        title: 'Total Expense'.tr,
                         amount: expense,
                         icon: Icons.north_east_rounded,
                         accentColor: const Color(0xFFE47745),
@@ -536,23 +547,11 @@ class ReportView extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 12),
-
-                // ==================================================
-                // REMAINING BALANCE
-                // ==================================================
                 _balanceCard(context, balance: balance),
-
                 const SizedBox(height: 24),
-
-                // ==================================================
-                // MONTHLY INCOME
-                // ==================================================
-                _sectionTitle(context, 'Monthly Income'),
-
+                _sectionTitle(context, 'Monthly Income'.tr),
                 const SizedBox(height: 12),
-
                 Container(
                   width: double.infinity,
                   height: 300,
@@ -567,18 +566,14 @@ class ReportView extends StatelessWidget {
                       maxX: 12,
                       minY: 0,
                       maxY: _monthlyAxisMax(monthlyIncomeData),
-
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: true,
                         verticalInterval: 1,
-                        horizontalInterval: _monthlyAxisInterval(
-                          monthlyIncomeData,
-                        ),
+                        horizontalInterval:
+                            _monthlyAxisInterval(monthlyIncomeData),
                       ),
-
                       borderData: FlBorderData(show: false),
-
                       lineTouchData: LineTouchData(
                         enabled: true,
                         touchTooltipData: LineTouchTooltipData(
@@ -586,8 +581,8 @@ class ReportView extends StatelessWidget {
                             return touchedSpots.map((spot) {
                               final int month = spot.x.round();
                               final String monthName =
-                                  month >= 1 && month <= _months.length
-                                  ? _months[month - 1]
+                                  month >= 1 && month <= months.length
+                                  ? months[month - 1]
                                   : '';
                               return LineTooltipItem(
                                 '$monthName\n${Formatters.money(spot.y)}',
@@ -600,21 +595,19 @@ class ReportView extends StatelessWidget {
                           },
                         ),
                       ),
-
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-
                         rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 68,
-                            interval: _monthlyAxisInterval(monthlyIncomeData),
+                            interval:
+                                _monthlyAxisInterval(monthlyIncomeData),
                             getTitlesWidget: (value, meta) {
                               return Text(
                                 _formatMonthlyAxisValue(
@@ -630,7 +623,6 @@ class ReportView extends StatelessWidget {
                             },
                           ),
                         ),
-
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -638,16 +630,14 @@ class ReportView extends StatelessWidget {
                             reservedSize: 45,
                             getTitlesWidget: (value, meta) {
                               final int month = value.toInt();
-
                               if (month < 1 || month > 12) {
                                 return const SizedBox.shrink();
                               }
-
                               return SideTitleWidget(
                                 meta: meta,
                                 space: 12,
                                 child: Text(
-                                  _months[month - 1].substring(0, 3),
+                                  _shortMonth(month),
                                   style: const TextStyle(fontSize: 9),
                                 ),
                               );
@@ -655,19 +645,15 @@ class ReportView extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       lineBarsData: [
                         LineChartBarData(
                           spots: List.generate(12, (index) {
                             final int month = index + 1;
-
-                            // EXACT actual income amount.
                             final double rawAmount =
                                 monthlyIncomeData[month] ?? 0.0;
                             final double amount = rawAmount.isFinite
                                 ? rawAmount
                                 : 0;
-
                             return FlSpot(month.toDouble(), amount);
                           }),
                           isCurved: false,
@@ -678,24 +664,12 @@ class ReportView extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // INCOME CATEGORIES
-                // ==================================================
-                _sectionTitle(context, 'Income Categories'),
-
+                _sectionTitle(context, 'Income Categories'.tr),
                 const SizedBox(height: 12),
-
                 _categoryChart(context, incomeCategoryData, isIncome: true),
-
                 const SizedBox(height: 28),
-
-                // ==================================================
-                // MONTHLY EXPENSES
-                // ==================================================
-                _sectionTitle(context, 'Monthly Expenses'),
-
+                _sectionTitle(context, 'Monthly Expenses'.tr),
                 const SizedBox(height: 12),
-
                 Container(
                   width: double.infinity,
                   height: 300,
@@ -710,16 +684,13 @@ class ReportView extends StatelessWidget {
                       maxX: 12,
                       minY: 0,
                       maxY: _monthlyAxisMax(monthlyData),
-
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: true,
                         verticalInterval: 1,
                         horizontalInterval: _monthlyAxisInterval(monthlyData),
                       ),
-
                       borderData: FlBorderData(show: false),
-
                       lineTouchData: LineTouchData(
                         enabled: true,
                         touchTooltipData: LineTouchTooltipData(
@@ -727,8 +698,8 @@ class ReportView extends StatelessWidget {
                             return touchedSpots.map((spot) {
                               final int month = spot.x.round();
                               final String monthName =
-                                  month >= 1 && month <= _months.length
-                                  ? _months[month - 1]
+                                  month >= 1 && month <= months.length
+                                  ? months[month - 1]
                                   : '';
                               return LineTooltipItem(
                                 '$monthName\n${Formatters.money(spot.y)}',
@@ -741,16 +712,13 @@ class ReportView extends StatelessWidget {
                           },
                         ),
                       ),
-
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-
                         rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -771,7 +739,6 @@ class ReportView extends StatelessWidget {
                             },
                           ),
                         ),
-
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -779,16 +746,14 @@ class ReportView extends StatelessWidget {
                             reservedSize: 45,
                             getTitlesWidget: (value, meta) {
                               final int month = value.toInt();
-
                               if (month < 1 || month > 12) {
                                 return const SizedBox.shrink();
                               }
-
                               return SideTitleWidget(
                                 meta: meta,
                                 space: 12,
                                 child: Text(
-                                  _months[month - 1].substring(0, 3),
+                                  _shortMonth(month),
                                   style: const TextStyle(fontSize: 9),
                                 ),
                               );
@@ -796,18 +761,15 @@ class ReportView extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       lineBarsData: [
                         LineChartBarData(
                           spots: List.generate(12, (index) {
                             final int month = index + 1;
-
-                            // EXACT actual expense amount.
-                            final double rawAmount = monthlyData[month] ?? 0.0;
+                            final double rawAmount =
+                                monthlyData[month] ?? 0.0;
                             final double amount = rawAmount.isFinite
                                 ? rawAmount
                                 : 0;
-
                             return FlSpot(month.toDouble(), amount);
                           }),
                           isCurved: false,
@@ -818,27 +780,13 @@ class ReportView extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 28),
-
-                // ==================================================
-                // EXPENSE CATEGORIES
-                // ==================================================
-                _sectionTitle(context, 'Expense Categories'),
-
+                _sectionTitle(context, 'Expense Categories'.tr),
                 const SizedBox(height: 12),
-
                 _categoryChart(context, categoryData, isIncome: false),
-
                 const SizedBox(height: 28),
-
-                // ==================================================
-                // INCOME VS EXPENSE
-                // ==================================================
-                _sectionTitle(context, 'Income vs Expense'),
-
+                _sectionTitle(context, 'Income vs Expense'.tr),
                 const SizedBox(height: 12),
-
                 Container(
                   width: double.infinity,
                   height: 300,
@@ -860,7 +808,9 @@ class ReportView extends StatelessWidget {
                         enabled: true,
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                            final label = group.x == 0 ? 'Income' : 'Expense';
+                            final label = group.x == 0
+                                ? 'Income'.tr
+                                : 'Expense'.tr;
                             return BarTooltipItem(
                               '$label\n${Formatters.money(rod.toY)}',
                               const TextStyle(
@@ -900,13 +850,11 @@ class ReportView extends StatelessWidget {
                             reservedSize: 45,
                             getTitlesWidget: (value, meta) {
                               String text = '';
-
                               if (value.toInt() == 0) {
-                                text = 'Income';
+                                text = 'Income'.tr;
                               } else if (value.toInt() == 1) {
-                                text = 'Expense';
+                                text = 'Expense'.tr;
                               }
-
                               return Padding(
                                 padding: const EdgeInsets.only(top: 12),
                                 child: Text(
@@ -948,10 +896,7 @@ class ReportView extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 28),
-
-                // ==================================================
                 const SizedBox(height: 25),
               ],
             ),
@@ -977,11 +922,11 @@ class ReportView extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: accentColor.withOpacity(isDarkMode ? 0.32 : 0.16),
+          color: accentColor.withValues(alpha: isDarkMode ? 0.32 : 0.16),
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withOpacity(isDarkMode ? 0.08 : 0.07),
+            color: accentColor.withValues(alpha: isDarkMode ? 0.08 : 0.07),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
@@ -994,7 +939,7 @@ class ReportView extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(isDarkMode ? 0.18 : 0.11),
+              color: accentColor.withValues(alpha: isDarkMode ? 0.18 : 0.11),
               borderRadius: BorderRadius.circular(13),
             ),
             alignment: Alignment.center,
@@ -1008,7 +953,7 @@ class ReportView extends StatelessWidget {
             style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface.withOpacity(0.72),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
             ),
           ),
           const SizedBox(height: 5),
@@ -1037,7 +982,7 @@ class ReportView extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: fabGreen.withOpacity(0.24),
+            color: fabGreen.withValues(alpha: 0.24),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1058,9 +1003,9 @@ class ReportView extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Saved Balance',
+                      'Saved Balance'.tr,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.88),
+                        color: Colors.white.withValues(alpha: 0.88),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1089,10 +1034,10 @@ class ReportView extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.16),
+              color: Colors.white.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.trending_up_rounded,
               color: Colors.white,
               size: 29,
@@ -1121,9 +1066,8 @@ class ReportView extends StatelessWidget {
     }
 
     final double paddedMaximum = maximum + maximum * 0.1;
-    final double targetMaximum = paddedMaximum.isFinite
-        ? paddedMaximum
-        : maximum;
+    final double targetMaximum =
+        paddedMaximum.isFinite ? paddedMaximum : maximum;
     final double roundedMaximum =
         (targetMaximum / interval).ceilToDouble() * interval;
 
@@ -1261,7 +1205,8 @@ class ReportView extends StatelessWidget {
 
     final double target = maximum + interval * 0.5;
     final double safeTarget = target.isFinite ? target : maximum;
-    final double roundedMax = (safeTarget / interval).ceilToDouble() * interval;
+    final double roundedMax =
+        (safeTarget / interval).ceilToDouble() * interval;
     if (!roundedMax.isFinite || roundedMax < maximum) {
       return maximum;
     }
@@ -1334,7 +1279,7 @@ class ReportView extends StatelessWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(child: Text('No category data available')),
+        child: Center(child: Text('No category data available'.tr)),
       );
     }
 
@@ -1396,7 +1341,7 @@ class ReportView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ...List.generate(entries.length, (index) {
-            final String name = entries[index].key;
+            final String name = entries[index].key.tr;
             final double amount = entries[index].value;
             final double percentage = percentages[index];
             final Color color = _categoryColor(
@@ -1418,7 +1363,12 @@ class ReportView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
+                  Expanded(
+                    child: Text(
+                      name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   Text(
                     '${percentage.toStringAsFixed(1)}%',
                     style: const TextStyle(fontWeight: FontWeight.w600),
@@ -1487,7 +1437,7 @@ class ReportView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1506,7 +1456,7 @@ class ReportView extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,

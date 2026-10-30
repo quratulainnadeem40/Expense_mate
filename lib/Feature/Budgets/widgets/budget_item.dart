@@ -5,7 +5,7 @@ import '../model/budget_model.dart';
 class BudgetItem extends StatelessWidget {
   final BudgetModel budget;
 
-  const BudgetItem({Key? key, required this.budget}) : super(key: key);
+  const BudgetItem({super.key, required this.budget});
 
   @override
   Widget build(BuildContext context) {

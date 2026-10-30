@@ -96,7 +96,7 @@ class OnboardingView extends GetView<OnboardingController> {
                       ),
                     ),
                     child: Text(
-                      controller.isLastPage ? 'Get started' : 'Next',
+                      controller.isLastPage ? 'Get started'.tr : 'Next'.tr,
                       style: const TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w700,
@@ -144,11 +144,11 @@ class OnboardingView extends GetView<OnboardingController> {
       case 1:
         return _MessagePage(
           icon: Icons.phonelink_lock_rounded,
-          title: 'Your money, on your phone',
+          title: 'Your money, on your phone'.tr,
           body:
               'Every entry is stored on this device first and synced '
               'to your account, so the app keeps working even when the '
-              'signal does not.',
+              'signal does not.'.tr,
           primaryText: primaryText,
           secondaryText: secondaryText,
         );
@@ -156,11 +156,11 @@ class OnboardingView extends GetView<OnboardingController> {
       case 2:
         return _MessagePage(
           icon: Icons.bolt_rounded,
-          title: 'An entry takes three taps',
+          title: 'An entry takes three taps'.tr,
           body:
               'Tap the green button, type the amount, pick a category '
               'and wallet. Budgets, goals and reports fill themselves in '
-              'from there.',
+              'from there.'.tr,
           primaryText: primaryText,
           secondaryText: secondaryText,
         );
@@ -200,7 +200,7 @@ class _LanguagePage extends GetView<OnboardingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Choose your language',
+                'Choose your language'.tr,
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w700,
@@ -209,7 +209,7 @@ class _LanguagePage extends GetView<OnboardingController> {
               ),
               const SizedBox(height: 4),
               Text(
-                'You can change it later in Settings.',
+                'You can change it later in Settings.'.tr,
                 style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             ],
@@ -423,7 +423,7 @@ class _PickRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             decoration: BoxDecoration(
               color: isActive
-                  ? _green.withOpacity(isDark ? 0.16 : 0.08)
+                  ? _green.withValues(alpha: isDark ? 0.16 : 0.08)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
@@ -441,7 +441,7 @@ class _PickRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isDark
                         ? Colors.white10
-                        : Colors.black.withOpacity(0.04),
+                        : Colors.black.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Text(

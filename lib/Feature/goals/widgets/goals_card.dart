@@ -62,14 +62,14 @@ class GoalsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: done
-              ? kGoalGreen.withOpacity(0.45)
-              : (isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
+              ? kGoalGreen.withValues(alpha: 0.45)
+              : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06)),
         ),
         boxShadow: isDark
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -98,7 +98,7 @@ class GoalsCard extends StatelessWidget {
                         strokeCap: StrokeCap.round,
                         backgroundColor: isDark
                             ? Colors.white12
-                            : Colors.black.withOpacity(0.07),
+                            : Colors.black.withValues(alpha: 0.07),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           kGoalGreen,
                         ),
@@ -226,7 +226,7 @@ class GoalsCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: Container(
               height: 9,
-              color: isDark ? Colors.white12 : Colors.black.withOpacity(0.07),
+              color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: goal.progress.clamp(0.0, 1.0),
@@ -248,7 +248,7 @@ class GoalsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
-                color: kGoalGreen.withOpacity(isDark ? 0.16 : 0.09),
+                color: kGoalGreen.withValues(alpha: isDark ? 0.16 : 0.09),
                 borderRadius: BorderRadius.circular(11),
               ),
               child: Row(

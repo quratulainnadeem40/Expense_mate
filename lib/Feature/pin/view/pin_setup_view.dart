@@ -211,7 +211,7 @@ class _PinSetupViewState extends State<PinSetupView> {
               width: 76,
               height: 76,
               decoration: BoxDecoration(
-                color: kPinGreen.withOpacity(isDark ? 0.18 : 0.10),
+                color: kPinGreen.withValues(alpha: isDark ? 0.18 : 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

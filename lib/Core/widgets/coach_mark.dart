@@ -104,7 +104,7 @@ class CoachMarkController {
       _entry = OverlayEntry(
         builder: (_) => ValueListenableBuilder<int>(
           valueListenable: _index,
-          builder: (_, value, __) => _CoachMarkView(
+          builder: (_, value, _) => _CoachMarkView(
             steps: _steps,
             index: value,
             onNext: _next,
@@ -232,7 +232,7 @@ class _CoachMarkView extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(step.radius),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.55),
+                      color: Colors.white.withValues(alpha: 0.55),
                       width: 2,
                     ),
                   ),
@@ -267,7 +267,7 @@ class _HolePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final dim = Paint()..color = Colors.black.withOpacity(0.72);
+    final dim = Paint()..color = Colors.black.withValues(alpha: 0.72);
     final full = Rect.fromLTWH(0, 0, size.width, size.height);
 
     if (hole == null) {
@@ -320,7 +320,7 @@ class _StepCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.22),
+            color: Colors.black.withValues(alpha: 0.22),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),

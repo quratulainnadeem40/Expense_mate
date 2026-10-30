@@ -202,7 +202,7 @@ class _PinLockViewState extends State<PinLockView> {
                 filled: true,
                 fillColor: isDark
                     ? Colors.white10
-                    : Colors.black.withOpacity(0.04),
+                    : Colors.black.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -316,7 +316,7 @@ class _PinLockViewState extends State<PinLockView> {
                 width: 76,
                 height: 76,
                 decoration: BoxDecoration(
-                  color: kPinGreen.withOpacity(isDark ? 0.18 : 0.10),
+                  color: kPinGreen.withValues(alpha: isDark ? 0.18 : 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

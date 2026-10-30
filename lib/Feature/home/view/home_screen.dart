@@ -1,3 +1,5 @@
+
+
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/widgets/coach_mark.dart';
@@ -36,7 +38,8 @@ class HomeScreen extends StatelessWidget {
       final nameFromMetaData =
           user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
 
-      if (nameFromMetaData != null && nameFromMetaData.toString().isNotEmpty) {
+      if (nameFromMetaData != null &&
+          nameFromMetaData.toString().isNotEmpty) {
         return nameFromMetaData.toString();
       }
 
@@ -46,23 +49,23 @@ class HomeScreen extends StatelessWidget {
       }
     }
 
-    return 'User';
+    return 'User'.tr;
   }
 
   String _getFormattedDate(DateTime date) {
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan'.tr,
+      'Feb'.tr,
+      'Mar'.tr,
+      'Apr'.tr,
+      'May'.tr,
+      'Jun'.tr,
+      'Jul'.tr,
+      'Aug'.tr,
+      'Sep'.tr,
+      'Oct'.tr,
+      'Nov'.tr,
+      'Dec'.tr,
     ];
 
     final month = months[date.month - 1];
@@ -142,9 +145,7 @@ class HomeScreen extends StatelessWidget {
                   : const Color(0xFFF9FAFB),
               child: Column(
                 children: [
-                  // =========================
                   // X BUTTON - TOP RIGHT
-                  // =========================
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
@@ -162,15 +163,16 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // =========================
                   // USER HEADER
-                  // =========================
                   UserAccountsDrawerHeader(
                     margin: EdgeInsets.zero,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isDarkMode
-                            ? [const Color(0xFF2E7D32), const Color(0xFF1B5E20)]
+                            ? [
+                                const Color(0xFF2E7D32),
+                                const Color(0xFF1B5E20),
+                              ]
                             : [
                                 const Color(0xFF4CAF50),
                                 const Color(0xFF388E3C),
@@ -180,11 +182,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     currentAccountPictureSize: const Size.square(64),
-
                     currentAccountPicture: Obx(() {
                       final imageUrl =
                           settingsController.profilePictureUrl.value;
-
                       final name = settingsController.profileName.value;
 
                       final firstLetter = name.isNotEmpty
@@ -197,7 +197,7 @@ class HomeScreen extends StatelessWidget {
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -221,7 +221,6 @@ class HomeScreen extends StatelessWidget {
                         ),
                       );
                     }),
-
                     accountName: Text(
                       _userName,
                       style: const TextStyle(
@@ -230,19 +229,16 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-
                     accountEmail: Text(
                       Supabase.instance.client.auth.currentUser?.email ?? '',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
 
-                  // =========================
                   // DRAWER OPTIONS
-                  // =========================
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.symmetric(
@@ -250,122 +246,95 @@ class HomeScreen extends StatelessWidget {
                         vertical: 16,
                       ),
                       children: [
-                        // =========================
-                        // WALLETS
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
                           emoji: '💳',
-                          title: 'Wallets',
-                          subtitle: 'Manage your cash, bank and other wallets',
+                          title: 'Wallets'.tr,
+                          subtitle: 'Manage your cash, bank and other wallets'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => const WalletsView(),
                             binding: WalletsBinding(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
 
-                        // =========================
-                        // BUDGETS
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.donut_small_rounded,
                           iconColor: const Color(0xFF2E7D32),
                           emoji: '📊',
-                          title: 'Budgets',
-                          subtitle: 'Set and track monthly spending limits',
+                          title: 'Budgets'.tr,
+                          subtitle: 'Set and track monthly spending limits'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => const BudgetView(),
                             binding: BudgetBinding(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
 
-                        // =========================
-                        // GOALS
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.flag_rounded,
                           iconColor: const Color(0xFFB26A00),
                           emoji: '🎯',
-                          title: 'Goals',
-                          subtitle: 'Track your financial targets and savings',
+                          title: 'Goals'.tr,
+                          subtitle: 'Track your financial targets and savings'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => const GoalsView(),
                             binding: GoalsBinding(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
 
-                        // =========================
-                        // BILLS & REMINDERS
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.receipt_long_rounded,
                           iconColor: const Color(0xFF7A4EAB),
                           emoji: '🧾',
-                          title: 'Bills & Reminders',
-                          subtitle: 'Manage upcoming bills and reminders',
+                          title: 'Bills & Reminders'.tr,
+                          subtitle: 'Manage upcoming bills and reminders'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => const BillsRemindersView(),
                             binding: BillsRemindersBinding(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
 
-                        // =========================
-                        // DIGITAL COMMITTEE
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.groups_rounded,
                           iconColor: const Color(0xFF00695C),
                           emoji: '🤝',
-                          title: 'Digital Committee',
-                          subtitle: 'Manage your committee and member payments',
+                          title: 'Digital Committee'.tr,
+                          subtitle: 'Manage your committee and member payments'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => const CommitteeView(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
 
-                        // =========================
-                        // UDHAAR
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.account_balance_wallet_rounded,
                           iconColor: const Color(0xFF3A5BA0),
                           emoji: '🧮',
-                          title: 'Udhaar',
-                          subtitle: 'Money you lent out and money you owe',
+                          title: 'Udhaar'.tr,
+                          subtitle: 'Money you lent out and money you owe'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => UdhaarView(),
                             binding: UdhaarBinding(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
 
-                        // =========================
-                        // PROFILE
-                        // =========================
                         _buildDrawerOption(
                           context: context,
                           icon: Icons.person_rounded,
                           iconColor: const Color(0xFFF2C14E),
-                          title: 'Profile',
-                          subtitle: 'Manage your profile and account settings',
+                          title: 'Profile'.tr,
+                          subtitle: 'Manage your profile and account settings'.tr,
                           onTap: () => _closeDrawerAndNavigate(
                             () => const SettingsView(),
                           ),
@@ -399,20 +368,19 @@ class HomeScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hello, $_userName 👋',
+                            '${'Hello'.tr}, $_userName 👋',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color:
-                                  theme.textTheme.titleLarge?.color ??
-                                  (isDarkMode ? Colors.white : Colors.black87),
+                              color: theme.textTheme.titleLarge?.color ??
+                                  (isDarkMode
+                                      ? Colors.white
+                                      : Colors.black87),
                             ),
                           ),
-
                           const SizedBox(height: 2),
-
                           Text(
-                            'Welcome back to Expense Mate',
+                            'Welcome back to Expense Mate'.tr,
                             style: TextStyle(
                               fontSize: 13,
                               color: isDarkMode
@@ -437,7 +405,6 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 20),
 
                   Obx(
@@ -448,7 +415,6 @@ class HomeScreen extends StatelessWidget {
                       totalExpense: reportController.totalExpense,
                     ),
                   ),
-
                   const SizedBox(height: 24),
 
                   Row(
@@ -456,24 +422,21 @@ class HomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Recent Transactions',
+                        'Recent Transactions'.tr,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color:
-                              theme.textTheme.titleMedium?.color ??
+                          color: theme.textTheme.titleMedium?.color ??
                               (isDarkMode ? Colors.white : Colors.black87),
                         ),
                       ),
-
                       SizedBox(
                         height: 38,
                         child: TextButton(
                           onPressed: () => Get.to(() => TransactionsView()),
                           style: TextButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF4CAF50,
-                            ).withOpacity(0.12),
+                            backgroundColor:
+                                const Color(0xFF4CAF50).withValues(alpha: 0.12),
                             foregroundColor: const Color(0xFF2E7D32),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
@@ -483,9 +446,9 @@ class HomeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'View All',
-                            style: TextStyle(
+                          child: Text(
+                            'View All'.tr,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
                             ),
@@ -494,7 +457,6 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 12),
 
                   Obx(() {
@@ -514,9 +476,7 @@ class HomeScreen extends StatelessWidget {
                                   ? Colors.grey.shade600
                                   : Colors.grey.shade400,
                             ),
-
                             const SizedBox(height: 8),
-
                             Text(
                               'No recent transactions found.',
                               style: TextStyle(
@@ -538,7 +498,8 @@ class HomeScreen extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: recentItems.length,
                       itemBuilder: (context, index) {
-                        final TransactionModel transaction = recentItems[index];
+                        final TransactionModel transaction =
+                            recentItems[index];
 
                         final bool isIncome = transaction.isIncome;
 
@@ -549,8 +510,8 @@ class HomeScreen extends StatelessWidget {
 
                         final String displayTitle =
                             transaction.title.trim().isEmpty
-                            ? categoryName
-                            : transaction.title;
+                                ? categoryName
+                                : transaction.title;
 
                         return Card(
                           elevation: 0,
@@ -560,22 +521,22 @@ class HomeScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 6.0),
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 2,
                               ),
-
                               leading: CircleAvatar(
                                 radius: 22,
                                 backgroundColor: isIncome
                                     ? (isDarkMode
-                                          ? const Color(0xFF1E382B)
-                                          : const Color(0xFFEBF9EE))
+                                        ? const Color(0xFF1E382B)
+                                        : const Color(0xFFEBF9EE))
                                     : (isDarkMode
-                                          ? const Color(0xFF3B1E1E)
-                                          : const Color(0xFFFDEEEE)),
+                                        ? const Color(0xFF3B1E1E)
+                                        : const Color(0xFFFDEEEE)),
                                 child: Icon(
                                   isIncome
                                       ? Icons.arrow_downward_rounded
@@ -586,7 +547,6 @@ class HomeScreen extends StatelessWidget {
                                   size: 20,
                                 ),
                               ),
-
                               title: Text(
                                 displayTitle,
                                 maxLines: 1,
@@ -599,7 +559,6 @@ class HomeScreen extends StatelessWidget {
                                       : Colors.black87,
                                 ),
                               ),
-
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
@@ -614,7 +573,6 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-
                               trailing: Text(
                                 "${isIncome ? '+' : '-'}PKR ${transaction.amount.toStringAsFixed(2)}",
                                 style: TextStyle(
@@ -646,8 +604,6 @@ class HomeScreen extends StatelessWidget {
   Widget _buildDrawerOption({
     required BuildContext context,
     required IconData icon,
-    // Emoji keeps the drawer in step with the Categories screen, where
-    // the same style is already used.
     String? emoji,
     required Color iconColor,
     required String title,
@@ -663,7 +619,7 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -682,17 +638,18 @@ class HomeScreen extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
                   child: emoji == null
                       ? Icon(icon, color: iconColor, size: 24)
-                      : Text(emoji, style: const TextStyle(fontSize: 23)),
+                      : Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 23),
+                        ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,9 +664,7 @@ class HomeScreen extends StatelessWidget {
                               : const Color(0xFF212121),
                         ),
                       ),
-
                       const SizedBox(height: 2),
-
                       Text(
                         subtitle,
                         maxLines: 1,
@@ -724,7 +679,6 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
