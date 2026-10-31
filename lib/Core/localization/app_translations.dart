@@ -53,6 +53,7 @@ class AppTranslations extends Translations {
     'internet': 'انٹرنیٹ',
     'entertainment': 'تفریح',
     'fitness': 'فٹنس',
+    'gym': 'جم',
     'gifts': 'تحائف',
     'beauty': 'خوبصورتی',
     'pet': 'پالتو جانور',
@@ -76,10 +77,7 @@ class AppTranslations extends Translations {
     'dec': 'دسمبر',
   };
 
-  static String localizeCategoryRecord(
-    String value, {
-    String? languageCode,
-  }) {
+  static String localizeCategoryRecord(String value, {String? languageCode}) {
     if ((languageCode ?? Get.locale?.languageCode)?.toLowerCase() != 'ur') {
       return value;
     }
@@ -322,7 +320,13 @@ class AppTranslations extends Translations {
     'Default currency': 'Default currency',
     'Delete currency': 'Delete currency',
     'Set an app PIN': 'Set an app PIN',
+    'Change app PIN': 'Change app PIN',
     'Lock the app with four digits': 'Lock the app with four digits',
+    'Asked for each time the app opens': 'Asked for each time the app opens',
+    'Unlock with fingerprint': 'Unlock with fingerprint',
+    'Your PIN still works if it fails': 'Your PIN still works if it fails',
+    'Remove app PIN': 'Remove app PIN',
+    'The app will open without asking': 'The app will open without asking',
     'Transaction Sound': 'Transaction Sound',
     'Play a short tone when an entry is saved':
         'Play a short tone when an entry is saved',
@@ -344,6 +348,10 @@ class AppTranslations extends Translations {
     'Receive reminders for upcoming bills':
         'Receive reminders for upcoming bills',
     'Delete Account': 'Delete Account',
+    'Account': 'Account',
+    'Default Currency': 'Default Currency',
+    'Sign out from your ExpenseMate account':
+        'Sign out from your ExpenseMate account',
     'Permanently delete your account and data':
         'Permanently delete your account and data',
     'Expense management made simple': 'Expense management made simple',
@@ -366,6 +374,35 @@ class AppTranslations extends Translations {
     'Logout?': 'Logout?',
     'Are you sure you want to logout from your ExpenseMate account?':
         'Are you sure you want to logout from your ExpenseMate account?',
+    'Profile Updated': 'Profile Updated',
+    'Name and email updated successfully.':
+        'Name and email updated successfully.',
+    'Name updated successfully.': 'Name updated successfully.',
+    'Email updated successfully.': 'Email updated successfully.',
+    'Password updated successfully.': 'Password updated successfully.',
+    'Confirmation Required': 'Confirmation Required',
+    'A confirmation email has been sent to your new email address. Please confirm it before the email change becomes active.':
+        'A confirmation email has been sent to your new email address. Please confirm it before the email change becomes active.',
+    'Profile database update failed.': 'Profile database update failed.',
+    'Unable to update profile. Please try again.':
+        'Unable to update profile. Please try again.',
+    'Unable to update name.': 'Unable to update name.',
+    'Unable to update profile picture.': 'Unable to update profile picture.',
+    'Unable to clear profile picture.': 'Unable to clear profile picture.',
+    'Your profile picture has been cleared.':
+        'Your profile picture has been cleared.',
+    'Profile Picture Removed': 'Profile Picture Removed',
+    'Success': 'Success',
+    'Logged Out': 'Logged Out',
+    'You have been logged out successfully.':
+        'You have been logged out successfully.',
+    'Unable to logout. Please try again.':
+        'Unable to logout. Please try again.',
+    'Account Deleted': 'Account Deleted',
+    'Your ExpenseMate account has been permanently deleted.':
+        'Your ExpenseMate account has been permanently deleted.',
+    'Unable to delete account. Please try again.':
+        'Unable to delete account. Please try again.',
     'Delete Account?': 'Delete Account?',
     'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
         'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.',
@@ -399,7 +436,15 @@ class AppTranslations extends Translations {
     'Default currency': 'ڈیفالٹ کرنسی',
     'Delete currency': 'کرنسی حذف کریں',
     'Set an app PIN': 'ایپ کا PIN سیٹ کریں',
+    'Change app PIN': 'ایپ کا PIN تبدیل کریں',
     'Lock the app with four digits': 'ایپ کو چار ہندسوں والے PIN سے لاک کریں',
+    'Asked for each time the app opens':
+        'ایپ کھولنے پر ہر بار PIN طلب کیا جائے گا',
+    'Unlock with fingerprint': 'فنگر پرنٹ سے اَن لاک کریں',
+    'Your PIN still works if it fails':
+        'فنگر پرنٹ ناکام ہونے پر بھی PIN استعمال کیا جا سکتا ہے',
+    'Remove app PIN': 'ایپ کا PIN ہٹائیں',
+    'The app will open without asking': 'ایپ کھولنے پر PIN نہیں مانگا جائے گا',
     'Transaction Sound': 'لین دین کی آواز',
     'Play a short tone when an entry is saved':
         'اندراج محفوظ ہونے پر مختصر آواز چلائیں',
@@ -421,6 +466,10 @@ class AppTranslations extends Translations {
     'Receive reminders for upcoming bills':
         'آنے والے بلوں کی یاددہانیاں حاصل کریں',
     'Delete Account': 'اکاؤنٹ حذف کریں',
+    'Account': 'اکاؤنٹ',
+    'Default Currency': 'ڈیفالٹ کرنسی',
+    'Sign out from your ExpenseMate account':
+        'اپنے ExpenseMate اکاؤنٹ سے لاگ آؤٹ کریں',
     'Permanently delete your account and data':
         'اپنا اکاؤنٹ اور ڈیٹا مستقل حذف کریں',
     'Expense management made simple': 'اخراجات کا آسان انتظام',
@@ -443,6 +492,37 @@ class AppTranslations extends Translations {
     'Logout?': 'لاگ آؤٹ کریں؟',
     'Are you sure you want to logout from your ExpenseMate account?':
         'کیا آپ واقعی اپنے ExpenseMate اکاؤنٹ سے لاگ آؤٹ کرنا چاہتے ہیں؟',
+    'Profile Updated': 'پروفائل اپ ڈیٹ ہو گئی',
+    'Name and email updated successfully.':
+        'نام اور ای میل کامیابی سے اپ ڈیٹ ہو گئے۔',
+    'Name updated successfully.': 'نام کامیابی سے اپ ڈیٹ ہو گیا۔',
+    'Email updated successfully.': 'ای میل کامیابی سے اپ ڈیٹ ہو گئی۔',
+    'Password updated successfully.': 'پاس ورڈ کامیابی سے اپ ڈیٹ ہو گیا۔',
+    'Confirmation Required': 'تصدیق ضروری ہے',
+    'A confirmation email has been sent to your new email address. Please confirm it before the email change becomes active.':
+        'آپ کے نئے ای میل پتے پر تصدیقی ای میل بھیج دی گئی ہے۔ ای میل کی تبدیلی فعال ہونے سے پہلے اس کی تصدیق کریں۔',
+    'Profile database update failed.':
+        'پروفائل کا ڈیٹا بیس اپ ڈیٹ نہیں ہو سکا۔',
+    'Unable to update profile. Please try again.':
+        'پروفائل اپ ڈیٹ نہیں ہو سکی۔ براہِ کرم دوبارہ کوشش کریں۔',
+    'Unable to update name.':
+        'نام اپ ڈیٹ نہیں ہو سکا۔ براہِ کرم دوبارہ کوشش کریں۔',
+    'Unable to update profile picture.': 'پروفائل تصویر اپ ڈیٹ نہیں ہو سکی۔',
+    'Unable to clear profile picture.': 'پروفائل تصویر ہٹائی نہیں جا سکی۔',
+    'Your profile picture has been cleared.':
+        'آپ کی پروفائل تصویر ہٹا دی گئی ہے۔',
+    'Profile Picture Removed': 'پروفائل تصویر ہٹا دی گئی',
+    'Success': 'کامیابی',
+    'Logged Out': 'لاگ آؤٹ ہو گیا',
+    'You have been logged out successfully.':
+        'آپ کامیابی سے لاگ آؤٹ ہو گئے ہیں۔',
+    'Unable to logout. Please try again.':
+        'لاگ آؤٹ نہیں ہو سکا۔ براہِ کرم دوبارہ کوشش کریں۔',
+    'Account Deleted': 'اکاؤنٹ حذف ہو گیا',
+    'Your ExpenseMate account has been permanently deleted.':
+        'آپ کا ExpenseMate اکاؤنٹ مستقل طور پر حذف کر دیا گیا ہے۔',
+    'Unable to delete account. Please try again.':
+        'اکاؤنٹ حذف نہیں ہو سکا۔ براہِ کرم دوبارہ کوشش کریں۔',
     'Delete Account?': 'اکاؤنٹ حذف کریں؟',
     'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.':
         'یہ عمل مستقل ہے۔ آپ کا ExpenseMate اکاؤنٹ اور اس سے متعلق ڈیٹا حذف ہو جائے گا۔ آپ اپنا اکاؤنٹ واپس حاصل نہیں کر سکیں گے۔',
@@ -1711,6 +1791,29 @@ class AppTranslations extends Translations {
     'Category Budgets': 'Category Budgets',
     'Over by @amount': 'Over by @amount',
     'No categories found.': 'No categories found.',
+    'Budget Cycle': 'Budget Cycle',
+    'Select Month Start': 'Select Month Start',
+    'Updates on its own every month': 'Updates on its own every month',
+    'Reset Reminder': 'Reset Reminder',
+    'Remind me': 'Remind me',
+    '1 day before': '1 day before',
+    '@count days before': '@count days before',
+    'Budget resets on its own each cycle.':
+        'Budget resets on its own each cycle.',
+    'Budget will not reset automatically.':
+        'Budget will not reset automatically.',
+    'Last Reset': 'Last Reset',
+    'Next Reset': 'Next Reset',
+    'Set Limit for @category': 'Set Limit for @category',
+    'Set Total Monthly Budget': 'Set Total Monthly Budget',
+    'Edit limit': 'Edit limit',
+    'Budget History': 'Budget History',
+    'Saved across all cycles': 'Saved across all cycles',
+    'Overspent across all cycles': 'Overspent across all cycles',
+    'Add category budget': 'Add category budget',
+    'Budget cycle settings': 'Budget cycle settings',
+    'Budget history': 'Budget history',
+    'Clear history': 'Clear history',
     'No upcoming bills': 'No upcoming bills',
     'No overdue bills': 'No overdue bills',
     'No paid bills yet': 'No paid bills yet',
@@ -2570,6 +2673,29 @@ class AppTranslations extends Translations {
     'Category Budgets': 'زمرہ وار بجٹ',
     'Over by @amount': '@amount زیادہ خرچ',
     'No categories found.': 'کوئی زمرہ نہیں ملا۔',
+    'Budget Cycle': 'بجٹ سائیکل',
+    'Select Month Start': 'مہینے کا آغاز منتخب کریں',
+    'Updates on its own every month': 'ہر ماہ خود بخود اپ ڈیٹ ہوتا ہے',
+    'Reset Reminder': 'ری سیٹ کی یاددہانی',
+    'Remind me': 'مجھے یاد دلائیں',
+    '1 day before': '1 دن پہلے',
+    '@count days before': '@count دن پہلے',
+    'Budget resets on its own each cycle.':
+        'بجٹ ہر سائیکل میں خودکار طور پر ری سیٹ ہوتا ہے۔',
+    'Budget will not reset automatically.':
+        'بجٹ خودکار طور پر ری سیٹ نہیں ہوگا۔',
+    'Last Reset': 'آخری ری سیٹ',
+    'Next Reset': 'اگلا ری سیٹ',
+    'Set Limit for @category': '@category کی حد مقرر کریں',
+    'Set Total Monthly Budget': 'کل ماہانہ بجٹ مقرر کریں',
+    'Edit limit': 'حد میں ترمیم کریں',
+    'Budget History': 'بجٹ کی ہسٹری',
+    'Saved across all cycles': 'تمام سائیکلوں میں بچت',
+    'Overspent across all cycles': 'تمام سائیکلوں میں حد سے زیادہ خرچ',
+    'Add category budget': 'زمرے کا بجٹ شامل کریں',
+    'Budget cycle settings': 'بجٹ سائیکل کی ترتیبات',
+    'Budget history': 'بجٹ کی ہسٹری',
+    'Clear history': 'ہسٹری صاف کریں',
     'No upcoming bills': 'کوئی آنے والا بل نہیں',
     'No overdue bills': 'کوئی تاخیر شدہ بل نہیں',
     'No paid bills yet': 'ابھی تک کوئی بل ادا نہیں ہوا',

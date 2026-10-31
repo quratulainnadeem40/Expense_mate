@@ -1,4 +1,5 @@
 import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../model/budget_model.dart';
@@ -14,7 +15,7 @@ class BudgetItem extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       child: ListTile(
         title: Text(
-          budget.categoryName.tr,
+          AppTranslations.localizeCategoryRecord(budget.categoryName),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(

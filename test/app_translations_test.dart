@@ -74,6 +74,163 @@ void main() {
     },
   );
 
+  test('Urdu covers the complete budget screen and budget history', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Live Budget',
+      'Budget Cycle',
+      'Select Month Start',
+      'Updates on its own every month',
+      'Reset Reminder',
+      'Remind me',
+      '1 day before',
+      '@count days before',
+      'Budget resets on its own each cycle.',
+      'Budget will not reset automatically.',
+      'Last Reset',
+      'Next Reset',
+      'Reset Budget Now',
+      'Change Budget Start Date?',
+      'Set Limit for @category',
+      'Set Total Monthly Budget',
+      'Edit limit',
+      'Add Custom Category',
+      'Budget cycle settings',
+      'Budget history',
+      'Clear history',
+      'Budget Exceeded',
+      'Category Budgets',
+      'Add category budget',
+      'Budget History',
+      'Saved across all cycles',
+      'Overspent across all cycles',
+      'Automatic reset',
+      'Manual reset',
+      'Saved',
+      'Over by',
+      'Limit',
+      'Spent',
+      'Hide categories',
+      'Show @count categories',
+      'No history yet',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+
+    expect(
+      AppTranslations.localizeCategoryRecord('Gym', languageCode: 'ur'),
+      'جم',
+    );
+  });
+
+  test('Urdu covers the profile, account actions, and About screen', () {
+    final translations = AppTranslations().keys;
+    final urdu = translations['ur']!;
+    final english = translations['en']!;
+
+    for (final key in [
+      'Profile',
+      'Appearance',
+      'Dark Mode',
+      'Dark theme is enabled',
+      'Light theme is enabled',
+      'Currency',
+      'Default Currency',
+      'Language',
+      'Hide amounts',
+      'Balances are hidden on the home screen',
+      'Balances are visible on the home screen',
+      'Notifications',
+      'Bill Notifications',
+      'Receive reminders for upcoming bills',
+      'Change app PIN',
+      'Set an app PIN',
+      'Asked for each time the app opens',
+      'Lock the app with four digits',
+      'Unlock with fingerprint',
+      'Your PIN still works if it fails',
+      'Remove app PIN',
+      'The app will open without asking',
+      'Transaction Sound',
+      'Play a short tone when an entry is saved',
+      'Account',
+      'Sign out from your ExpenseMate account',
+      'Logout',
+      'Delete Account',
+      'Permanently delete your account and data',
+      'ExpenseMate Account',
+      'Entries',
+      'Wallets',
+      'Goals',
+      'Edit profile',
+      'Update your account details',
+      'ACCOUNT DETAILS',
+      'Name',
+      'Email',
+      'New Password',
+      'Leave empty to keep current password',
+      'Leave password empty if you do not want to change it.',
+      'Change',
+      'Clear',
+      'Save changes',
+      'Please enter your name.',
+      'Password must be at least 6 characters.',
+      'No logged-in account found.',
+      'Profile Updated',
+      'Name and email updated successfully.',
+      'Name updated successfully.',
+      'Email updated successfully.',
+      'Password updated successfully.',
+      'Confirmation Required',
+      'A confirmation email has been sent to your new email address. Please confirm it before the email change becomes active.',
+      'Profile database update failed.',
+      'Unable to update profile. Please try again.',
+      'Unable to update name.',
+      'Profile Picture Removed',
+      'Your profile picture has been cleared.',
+      'Unable to update profile picture.',
+      'Unable to clear profile picture.',
+      'Logout?',
+      'Are you sure you want to logout from your ExpenseMate account?',
+      'You have been logged out successfully.',
+      'Unable to logout. Please try again.',
+      'Delete Account?',
+      'This action is permanent. Your ExpenseMate account and associated account data will be deleted. You will not be able to recover your account.',
+      'This cannot be undone.',
+      'Your ExpenseMate account has been permanently deleted.',
+      'Unable to delete account. Please try again.',
+      'About',
+      'Expense management made simple',
+      'Version 1.0.0',
+      'What is Expense Mate?',
+      'What each screen does',
+      'Your data',
+      'Your transactions are tied to your account and synced securely to the cloud, so you keep your history even if you change your phone. Only you can see your data — it is never sold or shared with advertisers.',
+      'Password protected account',
+      'Automatic cloud backup',
+      'No ads, no data selling',
+      'App information',
+      'Version',
+      'Developer',
+      'Package',
+      'Support & legal',
+      'Contact support',
+      'Website',
+      'Privacy policy',
+      'Terms of service',
+      'Made with Flutter',
+      'Version @version',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+
+    expect(english['Account'], 'Account');
+    expect(urdu['Version @version'], contains('@version'));
+  });
+
   test('Urdu covers the Home and Categories labels shown in the app', () {
     final urdu = AppTranslations().keys['ur']!;
 
