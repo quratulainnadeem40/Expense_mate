@@ -1,9 +1,11 @@
 import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class CategoryHistoryScreen extends StatelessWidget {
   const CategoryHistoryScreen({super.key});
@@ -112,10 +114,12 @@ class CategoryHistoryScreen extends StatelessWidget {
               );
               final title = transaction.title.trim().isNotEmpty
                   ? transaction.title.trim().toLowerCase() ==
-                          categoryName.trim().toLowerCase()
-                      ? categoryName.tr
-                      : transaction.title.trim()
-                  : categoryName.tr;
+                            categoryName.trim().toLowerCase()
+                        ? AppTranslations.localizeCategoryRecord(categoryName)
+                        : AppTranslations.localizeCategoryRecord(
+                            transaction.title.trim(),
+                          )
+                  : AppTranslations.localizeCategoryRecord(categoryName);
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -153,8 +157,8 @@ class CategoryHistoryScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${categoryName.tr} • '
-                            '${Formatters.formatDate(transaction.transactionDate)}',
+                            '${AppTranslations.localizeCategoryRecord(categoryName)} • '
+                            '${_formatDate(transaction.transactionDate)}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -183,5 +187,10 @@ class CategoryHistoryScreen extends StatelessWidget {
         );
       }),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final month = DateFormat('MMM').format(date).tr;
+    return '$month ${date.day}, ${date.year}';
   }
 }

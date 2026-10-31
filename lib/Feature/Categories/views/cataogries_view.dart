@@ -12,6 +12,7 @@ import 'package:expense_mate/Feature/Categories/controller/categories_controller
 import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
@@ -165,8 +166,23 @@ class _CategoriesViewState extends State<CategoriesView>
     );
   }
 
-  String _formatCycleDate(DateTime date) =>
-      DateFormat('d MMM yyyy').format(date);
+  String _formatCycleDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1].tr} ${date.year}';
+  }
 
   String _formatCategoryAmount(double amount) {
     return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
@@ -247,7 +263,9 @@ class _CategoriesViewState extends State<CategoriesView>
         .toList();
 
     final categoryNames = selectedCategories
-        .map((category) => category.name)
+        .map(
+          (category) => AppTranslations.localizeCategoryRecord(category.name),
+        )
         .toList();
     final linkedCount = selectedCategories.fold<int>(
       0,
@@ -369,14 +387,14 @@ class _CategoriesViewState extends State<CategoriesView>
     final endDate = period.end;
 
     final message = automatic
-        ? 'Transactions are present. Category totals will be tracked from '
-              '${_formatCycleDate(startDate)} to ${_formatCycleDate(endDate)} '
-              'and will start a new cycle automatically on day $startDay. '
-              'Your transactions and history will not be deleted.'
-        : 'This will start a new category tracking cycle today, '
-              '${_formatCycleDate(startDate)}. Current category totals will '
-              'start from zero. Transactions and reports history will remain '
-              'available and nothing will be deleted.';
+        ? 'Transactions are present. Category totals will be tracked from @start to @end and will start a new cycle automatically on day @day. Your transactions and history will not be deleted.'
+              .trParams({
+                'start': _formatCycleDate(startDate),
+                'end': _formatCycleDate(endDate),
+                'day': '$startDay',
+              })
+        : 'This will start a new category tracking cycle today, @start. Current category totals will start from zero. Transactions and reports history will remain available and nothing will be deleted.'
+              .trParams({'start': _formatCycleDate(startDate)});
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -384,7 +402,7 @@ class _CategoriesViewState extends State<CategoriesView>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
-          automatic ? 'Confirm category cycle' : 'Reset category totals?',
+          (automatic ? 'Confirm category cycle' : 'Reset category totals?').tr,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         ),
         content: Text(
@@ -398,7 +416,7 @@ class _CategoriesViewState extends State<CategoriesView>
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(automatic ? 'Confirm' : 'Reset totals'),
+            child: Text((automatic ? 'Confirm' : 'Reset totals').tr),
           ),
         ],
       ),
@@ -1088,8 +1106,10 @@ class _CategoriesViewState extends State<CategoriesView>
             children: [
               Text(
                 isSelectionMode
-                    ? '${selectedCategoryIds.length} selected'
-                    : 'Categories',
+                    ? '@count selected'.trParams({
+                        'count': '${selectedCategoryIds.length}',
+                      })
+                    : 'Categories'.tr,
                 style: AppTextStyles.headingMedium(
                   isDark,
                 ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
@@ -1150,12 +1170,10 @@ class _CategoriesViewState extends State<CategoriesView>
           ],
         ),
 
-        
         body: Stack(
           children: [
             GestureDetector(
               onTap: () {
-                
                 if (isSelectionMode) {
                   _exitSelectionMode();
                 }
@@ -1289,7 +1307,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         height: 48,
 
                                         decoration: BoxDecoration(
-                                          color: baseColor.withValues(alpha: 0.18),
+                                          color: baseColor.withValues(
+                                            alpha: 0.18,
+                                          ),
                                           shape: BoxShape.circle,
                                         ),
 
@@ -1312,7 +1332,9 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                           children: [
                                             Text(
-                                              category.name.tr,
+                                              AppTranslations.localizeCategoryRecord(
+                                                category.name,
+                                              ),
                                               style:
                                                   AppTextStyles.bodyLarge(
                                                     isDark,
@@ -1398,7 +1420,9 @@ class _CategoriesViewState extends State<CategoriesView>
                       onTap: () {
                         isDrawerOpen.value = false;
                       },
-                      child: Container(color: Colors.black.withValues(alpha: 0.5)),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
                     ),
 
                     Align(
@@ -1547,7 +1571,9 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1708,14 +1734,14 @@ class _CategoriesViewState extends State<CategoriesView>
                   onPressed: _openAddCategoryDialog,
 
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
-label: Text(
-  'Add'.tr,
-  style: const TextStyle(
-    color: Colors.white,
-    fontWeight: FontWeight.w600,
-    fontSize: 14,
-  ),
-),
+                  label: Text(
+                    'Add'.tr,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
@@ -1905,7 +1931,8 @@ label: Text(
                         iconColor: const Color(0xFF00695C),
                         emoji: '🤝',
                         title: 'Digital Committee'.tr,
-                        subtitle: 'Manage your committee and member payments'.tr,
+                        subtitle:
+                            'Manage your committee and member payments'.tr,
                         onTap: () =>
                             _closeDrawerAndNavigate(() => CommitteeView()),
                       ),

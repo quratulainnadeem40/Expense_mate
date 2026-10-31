@@ -49,6 +49,31 @@ void main() {
     }
   });
 
+  test(
+    'category records use reviewed Urdu terms without changing custom text',
+    () {
+      expect(
+        AppTranslations.localizeCategoryRecord('food', languageCode: 'ur'),
+        'کھانا',
+      );
+      expect(
+        AppTranslations.localizeCategoryRecord('Education', languageCode: 'ur'),
+        'تعلیم',
+      );
+      expect(
+        AppTranslations.localizeCategoryRecord(
+          'Custom market 24',
+          languageCode: 'ur',
+        ),
+        'Custom market 24',
+      );
+      expect(
+        AppTranslations.localizeCategoryRecord('food', languageCode: 'en'),
+        'food',
+      );
+    },
+  );
+
   test('Urdu covers the Home and Categories labels shown in the app', () {
     final urdu = AppTranslations().keys['ur']!;
 
@@ -65,6 +90,16 @@ void main() {
       'Set Up Your Category Cycle',
       'Cycle Start Day',
       'Category Reset Mode',
+      '@count selected',
+      'Total: @amount',
+      '1 Transaction',
+      'Transactions: @count',
+      'No transactions found for this category in the selected period.',
+      'Category Type',
+      'Select Icon',
+      'Add New Category',
+      'Enter category name',
+      'Please enter category name.',
       'Education',
       'Food',
       'Bills',

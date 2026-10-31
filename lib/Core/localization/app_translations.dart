@@ -3,6 +3,89 @@ import 'package:get/get.dart';
 
 class AppTranslations extends Translations {
   static const languageCodes = ['en', 'ur', 'ps', 'sd', 'ar', 'hi'];
+
+  static const _categoryRecordUrdu = {
+    'education': 'تعلیم',
+    'education fees': 'تعلیمی فیس',
+    'food': 'کھانا',
+    'food & dining': 'کھانا اور باہر کا کھانا',
+    'groceries': 'گروسری',
+    'grocery': 'گروسری',
+    'restaurant': 'ریستوران',
+    'meal': 'کھانا',
+    'bills': 'بل',
+    'bill': 'بل',
+    'electricity bill': 'بجلی کا بل',
+    'water bill': 'پانی کا بل',
+    'internet bill': 'انٹرنیٹ کا بل',
+    'utilities': 'یوٹیلیٹی بل',
+    'transport': 'آمدورفت',
+    'transportation': 'آمدورفت',
+    'fuel': 'ایندھن',
+    'petrol': 'پیٹرول',
+    'bus fare': 'بس کا کرایہ',
+    'taxi': 'ٹیکسی',
+    'health': 'صحت',
+    'healthcare': 'صحت کی دیکھ بھال',
+    'medical': 'طبی',
+    'medicine': 'دوا',
+    'doctor': 'ڈاکٹر',
+    'salary': 'تنخواہ',
+    'freelance': 'فری لانس',
+    'business': 'کاروبار',
+    'gift': 'تحفہ',
+    'profit': 'منافع',
+    'income': 'آمدنی',
+    'expense': 'خرچ',
+    'other': 'دیگر',
+    'pets': 'پالتو جانور',
+    'home': 'گھر',
+    'rent': 'کرایہ',
+    'house rent': 'گھر کا کرایہ',
+    'shopping': 'خریداری',
+    'clothing': 'لباس',
+    'coffee': 'کافی',
+    'mobile': 'موبائل',
+    'phone': 'فون',
+    'school fees': 'اسکول کی فیس',
+    'books': 'کتابیں',
+    'travel': 'سفر',
+    'internet': 'انٹرنیٹ',
+    'entertainment': 'تفریح',
+    'fitness': 'فٹنس',
+    'gifts': 'تحائف',
+    'beauty': 'خوبصورتی',
+    'pet': 'پالتو جانور',
+    'date': 'تاریخ',
+    'wallet': 'والٹ',
+    'note': 'نوٹ',
+    'status': 'حیثیت',
+    'no note': 'کوئی نوٹ نہیں',
+    'no wallet': 'کوئی والٹ نہیں',
+    'jan': 'جنوری',
+    'feb': 'فروری',
+    'mar': 'مارچ',
+    'apr': 'اپریل',
+    'may': 'مئی',
+    'jun': 'جون',
+    'jul': 'جولائی',
+    'aug': 'اگست',
+    'sep': 'ستمبر',
+    'oct': 'اکتوبر',
+    'nov': 'نومبر',
+    'dec': 'دسمبر',
+  };
+
+  static String localizeCategoryRecord(
+    String value, {
+    String? languageCode,
+  }) {
+    if ((languageCode ?? Get.locale?.languageCode)?.toLowerCase() != 'ur') {
+      return value;
+    }
+    return _categoryRecordUrdu[value.trim().toLowerCase()] ?? value;
+  }
+
   static Locale resolveFrameworkLocale(
     Locale? locale,
     Iterable<Locale> supportedLocales,
@@ -1403,6 +1486,7 @@ class AppTranslations extends Translations {
     'Delete @count categories and their related transaction data from the Transactions screen?':
         'Delete @count categories and their related transaction data from the Transactions screen?',
     'Delete @count categories?': 'Delete @count categories?',
+    '@count selected': '@count selected',
     'Cycle: @start – @end': 'Cycle: @start – @end',
     'Reset category totals whenever you choose. Your transactions remain saved.':
         'Reset category totals whenever you choose. Your transactions remain saved.',
@@ -1568,6 +1652,24 @@ class AppTranslations extends Translations {
     'Transactions from all categories will appear here.':
         'Transactions from all categories will appear here.',
     'Transaction Details': 'Transaction Details',
+    'Total: @amount': 'Total: @amount',
+    '1 Transaction': '1 Transaction',
+    'Transactions: @count': 'Transactions: @count',
+    'Unable to load transactions.\n@error':
+        'Unable to load transactions.\n@error',
+    'No transactions found for this category in the selected period.':
+        'No transactions found for this category in the selected period.',
+    'Deleted': 'Deleted',
+    'Transaction removed successfully': 'Transaction removed successfully',
+    'No note': 'No note',
+    'No wallet': 'No wallet',
+    'Category Type': 'Category Type',
+    'Select Icon': 'Select Icon',
+    'CATEGORY SETUP': 'CATEGORY SETUP',
+    'Add New Category': 'Add New Category',
+    'Enter category name': 'Enter category name',
+    'Please enter category name.': 'Please enter category name.',
+    '"@name" already exists for @type.': '"@name" already exists for @type.',
     'Delete category?': 'Delete category?',
     'Cycle Start Day': 'Cycle Start Day',
     'Savings Goals': 'Savings Goals',
@@ -2245,6 +2347,7 @@ class AppTranslations extends Translations {
     'Delete @count categories and their related transaction data from the Transactions screen?':
         '@count زمرے اور ان سے متعلق لین دین حذف کریں؟',
     'Delete @count categories?': '@count زمرے حذف کریں؟',
+    '@count selected': '@count منتخب',
     'Cycle: @start – @end': 'سائیکل: @start – @end',
     'Reset category totals whenever you choose. Your transactions remain saved.':
         'زمرے کے کل اعداد جب چاہیں ری سیٹ کریں۔ آپ کے لین دین محفوظ رہیں گے۔',
@@ -2411,6 +2514,24 @@ class AppTranslations extends Translations {
     'Transactions from all categories will appear here.':
         'تمام زمروں کے لین دین یہاں دکھائی دیں گے۔',
     'Transaction Details': 'لین دین کی تفصیلات',
+    'Total: @amount': 'کل: @amount',
+    '1 Transaction': '1 لین دین',
+    'Transactions: @count': 'لین دین: @count',
+    'Unable to load transactions.\n@error': 'لین دین لوڈ نہیں ہو سکے۔\n@error',
+    'No transactions found for this category in the selected period.':
+        'منتخبہ مدت میں اس زمرے کے لیے کوئی لین دین نہیں ملا۔',
+    'Deleted': 'حذف کر دیا گیا',
+    'Transaction removed successfully': 'لین دین کامیابی سے حذف کر دیا گیا',
+    'No note': 'کوئی نوٹ نہیں',
+    'No wallet': 'کوئی والٹ نہیں',
+    'Category Type': 'زمرے کی قسم',
+    'Select Icon': 'آئیکن منتخب کریں',
+    'CATEGORY SETUP': 'زمرے کی ترتیب',
+    'Add New Category': 'نیا زمرہ شامل کریں',
+    'Enter category name': 'زمرے کا نام درج کریں',
+    'Please enter category name.': 'براہِ کرم زمرے کا نام درج کریں۔',
+    '"@name" already exists for @type.':
+        '@type کے لیے "@name" پہلے سے موجود ہے۔',
     'Delete category?': 'زمرہ حذف کریں؟',
     'Cycle Start Day': 'سائیکل شروع ہونے کا دن',
     'Savings Goals': 'بچت کے اہداف',

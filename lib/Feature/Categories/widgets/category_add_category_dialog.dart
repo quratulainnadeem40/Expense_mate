@@ -1,9 +1,9 @@
-
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:uuid/uuid.dart';
 
 import '../controller/categories_controller.dart';
@@ -173,14 +173,15 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     if (!mounted) return;
 
     if (existingCategory != null) {
-      final typeLabel =
-          selectedType == 'income' ? 'Income'.tr : 'Expense'.tr;
+      final typeLabel = selectedType == 'income' ? 'Income'.tr : 'Expense'.tr;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             '"@name" already exists for @type.'.trParams({
-              'name': existingCategory.name,
+              'name': AppTranslations.localizeCategoryRecord(
+                existingCategory.name,
+              ),
               'type': typeLabel,
             }),
           ),
@@ -199,10 +200,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       type: selectedType,
     );
 
-    await controller.addCategory(
-      newCategory,
-      closeDialog: true,
-    );
+    await controller.addCategory(newCategory, closeDialog: true);
   }
 
   @override
@@ -230,12 +228,11 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.13) : Colors.transparent,
+            color: isSelected
+                ? color.withValues(alpha: 0.13)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
@@ -251,25 +248,20 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               const SizedBox(width: 7),
               Flexible(
                 child: Text(
-                  label.tr,
+                  AppTranslations.localizeCategoryRecord(label),
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isSelected
                         ? color
                         : (isDark ? Colors.white70 : Colors.black87),
-                    fontWeight:
-                        isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 14,
                   ),
                 ),
               ),
               if (isSelected) ...[
                 const SizedBox(width: 5),
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: color,
-                  size: 16,
-                ),
+                Icon(Icons.check_circle_rounded, color: color, size: 16),
               ],
             ],
           ),
@@ -292,13 +284,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       backgroundColor: surface,
       surfaceTintColor: Colors.transparent,
       elevation: 18,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 24,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       clipBehavior: Clip.antiAlias,
       titlePadding: EdgeInsets.zero,
       contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
@@ -404,10 +391,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: accent,
-                    width: 1.5,
-                  ),
+                  borderSide: const BorderSide(color: accent, width: 1.5),
                 ),
               ),
             ),
@@ -485,8 +469,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                       color: isSelected
                           ? iconColor.withValues(alpha: isDark ? 0.34 : 0.24)
                           : (isDark
-                              ? Colors.white.withValues(alpha: 0.04)
-                              : iconColor.withValues(alpha: 0.10)),
+                                ? Colors.white.withValues(alpha: 0.04)
+                                : iconColor.withValues(alpha: 0.10)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
@@ -509,10 +493,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                       children: [
                         Text(
                           emoji,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            height: 1.15,
-                          ),
+                          style: const TextStyle(fontSize: 26, height: 1.15),
                         ),
                         if (isSelected)
                           Positioned(
@@ -556,10 +537,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
           onPressed: () => Get.back(),
           style: TextButton.styleFrom(
             foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           child: Text('Cancel'.tr),
         ),
@@ -569,10 +547,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             backgroundColor: accent,
             foregroundColor: Colors.white,
             elevation: 2,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 22,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),

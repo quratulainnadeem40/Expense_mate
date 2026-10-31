@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/controller/expense_controller.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
@@ -26,8 +27,8 @@ class TransactionDetailsScreen extends StatelessWidget {
     Get.back();
 
     Get.snackbar(
-      'Deleted',
-      'Transaction removed successfully',
+      'Deleted'.tr,
+      'Transaction removed successfully'.tr,
       snackPosition: SnackPosition.BOTTOM,
     );
   }
@@ -66,10 +67,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Transaction Details'.tr),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text('Transaction Details'.tr), centerTitle: true),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -100,7 +98,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               // TITLE
               // ------------------------------------------------
               Text(
-                transaction.title,
+                AppTranslations.localizeCategoryRecord(transaction.title),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 20,
@@ -129,7 +127,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               // CATEGORY ID
               // ------------------------------------------------
               Text(
-                _categoryName.tr,
+                AppTranslations.localizeCategoryRecord(_categoryName),
                 style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
 
@@ -149,7 +147,8 @@ class TransactionDetailsScreen extends StatelessWidget {
                   children: [
                     _buildDetailRow(
                       'Date',
-                      DateFormat('MMM dd, yyyy').format(transaction.date),
+                      '${DateFormat('MMM').format(transaction.date).tr} '
+                          '${transaction.date.day}, ${transaction.date.year}',
                     ),
 
                     const Divider(height: 24),
@@ -161,7 +160,9 @@ class TransactionDetailsScreen extends StatelessWidget {
                     _buildDetailRow(
                       'Note',
                       transaction.note?.isNotEmpty == true
-                          ? transaction.note!
+                          ? AppTranslations.localizeCategoryRecord(
+                              transaction.note!,
+                            )
                           : 'No note',
                     ),
 
@@ -229,7 +230,9 @@ class TransactionDetailsScreen extends StatelessWidget {
 
   String _walletName() {
     if (!Get.isRegistered<ExpenseController>()) {
-      return transaction.walletId.isEmpty ? 'No wallet' : transaction.walletId;
+      return transaction.walletId.isEmpty
+          ? 'No wallet'
+          : AppTranslations.localizeCategoryRecord(transaction.walletId);
     }
 
     final expenseController = Get.find<ExpenseController>();
@@ -240,8 +243,10 @@ class TransactionDetailsScreen extends StatelessWidget {
       (wallet) => wallet.id == transaction.walletId,
     );
 
-    return wallet?.name ??
+    final name =
+        wallet?.name ??
         (transaction.walletId.isEmpty ? 'No wallet' : transaction.walletId);
+    return AppTranslations.localizeCategoryRecord(name);
   }
 
   // ------------------------------------------------------------
@@ -253,13 +258,16 @@ class TransactionDetailsScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+        Text(
+          title.tr,
+          style: const TextStyle(color: Colors.grey, fontSize: 14),
+        ),
 
         const SizedBox(width: 20),
 
         Flexible(
           child: Text(
-            value,
+            AppTranslations.localizeCategoryRecord(value),
             textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 14,

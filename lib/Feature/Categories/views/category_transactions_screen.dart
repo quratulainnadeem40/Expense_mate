@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 
 class CategoryTransactionsScreen extends StatefulWidget {
   final String categoryId;
@@ -54,7 +54,10 @@ class _CategoryTransactionsScreenState
       buffer.write(formatted[i]);
     }
 
-    return 'Rs. ${buffer.toString()}';
+    final currency = Get.locale?.languageCode.toLowerCase() == 'ur'
+        ? 'روپے'
+        : 'Rs.';
+    return '$currency ${buffer.toString()}';
   }
 
   String _normalizeType(dynamic type) {
@@ -87,8 +90,18 @@ class _CategoryTransactionsScreenState
     if (start == null || end == null) return '';
 
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
 
     final formattedStart = '${start.day} ${months[start.month - 1].tr}';
@@ -106,7 +119,7 @@ class _CategoryTransactionsScreenState
     if (user == null) return [];
 
     final normalizedCategoryName = _normalizeName(widget.categoryName);
-    final matchingCategoryIds = <String>{widget.categoryId};
+    final matchingCategoryIds = <String>{};
 
     final categoryResponse = await client
         .from('categories')
@@ -119,11 +132,13 @@ class _CategoryTransactionsScreenState
       if (_normalizeName(categoryName) == normalizedCategoryName) {
         final id = item['id']?.toString();
 
-        if (id != null && id.isNotEmpty) {
+        if (id != null && id.isNotEmpty && !id.startsWith('default_')) {
           matchingCategoryIds.add(id);
         }
       }
     }
+
+    if (matchingCategoryIds.isEmpty) return [];
 
     final results = <Map<String, dynamic>>[];
     final seenTransactionIds = <String>{};
@@ -151,11 +166,11 @@ class _CategoryTransactionsScreenState
     results.sort((a, b) {
       final dateA =
           DateTime.tryParse(a['transaction_date']?.toString() ?? '') ??
-              DateTime(1970);
+          DateTime(1970);
 
       final dateB =
           DateTime.tryParse(b['transaction_date']?.toString() ?? '') ??
-              DateTime(1970);
+          DateTime(1970);
 
       return dateB.compareTo(dateA);
     });
@@ -218,9 +233,7 @@ class _CategoryTransactionsScreenState
               ),
               const SizedBox(height: 14),
               Text(
-                'Total: @amount'.trParams({
-                  'amount': _formatAmount(total),
-                }),
+                'Total: @amount'.trParams({'amount': _formatAmount(total)}),
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -247,11 +260,15 @@ class _CategoryTransactionsScreenState
 
           final transactionTitle =
               transaction['title']?.toString().trim().isNotEmpty == true
-                      ? transaction['title'].toString().trim().toLowerCase() ==
-                              widget.categoryName.trim().toLowerCase()
-                          ? widget.categoryName.tr
-                          : transaction['title'].toString()
-                      : widget.categoryName.tr;
+              ? transaction['title'].toString().trim().toLowerCase() ==
+                        widget.categoryName.trim().toLowerCase()
+                    ? AppTranslations.localizeCategoryRecord(
+                        widget.categoryName,
+                      )
+                    : AppTranslations.localizeCategoryRecord(
+                        transaction['title'].toString(),
+                      )
+              : AppTranslations.localizeCategoryRecord(widget.categoryName);
 
           final transactionDate = DateTime.tryParse(
             transaction['transaction_date']?.toString() ?? '',
@@ -260,8 +277,8 @@ class _CategoryTransactionsScreenState
           final formattedDate = transactionDate == null
               ? ''
               : '${transactionDate.day.toString().padLeft(2, '0')}/'
-                  '${transactionDate.month.toString().padLeft(2, '0')}/'
-                  '${transactionDate.year}';
+                    '${transactionDate.month.toString().padLeft(2, '0')}/'
+                    '${transactionDate.year}';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
@@ -311,8 +328,7 @@ class _CategoryTransactionsScreenState
                           formattedDate,
                           style: TextStyle(
                             fontSize: 12,
-                            color:
-                                isDark ? Colors.grey[400] : Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -345,7 +361,7 @@ class _CategoryTransactionsScreenState
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(widget.categoryName.tr),
+            Text(AppTranslations.localizeCategoryRecord(widget.categoryName)),
             if (widget.periodStart != null && widget.periodEnd != null)
               Text(
                 _formatPeriod(),
@@ -371,9 +387,7 @@ class _CategoryTransactionsScreenState
                     'error': snapshot.error.toString(),
                   }),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 ),
               ),
             );
