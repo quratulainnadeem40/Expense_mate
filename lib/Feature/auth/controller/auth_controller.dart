@@ -105,11 +105,32 @@ class AuthController extends GetxController {
       );
 
       if (response.user != null) {
-        Get.snackbar(
-          'Welcome',
-          'Login successful',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+  // Send successful login notification email.
+  try {
+    final emailResponse = await _supabase.functions.invoke(
+      'send-login-email',
+    );
+
+    if (emailResponse.status == 200) {
+      debugPrint('LOGIN EMAIL: Request accepted successfully.');
+    } else {
+      debugPrint(
+        'LOGIN EMAIL: Request failed with status '
+        '${emailResponse.status}',
+      );
+    }
+  } catch (e) {
+    // Email failure should not prevent the user from logging in.
+    debugPrint('LOGIN EMAIL ERROR: $e');
+  }
+
+  Get.snackbar(
+    'Welcome',
+    'Login successful',
+    snackPosition: SnackPosition.BOTTOM,
+  );
+
+
 
         // Straight in if a PIN already exists on this phone, otherwise
         // offer to create one. Skipping is allowed, so signing in never
