@@ -1646,8 +1646,8 @@ class AppTranslations extends Translations {
     'Month Start': 'Month Start',
     'Budget cycle': 'Budget cycle',
     'Session expired': 'Session expired',
-    'For your security, you were signed out after 1 minute of inactivity. Log in again to continue.':
-        'For your security, you were signed out after 1 minute of inactivity. Log in again to continue.',
+    'For your security, you were signed out after 2 minutes of inactivity. Log in again to continue.':
+        'For your security, you were signed out after 2 minutes of inactivity. Log in again to continue.',
     'Login again': 'Login again',
     'Unable to end your session. Please try logging in again.':
         'Unable to end your session. Please try logging in again.',
@@ -2531,8 +2531,8 @@ class AppTranslations extends Translations {
     'Month Start': 'مہینے کا آغاز',
     'Budget cycle': 'بجٹ سائیکل',
     'Session expired': 'سیشن ختم ہو گیا',
-    'For your security, you were signed out after 1 minute of inactivity. Log in again to continue.':
-        'آپ کی سکیورٹی کے لیے ایک منٹ تک غیر فعال رہنے پر آپ کو لاگ آؤٹ کر دیا گیا۔ جاری رکھنے کے لیے دوبارہ لاگ اِن کریں۔',
+    'For your security, you were signed out after 2 minutes of inactivity. Log in again to continue.':
+        'آپ کی سکیورٹی کے لیے دو منٹ تک غیر فعال رہنے پر آپ کو لاگ آؤٹ کر دیا گیا۔ جاری رکھنے کے لیے دوبارہ لاگ اِن کریں۔',
     'Login again': 'دوبارہ لاگ اِن کریں',
     'Unable to end your session. Please try logging in again.':
         'آپ کا سیشن ختم نہیں ہو سکا۔ براہِ کرم دوبارہ لاگ اِن کرنے کی کوشش کریں۔',

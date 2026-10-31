@@ -78,9 +78,8 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
     super.dispose();
   }
 
-  /// Locks the app again once it has been in the background long
-  /// enough. The grace period means glancing at a notification does not
-  /// force the PIN to be typed again.
+  /// Requires local authentication after two minutes away when a PIN is
+  /// configured; otherwise the signed-in session must be renewed.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -90,7 +89,6 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       _backgroundedAt ??= DateTime.now();
-      if (pin.isPinSet) pin.onBackgrounded();
       return;
     }
 
@@ -98,31 +96,39 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
 
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;
-    if (backgroundedAt != null &&
-        DateTime.now().difference(backgroundedAt) >= _sessionTimeout &&
-        Supabase.instance.client.auth.currentSession != null) {
+    if (backgroundedAt == null ||
+        DateTime.now().difference(backgroundedAt) < _sessionTimeout) {
+      return;
+    }
+
+    if (Supabase.instance.client.auth.currentSession == null) {
+      if (Get.currentRoute != AppRoutes.login &&
+          Get.currentRoute != AppRoutes.splash) {
+        Get.offAllNamed(AppRoutes.login);
+      }
+      return;
+    }
+
+    if (!pin.isPinSet) {
       unawaited(_expireSession());
       return;
     }
 
-    if (pin.isPinSet && pin.shouldLockOnResume()) {
-      pin.lock();
-
-      final current = Get.currentRoute;
-      if (current == AppRoutes.pinLock || current == AppRoutes.splash) {
-        return;
-      }
-
-      Get.offAllNamed(
-        AppRoutes.pinLock,
-        arguments: {PinLockView.argNextRoute: AppRoutes.home},
-      );
+    pin.lock();
+    final current = Get.currentRoute;
+    if (current == AppRoutes.pinLock || current == AppRoutes.splash) {
+      return;
     }
+
+    Get.offAllNamed(
+      AppRoutes.pinLock,
+      arguments: {PinLockView.argNextRoute: AppRoutes.home},
+    );
   }
 
   SettingsController get settingsController => widget.settingsController;
 
-  static const Duration _sessionTimeout = Duration(minutes: 1);
+  static const Duration _sessionTimeout = PinService.gracePeriod;
 
   DateTime? _backgroundedAt;
   bool _isExpiringSession = false;
@@ -186,7 +192,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
                 ],
               ),
               content: Text(
-                'For your security, you were signed out after 1 minute of '
+                'For your security, you were signed out after 2 minutes of '
                 'inactivity. Log in again to continue.'.tr,
                 textAlign: TextAlign.center,
                 style: Theme.of(
