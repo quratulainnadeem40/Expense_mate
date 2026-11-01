@@ -1118,11 +1118,6 @@ class _CategoriesViewState extends State<CategoriesView>
                     child: Text('Select'.tr),
                   ),
                   IconButton(
-                    tooltip: 'Category cycle settings'.tr,
-                    onPressed: _showCycleSetupSheet,
-                    icon: const Icon(Icons.calendar_month_rounded),
-                  ),
-                  IconButton(
                     tooltip: 'Open navigation menu'.tr,
                     icon: Icon(
                       Icons.menu_rounded,
