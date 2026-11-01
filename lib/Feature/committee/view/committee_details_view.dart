@@ -1281,11 +1281,12 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                'Tap "Add Member" to add committee members.'.tr,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: secondaryText),
-              ),
+              if (widget.membersOnly)
+                Text(
+                  'Tap "Add Member" to add committee members.'.tr,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: secondaryText),
+                ),
             ],
           ),
         ),
@@ -1483,15 +1484,15 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         ),
         centerTitle: true,
       ),
-      floatingActionButton: widget.membersOnly && widget.committeeId == null
-          ? null
-          : FloatingActionButton.extended(
+      floatingActionButton: widget.membersOnly && widget.committeeId != null
+          ? FloatingActionButton.extended(
               backgroundColor: greenAccent,
               foregroundColor: Colors.white,
               onPressed: _showMemberDialog,
               icon: const Icon(Icons.person_add_alt_1),
               label: Text('Add Member'.tr),
-            ),
+            )
+          : null,
       body: widget.membersOnly && widget.committeeId == null
           ? _buildCommitteePicker()
           : Obx(() {

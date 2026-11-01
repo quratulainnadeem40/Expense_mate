@@ -23,6 +23,7 @@ import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/transactions/view/transcatio_screen.dart';
 import 'package:expense_mate/Feature/home/controller/home_controller.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -508,10 +509,20 @@ class HomeScreen extends StatelessWidget {
                           customCategory: transaction.customCategoryName,
                         );
 
+                        final String normalizedTitle =
+                            transaction.title.trim().toLowerCase();
                         final String displayTitle =
-                            transaction.title.trim().isEmpty
+                            normalizedTitle.isEmpty
                                 ? categoryName.tr
-                                : transaction.title.trim().toLowerCase() ==
+                                : normalizedTitle == 'income'
+                                ? AppTranslations.localizeTransactionType(
+                                    transaction.title,
+                                  )
+                                : normalizedTitle == 'expense'
+                                ? AppTranslations.localizeTransactionType(
+                                    transaction.title,
+                                  )
+                                : normalizedTitle ==
                                       categoryName.trim().toLowerCase()
                                 ? categoryName.tr
                                 : transaction.title;

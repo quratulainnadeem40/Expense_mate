@@ -728,7 +728,7 @@ class UdhaarView extends GetView<UdhaarController> {
         ? 'No one by that name. Try part of the name instead.'
         : (hasAnyEntries
               ? 'Your records are under one of the other tabs above.'
-              : 'Record money you lent to someone, or took from them, and the balance with each person is kept for you.');
+              : 'Track money you lend or borrow, all in one place.');
 
     return Center(
       child: Padding(

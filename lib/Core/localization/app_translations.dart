@@ -84,6 +84,20 @@ class AppTranslations extends Translations {
     return _categoryRecordUrdu[value.trim().toLowerCase()] ?? value;
   }
 
+  static String localizeTransactionType(String value) {
+    final translationKey = switch (value.trim().toLowerCase()) {
+      'income' => 'Income',
+      'expense' => 'Expense',
+      _ => null,
+    };
+    if (translationKey == null) return value;
+
+    if (Get.locale?.languageCode.toLowerCase() == 'ur') {
+      return _urdu[translationKey] ?? translationKey;
+    }
+    return translationKey.tr;
+  }
+
   static Locale resolveFrameworkLocale(
     Locale? locale,
     Iterable<Locale> supportedLocales,
@@ -1464,8 +1478,8 @@ class AppTranslations extends Translations {
         'No one by that name. Try part of the name instead.',
     'Your records are under one of the other tabs above.':
         'Your records are under one of the other tabs above.',
-    'Record money you lent to someone, or took from them, and the balance with each person is kept for you.':
-        'Record money you lent to someone, or took from them, and the balance with each person is kept for you.',
+    'Track money you lend or borrow, all in one place.':
+        'Track money you lend or borrow, all in one place.',
     'New udhaar': 'New udhaar',
     'I gave': 'I gave',
     'they owe me': 'they owe me',
@@ -2335,6 +2349,7 @@ class AppTranslations extends Translations {
     'people': 'افراد',
     'To receive': 'وصول کرنے ہیں',
     'To pay': 'ادا کرنے ہیں',
+    'Settled': 'طے شدہ',
     'Search a name': 'نام تلاش کریں',
     'Settled · last @date': 'طے شدہ · آخری بار @date',
     '@count open · last @date': '@count کھلے · آخری بار @date',
@@ -2352,8 +2367,8 @@ class AppTranslations extends Translations {
         'اس نام کا کوئی شخص نہیں ملا۔ نام کا کچھ حصہ لکھ کر دیکھیں۔',
     'Your records are under one of the other tabs above.':
         'آپ کے ریکارڈ اوپر موجود کسی دوسرے ٹیب میں ہیں۔',
-    'Record money you lent to someone, or took from them, and the balance with each person is kept for you.':
-        'کسی کو ادھار دی گئی یا اس سے لی گئی رقم درج کریں، ہر شخص کے ساتھ بقایا رقم محفوظ رہے گی۔',
+    'Track money you lend or borrow, all in one place.':
+        'ادھار دی گئی یا لی گئی رقم کا حساب ایک جگہ رکھیں۔',
     'New udhaar': 'نیا ادھار',
     'I gave': 'میں نے دیے',
     'they owe me': 'انہیں مجھے دینے ہیں',

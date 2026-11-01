@@ -1,5 +1,6 @@
 
 import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
 import 'package:expense_mate/Feature/udhaar/view/udhaar_view.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
@@ -688,10 +689,20 @@ class _TransactionsViewState extends State<TransactionsView>
                           customCategory: transaction.customCategoryName,
                         );
 
+                        final String normalizedTitle =
+                            transaction.title.trim().toLowerCase();
                         final String displayTitle =
-                            transaction.title.trim().isEmpty
+                            normalizedTitle.isEmpty
                                 ? categoryName.tr
-                                : transaction.title.trim().toLowerCase() ==
+                                : normalizedTitle == 'income'
+                                ? AppTranslations.localizeTransactionType(
+                                    transaction.title,
+                                  )
+                                : normalizedTitle == 'expense'
+                                ? AppTranslations.localizeTransactionType(
+                                    transaction.title,
+                                  )
+                                : normalizedTitle ==
                                       categoryName.trim().toLowerCase()
                                 ? categoryName.tr
                                 : transaction.title;
