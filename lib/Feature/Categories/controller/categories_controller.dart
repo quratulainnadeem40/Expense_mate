@@ -141,41 +141,10 @@ class CategoriesController extends GetxController {
     return day > lastDay ? lastDay : day;
   }
 
-  static List<CategoryModel> filterCategoriesForDisplay({
+  static List<CategoryModel> categoriesForDisplay({
     required Iterable<CategoryModel> categories,
-    required Iterable<TransactionModel> transactions,
   }) {
-    final transactionCategoryIds = <String>{};
-    final transactionCategoryNames = <String>{};
-
-    for (final transaction in transactions) {
-      final categoryId = transaction.categoryId.trim().toLowerCase();
-      if (categoryId.isNotEmpty) {
-        transactionCategoryIds.add(categoryId);
-      }
-
-      final customCategoryName = _normalizeCategoryName(
-        transaction.customCategoryName,
-      );
-      if (customCategoryName.isNotEmpty) {
-        transactionCategoryNames.add(customCategoryName);
-      }
-    }
-
-    return categories.where((category) {
-      if (isProtectedCategoryName(category.name)) {
-        return true;
-      }
-
-      final categoryName = _normalizeCategoryName(category.name);
-      final categoryIds = <String>{
-        category.id,
-        ...category.linkedIds,
-      }.map((id) => id.trim().toLowerCase()).where((id) => id.isNotEmpty);
-
-      return categoryIds.any(transactionCategoryIds.contains) ||
-          transactionCategoryNames.contains(categoryName);
-    }).toList();
+    return categories.toList();
   }
 
   List<CategoryModel> categoriesForType(String type) {

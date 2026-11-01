@@ -21,7 +21,6 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final CategoriesController controller = Get.find<CategoriesController>();
 
   String selectedIcon = 'food';
-  String selectedType = 'expense';
 
   final List<Map<String, dynamic>> categoryIcons = [
     {
@@ -147,6 +146,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
   ];
 
   Future<void> _saveCategory() async {
+    const categoryType = 'expense';
     final categoryName = nameController.text.trim();
 
     if (categoryName.isEmpty) {
@@ -167,14 +167,12 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     // Keep category names unique within each transaction type.
     final existingCategory = await controller.findCategoryByName(
       normalizedName,
-      type: selectedType,
+      type: categoryType,
     );
 
     if (!mounted) return;
 
     if (existingCategory != null) {
-      final typeLabel = selectedType == 'income' ? 'Income'.tr : 'Expense'.tr;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -182,7 +180,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               'name': AppTranslations.localizeCategoryRecord(
                 existingCategory.name,
               ),
-              'type': typeLabel,
+              'type': 'Expense'.tr,
             }),
           ),
           behavior: SnackBarBehavior.floating,
@@ -197,7 +195,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       icon: selectedIcon,
       colorValue: 0xFF2E7D32,
       isDefault: false,
-      type: selectedType,
+      type: categoryType,
     );
 
     await controller.addCategory(newCategory, closeDialog: true);
@@ -207,67 +205,6 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
   void dispose() {
     nameController.dispose();
     super.dispose();
-  }
-
-  Widget _buildTypeButton({
-    required String label,
-    required String type,
-    required IconData icon,
-    required Color color,
-    required bool isDark,
-  }) {
-    final bool isSelected = selectedType == type;
-
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            selectedType = type;
-          });
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(alpha: 0.13)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? color
-                  : (isDark ? Colors.white24 : Colors.black12),
-              width: isSelected ? 1.7 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 19),
-              const SizedBox(width: 7),
-              Flexible(
-                child: Text(
-                  AppTranslations.localizeCategoryRecord(label),
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isSelected
-                        ? color
-                        : (isDark ? Colors.white70 : Colors.black87),
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              if (isSelected) ...[
-                const SizedBox(width: 5),
-                Icon(Icons.check_circle_rounded, color: color, size: 16),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -393,45 +330,6 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: accent, width: 1.5),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // CATEGORY TYPE
-            Text(
-              'Category Type'.tr,
-              style: AppTextStyles.bodyMedium(isDark).copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.grey.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                children: [
-                  _buildTypeButton(
-                    label: 'Expense',
-                    type: 'expense',
-                    icon: Icons.arrow_upward_rounded,
-                    color: Colors.red,
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildTypeButton(
-                    label: 'Income',
-                    type: 'income',
-                    icon: Icons.arrow_downward_rounded,
-                    color: Colors.green,
-                    isDark: isDark,
-                  ),
-                ],
               ),
             ),
             const SizedBox(height: 20),

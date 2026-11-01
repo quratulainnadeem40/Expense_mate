@@ -182,28 +182,6 @@ class _CategoriesViewState extends State<CategoriesView>
     return '${date.day} ${months[date.month - 1].tr} ${date.year}';
   }
 
-  Widget _buildCategoryTypeBadge({
-    required String label,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: isDark ? 0.16 : 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label.tr,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-
   void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
     _scaffoldKey.currentState?.closeEndDrawer();
 
@@ -1174,9 +1152,6 @@ class _CategoriesViewState extends State<CategoriesView>
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final transactions = _transactionsController.transactions
-                    .toList();
-
                 if (controller.categoryList.isEmpty) {
                   return Center(
                     child: Text(
@@ -1186,11 +1161,9 @@ class _CategoriesViewState extends State<CategoriesView>
                   );
                 }
 
-                final categories =
-                    CategoriesController.filterCategoriesForDisplay(
-                      categories: controller.categoryList,
-                      transactions: transactions,
-                    );
+                final categories = CategoriesController.categoriesForDisplay(
+                  categories: controller.categoryList,
+                );
 
                 return Column(
                   children: [
@@ -1318,29 +1291,6 @@ class _CategoriesViewState extends State<CategoriesView>
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 16,
                                                   ),
-                                            ),
-
-                                            const SizedBox(height: 4),
-
-                                            const SizedBox(height: 6),
-                                            Wrap(
-                                              spacing: 6,
-                                              runSpacing: 4,
-                                              children: [
-                                                _buildCategoryTypeBadge(
-                                                  label:
-                                                      category.type
-                                                              .trim()
-                                                              .toLowerCase() ==
-                                                          'income'
-                                                      ? 'Income'
-                                                      : 'Expense',
-                                                  color: const Color(
-                                                    0xFFE25555,
-                                                  ),
-                                                  isDark: isDark,
-                                                ),
-                                              ],
                                             ),
                                           ],
                                         ),
