@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppTranslations extends Translations {
-  static const languageCodes = ['en', 'ur', 'ps', 'sd', 'ar', 'hi'];
+  static const languageCodes = ['en', 'ur'];
 
   static const _categoryRecordUrdu = {
     'education': 'تعلیم',
@@ -90,12 +90,7 @@ class AppTranslations extends Translations {
   ) {
     final languageCode = (locale?.languageCode ?? 'en').toLowerCase();
     final frameworkLanguageCode = switch (languageCode) {
-      'ur' || 'en' || 'ar' || 'hi' => languageCode,
-      // Flutter's Material widgets only ship with a subset of locales.
-      // Pashto and Sindhi are supported in the app translations, but they
-      // must fall back to English for framework widgets to avoid the
-      // "No MaterialLocalizations found" crash.
-      'ps' || 'sd' => 'en',
+      'ur' => 'ur',
       _ => 'en',
     };
 

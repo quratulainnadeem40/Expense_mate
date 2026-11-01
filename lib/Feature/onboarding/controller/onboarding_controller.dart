@@ -58,20 +58,17 @@ class OnboardingController extends GetxController {
   ];
 
   static const List<OnboardingCurrency> currencies = [
-    OnboardingCurrency(code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs'),
-    OnboardingCurrency(code: 'USD', name: 'US Dollar', symbol: '\u0024'),
-    OnboardingCurrency(code: 'AED', name: 'UAE Dirham', symbol: 'AED'),
+    OnboardingCurrency(code: 'PKR', name: 'Pakistani Rupees', symbol: 'Rs'),
     OnboardingCurrency(code: 'SAR', name: 'Saudi Riyal', symbol: 'SR'),
-    OnboardingCurrency(code: 'GBP', name: 'British Pound', symbol: '\u00A3'),
-    OnboardingCurrency(code: 'EUR', name: 'Euro', symbol: '\u20AC'),
-    OnboardingCurrency(code: 'INR', name: 'Indian Rupee', symbol: '\u20B9'),
-    OnboardingCurrency(code: 'CAD', name: 'Canadian Dollar', symbol: 'C\u0024'),
+    OnboardingCurrency(code: 'TRY', name: 'Turkish Lira', symbol: '\u20BA'),
+    OnboardingCurrency(code: 'AED', name: 'UAE Dirham', symbol: 'AED'),
+    OnboardingCurrency(code: 'USD', name: 'US Dollar', symbol: '\u0024'),
     OnboardingCurrency(
       code: 'AUD',
       name: 'Australian Dollar',
       symbol: 'A\u0024',
     ),
-    OnboardingCurrency(code: 'TRY', name: 'Turkish Lira', symbol: '\u20BA'),
+    OnboardingCurrency(code: 'GBP', name: 'British Pound', symbol: '\u00A3'),
   ];
 
   Box get _box => Hive.box(AppKeys.settingsBox);
@@ -90,8 +87,15 @@ class OnboardingController extends GetxController {
     // Carry over whatever is already set, so going back through
     // onboarding does not silently reset the user's currency.
     if (Hive.isBoxOpen(AppKeys.settingsBox)) {
+      final savedCurrency = _box
+          .get('currency', defaultValue: 'PKR')
+          .toString()
+          .trim()
+          .toUpperCase();
       selectedCurrency.value =
-          _box.get('currency', defaultValue: 'PKR') as String;
+          SettingsController.defaultCurrencies.contains(savedCurrency)
+          ? savedCurrency
+          : 'PKR';
 
       final savedLanguage =
           _box.get(languageKey, defaultValue: 'en').toString().trim().toLowerCase();

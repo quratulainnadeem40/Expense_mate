@@ -120,8 +120,16 @@ class SettingsView extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: 390),
             child: SingleChildScrollView(
               child: Obx(() {
-                const defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
                 final customCurrencies = controller.customCurrencies.toList();
+                const currencyNames = {
+                  'PKR': 'Pakistani Rupees',
+                  'SAR': 'Saudi Riyal',
+                  'TRY': 'Turkish Lira',
+                  'AED': 'UAE Dirham',
+                  'USD': 'US Dollar',
+                  'AUD': 'Australian Dollar',
+                  'GBP': 'British Pound',
+                };
 
                 Widget currencyTile({
                   required String currency,
@@ -166,7 +174,9 @@ class SettingsView extends StatelessWidget {
                         ).copyWith(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        isCustom ? 'Custom currency'.tr : 'Default currency'.tr,
+                        isCustom
+                            ? 'Custom currency'.tr
+                            : currencyNames[currency] ?? currency,
                         style: AppTextStyles.caption(isDark),
                       ),
                       onTap: () async {
@@ -192,7 +202,7 @@ class SettingsView extends StatelessWidget {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ...defaultCurrencies.map(
+                    ...SettingsController.defaultCurrencies.map(
                       (currency) =>
                           currencyTile(currency: currency, isCustom: false),
                     ),
@@ -303,14 +313,7 @@ class SettingsView extends StatelessWidget {
   Future<void> _showLanguageListDialog(BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    const languages = <String, String>{
-      'en': 'English',
-      'ur': 'اردو',
-      'ps': 'پښتو',
-      'sd': 'سنڌي',
-      'ar': 'العربية',
-      'hi': 'हिन्दी',
-    };
+    const languages = <String, String>{'en': 'English', 'ur': 'اردو'};
 
     await Get.dialog(
       AlertDialog(
@@ -1093,14 +1096,7 @@ class SettingsView extends StatelessWidget {
   }
 
   String _languageName(String code) {
-    const names = <String, String>{
-      'en': 'English',
-      'ur': 'اردو',
-      'ps': 'پښتو',
-      'sd': 'سنڌي',
-      'ar': 'العربية',
-      'hi': 'हिन्दी',
-    };
+    const names = <String, String>{'en': 'English', 'ur': 'اردو'};
     return names[code] ?? 'English';
   }
 

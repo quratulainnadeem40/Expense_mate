@@ -31,10 +31,6 @@ class SettingsController extends GetxController {
   static const Set<String> supportedLanguages = {
     'en',
     'ur',
-    'ps',
-    'sd',
-    'ar',
-    'hi',
   };
 
   final selectedLanguage = 'en'.obs;
@@ -627,8 +623,11 @@ class SettingsController extends GetxController {
 
   static const List<String> defaultCurrencies = [
     'PKR',
+    'SAR',
+    'TRY',
+    'AED',
     'USD',
-    'EUR',
+    'AUD',
     'GBP',
   ];
 
@@ -664,11 +663,11 @@ class SettingsController extends GetxController {
 
     final currency = savedCurrency.toString().trim().toUpperCase();
 
-    if (currency.isEmpty) {
-      selectedCurrency.value = 'PKR';
+    final isSupportedCurrency =
+        defaultCurrencies.contains(currency) || currencies.contains(currency);
+    selectedCurrency.value = isSupportedCurrency ? currency : 'PKR';
+    if (!isSupportedCurrency) {
       await settingsBox.put('currency', 'PKR');
-    } else {
-      selectedCurrency.value = currency;
     }
 
     await settingsBox.put(
