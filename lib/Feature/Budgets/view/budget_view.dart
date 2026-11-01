@@ -2045,26 +2045,6 @@ class _BudgetViewState extends State<BudgetView> {
           icon: Icon(Icons.arrow_back, color: primaryTextColor),
           onPressed: () => Get.back(),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Budget cycle settings'.tr,
-            onPressed: () => _showBudgetCycleBottomSheet(context),
-            icon: Icon(
-              Icons.calendar_month_rounded,
-              color: primaryTextColor,
-              size: 24,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Budget history'.tr,
-            onPressed: () => Get.to(() => const BudgetHistoryView()),
-            icon: Icon(
-              Icons.history_rounded,
-              color: primaryTextColor,
-              size: 24,
-            ),
-          ),
-        ],
       ),
 
       body: Obx(() {
