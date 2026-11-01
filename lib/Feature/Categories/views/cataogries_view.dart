@@ -1,4 +1,3 @@
-import 'package:expense_mate/Core/utils/formatters.dart';
 import 'dart:async';
 
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
@@ -25,7 +24,6 @@ import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesView extends StatefulWidget {
@@ -184,13 +182,8 @@ class _CategoriesViewState extends State<CategoriesView>
     return '${date.day} ${months[date.month - 1].tr} ${date.year}';
   }
 
-  String _formatCategoryAmount(double amount) {
-    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
-  }
-
-  Widget _buildCategoryAmount({
+  Widget _buildCategoryTypeBadge({
     required String label,
-    required double amount,
     required Color color,
     required bool isDark,
   }) {
@@ -201,10 +194,7 @@ class _CategoriesViewState extends State<CategoriesView>
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        '@label: @amount'.trParams({
-          'label': label.tr,
-          'amount': _formatCategoryAmount(amount),
-        }),
+        label.tr,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -1216,20 +1206,6 @@ class _CategoriesViewState extends State<CategoriesView>
                             category.colorValue,
                           );
 
-                          final monthlyTotals =
-                              CategoriesController.calculateCategoryTotals(
-                                transactions: transactions,
-                                categoryIds: {
-                                  category.id,
-                                  ...category.linkedIds,
-                                },
-                                periodStart: _periodStart,
-                                periodEndExclusive: _periodEnd.add(
-                                  const Duration(days: 1),
-                                ),
-                                resetAt: _currentManualCycleBoundary,
-                              );
-
                           final bool isDefaultCategory = category.isDefault;
 
                           final bool isSelected = selectedCategoryIds.contains(
@@ -1351,19 +1327,14 @@ class _CategoriesViewState extends State<CategoriesView>
                                               spacing: 6,
                                               runSpacing: 4,
                                               children: [
-                                                _buildCategoryAmount(
-                                                  label: 'Income',
-                                                  amount:
-                                                      monthlyTotals['income']!,
-                                                  color: const Color(
-                                                    0xFF2E9D59,
-                                                  ),
-                                                  isDark: isDark,
-                                                ),
-                                                _buildCategoryAmount(
-                                                  label: 'Expense',
-                                                  amount:
-                                                      monthlyTotals['expense']!,
+                                                _buildCategoryTypeBadge(
+                                                  label:
+                                                      category.type
+                                                              .trim()
+                                                              .toLowerCase() ==
+                                                          'income'
+                                                      ? 'Income'
+                                                      : 'Expense',
                                                   color: const Color(
                                                     0xFFE25555,
                                                   ),
