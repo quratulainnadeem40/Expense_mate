@@ -20,6 +20,8 @@ void main() {
     'Transactions',
     'Categories',
     'Reports',
+    'View',
+    'Type',
     'Settings',
     'Welcome Back!',
     'Email',

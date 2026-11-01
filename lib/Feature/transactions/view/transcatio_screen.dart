@@ -15,6 +15,7 @@ import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
+import 'package:expense_mate/Feature/Categories/views/transaction_details_screen.dart';
 import 'package:expense_mate/Feature/committee/view/committee_view.dart';
 import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:expense_mate/Feature/transactions/widgets/add_transcation_dialog.dart';
@@ -696,16 +697,21 @@ class _TransactionsViewState extends State<TransactionsView>
                                 : transaction.title;
 
                         return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onLongPress: () {
                             _toggleTransactionSelection(transaction.id);
                           },
-                          onTap: _isSelectionMode
-                              ? () {
-                                  _toggleTransactionSelection(
-                                    transaction.id,
-                                  );
-                                }
-                              : null,
+                          onTap: () {
+                            if (_isSelectionMode) {
+                              _toggleTransactionSelection(transaction.id);
+                              return;
+                            }
+                            Get.to(
+                              () => TransactionDetailsScreen(
+                                transaction: transaction,
+                              ),
+                            );
+                          },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             margin: const EdgeInsets.only(bottom: 12),
@@ -858,6 +864,14 @@ class _TransactionsViewState extends State<TransactionsView>
                                         PopupMenuButton<String>(
                                           icon: const Icon(Icons.more_vert),
                                           onSelected: (value) async {
+                                            if (value == 'view') {
+                                              Get.to(
+                                                () => TransactionDetailsScreen(
+                                                  transaction: transaction,
+                                                ),
+                                              );
+                                            }
+
                                             if (value == 'edit') {
                                               await showDialog(
                                                 context: context,
@@ -920,6 +934,18 @@ class _TransactionsViewState extends State<TransactionsView>
                                             }
                                           },
                                           itemBuilder: (context) => [
+                                            PopupMenuItem<String>(
+                                              value: 'view',
+                                              child: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.visibility_outlined,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text('View'.tr),
+                                                ],
+                                              ),
+                                            ),
                                             PopupMenuItem<String>(
                                               value: 'edit',
                                               child: Row(

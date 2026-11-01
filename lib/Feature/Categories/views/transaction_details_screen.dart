@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import 'package:expense_mate/Core/localization/app_translations.dart';
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Feature/expense/binding/epense_binding.dart';
 import 'package:expense_mate/Feature/expense/controller/expense_controller.dart';
 import 'package:expense_mate/Feature/expense/view/add_expense_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
+import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   final TransactionModel transaction;
@@ -49,7 +51,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     expenseController.noteController.text =
         transaction.note ?? transaction.title;
 
-    expenseController.isExpense.value = transaction.type == 'expense';
+    expenseController.isExpense.value = !transaction.isIncome;
 
     expenseController.selectedCategoryId.value = transaction.categoryId;
 
@@ -69,9 +71,10 @@ class TransactionDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('Transaction Details'.tr), centerTitle: true),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 10),
 
@@ -98,7 +101,9 @@ class TransactionDetailsScreen extends StatelessWidget {
               // TITLE
               // ------------------------------------------------
               Text(
-                AppTranslations.localizeCategoryRecord(transaction.title),
+                transaction.title.trim().isEmpty
+                    ? AppTranslations.localizeCategoryRecord(_categoryName)
+                    : transaction.title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 20,
@@ -112,8 +117,11 @@ class TransactionDetailsScreen extends StatelessWidget {
               // AMOUNT
               // ------------------------------------------------
               Text(
-                '${transaction.isIncome ? '+' : '-'}'
-                '₨${transaction.amount.toStringAsFixed(2)}',
+                Formatters.signedMoney(
+                  transaction.amount,
+                  isIncome: transaction.isIncome,
+                  decimals: 2,
+                ),
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -145,7 +153,38 @@ class TransactionDetailsScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
+                    _buildDetailRow(context, 'Category', _categoryName),
+
+                    const Divider(height: 24),
+
                     _buildDetailRow(
+                      context,
+                      'Type',
+                      transaction.isIncome ? 'Income'.tr : 'Expense'.tr,
+                      valueColor: transaction.isIncome
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+
+                    const Divider(height: 24),
+
+                    _buildDetailRow(
+                      context,
+                      'Amount',
+                      Formatters.signedMoney(
+                        transaction.amount,
+                        isIncome: transaction.isIncome,
+                        decimals: 2,
+                      ),
+                      valueColor: transaction.isIncome
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+
+                    const Divider(height: 24),
+
+                    _buildDetailRow(
+                      context,
                       'Date',
                       '${DateFormat('MMM').format(transaction.date).tr} '
                           '${transaction.date.day}, ${transaction.date.year}',
@@ -153,33 +192,22 @@ class TransactionDetailsScreen extends StatelessWidget {
 
                     const Divider(height: 24),
 
-                    _buildDetailRow('Wallet', _walletName()),
+                    _buildDetailRow(context, 'Wallet', _walletName()),
 
                     const Divider(height: 24),
 
                     _buildDetailRow(
+                      context,
                       'Note',
                       transaction.note?.isNotEmpty == true
-                          ? AppTranslations.localizeCategoryRecord(
-                              transaction.note!,
-                            )
-                          : 'No note',
-                    ),
-
-                    const Divider(height: 24),
-
-                    _buildDetailRow(
-                      'Status',
-                      transaction.isIncome ? 'Income' : 'Expense',
-                      valueColor: transaction.isIncome
-                          ? Colors.green
-                          : Colors.red,
+                          ? transaction.note!
+                          : 'No note'.tr,
                     ),
                   ],
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 24),
 
               // ------------------------------------------------
               // ACTIONS
@@ -213,11 +241,14 @@ class TransactionDetailsScreen extends StatelessWidget {
     if (Get.isRegistered<CategoriesController>()) {
       final categoriesController = Get.find<CategoriesController>();
       final category = categoriesController.categoryList.firstWhereOrNull(
-        (category) => category.linkedIds.any(
-          (id) =>
-              id.trim().toLowerCase() ==
-              transaction.categoryId.trim().toLowerCase(),
-        ),
+        (category) =>
+            category.id.trim().toLowerCase() ==
+                transaction.categoryId.trim().toLowerCase() ||
+            category.linkedIds.any(
+              (id) =>
+                  id.trim().toLowerCase() ==
+                  transaction.categoryId.trim().toLowerCase(),
+            ),
       );
       if (category != null) return category.name;
     }
@@ -229,10 +260,17 @@ class TransactionDetailsScreen extends StatelessWidget {
   // ------------------------------------------------------------
 
   String _walletName() {
+    if (Get.isRegistered<WalletsController>()) {
+      final wallet = Get.find<WalletsController>().wallets.firstWhereOrNull(
+        (wallet) => wallet.id == transaction.walletId,
+      );
+      if (wallet != null) return wallet.name;
+    }
+
     if (!Get.isRegistered<ExpenseController>()) {
       return transaction.walletId.isEmpty
-          ? 'No wallet'
-          : AppTranslations.localizeCategoryRecord(transaction.walletId);
+          ? 'No wallet'.tr
+          : transaction.walletId;
     }
 
     final expenseController = Get.find<ExpenseController>();
@@ -246,14 +284,19 @@ class TransactionDetailsScreen extends StatelessWidget {
     final name =
         wallet?.name ??
         (transaction.walletId.isEmpty ? 'No wallet' : transaction.walletId);
-    return AppTranslations.localizeCategoryRecord(name);
+    return name;
   }
 
   // ------------------------------------------------------------
   // DETAIL ROW
   // ------------------------------------------------------------
 
-  Widget _buildDetailRow(String title, String value, {Color? valueColor}) {
+  Widget _buildDetailRow(
+    BuildContext context,
+    String title,
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,12 +310,12 @@ class TransactionDetailsScreen extends StatelessWidget {
 
         Flexible(
           child: Text(
-            AppTranslations.localizeCategoryRecord(value),
+            value,
             textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: valueColor ?? Colors.black,
+              color: valueColor ?? Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
