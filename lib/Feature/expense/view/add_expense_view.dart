@@ -498,7 +498,11 @@ class AddExpenseView extends GetView<ExpenseController> {
                           : controller.incomeCategories.toList();
 
                       final dropdownCategories = List<CategoryModel>.from(
-                        categoryList,
+                        categoryList.where(
+                          (category) =>
+                              !isExpense ||
+                              category.name.trim().toLowerCase() != 'other',
+                        ),
                       );
 
                       debugPrint(
@@ -529,6 +533,39 @@ class AddExpenseView extends GetView<ExpenseController> {
                           }
                         }
                       }
+                      final showAddCategoryOption =
+                          isExpense ||
+                          !dropdownCategories.any(
+                            (category) =>
+                                category.name.trim().toLowerCase() == 'other',
+                          );
+                      final categoryDropdownItems = dropdownCategories
+                          .map<DropdownMenuItem<String>>((category) {
+                            return DropdownMenuItem<String>(
+                              value: category.id,
+                              child: Text(
+                                category.name.tr,
+                                style: TextStyle(
+                                  color: theme.textTheme.bodyMedium?.color,
+                                ),
+                              ),
+                            );
+                          })
+                          .toList();
+                      if (showAddCategoryOption) {
+                        categoryDropdownItems.add(
+                          DropdownMenuItem<String>(
+                            value: _addCategoryOption,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.add_rounded),
+                                const SizedBox(width: 8),
+                                Text('Other'.tr),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
 
                       final selectedCategoryId =
                           controller.selectedCategoryId.value;
@@ -546,7 +583,8 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                           const SizedBox(height: 6),
 
-                          if (dropdownCategories.isEmpty)
+                          if (dropdownCategories.isEmpty &&
+                              !showAddCategoryOption)
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(14),
@@ -593,7 +631,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                       ),
                                     );
                                   }),
-                                  Text(isExpense ? 'More...'.tr : 'Other'.tr),
+                                  if (showAddCategoryOption) Text('Other'.tr),
                                 ];
                               },
 
@@ -608,39 +646,7 @@ class AddExpenseView extends GetView<ExpenseController> {
 
                               decoration: _buildInputDecoration(theme, isDark),
 
-                              items:
-                                  dropdownCategories
-                                      .map<DropdownMenuItem<String>>((
-                                        category,
-                                      ) {
-                                        return DropdownMenuItem<String>(
-                                          value: category.id,
-                                          child: Text(
-                                            category.name.tr,
-                                            style: TextStyle(
-                                              color: theme
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.color,
-                                            ),
-                                          ),
-                                        );
-                                      })
-                                      .toList()
-                                    ..add(
-                                      DropdownMenuItem<String>(
-                                        value: _addCategoryOption,
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.add_rounded),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              isExpense ? 'More...'.tr : 'Other'.tr,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                              items: categoryDropdownItems,
 
                               onChanged: (value) {
                                 if (value == _addCategoryOption) {
