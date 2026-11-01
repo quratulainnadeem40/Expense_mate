@@ -411,36 +411,10 @@ class _CategoryTransactionsScreenState
               )
               .toList();
 
-          final showIncome = incomeTransactions.isNotEmpty;
-          final showExpense = expenseTransactions.isNotEmpty;
-
-          if (!showIncome && !showExpense) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 60,
-                      color: isDark ? Colors.grey[600] : Colors.grey[400],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No transactions found for this category in the selected period.'
-                          .tr,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+          final hasTransactions = allTransactions.isNotEmpty;
+          final showIncome = incomeTransactions.isNotEmpty || !hasTransactions;
+          final showExpense =
+              expenseTransactions.isNotEmpty || !hasTransactions;
 
           return RefreshIndicator(
             onRefresh: () async {
