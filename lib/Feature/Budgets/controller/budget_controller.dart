@@ -454,6 +454,8 @@ class BudgetController extends GetxController {
         ? Get.find<TransactionsController>()
         : Get.put(TransactionsController());
 
+    loadPersistedState();
+
     ever(transactionsController.transactions, (_) {
       calculateBudgets();
 
@@ -481,8 +483,6 @@ class BudgetController extends GetxController {
 
       savePersistedState();
     });
-
-    loadPersistedState();
 
     calculateBudgets();
 

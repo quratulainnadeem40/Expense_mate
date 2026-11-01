@@ -259,6 +259,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
         darkTheme: AppTheme.darkTheme,
         themeMode: settingsController.isDarkMode.value
             ? ThemeMode.dark
+            
             : ThemeMode.light,
         initialRoute: AppRoutes.splash,
         getPages: AppPages.pages,
