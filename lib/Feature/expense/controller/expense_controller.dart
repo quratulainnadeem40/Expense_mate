@@ -308,10 +308,10 @@ class ExpenseController extends GetxController {
       Get.back();
 
       Get.snackbar(
-        wasEditing ? 'Updated' : 'Success',
+        (wasEditing ? 'Updated' : 'Success').tr,
         wasEditing
-            ? 'Transaction updated successfully.'
-            : 'Transaction added successfully.',
+            ? 'Transaction updated successfully.'.tr
+            : 'Transaction added successfully.'.tr,
         snackPosition: SnackPosition.TOP,
         backgroundColor: const Color(0xFF2EA44F),
         colorText: Colors.white,
@@ -353,8 +353,8 @@ class ExpenseController extends GetxController {
 
   void _showError(String message) {
     Get.snackbar(
-      'Error',
-      message,
+      'Error'.tr,
+      message.tr,
       snackPosition: SnackPosition.TOP,
       backgroundColor: const Color(0xFFE53935),
       colorText: Colors.white,

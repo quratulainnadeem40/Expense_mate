@@ -863,7 +863,7 @@ class AddExpenseView extends GetView<ExpenseController> {
                                         .trim()
                                         .isEmpty) {
                                   Get.snackbar(
-                                    'Warning',
+                                    'Warning'.tr,
                                     controller.isExpense.value
                                         ? 'Please select an expense category'.tr
                                         : 'Please select an income category'.tr,

@@ -50,8 +50,8 @@ class TransactionCard extends StatelessWidget {
 
               if (success) {
                 Get.snackbar(
-                  'Deleted',
-                  'Transaction deleted successfully.',
+                  'Deleted'.tr,
+                  'Transaction deleted successfully.'.tr,
                   snackPosition: SnackPosition.BOTTOM,
                 );
               }

@@ -47,7 +47,7 @@ class _PinLockViewState extends State<PinLockView> {
     if (!await service.isAvailable()) return;
     if (!await service.hasEnrolled()) return;
 
-    final label = await service.label();
+    final label = (await service.label()).tr;
     if (!mounted) return;
 
     setState(() {
@@ -63,7 +63,9 @@ class _PinLockViewState extends State<PinLockView> {
   Future<void> _tryBiometric() async {
     if (!_biometricReady || _isBlocked) return;
 
-    final ok = await BiometricService.instance.authenticate();
+    final ok = await BiometricService.instance.authenticate(
+      reason: 'Unlock Expense Mate'.tr,
+    );
     if (!ok || !mounted) return;
 
     await PinService.instance.recordSuccess();
@@ -142,8 +144,10 @@ class _PinLockViewState extends State<PinLockView> {
     setState(() {
       _entry = '';
       _error = PinService.instance.isTemporarilyBlocked
-          ? 'Too many tries. Wait a moment.'
-          : 'Wrong PIN. $left ${left == 1 ? 'try' : 'tries'} left.';
+          ? 'Too many tries. Wait a moment.'.tr
+          : left == 1
+          ? 'Wrong PIN. @count try left.'.trParams({'count': '$left'})
+          : 'Wrong PIN. @count tries left.'.trParams({'count': '$left'});
     });
 
     _watchLockout();
@@ -273,7 +277,7 @@ class _PinLockViewState extends State<PinLockView> {
                         Get.back();
                         Get.offAllNamed(AppRoutes.pinSetup);
                       } on AuthException catch (e) {
-                        error.value = e.message;
+                        error.value = e.message.tr;
                       } catch (_) {
                         error.value = 'Could not check that. Try again.'.tr;
                       } finally {

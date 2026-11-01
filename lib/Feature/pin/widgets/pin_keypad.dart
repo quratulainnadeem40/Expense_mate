@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 const Color kPinGreen = Color(0xFF2EA44F);
 
@@ -125,7 +126,7 @@ class PinKeypad extends StatelessWidget {
                     if (actionLabel != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        actionLabel!,
+                        actionLabel!.tr,
                         style: TextStyle(fontSize: 9.5, color: hint),
                       ),
                     ],

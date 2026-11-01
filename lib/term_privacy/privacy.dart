@@ -32,8 +32,8 @@ class _PrivacyViewState extends State<PrivacyView> {
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
     Get.snackbar(
-      label,
-      'Copied to clipboard',
+      label.tr,
+      'Copied to clipboard'.tr,
       snackPosition: SnackPosition.BOTTOM,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),

@@ -2197,6 +2197,7 @@ class AppTranslations extends Translations {
         'اپنی پروفائل اور اکاؤنٹ کی ترتیبات کا انتظام کریں',
     'Udhaar': 'ادھار',
     'Welcome Back!': 'واپس خوش آمدید!',
+    'Welcome': 'خوش آمدید',
     'Login to continue to Expense Mate':
         'Expense Mate جاری رکھنے کے لیے لاگ اِن کریں',
     'Email': 'ای میل',
@@ -2215,6 +2216,37 @@ class AppTranslations extends Translations {
     'Create a password': 'پاس ورڈ بنائیں',
     'Already have an account?': 'پہلے سے اکاؤنٹ ہے؟',
     'Hello': 'السلام علیکم',
+    'Account created successfully': 'اکاؤنٹ کامیابی سے بن گیا۔',
+    'Login successful': 'لاگ اِن کامیاب',
+    'Email Sent': 'ای میل بھیج دی گئی',
+    'Check your email for the password reset link.':
+        'پاس ورڈ ری سیٹ کرنے کے لنک کے لیے اپنا ای میل دیکھیں۔',
+    'Copied to clipboard': 'کلپ بورڈ پر کاپی ہو گیا',
+    'Updated': 'اپ ڈیٹ ہو گیا',
+    'Transaction updated successfully.':
+        'لین دین کامیابی سے اپ ڈیٹ ہو گیا۔',
+    'Transaction added successfully.': 'لین دین کامیابی سے شامل ہو گیا۔',
+    'Transaction deleted successfully.': 'لین دین کامیابی سے حذف ہو گیا۔',
+    'Failed to save transaction.': 'لین دین محفوظ نہیں ہو سکا۔',
+    'Invalid login credentials': 'لاگ اِن کی تفصیلات درست نہیں ہیں۔',
+    'Please enter amount.': 'براہِ کرم رقم درج کریں۔',
+    'Please select an expense category.':
+        'براہِ کرم اخراجات کا زمرہ منتخب کریں۔',
+    'Please select an income category.':
+        'براہِ کرم آمدنی کا زمرہ منتخب کریں۔',
+    'No wallet selected': 'کوئی والٹ منتخب نہیں کیا گیا۔',
+    'Transaction ID is missing.': 'لین دین کی شناخت موجود نہیں۔',
+    'Email address': 'ای میل ایڈریس',
+    'Website link': 'ویب سائٹ کا لنک',
+    'Please enter your name': 'براہِ کرم اپنا نام درج کریں۔',
+    'Please enter your email': 'براہِ کرم اپنا ای میل درج کریں۔',
+    'Please enter your password': 'براہِ کرم اپنا پاس ورڈ درج کریں۔',
+    'Password must be at least 6 characters':
+        'پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے۔',
+    'Something went wrong. Please try again.':
+        'کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔',
+    'Unable to logout. Please try again.':
+        'لاگ آؤٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
     'Welcome back to Expense Mate': 'Expense Mate میں دوبارہ خوش آمدید',
     'Total Balance': 'کل بیلنس',
     'Recent Transactions': 'حالیہ لین دین',
@@ -2252,6 +2284,11 @@ class AppTranslations extends Translations {
     'Balance': 'بیلنس',
     'e.g. Cash, Bank Account': 'مثلاً نقد، بینک اکاؤنٹ',
     'Use @label': '@label استعمال کریں',
+    'Fingerprint': 'فنگر پرنٹ',
+    'Face unlock': 'چہرے سے اَن لاک',
+    'Iris': 'آنکھ کی پتلی',
+    'Biometric unlock': 'بائیومیٹرک اَن لاک',
+    'Unlock Expense Mate': 'Expense Mate اَن لاک کریں',
     'Done': 'مکمل',
     'In progress': 'جاری',
     'Completed': 'مکمل',
@@ -2394,6 +2431,31 @@ class AppTranslations extends Translations {
     'Reminders & Notifications': 'یاددہانیاں اور اطلاعات',
     'Manage payment due dates and monthly reminders.':
         'ادائیگی کی آخری تاریخوں اور ماہانہ یاددہانیوں کا انتظام کریں۔',
+    'Committee Reminders': 'کمیٹی کی یاددہانیاں',
+    'Manage your committee payment and monthly reminders.':
+        'کمیٹی کی ادائیگیوں اور ماہانہ یاددہانیوں کا انتظام کریں۔',
+    'Payment Due Reminder': 'ادائیگی کی مقررہ تاریخ کی یاددہانی',
+    'Get a reminder when your committee payment is due.':
+        'کمیٹی کی ادائیگی کی تاریخ آنے پر یاددہانی حاصل کریں۔',
+    'Upcoming Payment Reminder': 'آنے والی ادائیگی کی یاددہانی',
+    'Get a reminder before your monthly contribution is due.':
+        'ماہانہ حصہ دینے کی تاریخ سے پہلے یاددہانی حاصل کریں۔',
+    'Receiving Member Reminder': 'وصول کنندہ رکن کی یاددہانی',
+    'Get notified when it is your turn to receive the committee pool.':
+        'جب کمیٹی کی رقم وصول کرنے کی آپ کی باری ہو تو اطلاع حاصل کریں۔',
+    'Overdue Payment Reminder': 'تاخیر شدہ ادائیگی کی یاددہانی',
+    'Get a reminder when a committee payment becomes overdue.':
+        'کمیٹی کی ادائیگی میں تاخیر ہونے پر یاددہانی حاصل کریں۔',
+    'Monthly Committee Reminder': 'ماہانہ کمیٹی کی یاددہانی',
+    'Receive a monthly reminder about your committee.':
+        'اپنی کمیٹی کے بارے میں ہر ماہ یاددہانی حاصل کریں۔',
+    'Test Reminder': 'یاددہانی آزمائیں',
+    'Committee reminder notification sent successfully.':
+        'کمیٹی کی یاددہانی کی اطلاع کامیابی سے بھیج دی گئی۔',
+    'Unable to send notification: @message':
+        'اطلاع نہیں بھیجی جا سکی: @message',
+    'Committee reminders are managed from this screen.':
+        'کمیٹی کی یاددہانیوں کا انتظام اسی اسکرین سے کریں۔',
     'Committee History': 'کمیٹی کی ہسٹری',
     'View completed committees and payment history.':
         'مکمل شدہ کمیٹیاں اور ادائیگی کی ہسٹری دیکھیں۔',
@@ -2602,6 +2664,20 @@ class AppTranslations extends Translations {
     'All members have already received the committee.':
         'تمام اراکین کمیٹی کی رقم وصول کر چکے ہیں۔',
     'Forgot your PIN?': 'اپنا PIN بھول گئے؟',
+    'Create a PIN': 'PIN بنائیں',
+    'Enter it again': 'دوبارہ درج کریں',
+    'Four digits. You will enter this each time the app opens.':
+        'چار ہندسوں کا PIN بنائیں۔ ایپ کھولنے پر ہر بار درج کرنا ہوگا۔',
+    'Type the same four digits once more.':
+        'وہی چار ہندسے دوبارہ درج کریں۔',
+    'Pick something harder to guess':
+        'ایسا PIN منتخب کریں جس کا اندازہ لگانا مشکل ہو۔',
+    'The two PINs did not match': 'دونوں PIN ایک جیسے نہیں ہیں۔',
+    'Too many tries. Wait a moment.':
+        'بہت زیادہ کوششیں ہو گئیں۔ تھوڑی دیر انتظار کریں۔',
+    'Wrong PIN. @count try left.': 'غلط PIN۔ @count کوشش باقی ہے۔',
+    'Wrong PIN. @count tries left.': 'غلط PIN۔ @count کوششیں باقی ہیں۔',
+    'Forgot': 'بھول گئے؟',
     'Enter your account password to set a new PIN.':
         'نیا PIN بنانے کے لیے اپنے اکاؤنٹ کا پاس ورڈ درج کریں۔',
     'Enter the password for @email to set a new PIN.':

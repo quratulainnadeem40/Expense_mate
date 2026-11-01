@@ -885,7 +885,7 @@ class SettingsController extends GetxController {
   void _showError(String message) {
     Get.snackbar(
       'Error'.tr,
-      message,
+      message.tr,
       snackPosition: SnackPosition.BOTTOM,
     );
   }

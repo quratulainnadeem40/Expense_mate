@@ -53,8 +53,8 @@ class AuthController extends GetxController {
 
       if (response.user != null) {
         Get.snackbar(
-          'Success',
-          'Account created successfully',
+          'Success'.tr,
+          'Account created successfully'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
 
@@ -106,8 +106,8 @@ class AuthController extends GetxController {
 
       if (response.user != null) {
         Get.snackbar(
-          'Welcome',
-          'Login successful',
+          'Welcome'.tr,
+          'Login successful'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
 
@@ -161,8 +161,8 @@ class AuthController extends GetxController {
       await _supabase.auth.resetPasswordForEmail(trimmedEmail);
 
       Get.snackbar(
-        'Email Sent',
-        'Check your email for the password reset link.',
+        'Email Sent'.tr,
+        'Check your email for the password reset link.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
@@ -180,8 +180,8 @@ class AuthController extends GetxController {
 
   void _showError(String message) {
     Get.snackbar(
-      'Error',
-      message,
+      'Error'.tr,
+      message.tr,
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.red,
       colorText: Colors.white,
