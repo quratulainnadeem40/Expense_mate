@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
 import 'package:expense_mate/Feature/Budgets/view/budget_view.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
@@ -5,8 +8,38 @@ import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late Directory tempDir;
+
+  setUpAll(() async {
+    tempDir = await Directory.systemTemp.createTemp('budget_accuracy_test_');
+    Hive.init(tempDir.path);
+    await Hive.openBox(AppKeys.budgetBox);
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(
+      url: 'https://example.supabase.co',
+      anonKey: 'test-key',
+    );
+    FlutterLocalNotificationsPlatform.instance =
+        _NoopNotificationsPlatform();
+  });
+
+  setUp(() async {
+    await Hive.box(AppKeys.budgetBox).clear();
+  });
+
+  tearDownAll(() async {
+    await Hive.close();
+    await tempDir.delete(recursive: true);
+  });
+
   test('budget spending is calculated from real category ids and limits are summed accurately', () {
     final budgetController = BudgetController();
     budgetController.categoriesController = CategoriesController();
@@ -129,9 +162,16 @@ void main() {
     expect(controller.totalSpent, 350000.0);
     expect(controller.customTotalBudget.value, 600000.0);
 
+    controller.resetReminderOn.value = false;
     controller.resetMonthlySpent();
 
     expect(controller.totalSpent, 0.0);
     expect(controller.customTotalBudget.value, 600000.0);
   });
+
+}
+
+class _NoopNotificationsPlatform extends FlutterLocalNotificationsPlatform {
+  @override
+  Future<void> cancel(int id) async {}
 }

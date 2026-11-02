@@ -18,7 +18,7 @@ class CategoriesController extends GetxController {
     'health',
   ];
 
-  final SupabaseClient _supabase = Supabase.instance.client;
+  SupabaseClient get _supabase => Supabase.instance.client;
 
   final wallets = <dynamic>[].obs;
 

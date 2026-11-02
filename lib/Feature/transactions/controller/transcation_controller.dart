@@ -11,8 +11,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TransactionsController extends GetxController {
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+  SupabaseClient get _supabase => Supabase.instance.client;
 
   // ==========================================================
   // TRANSACTIONS

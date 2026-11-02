@@ -385,9 +385,15 @@ class BudgetController extends GetxController {
 
   void _setCategoryNameLimit(String categoryName, double amount) {
     final normalizedName = _normalizeName(categoryName);
+    final categoryIds = categoriesController.categoryList
+        .map((category) => category.id)
+        .toSet();
     final duplicateKeys = customLimits.keys
         .where(
-          (key) => key != categoryName && _normalizeName(key) == normalizedName,
+          (key) =>
+              key != categoryName &&
+              !categoryIds.contains(key) &&
+              _normalizeName(key) == normalizedName,
         )
         .toList();
 
@@ -415,17 +421,14 @@ class BudgetController extends GetxController {
 
   List<CategoryModel> get expenseBudgetCategories {
     return categoriesController.categoryList.where((category) {
-      if (category.id.startsWith('default_') && category.linkedIds.isEmpty) {
-        return true;
-      }
+      final linkedTypes = category.linkedIds
+          .map((id) => categoriesController.originalCategoryTypes[id])
+          .whereType<String>()
+          .map((type) => type.trim().toLowerCase())
+          .toSet();
 
-      final linkedIds = category.linkedIds.isEmpty
-          ? <String>{category.id}
-          : category.linkedIds.toSet();
-
-      return linkedIds.any(
-        (id) => categoriesController.originalCategoryTypes[id] == 'expense',
-      );
+      if (linkedTypes.isEmpty) return _isExpenseBudgetCategory(category);
+      return linkedTypes.contains('expense') || linkedTypes.contains('both');
     }).toList();
   }
   // ================================================================

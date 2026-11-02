@@ -424,7 +424,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                             controller: nameController,
                             textCapitalization: TextCapitalization.words,
                             style: TextStyle(color: primaryText),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Committee Name',
                               border: OutlineInputBorder(),
                             ),
@@ -442,7 +442,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                               decimal: true,
                             ),
                             style: TextStyle(color: primaryText),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Monthly Contribution',
                               prefixText: '${Formatters.code} ',
                               border: OutlineInputBorder(),
@@ -866,7 +866,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                         decimal: true,
                       ),
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Monthly Contribution',
                         prefixText: '${Formatters.code} ',
                         border: OutlineInputBorder(),

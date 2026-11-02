@@ -7,6 +7,16 @@ class WalletModel {
   final String currency;
   final DateTime createdAt;
 
+  bool get isCash => type.trim().toLowerCase() == 'cash';
+
+  String get displayType => isCash ? 'Cash (Physical cash)' : type;
+
+  String get transactionOptionLabel {
+    if (!isCash) return name;
+    if (name.trim().toLowerCase() == 'cash') return displayType;
+    return '$name · Physical cash';
+  }
+
   WalletModel({
     required this.id,
     required this.userId,
