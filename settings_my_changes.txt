@@ -1,0 +1,1675 @@
+﻿
+import 'package:expense_mate/Core/theme/custom_colors.dart';
+import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
+import 'package:expense_mate/Feature/goals/controller/goals_controller.dart';
+import 'package:expense_mate/Feature/onboarding/controller/onboarding_controller.dart';
+import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
+import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:expense_mate/Feature/about/view/about_view.dart';
+
+import '../controller/settings_controller.dart';
+
+class SettingsView extends StatelessWidget {
+  const SettingsView({super.key});
+
+  static const String _addCurrencyOption = '__add_currency__';
+
+  SettingsController get controller => Get.find<SettingsController>();
+
+  Future<void> _showAddCurrencyDialog() async {
+    final currencyController = TextEditingController();
+
+    final currency = await Get.dialog<String>(
+      AlertDialog(
+        title: Text('Add Currency'.tr),
+        content: TextField(
+          controller: currencyController,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          maxLength: 10,
+          decoration: InputDecoration(
+            labelText: 'Currency code or symbol'.tr,
+            hintText: 'e.g. AED'.tr,
+          ),
+          onSubmitted: (value) {
+            final code = value.trim();
+            if (code.isNotEmpty) {
+              Get.back(result: code);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancel'.tr),
+          ),
+          FilledButton(
+            onPressed: () {
+              final code = currencyController.text.trim();
+              if (code.isNotEmpty) {
+                Get.back(result: code);
+              }
+            },
+            child: Text('Add'.tr),
+          ),
+        ],
+      ),
+    );
+
+    currencyController.dispose();
+
+    if (currency != null && currency.trim().isNotEmpty) {
+      await controller.addCustomCurrency(currency);
+    }
+  }
+
+  Future<void> _showCurrencyListDialog(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        title: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(
+                Icons.currency_exchange_rounded,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Currency'.tr,
+                    style: AppTextStyles.headingMedium(
+                      isDark,
+                    ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Choose your preferred currency'.tr,
+                    style: AppTextStyles.caption(isDark),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 390),
+            child: SingleChildScrollView(
+              child: Obx(() {
+                const defaultCurrencies = ['PKR', 'USD', 'EUR', 'GBP'];
+
+                final customCurrencies = controller.customCurrencies.toList();
+
+                Widget currencyTile({
+                  required String currency,
+                  required bool isCustom,
+                }) {
+                  final isSelected =
+                      controller.selectedCurrency.value == currency;
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary.withValues(
+                              alpha: isDark ? 0.2 : 0.08,
+                            )
+                          : AppColors.cardAlt(isDark),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.45)
+                            : AppColors.border(isDark),
+                      ),
+                    ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.only(
+                        left: 14,
+                        right: isCustom ? 4 : 14,
+                      ),
+                      minVerticalPadding: 10,
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary(isDark),
+                      ),
+                      title: Text(
+                        currency,
+                        style: AppTextStyles.bodyLarge(
+                          isDark,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        isCustom ? 'Custom currency'.tr : 'Default currency'.tr,
+                        style: AppTextStyles.caption(isDark),
+                      ),
+                      onTap: () async {
+                        await controller.changeCurrency(currency);
+                        Get.back();
+                      },
+                      trailing: isCustom
+                          ? IconButton(
+                              tooltip: 'Delete currency'.tr,
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.expenseRed,
+                              ),
+                              onPressed: () async {
+                                await _confirmDeleteCurrency(context, currency);
+                              },
+                            )
+                          : null,
+                    ),
+                  );
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...defaultCurrencies.map(
+                      (currency) =>
+                          currencyTile(currency: currency, isCustom: false),
+                    ),
+                    if (customCurrencies.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Divider(color: AppColors.border(isDark)),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              child: Text(
+                                'MY CURRENCIES'.tr,
+                                style: AppTextStyles.caption(isDark).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(color: AppColors.border(isDark)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ...customCurrencies.map(
+                        (currency) =>
+                            currencyTile(currency: currency, isCustom: true),
+                      ),
+                    ],
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+        actions: [
+          FilledButton.icon(
+            onPressed: () {
+              Get.back();
+              _showAddCurrencyDialog();
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: Text('Add Currency'.tr),
+            style: FilledButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              backgroundColor: AppColors.primary.withValues(
+                alpha: isDark ? 0.22 : 0.10,
+              ),
+              elevation: 0,
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          OutlinedButton(
+            onPressed: () => Get.back(),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.textSecondary(isDark),
+              side: BorderSide(color: AppColors.border(isDark)),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            child: Text('Close'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLanguageListDialog(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await Get.dialog<void>(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        title: Text(
+          'Select Language'.tr,
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontSize: 19, fontWeight: FontWeight.w700),
+        ),
+        content: SizedBox(
+          width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 390),
+            child: SingleChildScrollView(
+              child: Obx(
+                () => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: OnboardingController.languages.map((language) {
+                    final code = language.code.toLowerCase();
+                    final isSelected =
+                        controller.selectedLanguage.value == code;
+
+                    return ListTile(
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary(isDark),
+                      ),
+                      title: Text(language.nativeName),
+                      subtitle: Text(language.englishName),
+                      onTap: () async {
+                        await controller.changeLanguage(code);
+                        Get.back<void>();
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Get.back<void>(),
+            child: Text('Close'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteCurrency(
+    BuildContext context,
+    String currency,
+  ) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('Delete Currency?'.tr),
+        content: Text(
+          'Are you sure you want to remove "@currency" from your custom currencies?'
+              .trParams({'currency': currency}),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text('Cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(
+              'Delete'.tr,
+              style: const TextStyle(color: AppColors.expenseRed),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await controller.deleteCustomCurrency(currency);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final walletsController = Get.isRegistered<WalletsController>()
+        ? Get.find<WalletsController>()
+        : Get.put(WalletsController());
+
+    final goalsController = Get.isRegistered<GoalsController>()
+        ? Get.find<GoalsController>()
+        : Get.put(GoalsController());
+
+    final transactionsController = Get.find<TransactionsController>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Profile'.tr,
+          style: AppTextStyles.headingMedium(
+            isDark,
+          ).copyWith(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: false,
+      ),
+      body: Obx(
+        () => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
+          children: [
+            _buildProfileHeader(
+              context,
+              isDark,
+              walletsController,
+              transactionsController,
+              goalsController,
+            ),
+
+            const SizedBox(height: 28),
+
+            _SectionHeader(title: 'APPEARANCE'.tr, isDark: isDark),
+
+            const SizedBox(height: 10),
+
+            _SettingsCard(
+              isDark: isDark,
+              children: [
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  secondary: _IconContainer(
+                    icon: controller.isDarkMode.value
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    isDark: isDark,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    'Dark Mode'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    controller.isDarkMode.value
+                        ? 'Dark theme is enabled'.tr
+                        : 'Light theme is enabled'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  value: controller.isDarkMode.value,
+                  onChanged: controller.toggleDarkMode,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            _SectionHeader(title: 'MONEY'.tr, isDark: isDark),
+
+            const SizedBox(height: 10),
+
+            _SettingsCard(
+              isDark: isDark,
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.currency_exchange_rounded,
+                    isDark: isDark,
+                    color: const Color(0xFF2979FF),
+                  ),
+                  title: Text(
+                    'Default Currency'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Obx(
+                    () => Text(
+                      controller.selectedCurrency.value,
+                      style: AppTextStyles.bodyMedium(isDark),
+                    ),
+                  ),
+                  trailing: Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        controller.selectedCurrency.value,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    _showCurrencyListDialog(context);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.language_rounded,
+                    isDark: isDark,
+                    color: const Color(0xFF2979FF),
+                  ),
+                  title: Text(
+                    'Language'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Obx(() {
+                    final language = OnboardingController.languages
+                        .where(
+                          (item) =>
+                              item.code.toLowerCase() ==
+                              controller.selectedLanguage.value,
+                        )
+                        .firstOrNull;
+
+                    return Text(
+  language?.nativeName ?? 'English'.tr,
+  style: AppTextStyles.bodyMedium(isDark),
+);
+                  }),
+                  trailing: Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        controller.selectedLanguage.value.toUpperCase(),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  onTap: () => _showLanguageListDialog(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  secondary: _IconContainer(
+                    icon: controller.hideAmounts.value
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    isDark: isDark,
+                    color: const Color(0xFFE0A000),
+                  ),
+                  title: Text(
+                    'Hide amounts'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    controller.hideAmounts.value
+                        ? 'Balances are hidden on the home screen'.tr
+                        : 'Balances are visible on the home screen'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  value: controller.hideAmounts.value,
+                  onChanged: (_) => controller.toggleHideAmounts(),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            _SectionHeader(title: 'ACCOUNT'.tr, isDark: isDark),
+
+            const SizedBox(height: 10),
+
+            _SettingsCard(
+              isDark: isDark,
+              children: [
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  secondary: _IconContainer(
+                    icon: Icons.notifications_active_outlined,
+                    isDark: isDark,
+                    color: const Color(0xFF2979FF),
+                  ),
+                  title: Text(
+                    'Bill Notifications'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Receive reminders for upcoming bills'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  value: controller.notificationsEnabled.value,
+                  onChanged: controller.toggleNotifications,
+                ),
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.logout_rounded,
+                    isDark: isDark,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                  title: Text(
+                    'Logout'.tr,
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Sign out from your ExpenseMate account'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 15,
+                  ),
+                  onTap: () {
+                    _showLogoutDialog(context);
+                  },
+                ),
+
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.expenseRed.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(
+                      Icons.delete_forever_rounded,
+                      color: AppColors.expenseRed,
+                    ),
+                  ),
+                  title: Text(
+                    'Delete Account'.tr,
+                    style: AppTextStyles.bodyLarge(isDark).copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.expenseRed,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Permanently delete your account and data'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 15,
+                  ),
+                  onTap: () {
+                    _showDeleteAccountDialog(context);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 74,
+                  endIndent: 16,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+                ListTile(
+                  onTap: () => Get.to(() => const AboutView()),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: _IconContainer(
+                    icon: Icons.account_balance_wallet_rounded,
+                    isDark: isDark,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    'ExpenseMate',
+                    style: AppTextStyles.bodyLarge(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Expense management made simple'.tr,
+                    style: AppTextStyles.bodyMedium(isDark),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 30),
+
+            Center(
+              child: Text(
+                'ExpenseMate',
+                style: AppTextStyles.caption(isDark),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Center(
+              child: Text(
+                'Version 1.0.0'.tr,
+                style: AppTextStyles.caption(isDark),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =============================================================
+  // PROFILE HEADER
+  // =============================================================
+
+  Widget _buildProfileHeader(
+    BuildContext context,
+    bool isDark,
+    WalletsController walletsController,
+    TransactionsController transactionsController,
+    GoalsController goalsController,
+  ) {
+    final displayName = controller.profileName.value.isNotEmpty
+        ? controller.profileName.value
+        : 'User'.tr;
+
+    final displayEmail = controller.profileEmail.value.isNotEmpty
+        ? controller.profileEmail.value
+        : 'No email available'.tr;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2E7D32), Color(0xFF174D2A)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: isDark ? 0.28 : 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 37,
+                      backgroundColor: Colors.white.withValues(alpha: 0.16),
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
+                          ? NetworkImage(controller.profilePictureUrl.value)
+                          : null,
+                      child: controller.profilePictureUrl.value.isEmpty
+                          ? Text(
+                              displayName.isNotEmpty
+                                  ? displayName[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Material(
+                      color: Colors.white,
+                      shape: const CircleBorder(),
+                      elevation: 3,
+                      child: InkWell(
+                        onTap: controller.pickProfilePicture,
+                        customBorder: const CircleBorder(),
+                        child: Container(
+                          width: 29,
+                          height: 29,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF2E7D32),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Color(0xFF2E7D32),
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.headingMedium(isDark).copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      displayEmail,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium(
+                        isDark,
+                      ).copyWith(color: Colors.white.withValues(alpha: 0.82)),
+                    ),
+                    const SizedBox(height: 9),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'ExpenseMate Account'.tr,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Material(
+                color: Colors.white.withValues(alpha: 0.14),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => _showEditProfileDialog(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildProfileStat(
+                  icon: Icons.account_balance_wallet_rounded,
+                  label: 'Wallets'.tr,
+                  count: () => walletsController.wallets.length,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildProfileStat(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Entries'.tr,
+                  count: () => transactionsController.transactions.length,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildProfileStat(
+                  icon: Icons.flag_rounded,
+                  label: 'Goals'.tr,
+                  count: () => goalsController.goals.length,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileStat({
+    required IconData icon,
+    required String label,
+    required int Function() count,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 15,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Text(
+              '${count()}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 19,
+                height: 1,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =============================================================
+  // EDIT PROFILE DIALOG
+  // =============================================================
+
+  void _showEditProfileDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final nameController = TextEditingController(
+      text: controller.profileName.value,
+    );
+
+    final emailController = TextEditingController(
+      text: controller.profileEmail.value,
+    );
+
+    final passwordController = TextEditingController();
+
+    final obscurePassword = true.obs;
+
+    InputDecoration profileFieldDecoration({
+      required String label,
+      required IconData icon,
+      String? hint,
+      Widget? suffix,
+    }) {
+      final radius = BorderRadius.circular(12);
+      return InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: AppColors.cardAlt(isDark),
+        border: OutlineInputBorder(borderRadius: radius),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: AppColors.border(isDark)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      );
+    }
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 22, 16, 6),
+        contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actionsAlignment: MainAxisAlignment.end,
+        title: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.manage_accounts_rounded,
+                color: AppColors.primary,
+                size: 23,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Edit profile'.tr,
+                    style: AppTextStyles.headingMedium(
+                      isDark,
+                    ).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Update your account details'.tr,
+                    style: AppTextStyles.caption(isDark),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () => Get.back(),
+              icon: const Icon(Icons.close_rounded),
+              style: IconButton.styleFrom(
+                foregroundColor: AppColors.textSecondary(isDark),
+                backgroundColor: AppColors.cardAlt(isDark),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Obx(
+                  () => Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.28),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.24 : 0.08,
+                          ),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 41,
+                      backgroundColor: AppColors.primary,
+                      backgroundImage:
+                          controller.profilePictureUrl.value.isNotEmpty
+                          ? NetworkImage(controller.profilePictureUrl.value)
+                          : null,
+                      child: controller.profilePictureUrl.value.isEmpty
+                          ? Text(
+                              controller.profileName.value.isNotEmpty
+                                  ? controller.profileName.value[0]
+                                        .toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Obx(
+                      () => OutlinedButton.icon(
+                        onPressed: controller.isUpdatingProfile.value
+                            ? null
+                            : () async {
+                                await controller.pickProfilePicture();
+                              },
+                        icon: const Icon(
+                          Icons.photo_library_outlined,
+                          size: 18,
+                        ),
+                        label: Text('Change'.tr),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                          ),
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    Obx(
+                      () => controller.profilePictureUrl.value.isNotEmpty
+                          ? OutlinedButton.icon(
+                              onPressed: controller.isUpdatingProfile.value
+                                  ? null
+                                  : () async {
+                                      await controller.clearProfilePicture();
+                                    },
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                                color: AppColors.expenseRed,
+                              ),
+                              label: Text(
+                                'Clear'.tr,
+                                style: const TextStyle(
+                                  color: AppColors.expenseRed,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.expenseRed,
+                                side: BorderSide(
+                                  color: AppColors.expenseRed.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                ),
+                                shape: const StadiumBorder(),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 11,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 22),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'ACCOUNT DETAILS'.tr,
+                    style: AppTextStyles.caption(isDark).copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: nameController,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  decoration: profileFieldDecoration(
+                    label: 'Name'.tr,
+                    icon: Icons.person_outline_rounded,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  decoration: profileFieldDecoration(
+                    label: 'Email'.tr,
+                    icon: Icons.email_outlined,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                Obx(
+                  () => TextField(
+                    controller: passwordController,
+                    obscureText: obscurePassword.value,
+                    textInputAction: TextInputAction.done,
+                    decoration: profileFieldDecoration(
+                      label: 'New Password'.tr,
+                      hint: 'Leave empty to keep current password'.tr,
+                      icon: Icons.lock_outline_rounded,
+                      suffix: IconButton(
+                        onPressed: () {
+                          obscurePassword.value = !obscurePassword.value;
+                        },
+                        icon: Icon(
+                          obscurePassword.value
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Leave password empty if you do not want to change it.'.tr,
+                    style: AppTextStyles.caption(isDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary(isDark),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+            ),
+            child: Text('Cancel'.tr),
+          ),
+
+          Obx(
+            () => ElevatedButton(
+              onPressed: controller.isUpdatingProfile.value
+                  ? null
+                  : () async {
+                      await controller.updateProfile(
+                        name: nameController.text,
+                        email: emailController.text,
+                        password: passwordController.text,
+                      );
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 13,
+                ),
+              ),
+              child: controller.isUpdatingProfile.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      'Save changes'.tr,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  // =============================================================
+  // LOGOUT
+  // =============================================================
+
+  void _showLogoutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        title: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(
+                  alpha: isDark ? 0.18 : 0.1,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: AppColors.expenseRed,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Logout?'.tr,
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to logout from your ExpenseMate account?'.tr,
+          style: AppTextStyles.bodyMedium(isDark).copyWith(height: 1.5),
+        ),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: () => Get.back(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary(isDark),
+                  side: BorderSide(color: AppColors.border(isDark)),
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 13,
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                child: Text('Cancel'.tr),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () async {
+                  Get.back();
+                  await controller.logout();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.expenseRed,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 13,
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: Text('Logout'.tr),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =============================================================
+  // DELETE ACCOUNT
+  // =============================================================
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        title: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(
+                  alpha: isDark ? 0.18 : 0.1,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.delete_forever_rounded,
+                color: AppColors.expenseRed,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Delete Account?'.tr,
+                style: AppTextStyles.headingMedium(
+                  isDark,
+                ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This action is permanent. Your ExpenseMate account '
+                      'and associated account data will be deleted. '
+                      'You will not be able to recover your account.'
+                  .tr,
+              style: AppTextStyles.bodyMedium(isDark).copyWith(height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(
+                  alpha: isDark ? 0.16 : 0.08,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.expenseRed.withValues(alpha: 0.22),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.expenseRed,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'This cannot be undone.'.tr,
+                      style: AppTextStyles.bodyMedium(isDark).copyWith(
+                        color: AppColors.expenseRed,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: () => Get.back(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary(isDark),
+                  side: BorderSide(color: AppColors.border(isDark)),
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 13,
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                child: Text('Cancel'.tr),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () async {
+                  Get.back();
+                  await controller.deleteAccount();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.expenseRed,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 13,
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: Text('Delete Account'.tr),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===============================================================
+// SECTION HEADER
+// ===============================================================
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final bool isDark;
+
+  const _SectionHeader({required this.title, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.caption(isDark).copyWith(
+            fontSize: 11,
+            letterSpacing: 1.25,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textSecondary(isDark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ===============================================================
+// SETTINGS CARD
+// ===============================================================
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+  final bool isDark;
+
+  const _SettingsCard({required this.children, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.04),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.08 : 0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Column(children: children),
+      ),
+    );
+  }
+}
+
+// ===============================================================
+// ICON CONTAINER
+// ===============================================================
+
+class _IconContainer extends StatelessWidget {
+  final IconData icon;
+  final bool isDark;
+  final Color color;
+
+  const _IconContainer({
+    required this.icon,
+    required this.isDark,
+    this.color = AppColors.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Icon(icon, color: color),
+    );
+  }
+}

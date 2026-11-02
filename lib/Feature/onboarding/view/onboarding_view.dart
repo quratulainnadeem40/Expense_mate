@@ -430,7 +430,7 @@ class _PickRow extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: isActive
-                  ? _green.withOpacity(isDark ? 0.16 : 0.08)
+                  ? _green.withValues(alpha: isDark ? 0.16 : 0.08)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
@@ -448,7 +448,7 @@ class _PickRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isDark
                         ? Colors.white10
-                        : Colors.black.withOpacity(0.04),
+                        : Colors.black.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Text(

@@ -83,8 +83,8 @@ class TransactionDetailsScreen extends StatelessWidget {
               CircleAvatar(
                 radius: 35,
                 backgroundColor: transaction.isIncome
-                    ? Colors.green.withOpacity(0.15)
-                    : Colors.red.withOpacity(0.15),
+                    ? Colors.green.withValues(alpha: 0.15)
+                    : Colors.red.withValues(alpha: 0.15),
                 child: Icon(
                   transaction.isIncome
                       ? Icons.arrow_downward
@@ -143,7 +143,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                   children: [
@@ -188,7 +188,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 children: [
                   IconButton.filledTonal(
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.1),
+                      backgroundColor: Colors.red.withValues(alpha: 0.1),
                     ),
                     onPressed: _deleteTransaction,
                     icon: const Icon(Icons.delete_outline, color: Colors.red),

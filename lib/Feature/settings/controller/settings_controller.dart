@@ -1,3 +1,5 @@
+import 'package:expense_mate/Feature/pin/view/pin_lock_view.dart';
+import 'package:expense_mate/Core/service/pin_service.dart';
 import '../../../Core/service/sound_service.dart';
 import 'dart:async';
 
@@ -27,6 +29,10 @@ class SettingsController extends GetxController {
 
   /// Confirmation sound after a transaction is saved.
   final transactionSound = true.obs;
+
+  /// Supabase reports a deliberate logout and an expired session with
+  /// the same event, so the two are told apart with this.
+  bool _userAskedToLogOut = false;
   final selectedCurrency = 'PKR'.obs;
   final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
@@ -98,13 +104,51 @@ class SettingsController extends GetxController {
         }
       }
 
-      // User logged out.
+      // User logged out, or the session ran out on its own.
       if (event == AuthChangeEvent.signedOut) {
         profileName.value = '';
         profileEmail.value = '';
         profilePictureUrl.value = '';
+
+        _handleSignedOut();
       }
     });
+  }
+
+  /// Decides where to send someone whose session has ended.
+  ///
+  /// Pressing Log out always means the login screen. A session that
+  /// simply ran out is different: if the phone already has a PIN, that
+  /// is enough to prove who this is, so there is no reason to make them
+  /// type an email and password again. Someone who skipped the PIN has
+  /// nothing else to go on, so they log in.
+  void _handleSignedOut() {
+    if (_userAskedToLogOut) {
+      _userAskedToLogOut = false;
+      return;
+    }
+
+    final route = PinService.instance.isPinSet
+        ? AppRoutes.pinLock
+        : AppRoutes.login;
+
+    if (Get.currentRoute == route) return;
+
+    // Nothing to send them to before the app has drawn anything; splash
+    // works out the route by itself on a cold start.
+    if (Get.currentRoute == AppRoutes.splash) return;
+
+    if (route == AppRoutes.pinLock) {
+      PinService.instance.lock();
+
+      Get.offAllNamed(
+        AppRoutes.pinLock,
+        arguments: {PinLockView.argNextRoute: AppRoutes.home},
+      );
+      return;
+    }
+
+    Get.offAllNamed(AppRoutes.login);
   }
 
   // ============================================================
@@ -886,6 +930,7 @@ class SettingsController extends GetxController {
 
   Future<void> logout() async {
     try {
+      _userAskedToLogOut = true;
       await _supabase.auth.signOut();
 
       Get.offAllNamed(AppRoutes.login);

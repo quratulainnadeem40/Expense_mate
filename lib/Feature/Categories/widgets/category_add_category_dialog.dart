@@ -237,7 +237,7 @@ Future<void> _saveCategory() async {
           ),
           decoration: BoxDecoration(
             color: isSelected
-                ? color.withOpacity(0.13)
+                ? color.withValues(alpha: 0.13)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
@@ -340,14 +340,14 @@ Future<void> _saveCategory() async {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(
                   color: Colors.white30,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -367,7 +367,7 @@ Future<void> _saveCategory() async {
                   Text(
                     'CATEGORY SETUP',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.72),
+                      color: Colors.white.withValues(alpha: 0.72),
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.4,
@@ -413,8 +413,8 @@ Future<void> _saveCategory() async {
                 ),
                 filled: true,
                 fillColor: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.white.withOpacity(0.72),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.white.withValues(alpha: 0.72),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -457,8 +457,8 @@ Future<void> _saveCategory() async {
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.04)
-                    : Colors.grey.withOpacity(0.08),
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.grey.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Row(
@@ -521,12 +521,12 @@ Future<void> _saveCategory() async {
                     height: 54,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? iconColor.withOpacity(
-                              isDark ? 0.34 : 0.24,
+                          ? iconColor.withValues(
+                              alpha: isDark ? 0.34 : 0.24,
                             )
                           : (isDark
-                              ? Colors.white.withOpacity(0.04)
-                              : iconColor.withOpacity(0.10)),
+                              ? Colors.white.withValues(alpha: 0.04)
+                              : iconColor.withValues(alpha: 0.10)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
@@ -539,7 +539,7 @@ Future<void> _saveCategory() async {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: iconColor.withOpacity(0.38),
+                                color: iconColor.withValues(alpha: 0.38),
                                 blurRadius: 12,
                                 offset: const Offset(0, 5),
                               ),
@@ -568,7 +568,7 @@ Future<void> _saveCategory() async {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.16),
+                                    color: Colors.black.withValues(alpha: 0.16),
                                     blurRadius: 3,
                                   ),
                                 ],

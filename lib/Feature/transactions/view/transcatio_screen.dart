@@ -12,7 +12,6 @@ import 'package:expense_mate/Feature/bills_reminders/binding/bills_reminders_bin
 import 'package:expense_mate/Feature/bills_reminders/view/bills_reminders_view.dart';
 import 'package:expense_mate/Feature/settings/binding/settings_binding.dart';
 import 'package:expense_mate/Feature/settings/view/settings_view.dart';
-import 'package:expense_mate/Feature/home/controller/home_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/committee/view/committee_view.dart';
@@ -191,28 +190,6 @@ class _TransactionsViewState extends State<TransactionsView>
   // BACK
   // ==========================================================
 
-  void _handleBack() {
-    // First exit selection mode.
-    if (_isSelectionMode) {
-      _clearSelection();
-      return;
-    }
-
-    if (searchQuery.value.isNotEmpty) {
-      _closeSearch();
-      return;
-    }
-
-    if (Navigator.of(context).canPop()) {
-      Get.back();
-      return;
-    }
-
-    if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().changePage(0);
-    }
-  }
-
   // ==========================================================
   // SEARCH
   // ==========================================================
@@ -242,28 +219,6 @@ class _TransactionsViewState extends State<TransactionsView>
     setState(() {
       selectedTransactionIds.clear();
     });
-  }
-
-  void _selectAll(List<TransactionModel> visibleTransactions) {
-    if (visibleTransactions.isEmpty) {
-      return;
-    }
-
-    final visibleIds = visibleTransactions
-        .map((transaction) => transaction.id)
-        .toSet();
-
-    final allVisibleSelected = visibleIds.every(
-      selectedTransactionIds.contains,
-    );
-
-    if (allVisibleSelected) {
-      // Unselect all currently visible transactions.
-      selectedTransactionIds.removeWhere((id) => visibleIds.contains(id));
-    } else {
-      // Select all currently visible transactions.
-      selectedTransactionIds.addAll(visibleIds);
-    }
   }
 
   // ==========================================================
@@ -395,918 +350,933 @@ class _TransactionsViewState extends State<TransactionsView>
 
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_isSelectionMode) {
-          _clearSelection();
-          return false;
-        }
+    return Obx(
+      () => PopScope(
+        canPop: !_isSelectionMode && searchQuery.value.isEmpty,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (_isSelectionMode) {
+            _clearSelection();
+          } else if (searchQuery.value.isNotEmpty) {
+            _closeSearch();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
 
-        if (searchQuery.value.isNotEmpty) {
-          _closeSearch();
-          return false;
-        }
+          endDrawer: _buildNavigationDrawer(
+            context,
+            isDarkMode,
+            settingsController,
+          ),
 
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
+          // ======================================================
+          // APP BAR
+          // ======================================================
+          appBar: AppBar(
+            title: _isSelectionMode
+                ? Text('${selectedTransactionIds.length} Selected')
+                : const Text('Transactions'),
 
-        endDrawer: _buildNavigationDrawer(
-          context,
-          isDarkMode,
-          settingsController,
-        ),
+            actions: [
+              if (_isSelectionMode) ...[
+                IconButton(
+                  tooltip: 'Select All',
+                  icon: const Icon(Icons.select_all_rounded),
+                  onPressed: _selectAllVisibleTransactions,
+                ),
+                IconButton(
+                  tooltip: 'Delete Selected',
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  onPressed: () {
+                    _confirmDeleteSelected(transactionsController);
+                  },
+                ),
+              ] else ...[
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: SyncStatusIndicator(),
+                ),
 
-        // ======================================================
-        // APP BAR
-        // ======================================================
-        appBar: AppBar(
-          title: _isSelectionMode
-              ? Text('${selectedTransactionIds.length} Selected')
-              : const Text('Transactions'),
-
-          actions: [
-            if (_isSelectionMode) ...[
-              IconButton(
-                tooltip: 'Select All',
-                icon: const Icon(Icons.select_all_rounded),
-                onPressed: _selectAllVisibleTransactions,
-              ),
-              IconButton(
-                tooltip: 'Delete Selected',
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () {
-                  _confirmDeleteSelected(transactionsController);
-                },
-              ),
-            ] else ...[
-              const Padding(
-                padding: EdgeInsets.only(right: 4),
-                child: SyncStatusIndicator(),
-              ),
-
-              Builder(
-                builder: (scaffoldContext) {
-                  return IconButton(
-                    icon: Icon(
-                      Icons.menu_rounded,
-                      size: 28,
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                    ),
-                    onPressed: () {
-                      Scaffold.of(scaffoldContext).openEndDrawer();
-                    },
-                  );
-                },
-              ),
-            ],
-          ],
-        ),
-        // ======================================================
-        // BODY
-        // ======================================================
-
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                // ==================================================
-                // INCOME / EXPENSE SUMMARY
-                // ==================================================
-
-                Obx(() {
-                  final list = transactionsController.transactions;
-
-                  double totalIncome = list
-                      .where((tx) => tx.isIncome == true)
-                      .fold(0.0, (sum, tx) => sum + tx.amount);
-
-                  double totalExpense = list
-                      .where((tx) => tx.isIncome == false)
-                      .fold(0.0, (sum, tx) => sum + tx.amount);
-
-                  final safeIncome = totalIncome.isNaN || totalIncome.isInfinite
-                      ? 0.0
-                      : totalIncome;
-
-                  final safeExpense =
-                      totalExpense.isNaN || totalExpense.isInfinite
-                      ? 0.0
-                      : totalExpense;
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? const Color(0xFF121212)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(
-                            isDarkMode ? 0.3 : 0.05,
-                          ),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Income',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkMode
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                Formatters.money(safeIncome, decimals: 2),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        Container(
-                          height: 35,
-                          width: 1,
-                          color: isDarkMode
-                              ? Colors.grey.shade700
-                              : Colors.grey.shade300,
-                        ),
-
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Expense',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkMode
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                Formatters.money(safeExpense, decimals: 2),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFEB5757),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                // ==================================================
-                // SEARCH
-                // ==================================================
-                Obx(
-                  () => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      textInputAction: TextInputAction.search,
-                      onChanged: (value) => searchQuery.value = value,
-                      style: TextStyle(
-                        fontSize: 16,
+                Builder(
+                  builder: (scaffoldContext) {
+                    return IconButton(
+                      icon: Icon(
+                        Icons.menu_rounded,
+                        size: 28,
                         color: isDarkMode ? Colors.white : Colors.black87,
                       ),
-                      cursorColor: const Color(0xFF4CAF50),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        filled: true,
-                        fillColor: isDarkMode
-                            ? const Color(0xFF121212)
-                            : Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
-                        prefixIcon: isSearchFocused.value
-                            ? null
-                            : Icon(
-                                Icons.search_rounded,
-                                color: isDarkMode
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
-                              ),
-                        suffixIcon:
-                            searchQuery.value.isEmpty && !isSearchFocused.value
-                            ? null
-                            : IconButton(
-                                tooltip: 'Cancel search',
-                                onPressed: _closeSearch,
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                        hintText: 'Search title or category...',
-                        hintStyle: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey.shade500,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: isDarkMode
-                                ? Colors.grey.shade700
-                                : const Color(0xFFE2E6E9),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: isDarkMode
-                                ? Colors.grey.shade700
-                                : const Color(0xFFE2E6E9),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF4CAF50),
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ==================================================
-                // TRANSACTION FILTER
-                // ==================================================
-                Obx(() {
-                  final filters = ['All', 'Income', 'Expense'];
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: filters.map((filter) {
-                        final isSelected = selectedFilter.value == filter;
-
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: ChoiceChip(
-                              label: Text(filter),
-                              selected: isSelected,
-                              showCheckmark: false,
-                              onSelected: (_) {
-                                selectedFilter.value = filter;
-                              },
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  );
-                }),
-                // ==================================================
-                // TRANSACTION LIST
-                // ==================================================
-
-                Expanded(
-                  child: Obx(() {
-                    final query = searchQuery.value.toLowerCase().trim();
-
-                    final list = transactionsController.transactions.where((
-                      tx,
-                    ) {
-                      // 1. Apply Income / Expense filter.
-                      if (!_matchesSelectedFilter(tx)) {
-                        return false;
-                      }
-
-                      // 2. Apply search filter.
-                      if (query.isEmpty) {
-                        return true;
-                      }
-
-                      final categoryName = _getCategoryName(
-                        tx.categoryId,
-                        customCategory: tx.customCategoryName,
-                      ).toLowerCase();
-
-                      final title = tx.title.toLowerCase();
-
-                      return title.contains(query) ||
-                          categoryName.contains(query);
-                    }).toList();
-
-                    if (list.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              size: 48,
-                              color: isDarkMode
-                                  ? Colors.grey.shade600
-                                  : Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No transactions found.',
-                              style: TextStyle(
-                                color: isDarkMode
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    // Keep your existing ListView.builder code here.
-
-                    return ListView.builder(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        8,
-                        16,
-                        112 + MediaQuery.of(context).viewPadding.bottom,
-                      ),
-                      itemCount: list.length,
-                      itemBuilder: (context, index) {
-                        final TransactionModel transaction = list[index];
-
-                        final bool isIncome = transaction.isIncome;
-
-                        final bool isSelected = selectedTransactionIds.contains(
-                          transaction.id,
-                        );
-
-                        final String categoryName = _getCategoryName(
-                          transaction.categoryId,
-                          customCategory: transaction.customCategoryName,
-                        );
-
-                        final String displayTitle =
-                            transaction.title.trim().isEmpty
-                            ? categoryName
-                            : transaction.title;
-
-                        return GestureDetector(
-                          onLongPress: () {
-                            _toggleTransactionSelection(transaction.id);
-                          },
-                          onTap: _isSelectionMode
-                              ? () {
-                                  _toggleTransactionSelection(transaction.id);
-                                }
-                              : null,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? (isDarkMode
-                                        ? const Color(0xFF183D1C)
-                                        : const Color(0xFFE8F5E9))
-                                  : (isDarkMode
-                                        ? const Color(0xFF121212)
-                                        : Colors.white),
-                              borderRadius: BorderRadius.circular(16),
-                              border: isSelected
-                                  ? Border.all(
-                                      color: const Color(0xFF4CAF50),
-                                      width: 1.5,
-                                    )
-                                  : null,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(
-                                    isDarkMode ? 0.2 : 0.04,
-                                  ),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-
-                              // ====================================
-                              // LEADING
-                              // ====================================
-                              leading: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_isSelectionMode)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 10),
-                                      child: AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 150,
-                                        ),
-                                        width: 24,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: isSelected
-                                              ? const Color(0xFF4CAF50)
-                                              : Colors.transparent,
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? const Color(0xFF4CAF50)
-                                                : (isDarkMode
-                                                      ? Colors.grey.shade600
-                                                      : Colors.grey.shade400),
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: isSelected
-                                            ? const Icon(
-                                                Icons.check,
-                                                color: Colors.white,
-                                                size: 16,
-                                              )
-                                            : null,
-                                      ),
-                                    ),
-
-                                  CircleAvatar(
-                                    radius: 22,
-                                    backgroundColor: isIncome
-                                        ? (isDarkMode
-                                              ? const Color(0xFF1E382B)
-                                              : const Color(0xFFEBF9EE))
-                                        : (isDarkMode
-                                              ? const Color(0xFF3B1E1E)
-                                              : const Color(0xFFFDEEEE)),
-                                    child: Icon(
-                                      isIncome
-                                          ? Icons.arrow_downward_rounded
-                                          : Icons.arrow_upward_rounded,
-                                      color: isIncome
-                                          ? const Color(0xFF4CAF50)
-                                          : const Color(0xFFEB5757),
-                                      size: 20,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // ====================================
-                              // TITLE
-                              // ====================================
-                              title: Text(
-                                displayTitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-
-                              // ====================================
-                              // SUBTITLE
-                              // ====================================
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  "$categoryName • ${_getFormattedDate(transaction.date)}",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.grey.shade400
-                                        : Colors.grey.shade600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-
-                              // ====================================
-                              // TRAILING
-                              // ====================================
-                              trailing: _isSelectionMode
-                                  ? Text(
-                                      Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
-                                      style:
-                                          AppTextStyles.bodyMedium(
-                                            isDarkMode,
-                                          ).copyWith(
-                                            color: isIncome
-                                                ? Colors.green
-                                                : Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    )
-                                  : Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          Formatters.signedMoney(transaction.amount, isIncome: isIncome, decimals: 2),
-                                          style:
-                                              AppTextStyles.bodyMedium(
-                                                isDarkMode,
-                                              ).copyWith(
-                                                color: isIncome
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-
-                                        PopupMenuButton<String>(
-                                          icon: const Icon(Icons.more_vert),
-                                          onSelected: (value) async {
-                                            if (value == 'edit') {
-                                              await showDialog(
-                                                context: context,
-                                                builder: (_) {
-                                                  return AddTransactionDialog(
-                                                    transaction: transaction,
-                                                  );
-                                                },
-                                              );
-                                            }
-
-                                            if (value == 'delete') {
-                                              final shouldDelete =
-                                                  await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (dialogContext) {
-                                                      return AlertDialog(
-                                                        title: const Text(
-                                                          'Delete Transaction',
-                                                        ),
-                                                        content: Text(
-                                                          'Are you sure you want to delete '
-                                                          '"${transaction.title}"?',
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              Navigator.of(
-                                                                dialogContext,
-                                                              ).pop(false);
-                                                            },
-                                                            child: const Text(
-                                                              'Cancel',
-                                                            ),
-                                                          ),
-                                                          ElevatedButton(
-                                                            onPressed: () {
-                                                              Navigator.of(
-                                                                dialogContext,
-                                                              ).pop(true);
-                                                            },
-                                                            child: const Text(
-                                                              'Delete',
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-
-                                              if (shouldDelete == true) {
-                                                await transactionsController
-                                                    .deleteTransaction(
-                                                      transaction.id,
-                                                    );
-                                              }
-                                            }
-                                          },
-                                          itemBuilder: (context) => const [
-                                            PopupMenuItem<String>(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit_outlined),
-                                                  SizedBox(width: 10),
-                                                  Text('Edit'),
-                                                ],
-                                              ),
-                                            ),
-                                            PopupMenuItem<String>(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete_outline),
-                                                  SizedBox(width: 10),
-                                                  Text('Delete'),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-                        );
+                      onPressed: () {
+                        Scaffold.of(scaffoldContext).openEndDrawer();
                       },
                     );
-                  }),
+                  },
                 ),
               ],
-            ),
+            ],
+          ),
 
-            // ====================================================
-            // CUSTOM FLOATING DRAWER OVERLAY
-            // ====================================================
-            Obx(() {
-              if (!isDrawerOpen.value) {
-                return const SizedBox.shrink();
-              }
-
-              return Stack(
+          // ======================================================
+          // BODY
+          // ======================================================
+          body: Stack(
+            children: [
+              Column(
                 children: [
-                  GestureDetector(
-                    onTap: () => isDrawerOpen.value = false,
-                    child: Container(color: Colors.black.withOpacity(0.5)),
-                  ),
+                  // ==================================================
+                  // INCOME / EXPENSE SUMMARY
+                  // ==================================================
+                  Obx(() {
+                    final list = transactionsController.transactions;
 
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      width: MediaQuery.of(context).size.width < 316
-                          ? MediaQuery.of(context).size.width - 12
-                          : 304,
-                      height: MediaQuery.of(context).size.height * 0.76,
-                      margin: const EdgeInsets.only(
-                        right: 12,
-                        top: 10,
-                        bottom: 80,
+                    double totalIncome = list
+                        .where((tx) => tx.isIncome == true)
+                        .fold(0.0, (sum, tx) => sum + tx.amount);
+
+                    double totalExpense = list
+                        .where((tx) => tx.isIncome == false)
+                        .fold(0.0, (sum, tx) => sum + tx.amount);
+
+                    final safeIncome =
+                        totalIncome.isNaN || totalIncome.isInfinite
+                        ? 0.0
+                        : totalIncome;
+
+                    final safeExpense =
+                        totalExpense.isNaN || totalExpense.isInfinite
+                        ? 0.0
+                        : totalExpense;
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 16,
                       ),
                       decoration: BoxDecoration(
                         color: isDarkMode
-                            ? const Color(0xFF1E1E1E)
-                            : const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(28),
+                            ? const Color(0xFF121212)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+                            color: Colors.black.withValues(
+                              alpha: isDarkMode ? 0.3 : 0.05,
+                            ),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: Column(
-                          children: [
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 6,
-                                  right: 6,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Income',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDarkMode
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                  ),
                                 ),
-                                child: IconButton(
-                                  onPressed: () => isDrawerOpen.value = false,
-                                  icon: Icon(
-                                    Icons.close,
-                                    size: 28,
+                                const SizedBox(height: 6),
+                                Text(
+                                  Formatters.money(safeIncome, decimals: 2),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Container(
+                            height: 35,
+                            width: 1,
+                            color: isDarkMode
+                                ? Colors.grey.shade700
+                                : Colors.grey.shade300,
+                          ),
+
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Expense',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDarkMode
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  Formatters.money(safeExpense, decimals: 2),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFEB5757),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  // ==================================================
+                  // SEARCH
+                  // ==================================================
+                  Obx(
+                    () => Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        textInputAction: TextInputAction.search,
+                        onChanged: (value) => searchQuery.value = value,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
+                        cursorColor: const Color(0xFF4CAF50),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: true,
+                          fillColor: isDarkMode
+                              ? const Color(0xFF121212)
+                              : Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
+                          prefixIcon: isSearchFocused.value
+                              ? null
+                              : Icon(
+                                  Icons.search_rounded,
+                                  color: isDarkMode
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
+                                ),
+                          suffixIcon:
+                              searchQuery.value.isEmpty &&
+                                  !isSearchFocused.value
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Cancel search',
+                                  onPressed: _closeSearch,
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                          hintText: 'Search title or category...',
+                          hintStyle: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey.shade500,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: isDarkMode
+                                  ? Colors.grey.shade700
+                                  : const Color(0xFFE2E6E9),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: isDarkMode
+                                  ? Colors.grey.shade700
+                                  : const Color(0xFFE2E6E9),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF4CAF50),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ==================================================
+                  // TRANSACTION FILTER
+                  // ==================================================
+                  Obx(() {
+                    final filters = ['All', 'Income', 'Expense'];
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: filters.map((filter) {
+                          final isSelected = selectedFilter.value == filter;
+
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: ChoiceChip(
+                                label: Text(filter),
+                                selected: isSelected,
+                                showCheckmark: false,
+                                onSelected: (_) {
+                                  selectedFilter.value = filter;
+                                },
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  }),
+
+                  // ==================================================
+                  // TRANSACTION LIST
+                  // ==================================================
+                  Expanded(
+                    child: Obx(() {
+                      final query = searchQuery.value.toLowerCase().trim();
+
+                      final list = transactionsController.transactions.where((
+                        tx,
+                      ) {
+                        // 1. Apply Income / Expense filter.
+                        if (!_matchesSelectedFilter(tx)) {
+                          return false;
+                        }
+
+                        // 2. Apply search filter.
+                        if (query.isEmpty) {
+                          return true;
+                        }
+
+                        final categoryName = _getCategoryName(
+                          tx.categoryId,
+                          customCategory: tx.customCategoryName,
+                        ).toLowerCase();
+
+                        final title = tx.title.toLowerCase();
+
+                        return title.contains(query) ||
+                            categoryName.contains(query);
+                      }).toList();
+
+                      if (list.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
+                                size: 48,
+                                color: isDarkMode
+                                    ? Colors.grey.shade600
+                                    : Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No transactions found.',
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      // Keep your existing ListView.builder code here.
+
+                      return ListView.builder(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          8,
+                          16,
+                          112 + MediaQuery.of(context).viewPadding.bottom,
+                        ),
+                        itemCount: list.length,
+                        itemBuilder: (context, index) {
+                          final TransactionModel transaction = list[index];
+
+                          final bool isIncome = transaction.isIncome;
+
+                          final bool isSelected = selectedTransactionIds
+                              .contains(transaction.id);
+
+                          final String categoryName = _getCategoryName(
+                            transaction.categoryId,
+                            customCategory: transaction.customCategoryName,
+                          );
+
+                          final String displayTitle =
+                              transaction.title.trim().isEmpty
+                              ? categoryName
+                              : transaction.title;
+
+                          return GestureDetector(
+                            onLongPress: () {
+                              _toggleTransactionSelection(transaction.id);
+                            },
+                            onTap: _isSelectionMode
+                                ? () {
+                                    _toggleTransactionSelection(transaction.id);
+                                  }
+                                : null,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? (isDarkMode
+                                          ? const Color(0xFF183D1C)
+                                          : const Color(0xFFE8F5E9))
+                                    : (isDarkMode
+                                          ? const Color(0xFF121212)
+                                          : Colors.white),
+                                borderRadius: BorderRadius.circular(16),
+                                border: isSelected
+                                    ? Border.all(
+                                        color: const Color(0xFF4CAF50),
+                                        width: 1.5,
+                                      )
+                                    : null,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(
+                                      alpha: isDarkMode ? 0.2 : 0.04,
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+
+                                // ====================================
+                                // LEADING
+                                // ====================================
+                                leading: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_isSelectionMode)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 10,
+                                        ),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 150,
+                                          ),
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isSelected
+                                                ? const Color(0xFF4CAF50)
+                                                : Colors.transparent,
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? const Color(0xFF4CAF50)
+                                                  : (isDarkMode
+                                                        ? Colors.grey.shade600
+                                                        : Colors.grey.shade400),
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: isSelected
+                                              ? const Icon(
+                                                  Icons.check,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                )
+                                              : null,
+                                        ),
+                                      ),
+
+                                    CircleAvatar(
+                                      radius: 22,
+                                      backgroundColor: isIncome
+                                          ? (isDarkMode
+                                                ? const Color(0xFF1E382B)
+                                                : const Color(0xFFEBF9EE))
+                                          : (isDarkMode
+                                                ? const Color(0xFF3B1E1E)
+                                                : const Color(0xFFFDEEEE)),
+                                      child: Icon(
+                                        isIncome
+                                            ? Icons.arrow_downward_rounded
+                                            : Icons.arrow_upward_rounded,
+                                        color: isIncome
+                                            ? const Color(0xFF4CAF50)
+                                            : const Color(0xFFEB5757),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // ====================================
+                                // TITLE
+                                // ====================================
+                                title: Text(
+                                  displayTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
                                     color: isDarkMode
                                         ? Colors.white
                                         : Colors.black87,
                                   ),
                                 ),
-                              ),
-                            ),
 
-                            UserAccountsDrawerHeader(
-                              margin: EdgeInsets.zero,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isDarkMode
-                                      ? const [
-                                          Color(0xFF2E7D32),
-                                          Color(0xFF1B5E20),
-                                        ]
-                                      : const [
-                                          Color(0xFF4CAF50),
-                                          Color(0xFF388E3C),
-                                        ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                              ),
-                              currentAccountPictureSize: const Size.square(64),
-                              currentAccountPicture: Obx(() {
-                                final imageUrl =
-                                    settingsController.profilePictureUrl.value;
-
-                                final name =
-                                    settingsController.profileName.value;
-
-                                final firstLetter = name.isNotEmpty
-                                    ? name[0].toUpperCase()
-                                    : 'U';
-
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
+                                // ====================================
+                                // SUBTITLE
+                                // ====================================
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Text(
+                                    "$categoryName • ${_getFormattedDate(transaction.date)}",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: isDarkMode
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600,
+                                      fontSize: 12,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.15,
+                                  ),
+                                ),
+
+                                // ====================================
+                                // TRAILING
+                                // ====================================
+                                trailing: _isSelectionMode
+                                    ? Text(
+                                        Formatters.signedMoney(
+                                          transaction.amount,
+                                          isIncome: isIncome,
+                                          decimals: 2,
                                         ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: CircleAvatar(
-                                    backgroundColor: Colors.white,
-                                    backgroundImage: imageUrl.isNotEmpty
-                                        ? NetworkImage(imageUrl)
-                                        : null,
-                                    child: imageUrl.isEmpty
-                                        ? Text(
-                                            firstLetter,
-                                            style: const TextStyle(
-                                              fontSize: 26,
+                                        style:
+                                            AppTextStyles.bodyMedium(
+                                              isDarkMode,
+                                            ).copyWith(
+                                              color: isIncome
+                                                  ? Colors.green
+                                                  : Colors.red,
                                               fontWeight: FontWeight.bold,
-                                              color: Color(0xFF2E7D32),
                                             ),
-                                          )
-                                        : null,
-                                  ),
-                                );
-                              }),
-                              accountName: Text(
-                                _userName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              accountEmail: Text(
-                                Supabase
-                                        .instance
-                                        .client
-                                        .auth
-                                        .currentUser
-                                        ?.email ??
-                                    '',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
+                                      )
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            Formatters.signedMoney(
+                                              transaction.amount,
+                                              isIncome: isIncome,
+                                              decimals: 2,
+                                            ),
+                                            style:
+                                                AppTextStyles.bodyMedium(
+                                                  isDarkMode,
+                                                ).copyWith(
+                                                  color: isIncome
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+
+                                          PopupMenuButton<String>(
+                                            icon: const Icon(Icons.more_vert),
+                                            onSelected: (value) async {
+                                              if (value == 'edit') {
+                                                await showDialog(
+                                                  context: context,
+                                                  builder: (_) {
+                                                    return AddTransactionDialog(
+                                                      transaction: transaction,
+                                                    );
+                                                  },
+                                                );
+                                              } else if (value == 'delete') {
+                                                final shouldDelete =
+                                                    await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (dialogContext) {
+                                                        return AlertDialog(
+                                                          title: const Text(
+                                                            'Delete Transaction',
+                                                          ),
+                                                          content: Text(
+                                                            'Are you sure you want to delete '
+                                                            '"${transaction.title}"?',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                  dialogContext,
+                                                                ).pop(false);
+                                                              },
+                                                              child: const Text(
+                                                                'Cancel',
+                                                              ),
+                                                            ),
+                                                            ElevatedButton(
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                  dialogContext,
+                                                                ).pop(true);
+                                                              },
+                                                              child: const Text(
+                                                                'Delete',
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    );
+
+                                                if (shouldDelete == true) {
+                                                  await transactionsController
+                                                      .deleteTransaction(
+                                                        transaction.id,
+                                                      );
+                                                }
+                                              }
+                                            },
+                                            itemBuilder: (context) => const [
+                                              PopupMenuItem<String>(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit_outlined),
+                                                    SizedBox(width: 10),
+                                                    Text('Edit'),
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.delete_outline),
+                                                    SizedBox(width: 10),
+                                                    Text('Delete'),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                               ),
                             ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
 
-                            Expanded(
-                              child: ListView(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 16,
-                                ),
-                                physics: const BouncingScrollPhysics(),
-                                children: [
-                                  _buildDrawerOption(
-                                    context: context,
-                                    icon: Icons.account_balance_wallet_rounded,
-                                    iconColor: const Color(0xFF3A5BA0),
-                                    emoji: '💳',
-                                    title: 'Wallets',
-                                    subtitle:
-                                        'Manage your cash, bank and other wallets',
-                                    onTap: () => _closeDrawerAndNavigate(
-                                      () => const WalletsView(),
-                                      binding: WalletsBinding(),
-                                    ),
-                                  ),
+              // ====================================================
+              // CUSTOM FLOATING DRAWER OVERLAY
+              // ====================================================
+              Obx(() {
+                if (!isDrawerOpen.value) {
+                  return const SizedBox.shrink();
+                }
 
-                                  const SizedBox(height: 12),
+                return Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: () => isDrawerOpen.value = false,
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
+                    ),
 
-                                  _buildDrawerOption(
-                                    context: context,
-                                    icon: Icons.donut_small_rounded,
-                                    iconColor: const Color(0xFF2E7D32),
-                                    emoji: '📊',
-                                    title: 'Budgets',
-                                    subtitle:
-                                        'Set and track monthly spending limits',
-                                    onTap: () => _closeDrawerAndNavigate(
-                                      () => const BudgetView(),
-                                      binding: BudgetBinding(),
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  _buildDrawerOption(
-                                    context: context,
-                                    icon: Icons.flag_rounded,
-                                    iconColor: const Color(0xFFB26A00),
-                                    emoji: '🎯',
-                                    title: 'Goals',
-                                    subtitle:
-                                        'Track your financial targets and savings',
-                                    onTap: () => _closeDrawerAndNavigate(
-                                      () => const GoalsView(),
-                                      binding: GoalsBinding(),
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  _buildDrawerOption(
-                                    context: context,
-                                    icon: Icons.receipt_long_rounded,
-                                    iconColor: const Color(0xFF7A4EAB),
-                                    emoji: '🧾',
-                                    title: 'Bills & Reminders',
-                                    subtitle:
-                                        'Manage upcoming bills and reminders',
-                                    onTap: () => _closeDrawerAndNavigate(
-                                      () => const BillsRemindersView(),
-                                      binding: BillsRemindersBinding(),
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  _buildDrawerOption(
-                                    context: context,
-                                    icon: Icons.groups_rounded,
-                                    iconColor: const Color(0xFF00695C),
-                                    emoji: '🤝',
-                                    title: 'Digital Committee',
-                                    subtitle:
-                                        'Manage your committee and member payments',
-                                    onTap: () => _closeDrawerAndNavigate(
-                                      () => CommitteeView(),
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  _buildDrawerOption(
-                                    context: context,
-                                    icon: Icons.person_rounded,
-                                    iconColor: const Color(0xFFF2C14E),
-                                    title: 'Profile',
-                                    subtitle: 'Manage your profile and acc...',
-                                    onTap: () => _closeDrawerAndNavigate(
-                                      () => const SettingsView(),
-                                      binding: SettingsBinding(),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width < 316
+                            ? MediaQuery.of(context).size.width - 12
+                            : 304,
+                        height: MediaQuery.of(context).size.height * 0.76,
+                        margin: const EdgeInsets.only(
+                          right: 12,
+                          top: 10,
+                          bottom: 80,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
                             ),
                           ],
                         ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: Column(
+                            children: [
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 6,
+                                    right: 6,
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () => isDrawerOpen.value = false,
+                                    icon: Icon(
+                                      Icons.close,
+                                      size: 28,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              UserAccountsDrawerHeader(
+                                margin: EdgeInsets.zero,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: isDarkMode
+                                        ? const [
+                                            Color(0xFF2E7D32),
+                                            Color(0xFF1B5E20),
+                                          ]
+                                        : const [
+                                            Color(0xFF4CAF50),
+                                            Color(0xFF388E3C),
+                                          ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                currentAccountPictureSize: const Size.square(
+                                  64,
+                                ),
+                                currentAccountPicture: Obx(() {
+                                  final imageUrl = settingsController
+                                      .profilePictureUrl
+                                      .value;
+
+                                  final name =
+                                      settingsController.profileName.value;
+
+                                  final firstLetter = name.isNotEmpty
+                                      ? name[0].toUpperCase()
+                                      : 'U';
+
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: CircleAvatar(
+                                      backgroundColor: Colors.white,
+                                      backgroundImage: imageUrl.isNotEmpty
+                                          ? NetworkImage(imageUrl)
+                                          : null,
+                                      child: imageUrl.isEmpty
+                                          ? Text(
+                                              firstLetter,
+                                              style: const TextStyle(
+                                                fontSize: 26,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF2E7D32),
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                  );
+                                }),
+                                accountName: Text(
+                                  _userName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                accountEmail: Text(
+                                  Supabase
+                                          .instance
+                                          .client
+                                          .auth
+                                          .currentUser
+                                          ?.email ??
+                                      '',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+
+                              Expanded(
+                                child: ListView(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 16,
+                                  ),
+                                  physics: const BouncingScrollPhysics(),
+                                  children: [
+                                    _buildDrawerOption(
+                                      context: context,
+                                      icon:
+                                          Icons.account_balance_wallet_rounded,
+                                      iconColor: const Color(0xFF3A5BA0),
+                                      emoji: '💳',
+                                      title: 'Wallets',
+                                      subtitle:
+                                          'Manage your cash, bank and other wallets',
+                                      onTap: () => _closeDrawerAndNavigate(
+                                        () => const WalletsView(),
+                                        binding: WalletsBinding(),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    _buildDrawerOption(
+                                      context: context,
+                                      icon: Icons.donut_small_rounded,
+                                      iconColor: const Color(0xFF2E7D32),
+                                      emoji: '📊',
+                                      title: 'Budgets',
+                                      subtitle:
+                                          'Set and track monthly spending limits',
+                                      onTap: () => _closeDrawerAndNavigate(
+                                        () => const BudgetView(),
+                                        binding: BudgetBinding(),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    _buildDrawerOption(
+                                      context: context,
+                                      icon: Icons.flag_rounded,
+                                      iconColor: const Color(0xFFB26A00),
+                                      emoji: '🎯',
+                                      title: 'Goals',
+                                      subtitle:
+                                          'Track your financial targets and savings',
+                                      onTap: () => _closeDrawerAndNavigate(
+                                        () => const GoalsView(),
+                                        binding: GoalsBinding(),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    _buildDrawerOption(
+                                      context: context,
+                                      icon: Icons.receipt_long_rounded,
+                                      iconColor: const Color(0xFF7A4EAB),
+                                      emoji: '🧾',
+                                      title: 'Bills & Reminders',
+                                      subtitle:
+                                          'Manage upcoming bills and reminders',
+                                      onTap: () => _closeDrawerAndNavigate(
+                                        () => const BillsRemindersView(),
+                                        binding: BillsRemindersBinding(),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    _buildDrawerOption(
+                                      context: context,
+                                      icon: Icons.groups_rounded,
+                                      iconColor: const Color(0xFF00695C),
+                                      emoji: '🤝',
+                                      title: 'Digital Committee',
+                                      subtitle:
+                                          'Manage your committee and member payments',
+                                      onTap: () => _closeDrawerAndNavigate(
+                                        () => CommitteeView(),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    _buildDrawerOption(
+                                      context: context,
+                                      icon: Icons.person_rounded,
+                                      iconColor: const Color(0xFFF2C14E),
+                                      title: 'Profile',
+                                      subtitle:
+                                          'Manage your profile and acc...',
+                                      onTap: () => _closeDrawerAndNavigate(
+                                        () => const SettingsView(),
+                                        binding: SettingsBinding(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            }),
-          ],
+                  ],
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -1414,7 +1384,7 @@ class _TransactionsViewState extends State<TransactionsView>
                     Supabase.instance.client.auth.currentUser?.email ?? '',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -1560,7 +1530,7 @@ class _TransactionsViewState extends State<TransactionsView>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1579,7 +1549,7 @@ class _TransactionsViewState extends State<TransactionsView>
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,

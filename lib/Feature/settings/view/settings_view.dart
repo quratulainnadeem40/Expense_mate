@@ -4,7 +4,6 @@ import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
-import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -13,8 +12,6 @@ import '../controller/settings_controller.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
-
-  static const String _addCurrencyOption = '__add_currency__';
 
   SettingsController get controller => Get.find<SettingsController>();
 

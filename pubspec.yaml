@@ -1,3 +1,4 @@
+
 name: expense_mate
 description: "A new Flutter project."
 publish_to: 'none'
@@ -19,6 +20,7 @@ dependencies:
   audioplayers: ^6.1.0
   crypto: ^3.0.6
   local_auth: ^2.3.0
+
   get_storage: ^2.1.1
   hive_flutter: ^1.1.0
   path_provider: ^2.1.5
@@ -35,6 +37,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0+eol
   path: ^1.9.1
   uuid: ^4.6.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,7 +48,7 @@ dev_dependencies:
 
   # Drift code generation
   drift_dev: ^2.35.0
-  build_runner: ^2.15.1 
+  build_runner: ^2.15.1
 
 flutter:
   uses-material-design: true

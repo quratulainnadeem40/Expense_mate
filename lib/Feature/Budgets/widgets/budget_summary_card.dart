@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../controller/budget_controller.dart';
 
 class BudgetSummaryCard extends GetView<BudgetController> {
-  const BudgetSummaryCard({Key? key}) : super(key: key);
+  const BudgetSummaryCard({super.key});
 
   @override
   Widget build(BuildContext context) {

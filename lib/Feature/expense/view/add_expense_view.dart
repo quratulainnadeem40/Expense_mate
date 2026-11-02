@@ -194,7 +194,7 @@ Future<void> _saveCategory(
       id: '',
       name: normalizedName,
       icon: 'category',
-      colorValue: const Color(0xFF2EA44F).value,
+      colorValue: const Color(0xFF2EA44F).toARGB32(),
       isDefault: false,
       type: normalizedType,
     ),
@@ -292,8 +292,8 @@ Future<void> _saveCategory(
                                     boxShadow: isExpense
                                         ? [
                                             BoxShadow(
-                                              color: expenseRed.withOpacity(
-                                                0.3,
+                                              color: expenseRed.withValues(
+                                                alpha: 0.3,
                                               ),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
@@ -346,8 +346,8 @@ Future<void> _saveCategory(
                                     boxShadow: !isExpense
                                         ? [
                                             BoxShadow(
-                                              color: primaryGreen.withOpacity(
-                                                0.3,
+                                              color: primaryGreen.withValues(
+                                                alpha: 0.3,
                                               ),
                                               blurRadius: 8,
                                               offset: const Offset(0, 3),
@@ -413,10 +413,10 @@ Future<void> _saveCategory(
                         decoration: BoxDecoration(
                           color: isDark
                               ? const Color(0xFF1E2421)
-                              : currentColor.withOpacity(0.06),
+                              : currentColor.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: currentColor.withOpacity(0.2),
+                            color: currentColor.withValues(alpha: 0.2),
                             width: 1.5,
                           ),
                         ),
@@ -442,7 +442,7 @@ Future<void> _saveCategory(
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
-                                      color: currentColor.withOpacity(0.7),
+                                      color: currentColor.withValues(alpha: 0.7),
                                     ),
                                   ),
                                 ),
@@ -477,7 +477,7 @@ Future<void> _saveCategory(
                                     decoration: InputDecoration(
                                       hintText: '0.00',
                                       hintStyle: TextStyle(
-                                        color: currentColor.withOpacity(0.4),
+                                        color: currentColor.withValues(alpha: 0.4),
                                       ),
                                       border: InputBorder.none,
                                       enabledBorder: InputBorder.none,
@@ -537,7 +537,7 @@ debugPrint(
                                 id: '$_incomeDefaultPrefix$name',
                                 name: name,
                                 icon: 'category',
-                                colorValue: const Color(0xFF2EA44F).value,
+                                colorValue: const Color(0xFF2EA44F).toARGB32(),
                                 isDefault: true,
                                 type: 'income',
                               ),
@@ -580,7 +580,7 @@ debugPrint(
                                 '$selectedCategoryId:$customCategoryName:$isExpense',
                               ),
 
-                              value:
+                              initialValue:
                                   dropdownCategories.any(
                                     (category) =>
                                         category.id == selectedCategoryId,
@@ -593,7 +593,7 @@ debugPrint(
                                     ? 'Select Category'
                                     : customCategoryName,
                                 style: TextStyle(
-                                  color: theme.hintColor.withOpacity(0.6),
+                                  color: theme.hintColor.withValues(alpha: 0.6),
                                   fontSize: 14,
                                 ),
                               ),
@@ -731,12 +731,12 @@ debugPrint(
                           : null;
 
                       return DropdownButtonFormField<String>(
-                        value: selectedWalletVal,
+                        initialValue: selectedWalletVal,
 
                         hint: Text(
                           'Select Wallet',
                           style: TextStyle(
-                            color: theme.hintColor.withOpacity(0.6),
+                            color: theme.hintColor.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
@@ -828,7 +828,7 @@ debugPrint(
                             .copyWith(
                               hintText: _noteHint(selectedName, isExpense),
                               hintStyle: TextStyle(
-                                color: theme.hintColor.withOpacity(0.6),
+                                color: theme.hintColor.withValues(alpha: 0.6),
                                 fontSize: 13,
                               ),
                             ),
@@ -855,7 +855,7 @@ debugPrint(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryGreen,
                           elevation: 2,
-                          shadowColor: primaryGreen.withOpacity(0.4),
+                          shadowColor: primaryGreen.withValues(alpha: 0.4),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1119,7 +1119,7 @@ debugPrint(
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -1134,7 +1134,7 @@ debugPrint(
       color: isDark ? const Color(0xFF252A2D) : const Color(0xFFF7F8FA),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
       ),
     );
   }

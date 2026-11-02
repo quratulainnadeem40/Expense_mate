@@ -16,8 +16,7 @@ class CommitteeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -78,8 +77,8 @@ class CommitteeCard extends StatelessWidget {
                   borderRadius:
                       BorderRadius.circular(20),
                   color: status == 'Active'
-                      ? Colors.green.withOpacity(0.12)
-                      : Colors.orange.withOpacity(0.12),
+                      ? Colors.green.withValues(alpha: 0.12)
+                      : Colors.orange.withValues(alpha: 0.12),
                 ),
                 child: Text(
                   status,

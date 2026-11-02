@@ -5,9 +5,9 @@ class RecentTransactionsList extends StatelessWidget {
   final RxList<Map<dynamic, dynamic>> transactions;
 
   const RecentTransactionsList({
-    Key? key,
+    super.key,
     required this.transactions,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

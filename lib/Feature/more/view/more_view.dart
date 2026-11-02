@@ -92,7 +92,7 @@ class MoreView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -111,7 +111,7 @@ class MoreView extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(

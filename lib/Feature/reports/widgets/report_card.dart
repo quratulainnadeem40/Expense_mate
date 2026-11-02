@@ -4,7 +4,7 @@ import '../model/report_model.dart';
 class ReportCard extends StatelessWidget {
   final ReportModel report;
 
-  const ReportCard({Key? key, required this.report}) : super(key: key);
+  const ReportCard({super.key, required this.report});
 
   @override
   Widget build(BuildContext context) {
