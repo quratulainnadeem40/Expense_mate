@@ -293,7 +293,6 @@ class HomeScreen extends StatelessWidget {
                           context: context,
                           icon: Icons.receipt_long_rounded,
                           iconColor: const Color(0xFF7A4EAB),
-                          emoji: '🧾',
                           title: 'Bills & Reminders'.tr,
                           subtitle: 'Manage upcoming bills and reminders'.tr,
                           onTap: () => _closeDrawerAndNavigate(
@@ -318,9 +317,8 @@ class HomeScreen extends StatelessWidget {
 
                         _buildDrawerOption(
                           context: context,
-                          icon: Icons.account_balance_wallet_rounded,
+                          icon: Icons.handshake_outlined,
                           iconColor: const Color(0xFF3A5BA0),
-                          emoji: '🧮',
                           title: 'Udhaar'.tr,
                           subtitle: 'Money you lent out and money you owe'.tr,
                           onTap: () => _closeDrawerAndNavigate(
