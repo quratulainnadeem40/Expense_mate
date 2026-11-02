@@ -200,7 +200,7 @@ class UdhaarView extends GetView<UdhaarController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.white.withOpacity(0.14),
         borderRadius: BorderRadius.circular(13),
       ),
       child: Column(
@@ -273,7 +273,7 @@ class UdhaarView extends GetView<UdhaarController> {
                       const EdgeInsets.symmetric(vertical: 13),
                   hintText: 'Search a name',
                   hintStyle: TextStyle(
-                    color: secondaryText.withValues(alpha: 0.8),
+                    color: secondaryText.withOpacity(0.8),
                     fontSize: 14.5,
                   ),
                 ),
@@ -365,7 +365,7 @@ class UdhaarView extends GetView<UdhaarController> {
                               ? Colors.white24
                               : (isDark
                                   ? Colors.white12
-                                  : Colors.black.withValues(alpha: 0.06)),
+                                  : Colors.black.withOpacity(0.06)),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -411,13 +411,13 @@ class UdhaarView extends GetView<UdhaarController> {
         color: card,
         borderRadius: BorderRadius.circular(17),
         border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
         ),
         boxShadow: isDark
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -502,7 +502,7 @@ class UdhaarView extends GetView<UdhaarController> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: isDark ? 0.22 : 0.12),
+                    color: accent.withOpacity(isDark ? 0.22 : 0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -623,7 +623,7 @@ class UdhaarView extends GetView<UdhaarController> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: (entry.isSettled ? secondaryText : accent)
-                  .withValues(alpha: isDark ? 0.20 : 0.10),
+                  .withOpacity(isDark ? 0.20 : 0.10),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -750,7 +750,7 @@ class UdhaarView extends GetView<UdhaarController> {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: _green.withValues(alpha: 0.10),
+                color: _green.withOpacity(0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -803,7 +803,7 @@ class UdhaarView extends GetView<UdhaarController> {
     final error = RxnString();
 
     final fieldFill =
-        isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04);
+        isDark ? Colors.white10 : Colors.black.withOpacity(0.04);
     final primaryText = isDark ? Colors.white : const Color(0xFF1E1E1E);
     final secondaryText =
         isDark ? Colors.white70 : const Color(0xFF6B7280);
@@ -811,7 +811,7 @@ class UdhaarView extends GetView<UdhaarController> {
     InputDecoration decoration(String hint) => InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: secondaryText.withValues(alpha: 0.7),
+            color: secondaryText.withOpacity(0.7),
             fontSize: 14,
           ),
           filled: true,
@@ -855,7 +855,7 @@ class UdhaarView extends GetView<UdhaarController> {
                     width: 44,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: secondaryText.withValues(alpha: 0.35),
+                      color: secondaryText.withOpacity(0.35),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -1168,7 +1168,6 @@ class UdhaarView extends GetView<UdhaarController> {
                         note: noteController.text,
                       );
 
-                      if (!sheetContext.mounted) return;
                       Navigator.pop(sheetContext);
                     },
                     style: ElevatedButton.styleFrom(

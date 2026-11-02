@@ -28,7 +28,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text('Committee History'.tr),
+        title: const Text('Committee History'),
         centerTitle: true,
         backgroundColor: backgroundColor,
         surfaceTintColor: Colors.transparent,
@@ -38,14 +38,11 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: SegmentedButton<String>(
-              segments: [
-                ButtonSegment<String>(
-                  value: 'Active',
-                  label: Text('Active'.tr),
-                ),
+              segments: const [
+                ButtonSegment<String>(value: 'Active', label: Text('Active')),
                 ButtonSegment<String>(
                   value: 'Completed',
-                  label: Text('Completed'.tr),
+                  label: Text('Completed'),
                 ),
               ],
               selected: {_selectedFilter},
@@ -68,7 +65,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
               if (_committeeController.committees.isEmpty) {
                 return Center(
                   child: Text(
-                    'No committees available yet.'.tr,
+                    'No committees available yet.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: secondaryTextColor,
                     ),
@@ -79,7 +76,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
               if (committees.isEmpty) {
                 return Center(
                   child: Text(
-                    'No committees in this category.'.tr,
+                    'No committees in this category.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: secondaryTextColor,
                     ),
@@ -145,7 +142,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
     final String committeeName =
         committee['name']?.toString().trim().isNotEmpty == true
         ? committee['name'].toString()
-        : 'Committee'.tr;
+        : 'Committee';
     final Color statusColor = completed
         ? secondaryTextColor
         : (isDark ? const Color(0xFF81C784) : const Color(0xFF218653));

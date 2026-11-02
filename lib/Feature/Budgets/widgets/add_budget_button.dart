@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../controller/budget_controller.dart';
 
 class AddBudgetButton extends GetView<BudgetController> {
-  const AddBudgetButton({super.key});
+  const AddBudgetButton({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

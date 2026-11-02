@@ -95,7 +95,7 @@ class _CommitteeViewState extends State<CommitteeView> {
         SnackBar(
           backgroundColor: cardColor,
           content: Text(
-            'Please add a committee first.'.tr,
+            'Please add a committee first.',
             style: TextStyle(color: mainTextColor),
           ),
         ),
@@ -109,7 +109,7 @@ class _CommitteeViewState extends State<CommitteeView> {
         SnackBar(
           backgroundColor: cardColor,
           content: Text(
-            'Please add a committee first.'.tr,
+            'Please add a committee first.',
             style: TextStyle(color: mainTextColor),
           ),
         ),
@@ -152,12 +152,12 @@ class _CommitteeViewState extends State<CommitteeView> {
         backgroundColor: appBarColor,
         foregroundColor: appBarTextColor,
         elevation: 0,
-        title: Row(
+        title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.groups_rounded),
-            const SizedBox(width: 8),
-            Text('Committee'.tr),
+            Icon(Icons.groups_rounded),
+            SizedBox(width: 8),
+            Text('Committee'),
           ],
         ),
       ),
@@ -167,7 +167,7 @@ class _CommitteeViewState extends State<CommitteeView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Digital Committee'.tr,
+              'Digital Committee',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -176,7 +176,7 @@ class _CommitteeViewState extends State<CommitteeView> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Manage your monthly money pool easily.'.tr,
+              'Manage your monthly money pool easily.',
               style: TextStyle(color: secondaryColor),
             ),
             const SizedBox(height: 20),
@@ -194,12 +194,12 @@ class _CommitteeViewState extends State<CommitteeView> {
                 ),
                 onPressed: _openAddCommittee,
                 icon: const Icon(Icons.add),
-                label: Text('Add Committee'.tr),
+                label: const Text('Add Committee'),
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'Your Committees'.tr,
+              'Your Committees',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -233,7 +233,7 @@ class _CommitteeViewState extends State<CommitteeView> {
                       Icon(Icons.groups_rounded, size: 45, color: greenText),
                       const SizedBox(height: 10),
                       Text(
-                        'No committee added yet.'.tr,
+                        'No committee added yet.',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: mainTextColor,
@@ -277,7 +277,7 @@ class _CommitteeViewState extends State<CommitteeView> {
                         ),
                       ),
                       subtitle: Text(
-                        '${Formatters.code} ${committee['contribution'] ?? '0'} monthly',
+                        '\${Formatters.code} \${committee['contribution'] ?? '0'} monthly',
                         style: TextStyle(color: secondaryColor),
                       ),
                       trailing: Icon(

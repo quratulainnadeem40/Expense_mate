@@ -44,7 +44,7 @@ class ReportView extends StatelessWidget {
   ];
 
   String _formatAmount(double amount) {
-    return '${Formatters.code} ${amount.toStringAsFixed(0)}';
+    return '\${Formatters.code} \${amount.toStringAsFixed(0)}';
   }
 
   @override
@@ -127,7 +127,7 @@ class ReportView extends StatelessWidget {
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
+                              color: Colors.black.withOpacity(0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -177,7 +177,7 @@ class ReportView extends StatelessWidget {
                       Supabase.instance.client.auth.currentUser?.email ?? '',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                     ),
                   ),
@@ -978,11 +978,11 @@ class ReportView extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: accentColor.withValues(alpha: isDarkMode ? 0.32 : 0.16),
+          color: accentColor.withOpacity(isDarkMode ? 0.32 : 0.16),
         ),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(alpha: isDarkMode ? 0.08 : 0.07),
+            color: accentColor.withOpacity(isDarkMode ? 0.08 : 0.07),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
@@ -995,7 +995,7 @@ class ReportView extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: isDarkMode ? 0.18 : 0.11),
+              color: accentColor.withOpacity(isDarkMode ? 0.18 : 0.11),
               borderRadius: BorderRadius.circular(13),
             ),
             alignment: Alignment.center,
@@ -1009,7 +1009,7 @@ class ReportView extends StatelessWidget {
             style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+              color: theme.colorScheme.onSurface.withOpacity(0.72),
             ),
           ),
           const SizedBox(height: 5),
@@ -1038,7 +1038,7 @@ class ReportView extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: fabGreen.withValues(alpha: 0.24),
+            color: fabGreen.withOpacity(0.24),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1061,7 +1061,7 @@ class ReportView extends StatelessWidget {
                     Text(
                       'Saved Balance',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.88),
+                        color: Colors.white.withOpacity(0.88),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1090,7 +1090,7 @@ class ReportView extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
+              color: Colors.white.withOpacity(0.16),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -1488,7 +1488,7 @@ class ReportView extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1507,7 +1507,7 @@ class ReportView extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
+                    color: iconColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,

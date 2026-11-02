@@ -4,6 +4,7 @@ import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/widgets/sync_status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:expense_mate/Feature/about/view/about_view.dart';
@@ -12,6 +13,8 @@ import '../controller/settings_controller.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
+
+  static const String _addCurrencyOption = '__add_currency__';
 
   SettingsController get controller => Get.find<SettingsController>();
 
@@ -500,13 +503,13 @@ class SettingsView extends StatelessWidget {
                     vertical: 4,
                   ),
                   leading: _IconContainer(
-                    icon: PinService.instance.isPinSet
+                    icon: controller.pinIsSet.value
                         ? Icons.lock_rounded
                         : Icons.lock_open_rounded,
                     isDark: isDark,
                   ),
                   title: Text(
-                    PinService.instance.isPinSet
+                    controller.pinIsSet.value
                         ? 'Change app PIN'
                         : 'Set an app PIN',
                     style: AppTextStyles.bodyLarge(
@@ -514,7 +517,7 @@ class SettingsView extends StatelessWidget {
                     ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
-                    PinService.instance.isPinSet
+                    controller.pinIsSet.value
                         ? 'Asked for each time the app opens'
                         : 'Lock the app with four digits',
                     style: AppTextStyles.bodyMedium(isDark),
@@ -525,13 +528,13 @@ class SettingsView extends StatelessWidget {
                   ),
                   onTap: () async {
                     await Get.toNamed(AppRoutes.pinSetup);
-                    controller.update();
+                    controller.refreshLockState();
                   },
                 ),
 
                 // Only offered once a PIN exists, because biometrics
                 // always need the PIN as a fallback.
-                if (PinService.instance.isPinSet)
+                if (controller.pinIsSet.value)
                   FutureBuilder<bool>(
                     future: BiometricService.instance.isAvailable(),
                     builder: (context, snapshot) {
@@ -558,35 +561,15 @@ class SettingsView extends StatelessWidget {
                           'Your PIN still works if it fails',
                           style: AppTextStyles.bodyMedium(isDark),
                         ),
-                        value: BiometricService.instance.isEnabled,
-                        onChanged: (value) async {
-                          if (value) {
-                            // Checked once here, so a switch that was
-                            // turned on can be trusted at the lock
-                            // screen.
-                            final ok = await BiometricService.instance
-                                .hasEnrolled();
-
-                            if (!ok) {
-                              Get.snackbar(
-                                'Nothing enrolled',
-                                'Add a fingerprint in your phone '
-                                    'settings first.',
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
-                              return;
-                            }
-                          }
-
-                          await BiometricService.instance
-                              .setEnabled(value);
-                          controller.update();
-                        },
+                        // Read from the observable, so the switch moves
+                        // the moment it is tapped.
+                        value: controller.biometricEnabled.value,
+                        onChanged: controller.toggleBiometric,
                       );
                     },
                   ),
 
-                if (PinService.instance.isPinSet)
+                if (controller.pinIsSet.value)
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -1373,12 +1356,7 @@ class SettingsView extends StatelessWidget {
             ),
             onPressed: () async {
               Get.back();
-              await PinService.instance.clearPin();
-
-              // Biometrics lean on the PIN, so they go with it.
-              await BiometricService.instance.setEnabled(false);
-
-              controller.update();
+              await controller.removePin();
             },
             child: const Text('Remove'),
           ),

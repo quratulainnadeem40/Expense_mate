@@ -169,7 +169,7 @@ class _CategoriesViewState extends State<CategoriesView>
       DateFormat('d MMM yyyy').format(date);
 
   String _formatCategoryAmount(double amount) {
-    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
+    return '\${Formatters.code} \${NumberFormat('#,##0.00', 'en_US').format(amount)}';
   }
 
   Widget _buildCategoryAmount({
@@ -448,7 +448,10 @@ class _CategoriesViewState extends State<CategoriesView>
     final box = Hive.box(AppKeys.budgetBox);
     await box.put(AppKeys.categoryCycleStartDayKey, now.day);
     await box.put(AppKeys.categoryCycleAutomaticResetKey, false);
-    await box.put(AppKeys.categoryCycleManualResetKey, now.toIso8601String());
+    await box.put(
+      AppKeys.categoryCycleManualResetKey,
+      now.toIso8601String(),
+    );
 
     if (sheetContext.mounted) {
       Navigator.pop(sheetContext);
@@ -1242,12 +1245,13 @@ class _CategoriesViewState extends State<CategoriesView>
           ],
         ),
 
-        
+        // ========================================================
+        // BODY
+        // ========================================================
         body: Stack(
           children: [
             GestureDetector(
               onTap: () {
-                
                 if (isSelectionMode) {
                   _exitSelectionMode();
                 }
@@ -1325,7 +1329,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
+                                  color: Colors.black.withOpacity(0.02),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1381,7 +1385,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                         height: 48,
 
                                         decoration: BoxDecoration(
-                                          color: baseColor.withValues(alpha: 0.18),
+                                          color: baseColor.withOpacity(0.18),
                                           shape: BoxShape.circle,
                                         ),
 
@@ -1490,7 +1494,7 @@ class _CategoriesViewState extends State<CategoriesView>
                       onTap: () {
                         isDrawerOpen.value = false;
                       },
-                      child: Container(color: Colors.black.withValues(alpha: 0.5)),
+                      child: Container(color: Colors.black.withOpacity(0.5)),
                     ),
 
                     Align(
@@ -1515,7 +1519,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Colors.black.withOpacity(0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -1592,8 +1596,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.15,
+                                            color: Colors.black.withOpacity(
+                                              0.15,
                                             ),
                                             blurRadius: 8,
                                             offset: const Offset(0, 3),
@@ -1639,7 +1643,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withOpacity(0.9),
                                     ),
                                   ),
                                 ),
@@ -1660,10 +1664,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                             .account_balance_wallet_rounded,
                                         iconColor: const Color(0xFF2B82FB),
                                         emoji: '💳',
-                                        title: 'Wallets'.tr,
+                                        title: 'Wallets',
                                         subtitle:
-                                            'Manage your cash, bank and other wallets'
-                                                .tr,
+                                            'Manage your cash, bank and other wallets',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const WalletsView(),
                                           binding: WalletsBinding(),
@@ -1677,10 +1680,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon: Icons.pie_chart_rounded,
                                         iconColor: const Color(0xFFFF9800),
                                         emoji: '📊',
-                                        title: 'Budgets'.tr,
+                                        title: 'Budgets',
                                         subtitle:
-                                            'Set and track monthly spending limits'
-                                                .tr,
+                                            'Set and track monthly spending limits',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const BudgetView(),
                                           binding: BudgetBinding(),
@@ -1694,10 +1696,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon: Icons.stars_rounded,
                                         iconColor: const Color(0xFFE91E63),
                                         emoji: '🎯',
-                                        title: 'Goals'.tr,
+                                        title: 'Goals',
                                         subtitle:
-                                            'Track your financial targets and savings'
-                                                .tr,
+                                            'Track your financial targets and savings',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const GoalsView(),
                                           binding: GoalsBinding(),
@@ -1711,10 +1712,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon:
                                             Icons.notifications_active_rounded,
                                         iconColor: const Color(0xFF9C27B0),
-                                        title: 'Bills & Reminders'.tr,
+                                        title: 'Bills & Reminders',
                                         subtitle:
-                                            'Manage upcoming bills and reminders'
-                                                .tr,
+                                            'Manage upcoming bills and reminders',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const BillsRemindersView(),
                                           binding: BillsRemindersBinding(),
@@ -1728,10 +1728,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon: Icons.groups_rounded,
                                         iconColor: const Color(0xFF00695C),
                                         emoji: '🤝',
-                                        title: 'Digital Committee'.tr,
+                                        title: 'Digital Committee',
                                         subtitle:
-                                            'Manage your committee and member payments'
-                                                .tr,
+                                            'Manage your committee and member payments',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => CommitteeView(),
                                         ),
@@ -1745,10 +1744,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                             .account_balance_wallet_rounded,
                                         iconColor: const Color(0xFF3A5BA0),
                                         emoji: '🧮',
-                                        title: 'Udhaar'.tr,
+                                        title: 'Udhaar',
                                         subtitle:
-                                            'Money you lent out and money you owe'
-                                                .tr,
+                                            'Money you lent out and money you owe',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => UdhaarView(),
                                           binding: UdhaarBinding(),
@@ -1761,10 +1759,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         context: context,
                                         icon: Icons.person_rounded,
                                         iconColor: const Color(0xFFF2C14E),
-                                        title: 'Profile'.tr,
+                                        title: 'Profile',
                                         subtitle:
-                                            'Manage your profile and account settings'
-                                                .tr,
+                                            'Manage your profile and account settings',
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const SettingsView(),
                                           binding: SettingsBinding(),
@@ -1800,14 +1797,16 @@ class _CategoriesViewState extends State<CategoriesView>
                   onPressed: _openAddCategoryDialog,
 
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
-label: Text(
-  'Add'.tr,
-  style: const TextStyle(
-    color: Colors.white,
-    fontWeight: FontWeight.w600,
-    fontSize: 14,
-  ),
-),
+
+                  label: const Text(
+                    'Add',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
@@ -1891,7 +1890,7 @@ label: Text(
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
+                            color: Colors.black.withOpacity(0.15),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -1927,7 +1926,7 @@ label: Text(
                     Supabase.instance.client.auth.currentUser?.email ?? '',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ),
@@ -1944,8 +1943,8 @@ label: Text(
                         icon: Icons.account_balance_wallet_rounded,
                         iconColor: const Color(0xFF3A5BA0),
                         emoji: '💳',
-                        title: 'Wallets'.tr,
-                        subtitle: 'Manage your cash, bank and other wallets'.tr,
+                        title: 'Wallets',
+                        subtitle: 'Manage your cash, bank and other wallets',
                         onTap: () => _closeDrawerAndNavigate(
                           () => const WalletsView(),
                           binding: WalletsBinding(),
@@ -1957,8 +1956,8 @@ label: Text(
                         icon: Icons.donut_small_rounded,
                         iconColor: const Color(0xFF2E7D32),
                         emoji: '📊',
-                        title: 'Budgets'.tr,
-                        subtitle: 'Set and track monthly spending limits'.tr,
+                        title: 'Budgets',
+                        subtitle: 'Set and track monthly spending limits',
                         onTap: () => _closeDrawerAndNavigate(
                           () => const BudgetView(),
                           binding: BudgetBinding(),
@@ -1970,8 +1969,8 @@ label: Text(
                         icon: Icons.flag_rounded,
                         iconColor: const Color(0xFFB26A00),
                         emoji: '🎯',
-                        title: 'Goals'.tr,
-                        subtitle: 'Track your financial targets and savings'.tr,
+                        title: 'Goals',
+                        subtitle: 'Track your financial targets and savings',
                         onTap: () => _closeDrawerAndNavigate(
                           () => const GoalsView(),
                           binding: GoalsBinding(),
@@ -1983,8 +1982,8 @@ label: Text(
                         icon: Icons.receipt_long_rounded,
                         iconColor: const Color(0xFF7A4EAB),
                         emoji: '🧾',
-                        title: 'Bills & Reminders'.tr,
-                        subtitle: 'Manage upcoming bills and reminders'.tr,
+                        title: 'Bills & Reminders',
+                        subtitle: 'Manage upcoming bills and reminders',
                         onTap: () => _closeDrawerAndNavigate(
                           () => const BillsRemindersView(),
                           binding: BillsRemindersBinding(),
@@ -1996,8 +1995,8 @@ label: Text(
                         icon: Icons.groups_rounded,
                         iconColor: const Color(0xFF00695C),
                         emoji: '🤝',
-                        title: 'Digital Committee'.tr,
-                        subtitle: 'Manage your committee and member payments'.tr,
+                        title: 'Digital Committee',
+                        subtitle: 'Manage your committee and member payments',
                         onTap: () =>
                             _closeDrawerAndNavigate(() => CommitteeView()),
                       ),
@@ -2007,8 +2006,8 @@ label: Text(
                         icon: Icons.account_balance_wallet_rounded,
                         iconColor: const Color(0xFF3A5BA0),
                         emoji: '🧮',
-                        title: 'Udhaar'.tr,
-                        subtitle: 'Money you lent out and money you owe'.tr,
+                        title: 'Udhaar',
+                        subtitle: 'Money you lent out and money you owe',
                         onTap: () => _closeDrawerAndNavigate(
                           () => UdhaarView(),
                           binding: UdhaarBinding(),
@@ -2019,8 +2018,8 @@ label: Text(
                         context: context,
                         icon: Icons.person_rounded,
                         iconColor: const Color(0xFFF2C14E),
-                        title: 'Profile'.tr,
-                        subtitle: 'Manage your profile and account settings'.tr,
+                        title: 'Profile',
+                        subtitle: 'Manage your profile and account settings',
                         onTap: () => _closeDrawerAndNavigate(
                           () => const SettingsView(),
                           binding: SettingsBinding(),
@@ -2060,7 +2059,7 @@ label: Text(
 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -2084,7 +2083,7 @@ label: Text(
                   height: 44,
 
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
+                    color: iconColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
 
@@ -2102,7 +2101,7 @@ label: Text(
 
                     children: [
                       Text(
-                        title.tr,
+                        title,
 
                         style: TextStyle(
                           fontSize: 15,

@@ -68,15 +68,45 @@ class _PinLockViewState extends State<PinLockView> {
     if (!ok || !mounted) return;
 
     await PinService.instance.recordSuccess();
-    _goOn();
+    await _goOn();
   }
 
-  void _goOn() {
+  Future<void> _goOn() async {
+    // The PIN is enough to get in. If the session has lapsed, try to
+    // renew it quietly first, so the user is not sent to a login screen
+    // for something the app can usually fix by itself.
+    if (_supabase.auth.currentSession == null) {
+      await _tryRestoreSession();
+    }
+
     final args = Get.arguments;
     final next =
         args is Map ? args[PinLockView.argNextRoute] as String? : null;
 
     Get.offAllNamed(next ?? AppRoutes.home);
+
+    // Only if the renewal failed. The app still opens on the PIN, as
+    // asked; this just explains why the figures are not loading, since
+    // everything is read against the signed-in account.
+    if (_supabase.auth.currentSession == null) {
+      Get.snackbar(
+        'Not connected to your account',
+        'Sign in from Profile to load and sync your data.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 5),
+      );
+    }
+  }
+
+  /// Supabase keeps a refresh token, so a session that has merely timed
+  /// out can often be renewed without the user doing anything.
+  Future<void> _tryRestoreSession() async {
+    try {
+      await _supabase.auth.refreshSession();
+    } catch (_) {
+      // The refresh token itself has expired, which happens after a
+      // long gap. Nothing to do here; the message above covers it.
+    }
   }
 
   @override
@@ -132,7 +162,7 @@ class _PinLockViewState extends State<PinLockView> {
 
     if (PinService.instance.verify(_entry)) {
       await PinService.instance.recordSuccess();
-      _goOn();
+      await _goOn();
       return;
     }
 
@@ -221,7 +251,7 @@ class _PinLockViewState extends State<PinLockView> {
                 filled: true,
                 fillColor: isDark
                     ? Colors.white10
-                    : Colors.black.withValues(alpha: 0.04),
+                    : Colors.black.withOpacity(0.04),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -344,7 +374,7 @@ class _PinLockViewState extends State<PinLockView> {
                 width: 76,
                 height: 76,
                 decoration: BoxDecoration(
-                  color: kPinGreen.withValues(alpha: isDark ? 0.18 : 0.10),
+                  color: kPinGreen.withOpacity(isDark ? 0.18 : 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

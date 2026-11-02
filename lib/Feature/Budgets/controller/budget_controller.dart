@@ -237,7 +237,6 @@ class BudgetController extends GetxController {
 
   void setMonthStartDay(int day) {
     monthStartDay.value = day;
-    _budgetBox.put(AppKeys.categoryCycleStartDayKey, day);
 
     isCycleConfigured.value = true;
 

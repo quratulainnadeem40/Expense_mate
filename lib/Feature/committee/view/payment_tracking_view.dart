@@ -98,7 +98,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Add a committee first to track its payments.'.tr,
+              'Add a committee first to track its payments.',
               textAlign: TextAlign.center,
               style: TextStyle(color: secondaryTextColor),
             ),
@@ -110,7 +110,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Select a committee'.tr,
+            'Select a committee',
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.bold,
@@ -138,7 +138,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.groups_rounded)),
                 title: Text(
-                  committee['name']?.toString() ?? 'Committee'.tr,
+                  committee['name']?.toString() ?? 'Committee',
                   style: TextStyle(
                     color: primaryTextColor,
                     fontWeight: FontWeight.w600,
@@ -335,7 +335,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Change Payment Status'.tr,
+                  'Change Payment Status',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -344,7 +344,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Current status: $currentStatus'.tr,
+                  'Current status: $currentStatus',
                   style: TextStyle(fontSize: 13, color: secondaryColor),
                 ),
                 const SizedBox(height: 18),
@@ -460,14 +460,14 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.payments_rounded),
-            const SizedBox(width: 8),
+            Icon(Icons.payments_rounded),
+            SizedBox(width: 8),
             Text(
-              'Payment Tracking'.tr,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              'Payment Tracking',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -523,7 +523,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Payment Records'.tr,
+                      'Payment Records',
                       style: TextStyle(
                         fontSize: 19,
                         fontWeight: FontWeight.bold,
@@ -536,7 +536,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8,
                         ),
-                        title: Text('Select all members'.tr),
+                        title: const Text('Select all members'),
                         subtitle: Text(
                           '${_selectedPaymentIndices.length} of '
                           '${payments.length} selected',
@@ -553,26 +553,26 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                       ),
                       DropdownButtonFormField<String>(
                         initialValue: _bulkPaymentStatus,
-                        decoration: InputDecoration(
-                          labelText: 'Bulk payment status'.tr,
-                          border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(
+                        decoration: const InputDecoration(
+                          labelText: 'Bulk payment status',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 10,
                           ),
                         ),
-                        items: [
+                        items: const [
                           DropdownMenuItem(
                             value: 'Received',
-                            child: Text('Received'.tr),
+                            child: Text('Received'),
                           ),
                           DropdownMenuItem(
                             value: 'Pending',
-                            child: Text('Pending'.tr),
+                            child: Text('Pending'),
                           ),
                           DropdownMenuItem(
                             value: 'Overdue',
-                            child: Text('Overdue'.tr),
+                            child: Text('Overdue'),
                           ),
                         ],
                         onChanged: (status) {
@@ -617,7 +617,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
 
                         final String dateText = paymentDate != null
                             ? _formatDate(paymentDate)
-                            : 'Date not added'.tr;
+                            : 'Date not added';
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
@@ -673,7 +673,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                     const SizedBox(height: 12),
                     if (!_isBulkSelectionMode)
                       Text(
-                        'Tap any payment record to change its status.'.tr,
+                        'Tap any payment record to change its status.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,

@@ -294,8 +294,8 @@ class _MainScreenState extends State<MainScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? (isDark
-                        ? activeColor.withValues(alpha: 0.2)
-                        : activeColor.withValues(alpha: 0.12))
+                        ? activeColor.withOpacity(0.2)
+                        : activeColor.withOpacity(0.12))
                     : Colors.transparent,
                 borderRadius:
                     BorderRadius.circular(16),

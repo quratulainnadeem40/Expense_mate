@@ -355,7 +355,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   String _formatAmount(double amount) {
-    return '${Formatters.code} ${amount.toStringAsFixed(0)}';
+    return '\${Formatters.code} \${amount.toStringAsFixed(0)}';
   }
 
   String _formatDate(DateTime? date) {
@@ -638,7 +638,7 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: durationUnit,
+                    value: durationUnit,
                     decoration: _inputDecoration(
                       label: 'Unit',
                     ),

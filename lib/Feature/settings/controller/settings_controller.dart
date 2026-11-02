@@ -1,3 +1,4 @@
+import 'package:expense_mate/Core/service/biometric_service.dart';
 import 'package:expense_mate/Feature/pin/view/pin_lock_view.dart';
 import 'package:expense_mate/Core/service/pin_service.dart';
 import '../../../Core/service/sound_service.dart';
@@ -33,6 +34,15 @@ class SettingsController extends GetxController {
   /// Supabase reports a deliberate logout and an expired session with
   /// the same event, so the two are told apart with this.
   bool _userAskedToLogOut = false;
+
+  /// App lock state, mirrored here as observables.
+  ///
+  /// These used to be read straight off the services inside an Obx.
+  /// A plain getter is not observable, so flipping the switch changed
+  /// the stored value but nothing redrew until some other setting was
+  /// touched.
+  final biometricEnabled = false.obs;
+  final pinIsSet = false.obs;
   final selectedCurrency = 'PKR'.obs;
   final customCurrencies = <String>[].obs;
   final notificationsEnabled = true.obs;
@@ -766,6 +776,8 @@ class SettingsController extends GetxController {
       AppKeys.transactionSoundKey,
       defaultValue: true,
     ) as bool;
+
+    refreshLockState();
   }
 
   // ============================================================
@@ -827,6 +839,45 @@ class SettingsController extends GetxController {
   }
 
   /// Flips the balance card between the real figures and dots.
+  /// Re-reads the lock settings. Called after the PIN screens, which
+  /// change them from outside this controller.
+  void refreshLockState() {
+    pinIsSet.value = PinService.instance.isPinSet;
+    biometricEnabled.value = BiometricService.instance.isEnabled;
+  }
+
+  Future<void> toggleBiometric(bool value) async {
+    if (value) {
+      // Checked before turning it on, so a switch that reads as on can
+      // be trusted at the lock screen.
+      final enrolled = await BiometricService.instance.hasEnrolled();
+
+      if (!enrolled) {
+        Get.snackbar(
+          'Nothing enrolled',
+          'Add a fingerprint in your phone settings first.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+    }
+
+    await BiometricService.instance.setEnabled(value);
+
+    // Set from the stored value rather than from `value`, so the switch
+    // can never show something the service did not actually accept.
+    biometricEnabled.value = BiometricService.instance.isEnabled;
+  }
+
+  Future<void> removePin() async {
+    await PinService.instance.clearPin();
+
+    // Biometrics lean on the PIN, so they go with it.
+    await BiometricService.instance.setEnabled(false);
+
+    refreshLockState();
+  }
+
   Future<void> toggleTransactionSound(bool value) async {
     transactionSound.value = value;
     await SoundService.instance.setEnabled(value);

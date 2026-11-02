@@ -1,3 +1,4 @@
+import '../../settings/controller/settings_controller.dart';
 import '../../../Core/service/biometric_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -91,6 +92,12 @@ class _PinSetupViewState extends State<PinSetupView> {
     // Asked right here, while the lock is on the user's mind. Doing it
     // later from Settings is something almost nobody goes looking for.
     await _offerBiometric();
+
+    // Settings mirrors the lock state in observables, so it has to be
+    // told when the PIN changes from outside it.
+    if (Get.isRegistered<SettingsController>()) {
+      Get.find<SettingsController>().refreshLockState();
+    }
 
     final next = _nextRoute;
     if (next != null) {
@@ -212,7 +219,7 @@ class _PinSetupViewState extends State<PinSetupView> {
               width: 76,
               height: 76,
               decoration: BoxDecoration(
-                color: kPinGreen.withValues(alpha: isDark ? 0.18 : 0.10),
+                color: kPinGreen.withOpacity(isDark ? 0.18 : 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
