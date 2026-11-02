@@ -1,4 +1,6 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -23,6 +25,18 @@ class _EditWalletViewState extends State<EditWalletView> {
 
   late String selectedType;
   late String selectedCurrency;
+  late bool usesAppCurrency;
+
+  static const _currencyNames = {
+    'PKR': 'Pakistani Rupees',
+    'SAR': 'Saudi Riyal',
+    'TRY': 'Turkish Lira',
+    'AED': 'UAE Dirham',
+    'USD': 'US Dollar',
+    'AUD': 'Australian Dollar',
+    'GBP': 'British Pound',
+    'EUR': 'Euro',
+  };
 
   @override
   void initState() {
@@ -36,6 +50,7 @@ class _EditWalletViewState extends State<EditWalletView> {
 
     selectedType = widget.wallet.type;
     selectedCurrency = widget.wallet.currency;
+    usesAppCurrency = selectedCurrency == Formatters.code;
   }
 
   @override
@@ -70,6 +85,11 @@ class _EditWalletViewState extends State<EditWalletView> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final walletCurrencies = {
+      ...SettingsController.defaultCurrencies,
+      'EUR',
+      selectedCurrency,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -134,7 +154,8 @@ class _EditWalletViewState extends State<EditWalletView> {
                   decoration: InputDecoration(
                     labelText: 'Balance'.tr,
                     hintText: '0.00',
-                    prefixIcon: const Icon(Icons.attach_money),
+                    prefixText:
+                        '${Formatters.currencySymbol(selectedCurrency)} ',
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
@@ -159,33 +180,37 @@ class _EditWalletViewState extends State<EditWalletView> {
                 const SizedBox(height: 18),
 
                 DropdownButtonFormField<String>(
-                  initialValue: selectedCurrency,
+                  key: ValueKey(
+                    usesAppCurrency ? 'APP_CURRENCY' : selectedCurrency,
+                  ),
+                  initialValue: usesAppCurrency
+                      ? 'APP_CURRENCY'
+                      : selectedCurrency,
                   decoration: InputDecoration(
                     labelText: 'Currency'.tr,
                     border: const OutlineInputBorder(),
                   ),
                   items: [
                     DropdownMenuItem(
-                      value: 'PKR',
+                      value: 'APP_CURRENCY',
                       child: Text('Uses the app currency'.tr),
                     ),
-                    DropdownMenuItem(
-                      value: 'USD',
-                      child: Text('USD - US Dollar'.tr),
-                    ),
-                    DropdownMenuItem(
-                      value: 'EUR',
-                      child: Text('EUR - Euro'.tr),
-                    ),
-                    DropdownMenuItem(
-                      value: 'GBP',
-                      child: Text('GBP - British Pound'.tr),
+                    ...walletCurrencies.map(
+                      (currency) => DropdownMenuItem(
+                        value: currency,
+                        child: Text(
+                          '$currency - ${_currencyNames[currency] ?? currency}',
+                        ),
+                      ),
                     ),
                   ],
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
-                        selectedCurrency = value;
+                        usesAppCurrency = value == 'APP_CURRENCY';
+                        selectedCurrency = usesAppCurrency
+                            ? Formatters.code
+                            : value;
                       });
                     }
                   },

@@ -1,4 +1,6 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Feature/settings/controller/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,7 +22,24 @@ class _AddWalletViewState extends State<AddWalletView> {
   final customCurrencyController = TextEditingController();
 
   String selectedType = 'Cash';
-  String selectedCurrency = 'PKR';
+  String selectedCurrency = Formatters.code;
+  bool usesAppCurrency = true;
+
+  static const _walletCurrencies = [
+    ...SettingsController.defaultCurrencies,
+    'EUR',
+  ];
+
+  static const _currencyNames = {
+    'PKR': 'Pakistani Rupees',
+    'SAR': 'Saudi Riyal',
+    'TRY': 'Turkish Lira',
+    'AED': 'UAE Dirham',
+    'USD': 'US Dollar',
+    'AUD': 'Australian Dollar',
+    'GBP': 'British Pound',
+    'EUR': 'Euro',
+  };
 
   @override
   void dispose() {
@@ -74,6 +93,7 @@ class _AddWalletViewState extends State<AddWalletView> {
     if (result != null && result.trim().isNotEmpty) {
       setState(() {
         selectedCurrency = result.trim().toUpperCase();
+        usesAppCurrency = false;
       });
     }
   }
@@ -167,7 +187,7 @@ class _AddWalletViewState extends State<AddWalletView> {
                   decoration: InputDecoration(
                     labelText: 'Initial Balance'.tr,
                     hintText: '0.00',
-                    prefixIcon: const Icon(Icons.attach_money),
+                    prefixText: '${Formatters.currencySymbol(selectedCurrency)} ',
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
@@ -192,27 +212,28 @@ class _AddWalletViewState extends State<AddWalletView> {
                 const SizedBox(height: 18),
 
                 DropdownButtonFormField<String>(
-                  initialValue: selectedCurrency,
+                  key: ValueKey(
+                    usesAppCurrency ? 'APP_CURRENCY' : selectedCurrency,
+                  ),
+                  initialValue: usesAppCurrency
+                      ? 'APP_CURRENCY'
+                      : selectedCurrency,
                   decoration: InputDecoration(
                     labelText: 'Currency'.tr,
                     border: const OutlineInputBorder(),
                   ),
                   items: [
                     DropdownMenuItem<String>(
-                      value: 'PKR',
+                      value: 'APP_CURRENCY',
                       child: Text('Uses the app currency'.tr),
                     ),
-                    DropdownMenuItem<String>(
-                      value: 'USD',
-                      child: Text('USD - US Dollar'.tr),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'EUR',
-                      child: Text('EUR - Euro'.tr),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'GBP',
-                      child: Text('GBP - British Pound'.tr),
+                    ..._walletCurrencies.map(
+                      (currency) => DropdownMenuItem<String>(
+                        value: currency,
+                        child: Text(
+                          '$currency - ${_currencyNames[currency]}',
+                        ),
+                      ),
                     ),
                     DropdownMenuItem<String>(
                       value: 'MORE',
@@ -236,7 +257,10 @@ class _AddWalletViewState extends State<AddWalletView> {
                     }
 
                     setState(() {
-                      selectedCurrency = value;
+                      usesAppCurrency = value == 'APP_CURRENCY';
+                      selectedCurrency = usesAppCurrency
+                          ? Formatters.code
+                          : value;
                     });
                   },
                   validator: (value) {
