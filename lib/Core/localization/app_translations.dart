@@ -2071,9 +2071,12 @@ class AppTranslations extends Translations {
         'اپنی ماہانہ رقم کا انتظام آسانی سے کریں۔',
     'Your Committees': 'آپ کی کمیٹیاں',
     'No committee added yet.': 'ابھی تک کوئی کمیٹی شامل نہیں کی گئی۔',
+    'No committees available yet.': 'ابھی تک کوئی کمیٹی دستیاب نہیں۔',
+    'No committees in this category.': 'اس زمرے میں کوئی کمیٹی نہیں۔',
     'Add Committee': 'کمیٹی شامل کریں',
     'Please add a committee first.': 'براہِ کرم پہلے کمیٹی شامل کریں۔',
     'Members': 'اراکین',
+    'Committees': 'کمیٹیاں',
     'Committee Summary': 'کمیٹی کا خلاصہ',
     'Payment Summary': 'ادائیگی کا خلاصہ',
     'Monthly Contribution': 'ماہانہ حصہ',
@@ -2086,6 +2089,7 @@ class AppTranslations extends Translations {
     'Duration': 'مدت',
     'Total Payment': 'کل ادائیگی',
     'Received': 'موصول ہوا',
+    'Pending': 'زیرِ التوا',
     'Remaining': 'باقی',
     'Edit Committee': 'کمیٹی میں ترمیم کریں',
     'Committee Name': 'کمیٹی کا نام',
@@ -2143,7 +2147,9 @@ class AppTranslations extends Translations {
         'کیا آپ واقعی @name کو حذف کرنا چاہتے ہیں؟',
     'Member deleted successfully.': 'رکن کامیابی سے حذف ہوا۔',
     'Father/Husband: Not Added': 'والد/شوہر: شامل نہیں ہوا',
+    'Father/Husband: @name': 'والد/شوہر: @name',
     'Phone: Not Added': 'فون: شامل نہیں ہوا',
+    'Phone: @number': 'فون: @number',
     'Payment Status: @status': 'ادائیگی کی حیثیت: @status',
     'No Members Added': 'کوئی رکن شامل نہیں ہوا',
     'Tap "Add Member" to add committee members.':
@@ -2154,6 +2160,14 @@ class AppTranslations extends Translations {
     'Allocation method': 'تقسیم کا طریقہ',
     'Added order': 'شامل کرنے کا ترتیب',
     'Spin & win': 'چکر اور جیت',
+    'Spin the wheel to randomly choose this round’s recipient.':
+        'اس راؤنڈ کے وصول کنندہ کو بے ترتیب منتخب کرنے کے لیے پہیہ گھمائیں۔',
+    'Total amount': 'کل رقم',
+    'Monthly installment': 'ماہانہ قسط',
+    'Total members': 'اراکین کی کل تعداد',
+    'Start date': 'شروع ہونے کی تاریخ',
+    'Not received yet': 'ابھی تک وصول نہیں ہوا',
+    '@count members x @amount': '@count اراکین × @amount',
     'Allocate each round in the order members were added.':
         'ہر راؤنڈ میں ارکان کے شامل ہونے کے ترتیب کے مطابق تقسیم کریں۔',
     'Spin the wheel to randomly choose each round’s recipient.':
@@ -2161,6 +2175,18 @@ class AppTranslations extends Translations {
     'Add a committee first to manage its members.':
         'اپنے ارکان کا انتظام شروع کرنے کے لیے پہلے کمیٹی شامل کریں۔',
     'Select a committee': 'کمیٹی منتخب کریں',
+    'Add a committee first to track its payments.':
+        'ادائیگیوں کا حساب رکھنے کے لیے پہلے کمیٹی شامل کریں۔',
+    'Change Payment Status': 'ادائیگی کی حیثیت تبدیل کریں',
+    'Current status: @status': 'موجودہ حیثیت: @status',
+    'Tap any payment record to change its status.':
+        'ادائیگی کی حیثیت تبدیل کرنے کے لیے کسی بھی ریکارڈ پر ٹیپ کریں۔',
+    '@count payment records · @members members':
+        '@count ادائیگی کے ریکارڈ · @members اراکین',
+    'Cancel selection': 'انتخاب منسوخ کریں',
+    'Select payments': 'ادائیگیاں منتخب کریں',
+    'Not Set': 'مقرر نہیں',
+    'Update': 'اپ ڈیٹ کریں',
     'Number of Members': 'ارکان کی تعداد',
     'Total Committee Amount': 'کمیٹی کی کل رقم',
     'Total Amount for Duration': 'مدت کے لیے کل رقم',
@@ -2494,6 +2520,7 @@ class AppTranslations extends Translations {
     '@count members added': '@count اراکین شامل',
     '@count / @total members added': '@total میں سے @count اراکین شامل',
     '@count / @total Added': '@total میں سے @count شامل',
+    'Member': 'رکن',
     'You selected @count members. @ordinal member cannot be added.':
         'آپ نے @count اراکین منتخب کیے ہیں۔ @ordinal رکن شامل نہیں کیا جا سکتا۔',
     '@members members · @rounds rounds': '@members اراکین · @rounds چکر',

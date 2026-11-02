@@ -126,7 +126,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
   String _formatAmount(double amount) => Formatters.money(amount);
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'Not Set';
+    if (date == null) return 'Not Set'.tr;
 
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
@@ -303,7 +303,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
               title: 'Duration'.tr,
               value:
                   '${committeeController.duration.value} '
-                  '${committeeController.durationUnit.value}',
+                  '${committeeController.durationUnit.value.tr}',
               accentColor: amberText,
               cardColor: amberBackground,
             ),
@@ -1064,7 +1064,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     }
 
     final String name =
-        committeeController.members[index]['name']?.toString() ?? 'Member';
+        committeeController.members[index]['name']?.toString() ?? 'Member'.tr;
 
     showDialog<void>(
       context: context,
@@ -1074,7 +1074,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           child: AlertDialog(
             title: Text('Delete Member'.tr, style: TextStyle(color: primaryText)),
             content: Text(
-              'Are you sure you want to delete $name?'.tr,
+              'Are you sure you want to delete @name?'.trParams({
+                'name': name,
+              }),
               style: TextStyle(color: primaryText),
             ),
             actions: [
@@ -1114,7 +1116,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
   // --------------------------------------------------
 
   Widget _buildMemberCard(Map<String, dynamic> member, int index) {
-    final String name = member['name']?.toString() ?? 'Member';
+    final String name = member['name']?.toString() ?? 'Member'.tr;
 
     final String username = member['username']?.toString() ?? '';
 
@@ -1170,8 +1172,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       const SizedBox(height: 4),
                       Text(
                         fatherHusband.isEmpty
-                            ? 'Father/Husband: Not Added'
-                            : 'Father/Husband: $fatherHusband',
+                            ? 'Father/Husband: Not Added'.tr
+                            : 'Father/Husband: @name'.trParams({
+                                'name': fatherHusband,
+                              }),
                         style: TextStyle(fontSize: 12, color: secondaryText),
                       ),
                     ],
@@ -1211,7 +1215,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
               children: [
                 Expanded(
                   child: Text(
-                    phone.isEmpty ? 'Phone: Not Added' : 'Phone: $phone',
+                    phone.isEmpty
+                        ? 'Phone: Not Added'.tr
+                        : 'Phone: @number'.trParams({'number': phone}),
                     style: TextStyle(fontSize: 12, color: secondaryText),
                   ),
                 ),
@@ -1241,7 +1247,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Payment Status: @status'.trParams({'status': status}),
+                  'Payment Status: @status'.trParams({
+                    'status': status.tr,
+                  }),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -1503,7 +1511,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          widget.membersOnly ? 'Members' : 'Digital Committee',
+          (widget.membersOnly ? 'Members' : 'Digital Committee').tr,
           style: TextStyle(fontWeight: FontWeight.bold, color: primaryText),
         ),
         centerTitle: true,
@@ -1574,10 +1582,13 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     ],
                     Row(
                       children: [
-                        Expanded(child: _buildSectionTitle('Members')),
+                        Expanded(child: _buildSectionTitle('Members'.tr)),
                         Text(
-                          '${members.length} / '
-                          '${committeeController.totalMembers.value} Added',
+                          '@count / @total Added'.trParams({
+                            'count': '${members.length}',
+                            'total':
+                                '${committeeController.totalMembers.value}',
+                          }),
                           style: TextStyle(fontSize: 12, color: secondaryText),
                         ),
                       ],

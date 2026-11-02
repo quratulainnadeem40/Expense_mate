@@ -205,7 +205,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      completed ? 'Completed' : 'Active',
+                      (completed ? 'Completed' : 'Active').tr,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: statusColor,
                         fontWeight: FontWeight.w600,
@@ -220,8 +220,10 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
               _summaryLine(
                 context,
                 'Total amount',
-                '${_formatAmount(monthlyAmount * totalMembers)} '
-                    '($totalMembers members x ${_formatAmount(monthlyAmount)})',
+                '@count members x @amount'.trParams({
+                  'count': '$totalMembers',
+                  'amount': _formatAmount(monthlyAmount),
+                }),
               ),
               const SizedBox(height: 9),
               _summaryLine(
@@ -275,7 +277,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 142, child: Text(label, style: labelStyle)),
+        SizedBox(width: 142, child: Text(label.tr, style: labelStyle)),
         Expanded(child: Text(value, style: valueStyle)),
       ],
     );
@@ -432,7 +434,7 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
       'Dec',
     ];
     return '${date.day.toString().padLeft(2, '0')} '
-        '${months[date.month - 1]} ${date.year}';
+        '${months[date.month - 1].tr} ${date.year}';
   }
 }
 
@@ -527,7 +529,7 @@ class _CommitteeHistoryDetailView extends StatelessWidget {
                         Text(
                           received
                               ? _formatHistoryDate(entry.receiveDate!)
-                              : 'Not received yet',
+                              : 'Not received yet'.tr,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: received ? receivedColor : secondaryText,
                             fontWeight: received
@@ -561,5 +563,5 @@ String _formatHistoryDate(DateTime date) {
     'Dec',
   ];
   return '${date.day.toString().padLeft(2, '0')} '
-      '${months[date.month - 1]} ${date.year}';
+      '${months[date.month - 1].tr} ${date.year}';
 }

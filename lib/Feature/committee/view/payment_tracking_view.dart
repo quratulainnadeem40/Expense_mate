@@ -145,8 +145,10 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                   ),
                 ),
                 subtitle: Text(
-                  '${payments.length} payment records · '
-                  '${members.length} members',
+                  '@count payment records · @members members'.trParams({
+                    'count': '${payments.length}',
+                    'members': '${members.length}',
+                  }),
                   style: TextStyle(color: secondaryTextColor),
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
@@ -198,7 +200,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
       'December',
     ];
 
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+    return '${date.day} ${months[date.month - 1].tr} ${date.year}';
   }
 
   // --------------------------------------------------
@@ -351,7 +353,9 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Current status: $currentStatus'.tr,
+                  'Current status: @status'.trParams({
+                    'status': currentStatus.tr,
+                  }),
                   style: TextStyle(fontSize: 13, color: secondaryColor),
                 ),
                 const SizedBox(height: 18),
@@ -491,8 +495,8 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
             ? [
                 IconButton(
                   tooltip: _isBulkSelectionMode
-                      ? 'Cancel selection'
-                      : 'Select payments',
+                        ? 'Cancel selection'.tr
+                        : 'Select payments'.tr,
                   onPressed: _toggleBulkSelectionMode,
                   icon: Icon(
                     _isBulkSelectionMode
@@ -670,7 +674,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                                     child: PaymentCard(
                                       memberName:
                                           payment['memberName']?.toString() ??
-                                          'Member Name',
+                                          'Member Name'.tr,
                                       amount: _formatAmount(amount),
                                       paymentDate: dateText,
                                       status:

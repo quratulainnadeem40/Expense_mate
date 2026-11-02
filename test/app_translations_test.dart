@@ -308,6 +308,44 @@ void main() {
     );
   });
 
+  test('Urdu covers committee details, members, and payment screens', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Digital Committee',
+      'Members',
+      'Pending',
+      'Payment Status',
+      'Payment Status: @status',
+      'Father/Husband: Not Added',
+      'Father/Husband: @name',
+      'Phone: Not Added',
+      'Phone: @number',
+      '@count / @total Added',
+      'Change Payment Status',
+      'Current status: @status',
+      'Tap any payment record to change its status.',
+      'No committees available yet.',
+      'No committees in this category.',
+      'Not received yet',
+      'Total amount',
+      'Monthly installment',
+      'Total members',
+      'Start date',
+      '@count members x @amount',
+      'Spin the wheel to randomly choose this round’s recipient.',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu label: $key');
+    }
+
+    expect(urdu['Payment Status: @status'], contains('@status'));
+    expect(urdu['Father/Husband: @name'], contains('@name'));
+    expect(urdu['Phone: @number'], contains('@number'));
+    expect(urdu['@count / @total Added'], contains('@count'));
+    expect(urdu['@count members x @amount'], contains('@amount'));
+  });
+
   test('Urdu translates onboarding copy and currency names', () {
     final urdu = AppTranslations().keys['ur']!;
 
