@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -12,10 +13,43 @@ import 'package:expense_mate/Feature/transactions/controller/transcation_control
 import 'package:expense_mate/Feature/transactions/model/transcation_model.dart';
 import 'package:expense_mate/Feature/wallets/controller/wallets_controller.dart';
 
-class TransactionDetailsScreen extends StatelessWidget {
+class TransactionDetailsScreen extends StatefulWidget {
   final TransactionModel transaction;
 
-  const TransactionDetailsScreen({super.key, required this.transaction});
+  const TransactionDetailsScreen({
+    super.key,
+    required this.transaction,
+  });
+
+  @override
+  State<TransactionDetailsScreen> createState() =>
+      _TransactionDetailsScreenState();
+}
+
+class _TransactionDetailsScreenState
+    extends State<TransactionDetailsScreen> {
+
+  TransactionModel get transaction => widget.transaction;
+
+  // ------------------------------------------------------------
+  // LOAD WALLETS
+  // ------------------------------------------------------------
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (!Get.isRegistered<WalletsController>()) {
+      Get.put<WalletsController>(WalletsController());
+    } else {
+      final controller = Get.find<WalletsController>();
+
+      if (controller.wallets.isEmpty &&
+          !controller.isLoading.value) {
+        controller.loadWallets();
+      }
+    }
+  }
 
   // ------------------------------------------------------------
   // DELETE
@@ -46,18 +80,93 @@ class TransactionDetailsScreen extends StatelessWidget {
 
     final expenseController = Get.find<ExpenseController>();
 
-    expenseController.amountController.text = transaction.amount.toString();
+    expenseController.amountController.text =
+        transaction.amount.toString();
 
     expenseController.noteController.text =
         transaction.note ?? transaction.title;
 
     expenseController.isExpense.value = !transaction.isIncome;
 
-    expenseController.selectedCategoryId.value = transaction.categoryId;
+    expenseController.selectedCategoryId.value =
+        transaction.categoryId;
 
-    expenseController.selectedWalletId.value = transaction.walletId;
+    expenseController.selectedWalletId.value =
+        transaction.walletId;
 
     Get.to(() => const AddExpenseView(), arguments: transaction);
+  }
+
+  // ------------------------------------------------------------
+  // LOCALIZATION
+  // ------------------------------------------------------------
+
+  String _localizedDisplayText(String value) {
+    final text = value.trim();
+
+    if (text.isEmpty) return value;
+
+    return AppTranslations.localizeCategoryRecord(text);
+  }
+
+  String _localizedTransactionType() {
+    return AppTranslations.localizeTransactionType(
+      transaction.isIncome ? 'Income' : 'Expense',
+    );
+  }
+
+  String _localizedDateText(DateTime date) {
+    final languageCode = Get.locale?.languageCode ?? 'en';
+
+    if (languageCode != 'ur') {
+      return DateFormat('d MMMM y', 'en').format(date);
+    }
+
+    const urduMonths = {
+      1: 'جنوری',
+      2: 'فروری',
+      3: 'مارچ',
+      4: 'اپریل',
+      5: 'مئی',
+      6: 'جون',
+      7: 'جولائی',
+      8: 'اگست',
+      9: 'ستمبر',
+      10: 'اکتوبر',
+      11: 'نومبر',
+      12: 'دسمبر',
+    };
+
+    final monthName = urduMonths[date.month] ?? '';
+
+    return '${date.day} $monthName ${date.year}';
+  }
+
+  // ------------------------------------------------------------
+  // WALLET LOCALIZATION
+  // ------------------------------------------------------------
+
+  String _localizedWalletName(String walletName) {
+    final name = walletName.trim();
+    final normalizedName = name.toLowerCase();
+    final languageCode = Get.locale?.languageCode ?? 'en';
+
+    const walletTranslations = {
+      'cash': {
+        'ur': 'نقد رقم',
+      },
+      'bank account': {
+        'ur': 'بینک اکاؤنٹ',
+      },
+      'credit card': {
+        'ur': 'کریڈٹ کارڈ',
+      },
+      'other': {
+        'ur': 'دیگر',
+      },
+    };
+
+    return walletTranslations[normalizedName]?[languageCode] ?? name;
   }
 
   // ------------------------------------------------------------
@@ -67,9 +176,13 @@ class TransactionDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final localizedCategoryName = _localizedDisplayText(_categoryName);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Transaction Details'.tr), centerTitle: true),
+      appBar: AppBar(
+        title: Text('Transaction Details'.tr),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -81,6 +194,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // ICON
               // ------------------------------------------------
+
               CircleAvatar(
                 radius: 35,
                 backgroundColor: transaction.isIncome
@@ -90,7 +204,9 @@ class TransactionDetailsScreen extends StatelessWidget {
                   transaction.isIncome
                       ? Icons.arrow_downward
                       : Icons.shopping_bag,
-                  color: transaction.isIncome ? Colors.green : Colors.red,
+                  color: transaction.isIncome
+                      ? Colors.green
+                      : Colors.red,
                   size: 35,
                 ),
               ),
@@ -100,10 +216,11 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // TITLE
               // ------------------------------------------------
+
               Text(
                 transaction.title.trim().isEmpty
-                    ? AppTranslations.localizeCategoryRecord(_categoryName)
-                    : transaction.title,
+                    ? localizedCategoryName
+                    : _localizedDisplayText(transaction.title),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 20,
@@ -116,6 +233,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // AMOUNT
               // ------------------------------------------------
+
               Text(
                 Formatters.signedMoney(
                   transaction.amount,
@@ -125,18 +243,24 @@ class TransactionDetailsScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: transaction.isIncome ? Colors.green : Colors.red,
+                  color: transaction.isIncome
+                      ? Colors.green
+                      : Colors.red,
                 ),
               ),
 
               const SizedBox(height: 6),
 
               // ------------------------------------------------
-              // CATEGORY ID
+              // CATEGORY
               // ------------------------------------------------
+
               Text(
-                AppTranslations.localizeCategoryRecord(_categoryName),
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                localizedCategoryName,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
               ),
 
               const SizedBox(height: 30),
@@ -144,23 +268,30 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // DETAILS CARD
               // ------------------------------------------------
+
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   children: [
-                    _buildDetailRow(context, 'Category', _categoryName),
+                    _buildDetailRow(
+                      context,
+                      'Category',
+                      localizedCategoryName,
+                    ),
 
                     const Divider(height: 24),
 
                     _buildDetailRow(
                       context,
                       'Type',
-                      transaction.isIncome ? 'Income'.tr : 'Expense'.tr,
+                      _localizedTransactionType(),
                       valueColor: transaction.isIncome
                           ? Colors.green
                           : Colors.red,
@@ -186,13 +317,22 @@ class TransactionDetailsScreen extends StatelessWidget {
                     _buildDetailRow(
                       context,
                       'Date',
-                      '${DateFormat('MMM').format(transaction.date).tr} '
-                          '${transaction.date.day}, ${transaction.date.year}',
+                      _localizedDateText(transaction.date),
                     ),
 
                     const Divider(height: 24),
 
-                    _buildDetailRow(context, 'Wallet', _walletName()),
+                    // ------------------------------------------------
+                    // WALLET NAME
+                    // ------------------------------------------------
+
+                    Obx(
+                      () => _buildDetailRow(
+                        context,
+                        'Wallet',
+                        _walletName(),
+                      ),
+                    ),
 
                     const Divider(height: 24),
 
@@ -200,7 +340,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                       context,
                       'Note',
                       transaction.note?.isNotEmpty == true
-                          ? transaction.note!
+                          ? _localizedDisplayText(transaction.note!)
                           : 'No note'.tr,
                     ),
                   ],
@@ -212,21 +352,29 @@ class TransactionDetailsScreen extends StatelessWidget {
               // ------------------------------------------------
               // ACTIONS
               // ------------------------------------------------
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton.filledTonal(
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.withValues(alpha: 0.1),
+                      backgroundColor:
+                          Colors.red.withValues(alpha: 0.1),
                     ),
                     onPressed: _deleteTransaction,
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                    ),
                   ),
 
                   FloatingActionButton.small(
                     onPressed: _onEditPressed,
                     backgroundColor: Colors.blue,
-                    child: const Icon(Icons.edit, color: Colors.white),
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -237,10 +385,17 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
+  // ------------------------------------------------------------
+  // CATEGORY NAME
+  // ------------------------------------------------------------
+
   String get _categoryName {
     if (Get.isRegistered<CategoriesController>()) {
-      final categoriesController = Get.find<CategoriesController>();
-      final category = categoriesController.categoryList.firstWhereOrNull(
+      final categoriesController =
+          Get.find<CategoriesController>();
+
+      final category =
+          categoriesController.categoryList.firstWhereOrNull(
         (category) =>
             category.id.trim().toLowerCase() ==
                 transaction.categoryId.trim().toLowerCase() ||
@@ -250,8 +405,10 @@ class TransactionDetailsScreen extends StatelessWidget {
                   transaction.categoryId.trim().toLowerCase(),
             ),
       );
+
       if (category != null) return category.name;
     }
+
     return transaction.displayCategoryFallback;
   }
 
@@ -260,31 +417,31 @@ class TransactionDetailsScreen extends StatelessWidget {
   // ------------------------------------------------------------
 
   String _walletName() {
-    if (Get.isRegistered<WalletsController>()) {
-      final wallet = Get.find<WalletsController>().wallets.firstWhereOrNull(
-        (wallet) => wallet.id == transaction.walletId,
-      );
-      if (wallet != null) return wallet.name;
+    if (transaction.walletId.trim().isEmpty) {
+      return 'No wallet'.tr;
     }
 
-    if (!Get.isRegistered<ExpenseController>()) {
-      return transaction.walletId.isEmpty
-          ? 'No wallet'.tr
-          : transaction.walletId;
+    if (!Get.isRegistered<WalletsController>()) {
+      return 'Loading...'.tr;
     }
 
-    final expenseController = Get.find<ExpenseController>();
+    final walletsController = Get.find<WalletsController>();
 
-    final wallets = expenseController.walletsController.wallets;
-
-    final wallet = wallets.firstWhereOrNull(
-      (wallet) => wallet.id == transaction.walletId,
+    final wallet = walletsController.wallets.firstWhereOrNull(
+      (wallet) =>
+          wallet.id.trim().toLowerCase() ==
+          transaction.walletId.trim().toLowerCase(),
     );
 
-    final name =
-        wallet?.name ??
-        (transaction.walletId.isEmpty ? 'No wallet' : transaction.walletId);
-    return name;
+    if (wallet != null) {
+      return _localizedWalletName(wallet.name);
+    }
+
+    if (walletsController.isLoading.value) {
+      return 'Loading...'.tr;
+    }
+
+    return 'Wallet not found'.tr;
   }
 
   // ------------------------------------------------------------
@@ -303,7 +460,10 @@ class TransactionDetailsScreen extends StatelessWidget {
       children: [
         Text(
           title.tr,
-          style: const TextStyle(color: Colors.grey, fontSize: 14),
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 14,
+          ),
         ),
 
         const SizedBox(width: 20),
@@ -315,7 +475,8 @@ class TransactionDetailsScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+              color: valueColor ??
+                  Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),

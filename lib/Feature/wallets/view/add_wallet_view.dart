@@ -150,10 +150,6 @@ class _AddWalletViewState extends State<AddWalletView> {
                     setState(() {
                       selectedType = value;
                     });
-
-                    if (nameController.text.trim().isEmpty) {
-                      nameController.text = value;
-                    }
                   },
                 ),
 
