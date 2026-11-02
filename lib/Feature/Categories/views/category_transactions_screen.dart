@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:expense_mate/Core/utils/formatters.dart';
 import 'package:expense_mate/Core/localization/app_translations.dart';
 
 class CategoryTransactionsScreen extends StatefulWidget {
@@ -41,23 +42,6 @@ class _CategoryTransactionsScreenState
   double _parseAmount(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  String _formatAmount(double amount) {
-    final formatted = amount.round().toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < formatted.length; i++) {
-      if (i > 0 && (formatted.length - i) % 3 == 0) {
-        buffer.write(',');
-      }
-      buffer.write(formatted[i]);
-    }
-
-    final currency = Get.locale?.languageCode.toLowerCase() == 'ur'
-        ? 'روپے'
-        : 'Rs.';
-    return '$currency ${buffer.toString()}';
   }
 
   String _normalizeType(dynamic type) {
@@ -232,12 +216,16 @@ class _CategoryTransactionsScreenState
                 ],
               ),
               const SizedBox(height: 14),
-              Text(
-                'Total: @amount'.trParams({'amount': _formatAmount(total)}),
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: sectionColor,
+              Obx(
+                () => Text(
+                  'Total: @amount'.trParams({
+                    'amount': Formatters.money(total),
+                  }),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: sectionColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 5),
@@ -336,12 +324,14 @@ class _CategoryTransactionsScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '${isIncome ? '+' : '-'}${_formatAmount(amount)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: sectionColor,
+                Obx(
+                  () => Text(
+                    Formatters.signedMoney(amount, isIncome: isIncome),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: sectionColor,
+                    ),
                   ),
                 ),
               ],
