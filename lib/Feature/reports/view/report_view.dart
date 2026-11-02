@@ -333,13 +333,6 @@ class ReportView extends StatelessWidget {
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         actions: [
           IconButton(
-            tooltip: 'Refresh Reports'.tr,
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              controller.refreshReports();
-            },
-          ),
-          IconButton(
             tooltip: 'Open navigation menu'.tr,
             icon: const Icon(Icons.menu),
             onPressed: () {
