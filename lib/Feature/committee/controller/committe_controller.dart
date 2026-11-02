@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:expense_mate/Feature/committee/model/committee_reminder_occurrence.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -705,6 +706,10 @@ class CommitteeController extends GetxController {
   double get totalDurationAmount {
     if (duration.value <= 0) return 0;
     return totalPool * duration.value;
+  }
+
+  List<CommitteeReminderOccurrence> get reminderOccurrences {
+    return buildCommitteeReminderOccurrences(committees);
   }
 
   // --------------------------------------------------

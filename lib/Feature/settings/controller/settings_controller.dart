@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
 import 'package:expense_mate/Core/service/notification_service.dart';
+import 'package:expense_mate/Feature/committee/controller/committe_controller.dart';
 import '../../../Core/service/sound_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -798,6 +799,24 @@ class SettingsController extends GetxController {
         await notificationService.cancelAllNotifications();
       } catch (e) {
         debugPrint('Notification cleanup error: $e');
+      }
+    } else if (Get.isRegistered<CommitteeController>()) {
+      try {
+        await notificationService.syncCommitteeReminders(
+          occurrences: Get.find<CommitteeController>().reminderOccurrences,
+          enabled: settingsBox.get(
+            AppKeys.committeeReminderEnabledKey,
+            defaultValue: true,
+          ),
+          daysBefore: settingsBox.get(
+            AppKeys.committeeReminderDaysBeforeKey,
+            defaultValue: 1,
+          ),
+        );
+      } catch (error, stackTrace) {
+        debugPrint(
+          'Unable to restore committee reminders: $error\n$stackTrace',
+        );
       }
     }
   }

@@ -31,4 +31,10 @@ class AppKeys {
   static const String categoryCycleStartDayKey = 'category_cycle_start_day';
   static const String categoryCycleAutomaticResetKey =
       'category_cycle_reset_is_automatic';
+  static const String committeeReminderEnabledKey =
+      'committee_reminder_enabled';
+  static const String committeeReminderDaysBeforeKey =
+      'committee_reminder_days_before';
+  static const String committeeReminderNotificationIdsKey =
+      'committee_reminder_notification_ids';
 }

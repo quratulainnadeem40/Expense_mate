@@ -2456,6 +2456,34 @@ class AppTranslations extends Translations {
         'اطلاع نہیں بھیجی جا سکی: @message',
     'Committee reminders are managed from this screen.':
         'کمیٹی کی یاددہانیوں کا انتظام اسی اسکرین سے کریں۔',
+    'Get one reminder for each committee date.':
+        'کمیٹی کی ہر تاریخ کے لیے ایک یاددہانی حاصل کریں۔',
+    'Monthly committee reminder': 'ماہانہ کمیٹی کی یاددہانی',
+    'A single notification for each upcoming committee date.':
+        'کمیٹی کی ہر آنے والی تاریخ کے لیے صرف ایک اطلاع۔',
+    'When should we remind you?': 'آپ کو کب یاددہانی بھیجی جائے؟',
+    'One day before': 'ایک دن پہلے',
+    'Get one reminder one day before the due date.':
+        'مقررہ تاریخ سے ایک دن پہلے صرف ایک یاددہانی حاصل کریں۔',
+    'On the due date': 'مقررہ تاریخ والے دن',
+    'Get one reminder on the committee due date.':
+        'کمیٹی کی مقررہ تاریخ پر صرف ایک یاددہانی حاصل کریں۔',
+    'Next reminder': 'اگلی یاددہانی',
+    'No upcoming committee dates are scheduled.':
+        'کمیٹی کی کوئی آئندہ تاریخ مقرر نہیں ہے۔',
+    'Reminders are turned off.': 'یاددہانیاں بند ہیں۔',
+    'Notifications are disabled in app settings.':
+        'ایپ کی ترتیبات میں اطلاعات بند ہیں۔',
+    'Reminders are sent at 9:00 AM using your device time.':
+        'یاددہانیاں آپ کے آلے کے مقامی وقت کے مطابق صبح 9:00 بجے بھیجی جاتی ہیں۔',
+    'Reminder settings saved.': 'یاددہانی کی ترتیبات محفوظ ہو گئیں۔',
+    'Unable to update reminders: @message':
+        'یاددہانیوں کو اپ ڈیٹ نہیں کیا جا سکا: @message',
+    'Committee reminder': 'کمیٹی کی یاددہانی',
+    'Your committee contribution for @name is due tomorrow.':
+        '@name کے لیے کمیٹی کی رقم کل واجب الادا ہے۔',
+    'Your committee contribution for @name is due today.':
+        '@name کے لیے کمیٹی کی رقم آج واجب الادا ہے۔',
     'Committee History': 'کمیٹی کی ہسٹری',
     'View completed committees and payment history.':
         'مکمل شدہ کمیٹیاں اور ادائیگی کی ہسٹری دیکھیں۔',

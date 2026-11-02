@@ -1,6 +1,11 @@
 import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Feature/committee/model/committee_reminder_occurrence.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -22,16 +27,22 @@ class NotificationService {
   static const String _budgetChannelName = 'Budget Reset';
   static const String _budgetChannelDescription =
       'Reminders before your budget cycle resets';
+  static const String _committeeChannelId = 'committee_reminders';
+  static const String _committeeChannelName = 'Committee Reminders';
+  static const String _committeeChannelDescription =
+      'Reminders for upcoming committee dates';
 
-  // Bills use notificationId and notificationId + 1000000. This sits far
-  // above both so the two can never collide.
+  // Keep the budget reminder separate from bill and committee reminders.
   static const int _budgetReminderId = 9000001;
+  static const int _committeeReminderIdBase = 1900000000;
 
   static const String _channelDescription =
       'Notifications for upcoming and due bills';
 
   Future<void> init() async {
     tz.initializeTimeZones();
+    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -89,26 +100,129 @@ class NotificationService {
     debugPrint('INSTANT NOTIFICATION SENT');
   }
 
-  // Committee simple notification
-  Future<void> showCommitteeNotification() async {
+  Future<void> syncCommitteeReminders({
+    required List<CommitteeReminderOccurrence> occurrences,
+    required bool enabled,
+    required int daysBefore,
+  }) async {
+    if (daysBefore != 0 && daysBefore != 1) {
+      throw ArgumentError.value(daysBefore, 'daysBefore', 'Must be 0 or 1.');
+    }
+
+    final settings = Hive.box(AppKeys.settingsBox);
+    final dynamic storedIds = settings.get(
+      AppKeys.committeeReminderNotificationIdsKey,
+      defaultValue: <int>[],
+    );
+    final List<int> oldIds = storedIds is List
+        ? storedIds.whereType<num>().map((id) => id.toInt()).toList()
+        : <int>[];
+    final List<PendingNotificationRequest> pending = await _notifications
+        .pendingNotificationRequests();
+    final Set<int> usedIds = pending
+        .map((notification) => notification.id)
+        .toSet();
+    usedIds.addAll(oldIds);
+
+    final Map<String, Set<String>> namesByReminderDate = {};
+    if (enabled && settings.get('notifications_enabled', defaultValue: true)) {
+      final now = tz.TZDateTime.now(tz.local);
+
+      for (final occurrence in occurrences) {
+        final DateTime reminderDate = occurrence.reminderDate(
+          daysBefore: daysBefore,
+        );
+        final tz.TZDateTime fireDate = tz.TZDateTime(
+          tz.local,
+          reminderDate.year,
+          reminderDate.month,
+          reminderDate.day,
+          reminderDate.hour,
+        );
+        if (!fireDate.isAfter(now)) continue;
+
+        final String key =
+            '${fireDate.year}-${fireDate.month.toString().padLeft(2, '0')}-'
+            '${fireDate.day.toString().padLeft(2, '0')}';
+        namesByReminderDate
+            .putIfAbsent(key, () => <String>{})
+            .add(occurrence.committeeName);
+      }
+    }
+
+    if (namesByReminderDate.isEmpty) {
+      for (final int id in oldIds) {
+        await _notifications.cancel(id);
+      }
+      await settings.put(AppKeys.committeeReminderNotificationIdsKey, <int>[]);
+      return;
+    }
+
     const androidDetails = AndroidNotificationDetails(
-      'committee_reminders',
-      'Committee Reminders',
-      channelDescription: 'Notifications for committee payments',
+      _committeeChannelId,
+      _committeeChannelName,
+      channelDescription: _committeeChannelDescription,
       importance: Importance.max,
       priority: Priority.high,
     );
-
     const details = NotificationDetails(android: androidDetails);
 
-    await _notifications.show(
-      1000,
-      'Committee Reminder',
-      'Your committee contribution is due today.',
-      details,
-    );
+    final List<int> newIds = [];
+    final List<String> reminderDates = namesByReminderDate.keys.toList()
+      ..sort();
+    try {
+      for (int index = 0; index < reminderDates.length; index++) {
+        final String key = reminderDates[index];
+        final List<String> committeeNames = namesByReminderDate[key]!.toList()
+          ..sort();
+        final DateTime reminderDate = DateTime.parse(key);
+        final tz.TZDateTime fireDate = tz.TZDateTime(
+          tz.local,
+          reminderDate.year,
+          reminderDate.month,
+          reminderDate.day,
+          9,
+        );
 
-    debugPrint('COMMITTEE NOTIFICATION SENT');
+        int notificationId = _committeeReminderIdBase + index;
+        while (usedIds.contains(notificationId)) {
+          notificationId++;
+        }
+        usedIds.add(notificationId);
+
+        final String names = committeeNames.join(', ');
+        final String title = 'Committee reminder'.tr;
+        final bool isDueTomorrow = daysBefore == 1;
+        final String body = isDueTomorrow
+            ? 'Your committee contribution for @name is due tomorrow.'.trParams(
+                {'name': names},
+              )
+            : 'Your committee contribution for @name is due today.'.trParams({
+                'name': names,
+              });
+
+        await _notifications.zonedSchedule(
+          notificationId,
+          title,
+          body,
+          fireDate,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+        newIds.add(notificationId);
+      }
+    } catch (error) {
+      for (final int id in newIds) {
+        await _notifications.cancel(id);
+      }
+      rethrow;
+    }
+
+    for (final int id in oldIds) {
+      await _notifications.cancel(id);
+    }
+    await settings.put(AppKeys.committeeReminderNotificationIdsKey, newIds);
+    debugPrint('COMMITTEE REMINDERS SCHEDULED: ${newIds.length}');
   }
 
   Future<void> scheduleBillNotification({

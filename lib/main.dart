@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // Routes & Services Imports
 import 'package:expense_mate/Core/routes/page_routes.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
+import 'package:expense_mate/Core/constants/app_keys.dart';
 import 'package:expense_mate/Core/service/notification_service.dart';
 import 'package:expense_mate/Core/service/storage_service.dart';
 import 'package:expense_mate/Core/theme/custom_theme.dart';
@@ -22,6 +23,7 @@ import 'package:expense_mate/Feature/settings/controller/settings_controller.dar
 import 'package:expense_mate/Feature/reports/controller/report_controller.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/committee/controller/committe_controller.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +52,31 @@ void main() async {
 
   Get.put(ReportController(), permanent: true);
   Get.put(TransactionsController(), permanent: true);
-  Get.put(CommitteeController.instance, permanent: true);
+  final committeeController = Get.put(
+    CommitteeController.instance,
+    permanent: true,
+  );
+  final settingsBox = Hive.box(AppKeys.settingsBox);
+  Future<void> syncCommitteeReminders() async {
+    try {
+      await notificationService.syncCommitteeReminders(
+        occurrences: committeeController.reminderOccurrences,
+        enabled: settingsBox.get(
+          AppKeys.committeeReminderEnabledKey,
+          defaultValue: true,
+        ),
+        daysBefore: settingsBox.get(
+          AppKeys.committeeReminderDaysBeforeKey,
+          defaultValue: 1,
+        ),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Unable to sync committee reminders: $error\n$stackTrace');
+    }
+  }
+
+  await syncCommitteeReminders();
+  committeeController.committees.listen((_) => syncCommitteeReminders());
 
   runApp(ExpenseMateApp(settingsController: settingsController));
 }
