@@ -274,8 +274,7 @@ class SettingsController extends GetxController {
 
           Get.snackbar(
             'Confirmation Required'.tr,
-            'A confirmation email has been sent to your new email address. '
-                    'Please confirm it before the email change becomes active.'
+            'A confirmation email has been sent to your new email address. Please confirm it before the email change becomes active.'
                 .tr,
             snackPosition: SnackPosition.BOTTOM,
             duration: const Duration(seconds: 6),

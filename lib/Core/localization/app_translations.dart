@@ -452,6 +452,9 @@ class AppTranslations extends Translations {
     'Unlock with fingerprint': 'فنگر پرنٹ سے اَن لاک کریں',
     'Your PIN still works if it fails':
         'فنگر پرنٹ ناکام ہونے پر بھی PIN استعمال کیا جا سکتا ہے',
+    'Nothing enrolled': 'کوئی فنگر پرنٹ محفوظ نہیں',
+    'Add a fingerprint in your phone settings first.':
+        'پہلے فون کی ترتیبات میں فنگر پرنٹ شامل کریں۔',
     'Remove app PIN': 'ایپ کا PIN ہٹائیں',
     'The app will open without asking': 'ایپ کھولنے پر PIN نہیں مانگا جائے گا',
     'Transaction Sound': 'لین دین کی آواز',
@@ -2049,6 +2052,8 @@ class AppTranslations extends Translations {
     'Required': 'درکار',
     'Please enter a category name.': 'براہِ کرم زمرے کا نام درج کریں۔',
     'Invalid category': 'غلط زمرہ',
+    'Enter a category name.': 'زمرے کا نام درج کریں۔',
+    'Enter a source of income.': 'آمدنی کا ذریعہ درج کریں۔',
     'Please select a valid category type.':
         'براہِ کرم درست زمرہ قسم منتخب کریں۔',
     'Category already exists': 'زمرہ پہلے سے موجود ہے',
@@ -2262,6 +2267,10 @@ class AppTranslations extends Translations {
     'Please select an expense category.':
         'براہِ کرم اخراجات کا زمرہ منتخب کریں۔',
     'Please select an income category.':
+        'براہِ کرم آمدنی کا زمرہ منتخب کریں۔',
+    'Please select an expense category':
+        'براہِ کرم اخراجات کا زمرہ منتخب کریں۔',
+    'Please select an income category':
         'براہِ کرم آمدنی کا زمرہ منتخب کریں۔',
     'No wallet selected': 'کوئی والٹ منتخب نہیں کیا گیا۔',
     'Transaction ID is missing.': 'لین دین کی شناخت موجود نہیں۔',

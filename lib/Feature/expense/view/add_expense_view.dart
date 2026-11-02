@@ -169,9 +169,9 @@ class AddExpenseView extends GetView<ExpenseController> {
 
       Get.snackbar(
         'Category already exists'.tr,
-        'This category already exists in '.tr +
-            (normalizedType == 'income' ? 'Income'.tr : 'Expense'.tr) +
-            '.',
+        'This category already exists in @type.'.trParams({
+          'type': (normalizedType == 'income' ? 'Income' : 'Expense').tr,
+        }),
       );
 
       return;

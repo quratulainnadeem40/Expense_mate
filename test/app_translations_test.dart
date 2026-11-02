@@ -346,6 +346,27 @@ void main() {
     expect(urdu['@count members x @amount'], contains('@amount'));
   });
 
+  test('Urdu translates snackbar validation and account messages', () {
+    final urdu = AppTranslations().keys['ur']!;
+
+    for (final key in [
+      'Nothing enrolled',
+      'Add a fingerprint in your phone settings first.',
+      'Enter a category name.',
+      'Enter a source of income.',
+      'Please select an expense category',
+      'Please select an income category',
+      'This category already exists in @type.',
+      'Confirmation Required',
+      'A confirmation email has been sent to your new email address. Please confirm it before the email change becomes active.',
+    ]) {
+      expect(urdu[key], isNotNull, reason: 'Missing Urdu translation: $key');
+      expect(urdu[key], isNot(key), reason: 'Untranslated Urdu message: $key');
+    }
+
+    expect(urdu['This category already exists in @type.'], contains('@type'));
+  });
+
   test('Urdu translates onboarding copy and currency names', () {
     final urdu = AppTranslations().keys['ur']!;
 
