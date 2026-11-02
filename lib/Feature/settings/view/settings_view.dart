@@ -653,7 +653,7 @@ class SettingsView extends StatelessWidget {
                           'Your PIN still works if it fails'.tr,
                           style: AppTextStyles.bodyMedium(isDark),
                         ),
-                        value: BiometricService.instance.isEnabled,
+                        value: BiometricService.instance.isEnabledRx.value,
                         onChanged: (value) async {
                           if (value) {
                             final ok = await BiometricService.instance
