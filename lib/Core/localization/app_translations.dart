@@ -2148,6 +2148,9 @@ class AppTranslations extends Translations {
     'No Members Added': 'کوئی رکن شامل نہیں ہوا',
     'Tap "Add Member" to add committee members.':
         'کمیٹی کے ارکان شامل کرنے کے لیے "Add Member" پر کلک کریں۔',
+    'Add members from the Members section. Once added, use Payment Tracking to monitor their contributions.':
+        'اراکین والے حصے سے کمیٹی کے ارکان شامل کریں۔ شامل ہونے کے بعد ان کے ماہانہ حصوں کی نگرانی کے لیے ادائیگی ٹریکنگ استعمال کریں۔',
+    'Manage Members': 'اراکین کا انتظام کریں',
     'Allocation method': 'تقسیم کا طریقہ',
     'Added order': 'شامل کرنے کا ترتیب',
     'Spin & win': 'چکر اور جیت',

@@ -1267,11 +1267,15 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           side: BorderSide(color: outlineColor),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
           child: Column(
             children: [
-              Icon(Icons.people_outline, size: 52, color: secondaryText),
-              const SizedBox(height: 12),
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: greenBackground,
+                child: Icon(Icons.people_outline, size: 30, color: greenText),
+              ),
+              const SizedBox(height: 14),
               Text(
                 'No Members Added'.tr,
                 style: TextStyle(
@@ -1280,13 +1284,33 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   color: primaryText,
                 ),
               ),
-              const SizedBox(height: 6),
-              if (widget.membersOnly)
-                Text(
-                  'Tap "Add Member" to add committee members.'.tr,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: secondaryText),
+              const SizedBox(height: 8),
+              Text(
+                widget.membersOnly
+                    ? 'Tap "Add Member" to add committee members.'.tr
+                    : 'Add members from the Members section. Once added, use Payment Tracking to monitor their contributions.'
+                          .tr,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: secondaryText,
                 ),
+              ),
+              if (!widget.membersOnly) ...[
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: () {
+                    final String? committeeId =
+                        committeeController.activeCommitteeId.value;
+                    if (committeeId != null && committeeId.isNotEmpty) {
+                      _openCommitteeMembers(committeeId);
+                    }
+                  },
+                  icon: const Icon(Icons.manage_accounts_outlined),
+                  label: Text('Manage Members'.tr),
+                ),
+              ],
             ],
           ),
         ),

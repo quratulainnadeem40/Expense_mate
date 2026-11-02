@@ -279,6 +279,8 @@ void main() {
     final urdu = AppTranslations().keys['ur']!;
 
     for (final key in [
+      'Add members from the Members section. Once added, use Payment Tracking to monitor their contributions.',
+      'Manage Members',
       'Committee Schedule',
       'Committee Allocated',
       'Allocated Rounds',
