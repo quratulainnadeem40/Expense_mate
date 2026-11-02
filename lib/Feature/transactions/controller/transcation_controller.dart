@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:math';
 
@@ -17,8 +16,7 @@ class TransactionsController extends GetxController {
   // TRANSACTIONS
   // ==========================================================
 
-  final transactions =
-      <TransactionModel>[].obs;
+  final transactions = <TransactionModel>[].obs;
 
   // ==========================================================
   // TOTALS
@@ -38,15 +36,13 @@ class TransactionsController extends GetxController {
   // REPOSITORY
   // ==========================================================
 
-  final RepositoryProvider _repositories =
-      RepositoryProvider.instance;
+  final RepositoryProvider _repositories = RepositoryProvider.instance;
 
   // ==========================================================
   // CURRENT USER
   // ==========================================================
 
-  User? get currentUser =>
-      _supabase.auth.currentUser;
+  User? get currentUser => _supabase.auth.currentUser;
 
   // ==========================================================
   // INIT
@@ -86,8 +82,7 @@ class TransactionsController extends GetxController {
       // ------------------------------------------------------
 
       try {
-        final syncManager =
-            Get.find<SyncManager>();
+        final syncManager = Get.find<SyncManager>();
 
         await syncManager.sync();
 
@@ -97,9 +92,7 @@ class TransactionsController extends GetxController {
         // Local data remains available
       }
     } catch (_) {
-      _showError(
-        'Unable to load transactions.',
-      );
+      _showError('Unable to load transactions.');
     } finally {
       isLoading.value = false;
     }
@@ -109,21 +102,14 @@ class TransactionsController extends GetxController {
   // LOAD FROM LOCAL DATABASE
   // ==========================================================
 
-  Future<void> _loadFromLocal(
-    String userId,
-  ) async {
-    final localTransactions =
-        await _repositories.transactions
-            .getTransactions(userId);
-
-    final loadedTransactions =
-        localTransactions
-            .map(_localToModel)
-            .toList();
-
-    transactions.assignAll(
-      loadedTransactions,
+  Future<void> _loadFromLocal(String userId) async {
+    final localTransactions = await _repositories.transactions.getTransactions(
+      userId,
     );
+
+    final loadedTransactions = localTransactions.map(_localToModel).toList();
+
+    transactions.assignAll(loadedTransactions);
 
     _calculateTotals();
   }
@@ -132,15 +118,11 @@ class TransactionsController extends GetxController {
   // ADD TRANSACTION
   // ==========================================================
 
-  Future<bool> addTransaction(
-    TransactionModel transaction,
-  ) async {
+  Future<bool> addTransaction(TransactionModel transaction) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError(
-        'Please login first.',
-      );
+      _showError('Please login first.');
       return false;
     }
 
@@ -151,8 +133,7 @@ class TransactionsController extends GetxController {
       // Generate transaction ID
       // ------------------------------------------------------
 
-      final transactionId =
-          _generateUuid();
+      final transactionId = _generateUuid();
 
       // ------------------------------------------------------
       // Create transaction with generated ID
@@ -161,61 +142,42 @@ class TransactionsController extends GetxController {
       // customCategory is preserved for Reports.
       // ------------------------------------------------------
 
-      final transactionWithId =
-          TransactionModel(
+      final transactionWithId = TransactionModel(
         id: transactionId,
         userId: user.id,
         walletId: transaction.walletId,
         categoryId: transaction.categoryId,
-        customCategory:
-            transaction.customCategory,
+        customCategory: transaction.customCategory,
         title: transaction.title,
         amount: transaction.amount,
-        type: transaction.type
-            .trim()
-            .toLowerCase(),
-        transactionDate:
-            transaction.transactionDate,
+        type: transaction.type.trim().toLowerCase(),
+        transactionDate: transaction.transactionDate,
         note: transaction.note,
-        createdAt:
-            transaction.createdAt,
+        createdAt: transaction.createdAt,
       );
 
       // ------------------------------------------------------
       // Save transaction
       // ------------------------------------------------------
 
-      await _repositories
-          .transactionSync
-          .createTransaction(
+      await _repositories.transactionSync.createTransaction(
         userId: user.id,
         id: transactionWithId.id,
-        walletId:
-            transactionWithId.walletId,
-        categoryId:
-            transactionWithId.categoryId,
-        title:
-            transactionWithId.title,
-        amount:
-            transactionWithId.amount,
-        type:
-            transactionWithId.type,
-        transactionDate:
-            transactionWithId.transactionDate,
-        note:
-            transactionWithId.note,
-        createdAt:
-            transactionWithId.createdAt,
+        walletId: transactionWithId.walletId,
+        categoryId: transactionWithId.categoryId,
+        title: transactionWithId.title,
+        amount: transactionWithId.amount,
+        type: transactionWithId.type,
+        transactionDate: transactionWithId.transactionDate,
+        note: transactionWithId.note,
+        createdAt: transactionWithId.createdAt,
       );
 
       // ------------------------------------------------------
       // Update reactive list immediately
       // ------------------------------------------------------
 
-      transactions.insert(
-        0,
-        transactionWithId,
-      );
+      transactions.insert(0, transactionWithId);
 
       // ------------------------------------------------------
       // Recalculate totals
@@ -231,9 +193,7 @@ class TransactionsController extends GetxController {
 
       return true;
     } catch (_) {
-      _showError(
-        'Unable to add transaction.',
-      );
+      _showError('Unable to add transaction.');
 
       return false;
     } finally {
@@ -245,15 +205,11 @@ class TransactionsController extends GetxController {
   // UPDATE TRANSACTION
   // ==========================================================
 
-  Future<bool> updateTransaction(
-    TransactionModel transaction,
-  ) async {
+  Future<bool> updateTransaction(TransactionModel transaction) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError(
-        'Please login first.',
-      );
+      _showError('Please login first.');
       return false;
     }
 
@@ -264,75 +220,49 @@ class TransactionsController extends GetxController {
       // Keep transaction type normalized
       // ------------------------------------------------------
 
-      final updatedTransaction =
-          TransactionModel(
+      final updatedTransaction = TransactionModel(
         id: transaction.id,
-        userId: transaction.userId.isNotEmpty
-            ? transaction.userId
-            : user.id,
+        userId: transaction.userId.isNotEmpty ? transaction.userId : user.id,
         walletId: transaction.walletId,
-        categoryId:
-            transaction.categoryId,
-        customCategory:
-            transaction.customCategory,
+        categoryId: transaction.categoryId,
+        customCategory: transaction.customCategory,
         title: transaction.title,
         amount: transaction.amount,
-        type: transaction.type
-            .trim()
-            .toLowerCase(),
-        transactionDate:
-            transaction.transactionDate,
+        type: transaction.type.trim().toLowerCase(),
+        transactionDate: transaction.transactionDate,
         note: transaction.note,
-        createdAt:
-            transaction.createdAt,
+        createdAt: transaction.createdAt,
       );
 
       // ------------------------------------------------------
       // Update database
       // ------------------------------------------------------
 
-      await _repositories
-          .transactionSync
-          .updateTransaction(
+      await _repositories.transactionSync.updateTransaction(
         userId: user.id,
         id: updatedTransaction.id,
-        walletId:
-            updatedTransaction.walletId,
-        categoryId:
-            updatedTransaction.categoryId,
-        title:
-            updatedTransaction.title,
-        amount:
-            updatedTransaction.amount,
-        type:
-            updatedTransaction.type,
-        transactionDate:
-            updatedTransaction.transactionDate,
-        note:
-            updatedTransaction.note,
-        createdAt:
-            updatedTransaction.createdAt,
+        walletId: updatedTransaction.walletId,
+        categoryId: updatedTransaction.categoryId,
+        title: updatedTransaction.title,
+        amount: updatedTransaction.amount,
+        type: updatedTransaction.type,
+        transactionDate: updatedTransaction.transactionDate,
+        note: updatedTransaction.note,
+        createdAt: updatedTransaction.createdAt,
       );
 
       // ------------------------------------------------------
       // Update reactive list
       // ------------------------------------------------------
 
-      final index =
-          transactions.indexWhere(
-        (item) =>
-            item.id ==
-            updatedTransaction.id,
+      final index = transactions.indexWhere(
+        (item) => item.id == updatedTransaction.id,
       );
 
       if (index != -1) {
-        transactions[index] =
-            updatedTransaction;
+        transactions[index] = updatedTransaction;
       } else {
-        transactions.insert(
-          0,
-          updatedTransaction,
-        );
+        transactions.insert(0, updatedTransaction);
       }
 
       // ------------------------------------------------------
@@ -349,9 +279,7 @@ class TransactionsController extends GetxController {
 
       return true;
     } catch (_) {
-      _showError(
-        'Unable to update transaction.',
-      );
+      _showError('Unable to update transaction.');
 
       return false;
     } finally {
@@ -363,15 +291,11 @@ class TransactionsController extends GetxController {
   // DELETE SINGLE TRANSACTION
   // ==========================================================
 
-  Future<bool> deleteTransaction(
-    String transactionId,
-  ) async {
+  Future<bool> deleteTransaction(String transactionId) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError(
-        'Please login first.',
-      );
+      _showError('Please login first.');
       return false;
     }
 
@@ -382,9 +306,7 @@ class TransactionsController extends GetxController {
       // Delete from database
       // ------------------------------------------------------
 
-      await _repositories
-          .transactionSync
-          .deleteTransaction(
+      await _repositories.transactionSync.deleteTransaction(
         userId: user.id,
         id: transactionId,
       );
@@ -394,9 +316,7 @@ class TransactionsController extends GetxController {
       // ------------------------------------------------------
 
       transactions.removeWhere(
-        (transaction) =>
-            transaction.id ==
-            transactionId,
+        (transaction) => transaction.id == transactionId,
       );
 
       // ------------------------------------------------------
@@ -413,9 +333,7 @@ class TransactionsController extends GetxController {
 
       return true;
     } catch (_) {
-      _showError(
-        'Unable to delete transaction.',
-      );
+      _showError('Unable to delete transaction.');
 
       return false;
     } finally {
@@ -427,15 +345,11 @@ class TransactionsController extends GetxController {
   // DELETE MULTIPLE TRANSACTIONS
   // ==========================================================
 
-  Future<bool> deleteMultipleTransactions(
-    List<String> transactionIds,
-  ) async {
+  Future<bool> deleteMultipleTransactions(List<String> transactionIds) async {
     final user = currentUser;
 
     if (user == null) {
-      _showError(
-        'Please login first.',
-      );
+      _showError('Please login first.');
       return false;
     }
 
@@ -450,11 +364,8 @@ class TransactionsController extends GetxController {
       // Delete each transaction through existing sync flow
       // ------------------------------------------------------
 
-      for (final transactionId
-          in transactionIds) {
-        await _repositories
-            .transactionSync
-            .deleteTransaction(
+      for (final transactionId in transactionIds) {
+        await _repositories.transactionSync.deleteTransaction(
           userId: user.id,
           id: transactionId,
         );
@@ -466,10 +377,7 @@ class TransactionsController extends GetxController {
       // ------------------------------------------------------
 
       transactions.removeWhere(
-        (transaction) =>
-            transactionIds.contains(
-          transaction.id,
-        ),
+        (transaction) => transactionIds.contains(transaction.id),
       );
 
       // ------------------------------------------------------
@@ -486,9 +394,7 @@ class TransactionsController extends GetxController {
 
       return true;
     } catch (_) {
-      _showError(
-        'Unable to delete selected transactions.',
-      );
+      _showError('Unable to delete selected transactions.');
 
       return false;
     } finally {
@@ -502,11 +408,8 @@ class TransactionsController extends GetxController {
 
   void _syncInBackground() {
     try {
-      if (Get.isRegistered<
-          SyncManager>()) {
-        unawaited(
-          Get.find<SyncManager>().sync(),
-        );
+      if (Get.isRegistered<SyncManager>()) {
+        unawaited(Get.find<SyncManager>().sync());
       }
     } catch (_) {
       // Local operation already saved.
@@ -517,23 +420,16 @@ class TransactionsController extends GetxController {
   // LOCAL DATABASE MODEL -> TRANSACTION MODEL
   // ==========================================================
 
-  TransactionModel _localToModel(
-    LocalTransaction local,
-  ) {
+  TransactionModel _localToModel(LocalTransaction local) {
     return TransactionModel(
       id: local.id,
       userId: local.userId,
-      walletId:
-          local.walletId ?? '',
-      categoryId:
-          local.categoryId ?? '',
+      walletId: local.walletId ?? '',
+      categoryId: local.categoryId ?? '',
       title: local.title,
       amount: local.amount,
-      type: local.type
-          .trim()
-          .toLowerCase(),
-      transactionDate:
-          local.transactionDate,
+      type: local.type.trim().toLowerCase(),
+      transactionDate: local.transactionDate,
       note: local.note,
       createdAt: local.createdAt,
     );
@@ -547,12 +443,8 @@ class TransactionsController extends GetxController {
     double income = 0.0;
     double expense = 0.0;
 
-    for (final transaction
-        in transactions) {
-      final String type =
-          transaction.type
-              .trim()
-              .toLowerCase();
+    for (final transaction in transactions) {
+      final String type = transaction.type.trim().toLowerCase();
 
       if (type == 'income') {
         income += transaction.amount;
@@ -563,17 +455,14 @@ class TransactionsController extends GetxController {
 
     totalIncome.value = income;
     totalExpense.value = expense;
-    totalBalance.value =
-        income - expense;
+    totalBalance.value = income - expense;
   }
 
   // ==========================================================
   // ERROR
   // ==========================================================
 
-  void _showError(
-    String message,
-  ) {
+  void _showError(String message) {
     // Intentionally no snackbar.
   }
 
@@ -585,18 +474,10 @@ class TransactionsController extends GetxController {
     final random = Random();
 
     String hex(int count) {
-      final value =
-          List<int>.generate(
-        count,
-        (_) => random.nextInt(256),
-      );
+      final value = List<int>.generate(count, (_) => random.nextInt(256));
 
       return value
-          .map(
-            (number) => number
-                .toRadixString(16)
-                .padLeft(2, '0'),
-          )
+          .map((number) => number.toRadixString(16).padLeft(2, '0'))
           .join();
     }
 
@@ -616,42 +497,24 @@ class TransactionsController extends GetxController {
     // UUID Part 3 - Version 4
     // --------------------------------------------------------
 
-    final part3Bytes =
-        List<int>.generate(
-      2,
-      (_) => random.nextInt(256),
-    );
+    final part3Bytes = List<int>.generate(2, (_) => random.nextInt(256));
 
-    part3Bytes[0] =
-        (part3Bytes[0] & 0x0f) | 0x40;
+    part3Bytes[0] = (part3Bytes[0] & 0x0f) | 0x40;
 
     final part3 = part3Bytes
-        .map(
-          (number) => number
-              .toRadixString(16)
-              .padLeft(2, '0'),
-        )
+        .map((number) => number.toRadixString(16).padLeft(2, '0'))
         .join();
 
     // --------------------------------------------------------
     // UUID Part 4 - Variant
     // --------------------------------------------------------
 
-    final part4Bytes =
-        List<int>.generate(
-      2,
-      (_) => random.nextInt(256),
-    );
+    final part4Bytes = List<int>.generate(2, (_) => random.nextInt(256));
 
-    part4Bytes[0] =
-        (part4Bytes[0] & 0x3f) | 0x80;
+    part4Bytes[0] = (part4Bytes[0] & 0x3f) | 0x80;
 
     final part4 = part4Bytes
-        .map(
-          (number) => number
-              .toRadixString(16)
-              .padLeft(2, '0'),
-        )
+        .map((number) => number.toRadixString(16).padLeft(2, '0'))
         .join();
 
     // --------------------------------------------------------
