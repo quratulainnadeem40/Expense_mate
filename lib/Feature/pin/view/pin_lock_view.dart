@@ -130,12 +130,38 @@ class _PinLockViewState extends State<PinLockView> {
     await Future<void>.delayed(const Duration(milliseconds: 120));
     if (!mounted) return;
 
-    if (PinService.instance.verify(_entry)) {
-      await PinService.instance.recordSuccess();
-      _goOn();
-      return;
-    }
+   try {
+  final result = await PinService.instance.verifyPinOnServer(_entry);
 
+  if (result['success'] == true) {
+    await PinService.instance.recordSuccess();
+    _goOn();
+    return;
+  }
+
+  if (result['locked'] == true) {
+    Get.snackbar(
+      'Account Temporarily Locked',
+      'Too many incorrect attempts. Please try again later.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    return;
+  }
+
+  Get.snackbar(
+    'Incorrect PIN',
+    'Please enter the correct PIN.',
+    snackPosition: SnackPosition.BOTTOM,
+  );
+} catch (e) {
+  debugPrint('PIN VERIFICATION ERROR: $e');
+
+  Get.snackbar(
+    'Verification Failed',
+    'Unable to verify PIN. Check your internet connection.',
+    snackPosition: SnackPosition.BOTTOM,
+  );
+}
     await PinService.instance.recordFailure();
     if (!mounted) return;
 
