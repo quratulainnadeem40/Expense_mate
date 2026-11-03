@@ -2,6 +2,8 @@ import 'package:expense_mate/Core/widgets/coach_mark.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
+import 'package:expense_mate/Feature/Budgets/widgets/budget_cycle_setup_sheet.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/views/cataogries_view.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
@@ -35,8 +37,30 @@ class _MainScreenState extends State<MainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      CoachMarkController.instance.start(context, expenseMateTour());
+      final budgetController = Get.find<BudgetController>();
+      if (CoachMarkController.instance.hasSeenTour) {
+        _showFirstTimeBudgetSetup(budgetController);
+        return;
+      }
+
+      CoachMarkController.instance.start(
+        context,
+        expenseMateTour(),
+        onFinished: () => _showFirstTimeBudgetSetup(budgetController),
+      );
     });
+  }
+
+  Future<void> _showFirstTimeBudgetSetup(
+    BudgetController budgetController,
+  ) async {
+    if (!mounted || budgetController.isCycleConfigured.value) return;
+
+    await showBudgetCycleSetupSheet(
+      context,
+      controller: budgetController,
+      canSkip: true,
+    );
   }
 
   @override
@@ -58,6 +82,10 @@ class _MainScreenState extends State<MainScreen> {
         Get.isRegistered<TransactionsController>()
         ? Get.find<TransactionsController>()
         : Get.put(TransactionsController());
+
+    if (!Get.isRegistered<BudgetController>()) {
+      Get.put<BudgetController>(BudgetController(), permanent: true);
+    }
 
     // IMPORTANT:
     // Reports is inside IndexedStack, so ReportBindings()
@@ -153,7 +181,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     _buildNavItem(
                       icon: Icons.home_rounded,
-                      label: 'Home',
+                      label: 'Home'.tr,
                       index: 0,
                       controller: controller,
                       context: context,
@@ -161,7 +189,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     _buildNavItem(
                       icon: Icons.swap_horiz_rounded,
-                      label: 'Transactions',
+                      label: 'Transactions'.tr,
                       tourKey: TourKeys.transactionsTab,
                       index: 1,
                       controller: controller,
@@ -185,7 +213,7 @@ class _MainScreenState extends State<MainScreen> {
                   children: [
                     _buildNavItem(
                       icon: Icons.category_rounded,
-                      label: 'Categories',
+                      label: 'Categories'.tr,
                       tourKey: TourKeys.categoriesTab,
                       index: 2,
                       controller: controller,
@@ -194,7 +222,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     _buildNavItem(
                       icon: Icons.bar_chart_rounded,
-                      label: 'Reports',
+                      label: 'Reports'.tr,
                       tourKey: TourKeys.reportsTab,
                       index: 3,
                       controller: controller,
@@ -248,8 +276,8 @@ class _MainScreenState extends State<MainScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? (isDark
-                          ? activeColor.withOpacity(0.2)
-                          : activeColor.withOpacity(0.12))
+                          ? activeColor.withValues(alpha: 0.2)
+                          : activeColor.withValues(alpha: 0.12))
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
               ),

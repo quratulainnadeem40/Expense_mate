@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -50,6 +51,7 @@ class CoachMarkController {
 
   OverlayEntry? _entry;
   List<CoachStep> _steps = const [];
+  VoidCallback? _onFinished;
 
   /// Drives the overlay. Changing it rebuilds the card in place instead
   /// of tearing the overlay down and inserting a new one.
@@ -80,11 +82,13 @@ class CoachMarkController {
     BuildContext context,
     List<CoachStep> steps, {
     bool force = false,
+    VoidCallback? onFinished,
   }) {
     if (isRunning || steps.isEmpty) return;
     if (!force && hasSeenTour) return;
 
     _steps = steps;
+    _onFinished = onFinished;
     _index.value = 0;
 
     // Marked here, not when the tour ends. Writing it at the end meant
@@ -101,7 +105,7 @@ class CoachMarkController {
       _entry = OverlayEntry(
         builder: (_) => ValueListenableBuilder<int>(
           valueListenable: _index,
-          builder: (_, value, __) => _CoachMarkView(
+          builder: (_, value, _) => _CoachMarkView(
             steps: _steps,
             index: value,
             onNext: _next,
@@ -132,6 +136,9 @@ class CoachMarkController {
   void finish() {
     _entry?.remove();
     _entry = null;
+    final onFinished = _onFinished;
+    _onFinished = null;
+    onFinished?.call();
   }
 }
 
@@ -226,7 +233,7 @@ class _CoachMarkView extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(step.radius),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.55),
+                      color: Colors.white.withValues(alpha: 0.55),
                       width: 2,
                     ),
                   ),
@@ -261,7 +268,7 @@ class _HolePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final dim = Paint()..color = Colors.black.withOpacity(0.72);
+    final dim = Paint()..color = Colors.black.withValues(alpha: 0.72);
     final full = Rect.fromLTWH(0, 0, size.width, size.height);
 
     if (hole == null) {
@@ -314,7 +321,7 @@ class _StepCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.22),
+            color: Colors.black.withValues(alpha: 0.22),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -328,7 +335,7 @@ class _StepCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  step.title,
+                  step.title.tr,
                   style: TextStyle(
                     fontSize: 16.5,
                     fontWeight: FontWeight.w700,
@@ -337,7 +344,10 @@ class _StepCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${index + 1} of $total',
+                '@current of @total'.trParams({
+                  'current': '${index + 1}',
+                  'total': '$total',
+                }),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
@@ -350,7 +360,7 @@ class _StepCard extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            step.body,
+            step.body.tr,
             style: TextStyle(
               fontSize: 13.5,
               height: 1.5,
@@ -369,7 +379,7 @@ class _StepCard extends StatelessWidget {
                     foregroundColor: isDark ? Colors.white60 : Colors.black54,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  child: const Text('Skip'),
+                  child: Text('Skip'.tr),
                 ),
 
               const Spacer(),
@@ -385,7 +395,7 @@ class _StepCard extends StatelessWidget {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                   ),
-                  child: const Text('Back'),
+                  child: Text('Back'.tr),
                 ),
 
               const SizedBox(width: 8),
@@ -401,7 +411,7 @@ class _StepCard extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 22),
                 ),
-                child: Text(isLast ? 'Got it' : 'Next'),
+                child: Text((isLast ? 'Got it' : 'Next').tr),
               ),
             ],
           ),

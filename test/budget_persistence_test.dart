@@ -1,25 +1,35 @@
 import 'dart:io';
 
 import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Core/Database/database_provider.dart';
 import 'package:expense_mate/Feature/Budgets/controller/budget_controller.dart';
 import 'package:expense_mate/Feature/Categories/controller/categories_controller.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory tempDir;
 
   setUp(() async {
+    Get.reset();
     SharedPreferences.setMockInitialValues({});
+    tempDir = await Directory.systemTemp.createTemp('budget_test_');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => tempDir.path,
+        );
     await Supabase.initialize(
       url: 'https://epjzyrjxrhbfdyrbdsli.supabase.co',
-      anonKey: 'sb_publishable_2VnrpBbdOhiJpqw74rhufg_rp8GgJ_p',
+      publishableKey: 'sb_publishable_2VnrpBbdOhiJpqw74rhufg_rp8GgJ_p',
     );
-    final tempDir = await Directory.systemTemp.createTemp('budget_test_');
     Hive.init(tempDir.path);
     if (Hive.isBoxOpen(AppKeys.budgetBox)) {
       await Hive.box(AppKeys.budgetBox).clear();
@@ -29,8 +39,13 @@ void main() {
   });
 
   tearDown(() async {
+    await DatabaseProvider.instance.close();
     if (Hive.isBoxOpen(AppKeys.budgetBox)) {
       await Hive.box(AppKeys.budgetBox).clear();
+    }
+    await Hive.close();
+    if (await tempDir.exists()) {
+      await tempDir.delete(recursive: true);
     }
   });
 
@@ -75,6 +90,23 @@ void main() {
       expect(controllerB.customLimits['Food'], 5000.0);
       expect(controllerB.customLimits['Health'], 5000.0);
       expect(controllerB.totalAllocated, 10000.0);
+    },
+  );
+
+  test(
+    'configured budget cycle remains configured after controller startup',
+    () {
+      final budgetBox = Hive.box(AppKeys.budgetBox);
+      budgetBox.put(AppKeys.monthlyBudgetKey, 10000.0);
+      budgetBox.put(AppKeys.categoryBudgetKey, {'Food': 5000.0});
+      budgetBox.put(AppKeys.budgetMonthStartDayKey, 12);
+      budgetBox.put(AppKeys.budgetCycleConfiguredKey, true);
+
+      final controller = BudgetController();
+      controller.onInit();
+
+      expect(controller.isCycleConfigured.value, isTrue);
+      expect(controller.monthStartDay.value, 12);
     },
   );
 }

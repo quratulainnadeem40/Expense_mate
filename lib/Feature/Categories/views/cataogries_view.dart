@@ -1,4 +1,3 @@
-import 'package:expense_mate/Core/utils/formatters.dart';
 import 'dart:async';
 
 import 'package:expense_mate/Feature/udhaar/binding/udhaar_binding.dart';
@@ -12,6 +11,7 @@ import 'package:expense_mate/Feature/Categories/controller/categories_controller
 import 'package:expense_mate/Feature/Categories/views/category_transactions_screen.dart';
 import 'package:expense_mate/Feature/Categories/widgets/category_add_category_dialog.dart';
 import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:expense_mate/Feature/transactions/controller/transcation_controller.dart';
 import 'package:expense_mate/Feature/goals/binding/goals_binding.dart';
 import 'package:expense_mate/Feature/goals/view/goals_view.dart';
@@ -24,7 +24,6 @@ import 'package:expense_mate/Feature/wallets/view/wallets_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoriesView extends StatefulWidget {
@@ -165,34 +164,22 @@ class _CategoriesViewState extends State<CategoriesView>
     );
   }
 
-  String _formatCycleDate(DateTime date) =>
-      DateFormat('d MMM yyyy').format(date);
-
-  String _formatCategoryAmount(double amount) {
-    return '${Formatters.code} ${NumberFormat('#,##0.00', 'en_US').format(amount)}';
-  }
-
-  Widget _buildCategoryAmount({
-    required String label,
-    required double amount,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: isDark ? 0.16 : 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '$label: ${_formatCategoryAmount(amount)}',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
+  String _formatCycleDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1].tr} ${date.year}';
   }
 
   void _closeDrawerAndNavigate(Widget Function() page, {Bindings? binding}) {
@@ -244,7 +231,9 @@ class _CategoriesViewState extends State<CategoriesView>
         .toList();
 
     final categoryNames = selectedCategories
-        .map((category) => category.name)
+        .map(
+          (category) => AppTranslations.localizeCategoryRecord(category.name),
+        )
         .toList();
     final linkedCount = selectedCategories.fold<int>(
       0,
@@ -255,27 +244,33 @@ class _CategoriesViewState extends State<CategoriesView>
 
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Delete category?'),
+        title: Text('Delete category?'.tr),
         content: Text(
           categoryNames.length == 1
               ? hasLinkedData
-                    ? 'This will permanently delete "${categoryNames.first}" and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
-                    : 'This will permanently delete "${categoryNames.first}".\n\nDo you want to continue?'
+                    ? 'Delete @name and its related transaction data from the Transactions screen?'
+                          .trParams({'name': categoryNames.first})
+                    : 'Delete category @name?'.trParams({
+                        'name': categoryNames.first,
+                      })
               : hasLinkedData
-              ? 'This will permanently delete ${categoryNames.length} categories and all related transaction data from the Transactions screen.\n\nDo you want to continue?'
-              : 'This will permanently delete ${categoryNames.length} categories.\n\nDo you want to continue?',
+              ? 'Delete @count categories and their related transaction data from the Transactions screen?'
+                    .trParams({'count': '${categoryNames.length}'})
+              : 'Delete @count categories?'.trParams({
+                  'count': '${categoryNames.length}',
+                }),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFE53935),
             ),
             onPressed: () => Get.back(result: true),
-            child: const Text('Delete'),
+            child: Text('Delete'.tr),
           ),
         ],
       ),
@@ -360,14 +355,14 @@ class _CategoriesViewState extends State<CategoriesView>
     final endDate = period.end;
 
     final message = automatic
-        ? 'Transactions are present. Category totals will be tracked from '
-              '${_formatCycleDate(startDate)} to ${_formatCycleDate(endDate)} '
-              'and will start a new cycle automatically on day $startDay. '
-              'Your transactions and history will not be deleted.'
-        : 'This will start a new category tracking cycle today, '
-              '${_formatCycleDate(startDate)}. Current category totals will '
-              'start from zero. Transactions and reports history will remain '
-              'available and nothing will be deleted.';
+        ? 'Transactions are present. Category totals will be tracked from @start to @end and will start a new cycle automatically on day @day. Your transactions and history will not be deleted.'
+              .trParams({
+                'start': _formatCycleDate(startDate),
+                'end': _formatCycleDate(endDate),
+                'day': '$startDay',
+              })
+        : 'This will start a new category tracking cycle today, @start. Current category totals will start from zero. Transactions and reports history will remain available and nothing will be deleted.'
+              .trParams({'start': _formatCycleDate(startDate)});
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -375,7 +370,7 @@ class _CategoriesViewState extends State<CategoriesView>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
-          automatic ? 'Confirm category cycle' : 'Reset category totals?',
+          (automatic ? 'Confirm category cycle' : 'Reset category totals?').tr,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         ),
         content: Text(
@@ -385,11 +380,11 @@ class _CategoriesViewState extends State<CategoriesView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(automatic ? 'Confirm' : 'Reset totals'),
+            child: Text((automatic ? 'Confirm' : 'Reset totals').tr),
           ),
         ],
       ),
@@ -515,7 +510,7 @@ class _CategoriesViewState extends State<CategoriesView>
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: IconButton(
-                                  tooltip: 'Close',
+                                  tooltip: 'Close'.tr,
                                   visualDensity: VisualDensity.compact,
                                   onPressed: () =>
                                       Navigator.of(sheetContext).pop(),
@@ -532,7 +527,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Set Up Your Category Cycle',
+                          'Set Up Your Category Cycle'.tr,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -543,7 +538,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Choose when your monthly category tracking period should start.',
+                          'Choose when your monthly category tracking period should start.'
+                              .tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark ? Colors.white70 : Colors.black54,
@@ -551,7 +547,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          'Cycle Start Day',
+                          'Cycle Start Day'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -617,8 +613,10 @@ class _CategoriesViewState extends State<CategoriesView>
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            'Cycle: ${_formatCycleDate(previewPeriod.start)} – '
-                            '${_formatCycleDate(previewPeriod.end)}',
+                            'Cycle: @start – @end'.trParams({
+                              'start': _formatCycleDate(previewPeriod.start),
+                              'end': _formatCycleDate(previewPeriod.end),
+                            }),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: isDark
@@ -629,7 +627,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         ),
                         const SizedBox(height: 22),
                         Text(
-                          'Category Reset Mode',
+                          'Category Reset Mode'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -667,7 +665,7 @@ class _CategoriesViewState extends State<CategoriesView>
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
-                                      auto ? 'Automatic' : 'Manual',
+                                      (auto ? 'Automatic' : 'Manual').tr,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: active
@@ -686,8 +684,10 @@ class _CategoriesViewState extends State<CategoriesView>
                         const SizedBox(height: 14),
                         Text(
                           automatic
-                              ? 'Category totals roll over automatically on day $day each month. Your transactions remain saved.'
-                              : 'Reset category totals whenever you choose. Your transactions remain saved.',
+                              ? 'Category totals roll over automatically on day @day each month. Your transactions remain saved.'
+                                    .trParams({'day': '$day'})
+                              : 'Reset category totals whenever you choose. Your transactions remain saved.'
+                                    .tr,
                           style: TextStyle(
                             fontSize: 13.5,
                             height: 1.5,
@@ -714,8 +714,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text(
-                                'Reset Category Totals',
+                              child: Text(
+                                'Reset Category Totals'.tr,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -743,8 +743,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Save Category Cycle',
+                            child: Text(
+                              'Save Category Cycle'.tr,
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -1074,8 +1074,10 @@ class _CategoriesViewState extends State<CategoriesView>
             children: [
               Text(
                 isSelectionMode
-                    ? '${selectedCategoryIds.length} selected'
-                    : 'Categories',
+                    ? '@count selected'.trParams({
+                        'count': '${selectedCategoryIds.length}',
+                      })
+                    : 'Categories'.tr,
                 style: AppTextStyles.headingMedium(
                   isDark,
                 ).copyWith(fontWeight: FontWeight.bold, fontSize: 22),
@@ -1097,7 +1099,7 @@ class _CategoriesViewState extends State<CategoriesView>
           actions: [
             if (isSelectionMode)
               IconButton(
-                tooltip: 'Delete selected categories',
+                tooltip: 'Delete selected categories'.tr,
                 onPressed: selectedCategoryIds.isEmpty
                     ? null
                     : _deleteSelectedCategories,
@@ -1113,15 +1115,10 @@ class _CategoriesViewState extends State<CategoriesView>
                         isSelectionMode = true;
                       });
                     },
-                    child: const Text('Select'),
+                    child: Text('Select'.tr),
                   ),
                   IconButton(
-                    tooltip: 'Category cycle settings',
-                    onPressed: _showCycleSetupSheet,
-                    icon: const Icon(Icons.calendar_month_rounded),
-                  ),
-                  IconButton(
-                    tooltip: 'Open navigation menu',
+                    tooltip: 'Open navigation menu'.tr,
                     icon: Icon(
                       Icons.menu_rounded,
                       color: isDark ? Colors.white : const Color(0xFF2E7D32),
@@ -1136,9 +1133,6 @@ class _CategoriesViewState extends State<CategoriesView>
           ],
         ),
 
-        // ========================================================
-        // BODY
-        // ========================================================
         body: Stack(
           children: [
             GestureDetector(
@@ -1153,23 +1147,18 @@ class _CategoriesViewState extends State<CategoriesView>
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final transactions = _transactionsController.transactions
-                    .toList();
-
                 if (controller.categoryList.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'No categories found',
+                      'No categories found'.tr,
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   );
                 }
 
-                final categories =
-                    CategoriesController.filterCategoriesForDisplay(
-                      categories: controller.categoryList,
-                      transactions: transactions,
-                    );
+                final categories = CategoriesController.categoriesForDisplay(
+                  categories: controller.categoryList,
+                );
 
                 return Column(
                   children: [
@@ -1184,20 +1173,6 @@ class _CategoriesViewState extends State<CategoriesView>
                             category.name,
                             category.colorValue,
                           );
-
-                          final monthlyTotals =
-                              CategoriesController.calculateCategoryTotals(
-                                transactions: transactions,
-                                categoryIds: {
-                                  category.id,
-                                  ...category.linkedIds,
-                                },
-                                periodStart: _periodStart,
-                                periodEndExclusive: _periodEnd.add(
-                                  const Duration(days: 1),
-                                ),
-                                resetAt: _currentManualCycleBoundary,
-                              );
 
                           final bool isDefaultCategory = category.isDefault;
 
@@ -1220,7 +1195,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.02),
+                                  color: Colors.black.withValues(alpha: 0.02),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1276,7 +1251,9 @@ class _CategoriesViewState extends State<CategoriesView>
                                         height: 48,
 
                                         decoration: BoxDecoration(
-                                          color: baseColor.withOpacity(0.18),
+                                          color: baseColor.withValues(
+                                            alpha: 0.18,
+                                          ),
                                           shape: BoxShape.circle,
                                         ),
 
@@ -1299,7 +1276,9 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                           children: [
                                             Text(
-                                              category.name,
+                                              AppTranslations.localizeCategoryRecord(
+                                                category.name,
+                                              ),
                                               style:
                                                   AppTextStyles.bodyLarge(
                                                     isDark,
@@ -1307,34 +1286,6 @@ class _CategoriesViewState extends State<CategoriesView>
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 16,
                                                   ),
-                                            ),
-
-                                            const SizedBox(height: 4),
-
-                                            const SizedBox(height: 6),
-                                            Wrap(
-                                              spacing: 6,
-                                              runSpacing: 4,
-                                              children: [
-                                                _buildCategoryAmount(
-                                                  label: 'Income',
-                                                  amount:
-                                                      monthlyTotals['income']!,
-                                                  color: const Color(
-                                                    0xFF2E9D59,
-                                                  ),
-                                                  isDark: isDark,
-                                                ),
-                                                _buildCategoryAmount(
-                                                  label: 'Expense',
-                                                  amount:
-                                                      monthlyTotals['expense']!,
-                                                  color: const Color(
-                                                    0xFFE25555,
-                                                  ),
-                                                  isDark: isDark,
-                                                ),
-                                              ],
                                             ),
                                           ],
                                         ),
@@ -1385,7 +1336,9 @@ class _CategoriesViewState extends State<CategoriesView>
                       onTap: () {
                         isDrawerOpen.value = false;
                       },
-                      child: Container(color: Colors.black.withOpacity(0.5)),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
                     ),
 
                     Align(
@@ -1410,7 +1363,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -1487,8 +1440,8 @@ class _CategoriesViewState extends State<CategoriesView>
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.15,
+                                            color: Colors.black.withValues(
+                                              alpha: 0.15,
                                             ),
                                             blurRadius: 8,
                                             offset: const Offset(0, 3),
@@ -1534,7 +1487,9 @@ class _CategoriesViewState extends State<CategoriesView>
 
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1555,9 +1510,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                             .account_balance_wallet_rounded,
                                         iconColor: const Color(0xFF2B82FB),
                                         emoji: '💳',
-                                        title: 'Wallets',
+                                        title: 'Wallets'.tr,
                                         subtitle:
-                                            'Manage your cash, bank and other wallets',
+                                            'Manage your cash, bank and other wallets'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const WalletsView(),
                                           binding: WalletsBinding(),
@@ -1571,9 +1527,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon: Icons.pie_chart_rounded,
                                         iconColor: const Color(0xFFFF9800),
                                         emoji: '📊',
-                                        title: 'Budgets',
+                                        title: 'Budgets'.tr,
                                         subtitle:
-                                            'Set and track monthly spending limits',
+                                            'Set and track monthly spending limits'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const BudgetView(),
                                           binding: BudgetBinding(),
@@ -1587,9 +1544,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon: Icons.stars_rounded,
                                         iconColor: const Color(0xFFE91E63),
                                         emoji: '🎯',
-                                        title: 'Goals',
+                                        title: 'Goals'.tr,
                                         subtitle:
-                                            'Track your financial targets and savings',
+                                            'Track your financial targets and savings'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const GoalsView(),
                                           binding: GoalsBinding(),
@@ -1603,9 +1561,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon:
                                             Icons.notifications_active_rounded,
                                         iconColor: const Color(0xFF9C27B0),
-                                        title: 'Bills & Reminders',
+                                        title: 'Bills & Reminders'.tr,
                                         subtitle:
-                                            'Manage upcoming bills and reminders',
+                                            'Manage upcoming bills and reminders'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const BillsRemindersView(),
                                           binding: BillsRemindersBinding(),
@@ -1619,9 +1578,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                         icon: Icons.groups_rounded,
                                         iconColor: const Color(0xFF00695C),
                                         emoji: '🤝',
-                                        title: 'Digital Committee',
+                                        title: 'Digital Committee'.tr,
                                         subtitle:
-                                            'Manage your committee and member payments',
+                                            'Manage your committee and member payments'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => CommitteeView(),
                                         ),
@@ -1635,9 +1595,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                             .account_balance_wallet_rounded,
                                         iconColor: const Color(0xFF3A5BA0),
                                         emoji: '🧮',
-                                        title: 'Udhaar',
+                                        title: 'Udhaar'.tr,
                                         subtitle:
-                                            'Money you lent out and money you owe',
+                                            'Money you lent out and money you owe'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => UdhaarView(),
                                           binding: UdhaarBinding(),
@@ -1650,9 +1611,10 @@ class _CategoriesViewState extends State<CategoriesView>
                                         context: context,
                                         icon: Icons.person_rounded,
                                         iconColor: const Color(0xFFF2C14E),
-                                        title: 'Profile',
+                                        title: 'Profile'.tr,
                                         subtitle:
-                                            'Manage your profile and account settings',
+                                            'Manage your profile and account settings'
+                                                .tr,
                                         onTap: () => _closeDrawerAndNavigate(
                                           () => const SettingsView(),
                                           binding: SettingsBinding(),
@@ -1688,16 +1650,14 @@ class _CategoriesViewState extends State<CategoriesView>
                   onPressed: _openAddCategoryDialog,
 
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
-
-                  label: const Text(
-                    'Add',
-                    style: TextStyle(
+                  label: Text(
+                    'Add'.tr,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
                   ),
-
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
@@ -1781,7 +1741,7 @@ class _CategoriesViewState extends State<CategoriesView>
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -1817,7 +1777,7 @@ class _CategoriesViewState extends State<CategoriesView>
                     Supabase.instance.client.auth.currentUser?.email ?? '',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -1834,8 +1794,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         icon: Icons.account_balance_wallet_rounded,
                         iconColor: const Color(0xFF3A5BA0),
                         emoji: '💳',
-                        title: 'Wallets',
-                        subtitle: 'Manage your cash, bank and other wallets',
+                        title: 'Wallets'.tr,
+                        subtitle: 'Manage your cash, bank and other wallets'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const WalletsView(),
                           binding: WalletsBinding(),
@@ -1847,8 +1807,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         icon: Icons.donut_small_rounded,
                         iconColor: const Color(0xFF2E7D32),
                         emoji: '📊',
-                        title: 'Budgets',
-                        subtitle: 'Set and track monthly spending limits',
+                        title: 'Budgets'.tr,
+                        subtitle: 'Set and track monthly spending limits'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const BudgetView(),
                           binding: BudgetBinding(),
@@ -1860,8 +1820,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         icon: Icons.flag_rounded,
                         iconColor: const Color(0xFFB26A00),
                         emoji: '🎯',
-                        title: 'Goals',
-                        subtitle: 'Track your financial targets and savings',
+                        title: 'Goals'.tr,
+                        subtitle: 'Track your financial targets and savings'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const GoalsView(),
                           binding: GoalsBinding(),
@@ -1873,8 +1833,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         icon: Icons.receipt_long_rounded,
                         iconColor: const Color(0xFF7A4EAB),
                         emoji: '🧾',
-                        title: 'Bills & Reminders',
-                        subtitle: 'Manage upcoming bills and reminders',
+                        title: 'Bills & Reminders'.tr,
+                        subtitle: 'Manage upcoming bills and reminders'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const BillsRemindersView(),
                           binding: BillsRemindersBinding(),
@@ -1886,8 +1846,9 @@ class _CategoriesViewState extends State<CategoriesView>
                         icon: Icons.groups_rounded,
                         iconColor: const Color(0xFF00695C),
                         emoji: '🤝',
-                        title: 'Digital Committee',
-                        subtitle: 'Manage your committee and member payments',
+                        title: 'Digital Committee'.tr,
+                        subtitle:
+                            'Manage your committee and member payments'.tr,
                         onTap: () =>
                             _closeDrawerAndNavigate(() => CommitteeView()),
                       ),
@@ -1897,8 +1858,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         icon: Icons.account_balance_wallet_rounded,
                         iconColor: const Color(0xFF3A5BA0),
                         emoji: '🧮',
-                        title: 'Udhaar',
-                        subtitle: 'Money you lent out and money you owe',
+                        title: 'Udhaar'.tr,
+                        subtitle: 'Money you lent out and money you owe'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => UdhaarView(),
                           binding: UdhaarBinding(),
@@ -1909,8 +1870,8 @@ class _CategoriesViewState extends State<CategoriesView>
                         context: context,
                         icon: Icons.person_rounded,
                         iconColor: const Color(0xFFF2C14E),
-                        title: 'Profile',
-                        subtitle: 'Manage your profile and account settings',
+                        title: 'Profile'.tr,
+                        subtitle: 'Manage your profile and account settings'.tr,
                         onTap: () => _closeDrawerAndNavigate(
                           () => const SettingsView(),
                           binding: SettingsBinding(),
@@ -1950,7 +1911,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1974,7 +1935,7 @@ class _CategoriesViewState extends State<CategoriesView>
                   height: 44,
 
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
 
@@ -1992,7 +1953,7 @@ class _CategoriesViewState extends State<CategoriesView>
 
                     children: [
                       Text(
-                        title,
+                        title.tr,
 
                         style: TextStyle(
                           fontSize: 15,

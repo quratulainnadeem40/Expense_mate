@@ -126,7 +126,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
   String _formatAmount(double amount) => Formatters.money(amount);
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'Not Set';
+    if (date == null) return 'Not Set'.tr;
 
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
@@ -262,14 +262,14 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Committee Summary'),
+        _buildSectionTitle('Committee Summary'.tr),
         const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSummaryCard(
               icon: Icons.payments_outlined,
-              title: 'Monthly Contribution',
+              title: 'Monthly Contribution'.tr,
               value: _formatAmount(
                 committeeController.monthlyContribution.value,
               ),
@@ -279,7 +279,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             const SizedBox(width: 10),
             _buildSummaryCard(
               icon: Icons.groups_outlined,
-              title: 'Members',
+              title: 'Members'.tr,
               value: '${committeeController.totalMembers.value}',
               accentColor: purpleText,
               cardColor: purpleBackground,
@@ -292,7 +292,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           children: [
             _buildSummaryCard(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Total Pool',
+              title: 'Total Pool'.tr,
               value: _formatAmount(committeeController.totalPool),
               accentColor: greenText,
               cardColor: greenBackground,
@@ -300,10 +300,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             const SizedBox(width: 10),
             _buildSummaryCard(
               icon: Icons.calendar_month_outlined,
-              title: 'Duration',
+              title: 'Duration'.tr,
               value:
                   '${committeeController.duration.value} '
-                  '${committeeController.durationUnit.value}',
+                  '${committeeController.durationUnit.value.tr}',
               accentColor: amberText,
               cardColor: amberBackground,
             ),
@@ -321,14 +321,14 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Payment Summary'),
+        _buildSectionTitle('Payment Summary'.tr),
         const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSummaryCard(
               icon: Icons.receipt_long_outlined,
-              title: 'Total Payment',
+              title: 'Total Payment'.tr,
               value: _formatAmount(_totalPayment),
               accentColor: purpleText,
               cardColor: purpleBackground,
@@ -336,7 +336,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             const SizedBox(width: 8),
             _buildSummaryCard(
               icon: Icons.check_circle_outline,
-              title: 'Received',
+              title: 'Received'.tr,
               value: _formatAmount(_receivedPayment),
               accentColor: greenText,
               cardColor: greenBackground,
@@ -344,7 +344,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             const SizedBox(width: 8),
             _buildSummaryCard(
               icon: Icons.pending_actions_outlined,
-              title: 'Remaining',
+              title: 'Remaining'.tr,
               value: _formatAmount(_remainingPayment),
               accentColor: amberText,
               cardColor: amberBackground,
@@ -376,9 +376,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
       text: committeeController.duration.value.toString(),
     );
 
-    final List<String> units = ['Months', 'Years', 'Weeks', 'Days'];
+    final List<String> unitKeys = ['Months', 'Years', 'Weeks', 'Days'];
+    final List<String> units = unitKeys.map((unit) => unit.tr).toList();
 
-    String selectedUnit = units.firstWhere(
+    String selectedUnit = unitKeys.firstWhere(
       (unit) =>
           unit.toLowerCase() ==
           committeeController.durationUnit.value.toLowerCase(),
@@ -411,7 +412,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
 
                 return AlertDialog(
                   title: Text(
-                    'Edit Committee',
+                    'Edit Committee'.tr,
                     style: TextStyle(color: primaryText),
                   ),
                   content: SingleChildScrollView(
@@ -424,13 +425,13 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                             controller: nameController,
                             textCapitalization: TextCapitalization.words,
                             style: TextStyle(color: primaryText),
-                            decoration: const InputDecoration(
-                              labelText: 'Committee Name',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: 'Committee Name'.tr,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Please enter committee name';
+                                return 'Please enter committee name'.tr;
                               }
                               return null;
                             },
@@ -443,9 +444,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                             ),
                             style: TextStyle(color: primaryText),
                             decoration: InputDecoration(
-                              labelText: 'Monthly Contribution',
+                              labelText: 'Monthly Contribution'.tr,
                               prefixText: '${Formatters.code} ',
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               final double? amount = double.tryParse(
@@ -453,7 +454,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                               );
 
                               if (amount == null || amount <= 0) {
-                                return 'Enter a valid contribution';
+                                return 'Enter a valid amount'.tr;
                               }
 
                               return null;
@@ -464,9 +465,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                             controller: membersController,
                             keyboardType: TextInputType.number,
                             style: TextStyle(color: primaryText),
-                            decoration: const InputDecoration(
-                              labelText: 'Total Members',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: 'Total Members'.tr,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               final int? count = int.tryParse(
@@ -474,11 +475,12 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                               );
 
                               if (count == null || count <= 0) {
-                                return 'Enter a valid member quantity';
+                                return 'Enter a valid member quantity'.tr;
                               }
 
                               if (count < committeeController.members.length) {
-                                return 'Cannot be less than members already added';
+                                return 'Cannot be less than members already added'
+                                    .tr;
                               }
 
                               return null;
@@ -493,9 +495,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                                   controller: durationController,
                                   keyboardType: TextInputType.number,
                                   style: TextStyle(color: primaryText),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Duration',
-                                    border: OutlineInputBorder(),
+                                  decoration: InputDecoration(
+                                    labelText: 'Duration'.tr,
+                                    border: const OutlineInputBorder(),
                                   ),
                                   onChanged: (_) {
                                     setDialogState(() {});
@@ -506,7 +508,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                                     );
 
                                     if (number == null || number <= 0) {
-                                      return 'Enter duration';
+                                      return 'Enter duration'.tr;
                                     }
 
                                     return null;
@@ -517,19 +519,21 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                               Expanded(
                                 flex: 3,
                                 child: DropdownButtonFormField<String>(
-                                  value: selectedUnit,
+                                  initialValue: selectedUnit,
                                   isExpanded: true,
                                   dropdownColor: cardBackground,
                                   style: TextStyle(color: primaryText),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Unit',
-                                    border: OutlineInputBorder(),
+                                  decoration: InputDecoration(
+                                    labelText: 'Unit'.tr,
+                                    border: const OutlineInputBorder(),
                                   ),
-                                  items: units.map((unit) {
+                                  items: units.asMap().entries.map((entry) {
+                                    final unit = unitKeys[entry.key];
+                                    final localizedValue = entry.value;
                                     return DropdownMenuItem<String>(
                                       value: unit,
                                       child: Text(
-                                        unit,
+                                        localizedValue,
                                         style: TextStyle(color: primaryText),
                                       ),
                                     );
@@ -549,7 +553,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Start Date: ${_formatDate(selectedStartDate)}',
+                              '${'Start Date'.tr}: ${_formatDate(selectedStartDate)}',
                               style: TextStyle(color: primaryText),
                             ),
                           ),
@@ -562,7 +566,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                                 color: primaryAccent,
                               ),
                               label: Text(
-                                'Change Start Date',
+                                'Change Start Date'.tr,
                                 style: TextStyle(color: primaryText),
                               ),
                               onPressed: () async {
@@ -598,7 +602,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Ending Date: ${_formatDate(endingDate)}',
+                              '${'Ending Date'.tr}: ${_formatDate(endingDate)}',
                               style: TextStyle(color: secondaryText),
                             ),
                           ),
@@ -612,7 +616,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                         Navigator.of(dialogContext).pop();
                       },
                       child: Text(
-                        'Cancel',
+                        'Cancel'.tr,
                         style: TextStyle(color: secondaryText),
                       ),
                     ),
@@ -658,7 +662,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                         didSaveChanges = true;
                         Navigator.of(dialogContext).pop();
                       },
-                      child: const Text('Save Changes'),
+                      child: Text('Save Changes'.tr),
                     ),
                   ],
                 );
@@ -680,7 +684,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: greenAccent,
-          content: const Text('Committee updated successfully.'),
+          content: Text('Committee updated successfully.'.tr),
         ),
       );
     }
@@ -802,13 +806,13 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       controller: nameController,
                       textCapitalization: TextCapitalization.words,
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
-                        labelText: 'Member Name',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Member Name'.tr,
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter member name';
+                          return 'Please enter member name'.tr;
                         }
                         return null;
                       },
@@ -821,13 +825,13 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       enableSuggestions: false,
                       keyboardType: TextInputType.text,
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Username'.tr,
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter username';
+                          return 'Please enter username'.tr;
                         }
 
                         return null;
@@ -838,13 +842,13 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       controller: fatherHusbandController,
                       textCapitalization: TextCapitalization.words,
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
-                        labelText: 'Father Name / Husband Name',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Father Name / Husband Name'.tr,
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter father/husband name';
+                          return 'Please enter father/husband name'.tr;
                         }
                         return null;
                       },
@@ -854,9 +858,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
                       style: TextStyle(color: primaryText),
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number (Optional)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number (Optional)'.tr,
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -867,19 +871,19 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       ),
                       style: TextStyle(color: primaryText),
                       decoration: InputDecoration(
-                        labelText: 'Monthly Contribution',
+                        labelText: 'Monthly Contribution'.tr,
                         prefixText: '${Formatters.code} ',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter contribution';
+                          return 'Please enter contribution'.tr;
                         }
 
                         final double? amount = double.tryParse(value.trim());
 
                         if (amount == null || amount <= 0) {
-                          return 'Enter a valid amount';
+                          return 'Enter a valid amount'.tr;
                         }
 
                         return null;
@@ -894,7 +898,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                 onPressed: () {
                   Navigator.pop(dialogContext);
                 },
-                child: Text('Cancel', style: TextStyle(color: secondaryText)),
+                child: Text('Cancel'.tr, style: TextStyle(color: secondaryText)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -918,9 +922,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     excludingMemberIndex: editIndex,
                   )) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'This username is already taken. Please choose another username.',
+                          'This username is already taken. Please choose another username.'
+                              .tr,
                         ),
                       ),
                     );
@@ -933,9 +938,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     editIndex: editIndex,
                   )) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'This member already exists with the same name and father/husband name.',
+                          'This member already exists with the same name and father/husband name.'
+                              .tr,
                         ),
                       ),
                     );
@@ -954,9 +960,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
 
                     if (!updated) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
-                            'Unable to update member. Please check the username and member details.',
+                            'Unable to update member. Please check the username and member details.'
+                                .tr,
                           ),
                         ),
                       );
@@ -970,7 +977,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         backgroundColor: greenAccent,
-                        content: const Text('Member updated successfully.'),
+                        content: Text('Member updated successfully.'.tr),
                       ),
                     );
                     return;
@@ -986,8 +993,11 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'You selected $selectedMembers members. '
-                          '${_ordinal(nextMemberNumber)} member cannot be added.',
+                          'You selected @count members. @ordinal member cannot be added.'
+                              .trParams({
+                                'count': '$selectedMembers',
+                                'ordinal': _ordinal(nextMemberNumber),
+                              }),
                         ),
                       ),
                     );
@@ -1004,9 +1014,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
 
                   if (!added) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'Unable to add member. Please check the username and member details.',
+                          'Unable to add member. Please check the username and member details.'
+                              .tr,
                         ),
                       ),
                     );
@@ -1020,11 +1031,11 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: greenAccent,
-                      content: const Text('Member added successfully.'),
+                      content: Text('Member added successfully.'.tr),
                     ),
                   );
                 },
-                child: Text(isEdit ? 'Update' : 'Add'),
+                child: Text(isEdit ? 'Update'.tr : 'Add'.tr),
               ),
             ],
           ),
@@ -1053,7 +1064,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     }
 
     final String name =
-        committeeController.members[index]['name']?.toString() ?? 'Member';
+        committeeController.members[index]['name']?.toString() ?? 'Member'.tr;
 
     showDialog<void>(
       context: context,
@@ -1061,15 +1072,17 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         return Theme(
           data: dialogTheme,
           child: AlertDialog(
-            title: Text('Delete Member', style: TextStyle(color: primaryText)),
+            title: Text('Delete Member'.tr, style: TextStyle(color: primaryText)),
             content: Text(
-              'Are you sure you want to delete $name?',
+              'Are you sure you want to delete @name?'.trParams({
+                'name': name,
+              }),
               style: TextStyle(color: primaryText),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: Text('Cancel', style: TextStyle(color: secondaryText)),
+                child: Text('Cancel'.tr, style: TextStyle(color: secondaryText)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -1085,11 +1098,11 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: greenAccent,
-                      content: const Text('Member deleted successfully.'),
+                      content: Text('Member deleted successfully.'.tr),
                     ),
                   );
                 },
-                child: const Text('Delete'),
+                child: Text('Delete'.tr),
               ),
             ],
           ),
@@ -1103,7 +1116,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
   // --------------------------------------------------
 
   Widget _buildMemberCard(Map<String, dynamic> member, int index) {
-    final String name = member['name']?.toString() ?? 'Member';
+    final String name = member['name']?.toString() ?? 'Member'.tr;
 
     final String username = member['username']?.toString() ?? '';
 
@@ -1159,8 +1172,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                       const SizedBox(height: 4),
                       Text(
                         fatherHusband.isEmpty
-                            ? 'Father/Husband: Not Added'
-                            : 'Father/Husband: $fatherHusband',
+                            ? 'Father/Husband: Not Added'.tr
+                            : 'Father/Husband: @name'.trParams({
+                                'name': fatherHusband,
+                              }),
                         style: TextStyle(fontSize: 12, color: secondaryText),
                       ),
                     ],
@@ -1179,12 +1194,15 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'edit',
-                      child: Text('Edit', style: TextStyle(color: primaryText)),
+                      child: Text(
+                        'Edit'.tr,
+                        style: TextStyle(color: primaryText),
+                      ),
                     ),
                     PopupMenuItem(
                       value: 'delete',
                       child: Text(
-                        'Delete',
+                        'Delete'.tr,
                         style: TextStyle(color: primaryText),
                       ),
                     ),
@@ -1197,7 +1215,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
               children: [
                 Expanded(
                   child: Text(
-                    phone.isEmpty ? 'Phone: Not Added' : 'Phone: $phone',
+                    phone.isEmpty
+                        ? 'Phone: Not Added'.tr
+                        : 'Phone: @number'.trParams({'number': phone}),
                     style: TextStyle(fontSize: 12, color: secondaryText),
                   ),
                 ),
@@ -1227,7 +1247,9 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Payment Status: $status',
+                  'Payment Status: @status'.trParams({
+                    'status': status.tr,
+                  }),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -1253,25 +1275,50 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           side: BorderSide(color: outlineColor),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
           child: Column(
             children: [
-              Icon(Icons.people_outline, size: 52, color: secondaryText),
-              const SizedBox(height: 12),
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: greenBackground,
+                child: Icon(Icons.people_outline, size: 30, color: greenText),
+              ),
+              const SizedBox(height: 14),
               Text(
-                'No Members Added',
+                'No Members Added'.tr,
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                   color: primaryText,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
-                'Tap "Add Member" to add committee members.',
+                widget.membersOnly
+                    ? 'Tap "Add Member" to add committee members.'.tr
+                    : 'Add members from the Members section. Once added, use Payment Tracking to monitor their contributions.'
+                          .tr,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: secondaryText),
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: secondaryText,
+                ),
               ),
+              if (!widget.membersOnly) ...[
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: () {
+                    final String? committeeId =
+                        committeeController.activeCommitteeId.value;
+                    if (committeeId != null && committeeId.isNotEmpty) {
+                      _openCommitteeMembers(committeeId);
+                    }
+                  },
+                  icon: const Icon(Icons.manage_accounts_outlined),
+                  label: Text('Manage Members'.tr),
+                ),
+              ],
             ],
           ),
         ),
@@ -1291,7 +1338,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Allocation method',
+            'Allocation method'.tr,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -1302,16 +1349,16 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           SizedBox(
             width: double.infinity,
             child: SegmentedButton<String>(
-              segments: const [
+              segments: [
                 ButtonSegment<String>(
                   value: 'sequence',
-                  icon: Icon(Icons.format_list_numbered_rounded, size: 18),
-                  label: Text('Added order'),
+                  icon: const Icon(Icons.format_list_numbered_rounded, size: 18),
+                  label: Text('Added order'.tr),
                 ),
                 ButtonSegment<String>(
                   value: 'spin',
-                  icon: Icon(Icons.casino_outlined, size: 18),
-                  label: Text('Spin & win'),
+                  icon: const Icon(Icons.casino_outlined, size: 18),
+                  label: Text('Spin & win'.tr),
                 ),
               ],
               selected: <String>{mode},
@@ -1341,9 +1388,10 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           ),
           const SizedBox(height: 6),
           Text(
-            mode == 'sequence'
+            (mode == 'sequence'
                 ? 'Allocate each round in the order members were added.'
-                : 'Spin the wheel to randomly choose each round’s recipient.',
+                : 'Spin the wheel to randomly choose each round’s recipient.')
+                .tr,
             style: TextStyle(fontSize: 12, color: secondaryText),
           ),
         ],
@@ -1381,7 +1429,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Add a committee first to manage its members.',
+              'Add a committee first to manage its members.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(color: secondaryText),
             ),
@@ -1393,7 +1441,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Select a committee',
+            'Select a committee'.tr,
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.bold,
@@ -1426,14 +1474,17 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                   child: const Icon(Icons.groups_rounded),
                 ),
                 title: Text(
-                  committee['name']?.toString() ?? 'Committee',
+                  committee['name']?.toString() ?? 'Committee'.tr,
                   style: TextStyle(
                     color: primaryText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 subtitle: Text(
-                  '${members.length} / $memberCount members added',
+                  '@count / @total members added'.trParams({
+                    'count': '${members.length}',
+                    'total': '$memberCount',
+                  }),
                   style: TextStyle(color: secondaryText),
                 ),
                 trailing: Icon(Icons.chevron_right_rounded, color: greenText),
@@ -1460,20 +1511,20 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          widget.membersOnly ? 'Members' : 'Digital Committee',
+          (widget.membersOnly ? 'Members' : 'Digital Committee').tr,
           style: TextStyle(fontWeight: FontWeight.bold, color: primaryText),
         ),
         centerTitle: true,
       ),
-      floatingActionButton: widget.membersOnly && widget.committeeId == null
-          ? null
-          : FloatingActionButton.extended(
+      floatingActionButton: widget.membersOnly && widget.committeeId != null
+          ? FloatingActionButton.extended(
               backgroundColor: greenAccent,
               foregroundColor: Colors.white,
               onPressed: _showMemberDialog,
               icon: const Icon(Icons.person_add_alt_1),
-              label: const Text('Add Member'),
-            ),
+              label: Text('Add Member'.tr),
+            )
+          : null,
       body: widget.membersOnly && widget.committeeId == null
           ? _buildCommitteePicker()
           : Obx(() {
@@ -1505,18 +1556,22 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                             ),
                             onPressed: _showEditCommitteeDialog,
                             icon: const Icon(Icons.edit_outlined, size: 18),
-                            label: const Text('Edit'),
+                            label: Text('Edit'.tr),
                           ),
                         ],
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Start Date: ${_formatDate(committeeController.startDate.value)}',
+                        'Start Date: @date'.trParams({
+                          'date': _formatDate(committeeController.startDate.value),
+                        }),
                         style: TextStyle(fontSize: 12, color: secondaryText),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Ending Date: ${_formatDate(committeeController.endingDate.value)}',
+                        'Ending Date: @date'.trParams({
+                          'date': _formatDate(committeeController.endingDate.value),
+                        }),
                         style: TextStyle(fontSize: 12, color: secondaryText),
                       ),
                       const SizedBox(height: 22),
@@ -1527,10 +1582,13 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                     ],
                     Row(
                       children: [
-                        Expanded(child: _buildSectionTitle('Members')),
+                        Expanded(child: _buildSectionTitle('Members'.tr)),
                         Text(
-                          '${members.length} / '
-                          '${committeeController.totalMembers.value} Added',
+                          '@count / @total Added'.trParams({
+                            'count': '${members.length}',
+                            'total':
+                                '${committeeController.totalMembers.value}',
+                          }),
                           style: TextStyle(fontSize: 12, color: secondaryText),
                         ),
                       ],

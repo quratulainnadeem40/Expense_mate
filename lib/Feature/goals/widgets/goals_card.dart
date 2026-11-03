@@ -26,10 +26,14 @@ String goalMoney(double value) => '$goalCurrency ${formatMoney(value)}';
 
 /// "8 months left" reads better than "243 days left".
 String _timeLeft(int days) {
-  if (days >= 60) return '${(days / 30).round()} months left';
-  if (days >= 14) return '${(days / 7).round()} weeks left';
-  if (days == 1) return '1 day left';
-  return '$days days left';
+  if (days >= 60) {
+    return '@count months left'.trParams({'count': '${(days / 30).round()}'});
+  }
+  if (days >= 14) {
+    return '@count weeks left'.trParams({'count': '${(days / 7).round()}'});
+  }
+  if (days == 1) return '1 day left'.tr;
+  return '@count days left'.trParams({'count': '$days'});
 }
 
 class GoalsCard extends StatelessWidget {
@@ -62,14 +66,16 @@ class GoalsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: done
-              ? kGoalGreen.withOpacity(0.45)
-              : (isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
+              ? kGoalGreen.withValues(alpha: 0.45)
+              : (isDark
+                    ? Colors.white10
+                    : Colors.black.withValues(alpha: 0.06)),
         ),
         boxShadow: isDark
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -98,7 +104,7 @@ class GoalsCard extends StatelessWidget {
                         strokeCap: StrokeCap.round,
                         backgroundColor: isDark
                             ? Colors.white12
-                            : Colors.black.withOpacity(0.07),
+                            : Colors.black.withValues(alpha: 0.07),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           kGoalGreen,
                         ),
@@ -199,7 +205,9 @@ class GoalsCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 2),
                   child: Text(
-                    'of ${goalMoney(goal.targetAmount)}',
+                    'of @target'.trParams({
+                      'target': goalMoney(goal.targetAmount),
+                    }),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: theme.hintColor),
@@ -226,7 +234,9 @@ class GoalsCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: Container(
               height: 9,
-              color: isDark ? Colors.white12 : Colors.black.withOpacity(0.07),
+              color: isDark
+                  ? Colors.white12
+                  : Colors.black.withValues(alpha: 0.07),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: goal.progress.clamp(0.0, 1.0),
@@ -248,7 +258,7 @@ class GoalsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
-                color: kGoalGreen.withOpacity(isDark ? 0.16 : 0.09),
+                color: kGoalGreen.withValues(alpha: isDark ? 0.16 : 0.09),
                 borderRadius: BorderRadius.circular(11),
               ),
               child: Row(
@@ -261,7 +271,9 @@ class GoalsCard extends StatelessWidget {
                   const SizedBox(width: 7),
                   Expanded(
                     child: Text(
-                      '${goalMoney(goal.savedAmount)} saved — goal reached',
+                      '@amount saved — goal reached'.trParams({
+                        'amount': goalMoney(goal.savedAmount),
+                      }),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -282,7 +294,9 @@ class GoalsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${goalMoney(goal.remaining)} to go',
+                        '@amount to go'.trParams({
+                          'amount': goalMoney(goal.remaining),
+                        }),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -294,9 +308,11 @@ class GoalsCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         goal.daysLeft > 0
-                            ? 'Save about $goalCurrency '
-                                  '${formatMoney(goal.monthlyTarget)} a month'
-                            : 'Target date has passed',
+                            ? 'Save about @currency @amount a month'.trParams({
+                                'currency': goalCurrency,
+                                'amount': formatMoney(goal.monthlyTarget),
+                              })
+                            : 'Target date has passed'.tr,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11, color: theme.hintColor),
@@ -309,7 +325,7 @@ class GoalsCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: onAddMoney,
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add money'),
+                    label: Text('Add money'.tr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kGoalGreen,
                       foregroundColor: Colors.white,

@@ -3,6 +3,7 @@ import 'package:expense_mate/Core/theme/custom_colors.dart';
 import 'package:expense_mate/Feature/Categories/model/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 import 'package:uuid/uuid.dart';
 
 import '../controller/categories_controller.dart';
@@ -20,9 +21,6 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final CategoriesController controller = Get.find<CategoriesController>();
 
   String selectedIcon = 'food';
-
-  // Default category type.
-  String selectedType = 'expense';
 
   final List<Map<String, dynamic>> categoryIcons = [
     {
@@ -148,12 +146,13 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
   ];
 
   Future<void> _saveCategory() async {
+    const categoryType = 'expense';
     final categoryName = nameController.text.trim();
 
     if (categoryName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter category name.'),
+        SnackBar(
+          content: Text('Please enter category name.'.tr),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -168,7 +167,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     // Keep category names unique within each transaction type.
     final existingCategory = await controller.findCategoryByName(
       normalizedName,
-      type: selectedType,
+      type: categoryType,
     );
 
     if (!mounted) return;
@@ -177,8 +176,12 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '"${existingCategory.name}" already exists for '
-            '${selectedType == 'income' ? 'income' : 'expense'}.',
+            '"@name" already exists for @type.'.trParams({
+              'name': AppTranslations.localizeCategoryRecord(
+                existingCategory.name,
+              ),
+              'type': 'Expense'.tr,
+            }),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -192,7 +195,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       icon: selectedIcon,
       colorValue: 0xFF2E7D32,
       isDefault: false,
-      type: selectedType,
+      type: categoryType,
     );
 
     await controller.addCategory(newCategory, closeDialog: true);
@@ -203,73 +206,6 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     nameController.dispose();
     super.dispose();
   }
-
-  // ==========================================================
-  // INCOME / EXPENSE SELECTOR
-  // ==========================================================
-
-  Widget _buildTypeButton({
-    required String label,
-    required String type,
-    required IconData icon,
-    required Color color,
-    required bool isDark,
-  }) {
-    final bool isSelected = selectedType == type;
-
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            selectedType = type;
-          });
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.13) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? color
-                  : (isDark ? Colors.white24 : Colors.black12),
-              width: isSelected ? 1.7 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 19),
-              const SizedBox(width: 7),
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isSelected
-                        ? color
-                        : (isDark ? Colors.white70 : Colors.black87),
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              if (isSelected) ...[
-                const SizedBox(width: 5),
-                Icon(Icons.check_circle_rounded, color: color, size: 16),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  // BUILD
-  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -311,12 +247,12 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: Colors.white30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -334,18 +270,18 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'CATEGORY SETUP',
+                    'CATEGORY SETUP'.tr,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.72),
+                      color: Colors.white.withValues(alpha: 0.72),
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.4,
                     ),
                   ),
                   const SizedBox(height: 3),
-                  const Text(
-                    'Add New Category',
-                    style: TextStyle(
+                  Text(
+                    'Add New Category'.tr,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -371,15 +307,15 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               controller: nameController,
               textCapitalization: TextCapitalization.words,
               decoration: InputDecoration(
-                hintText: 'Enter category name',
+                hintText: 'Enter category name'.tr,
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : Colors.grey[600],
                   fontSize: 14,
                 ),
                 filled: true,
                 fillColor: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.white.withOpacity(0.72),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.white.withValues(alpha: 0.72),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -396,62 +332,17 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                 ),
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            // CATEGORY TYPE
-            Text(
-              'Category Type',
-              style: AppTextStyles.bodyMedium(isDark).copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : Colors.grey[700],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.04)
-                    : Colors.grey.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                children: [
-                  _buildTypeButton(
-                    label: 'Expense',
-                    type: 'expense',
-                    icon: Icons.arrow_upward_rounded,
-                    color: Colors.red,
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildTypeButton(
-                    label: 'Income',
-                    type: 'income',
-                    icon: Icons.arrow_downward_rounded,
-                    color: Colors.green,
-                    isDark: isDark,
-                  ),
-                ],
-              ),
-            ),
-
             const SizedBox(height: 20),
 
             // ICON SELECTION
             Text(
-              'Select Icon',
+              'Select Icon'.tr,
               style: AppTextStyles.bodyMedium(isDark).copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white70 : Colors.grey[700],
               ),
             ),
-
             const SizedBox(height: 12),
-
             Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -474,10 +365,10 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                     height: 54,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? iconColor.withOpacity(isDark ? 0.34 : 0.24)
+                          ? iconColor.withValues(alpha: isDark ? 0.34 : 0.24)
                           : (isDark
-                                ? Colors.white.withOpacity(0.04)
-                                : iconColor.withOpacity(0.10)),
+                                ? Colors.white.withValues(alpha: 0.04)
+                                : iconColor.withValues(alpha: 0.10)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
@@ -488,7 +379,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: iconColor.withOpacity(0.38),
+                                color: iconColor.withValues(alpha: 0.38),
                                 blurRadius: 12,
                                 offset: const Offset(0, 5),
                               ),
@@ -514,7 +405,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.16),
+                                    color: Colors.black.withValues(alpha: 0.16),
                                     blurRadius: 3,
                                   ),
                                 ],
@@ -546,9 +437,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr),
         ),
-
         FilledButton(
           onPressed: _saveCategory,
           style: FilledButton.styleFrom(
@@ -560,7 +450,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               borderRadius: BorderRadius.circular(14),
             ),
           ),
-          child: const Text('Add'),
+          child: Text('Add'.tr),
         ),
       ],
     );

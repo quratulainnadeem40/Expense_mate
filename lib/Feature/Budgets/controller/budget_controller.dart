@@ -154,8 +154,8 @@ class BudgetController extends GetxController {
     final start = cycleStartDay;
     final end = cycleEndDate;
 
-    return '${start.day} ${_shortMonths[start.month - 1]}'
-        ' - ${end.day} ${_shortMonths[end.month - 1]}';
+    return '${start.day} ${_shortMonths[start.month - 1].tr}'
+        ' - ${end.day} ${_shortMonths[end.month - 1].tr}';
   }
 
   bool get isResetDue => !DateTime.now().isBefore(nextResetDate);
@@ -201,8 +201,8 @@ class BudgetController extends GetxController {
       candidateDay,
     ).subtract(const Duration(days: 1));
 
-    return '${start.day} ${_shortMonths[start.month - 1]}'
-        ' - ${end.day} ${_shortMonths[end.month - 1]}';
+    return '${start.day} ${_shortMonths[start.month - 1].tr}'
+        ' - ${end.day} ${_shortMonths[end.month - 1].tr}';
   }
 
   String previewNextCycleLabel(int candidateDay) {
@@ -216,8 +216,8 @@ class BudgetController extends GetxController {
       _clampDay(afterMonth.year, afterMonth.month, candidateDay),
     ).subtract(const Duration(days: 1));
 
-    return '${start.day} ${_shortMonths[start.month - 1]}'
-        ' - ${end.day} ${_shortMonths[end.month - 1]}';
+    return '${start.day} ${_shortMonths[start.month - 1].tr}'
+        ' - ${end.day} ${_shortMonths[end.month - 1].tr}';
   }
 
   // ================================================================
@@ -236,6 +236,7 @@ class BudgetController extends GetxController {
 
   void setMonthStartDay(int day) {
     monthStartDay.value = day;
+    _budgetBox.put(AppKeys.categoryCycleStartDayKey, day);
 
     isCycleConfigured.value = true;
 
@@ -453,6 +454,8 @@ class BudgetController extends GetxController {
         ? Get.find<TransactionsController>()
         : Get.put(TransactionsController());
 
+    loadPersistedState();
+
     ever(transactionsController.transactions, (_) {
       calculateBudgets();
 
@@ -480,8 +483,6 @@ class BudgetController extends GetxController {
 
       savePersistedState();
     });
-
-    loadPersistedState();
 
     calculateBudgets();
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class CommitteeCard extends StatelessWidget {
   final String committeeName;
@@ -62,11 +63,11 @@ class CommitteeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: status == 'Active'
-                      ? Colors.green.withOpacity(0.12)
-                      : Colors.orange.withOpacity(0.12),
+                      ? Colors.green.withValues(alpha: 0.12)
+                      : Colors.orange.withValues(alpha: 0.12),
                 ),
                 child: Text(
-                  status,
+                  status.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -121,7 +122,7 @@ class CommitteeCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              title,
+              title.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? Colors.white54 : Colors.black45,

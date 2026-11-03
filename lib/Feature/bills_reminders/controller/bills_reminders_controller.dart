@@ -225,8 +225,8 @@ class BillsRemindersController extends GetxController {
       await _scheduleBillNotification(bill);
 
       Get.snackbar(
-        'Success',
-        'Bill added successfully.',
+        'Success'.tr,
+        'Bill added successfully.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
@@ -287,8 +287,8 @@ class BillsRemindersController extends GetxController {
       await _scheduleBillNotification(updatedBill);
 
       Get.snackbar(
-        'Success',
-        'Bill updated successfully.',
+        'Success'.tr,
+        'Bill updated successfully.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
@@ -381,8 +381,8 @@ class BillsRemindersController extends GetxController {
       }
 
       Get.snackbar(
-        'Success',
-        'Bill deleted successfully.',
+        'Success'.tr,
+        'Bill deleted successfully.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
@@ -420,8 +420,8 @@ class BillsRemindersController extends GetxController {
       }
 
       Get.snackbar(
-        'Success',
-        'All bills cleared.',
+        'Success'.tr,
+        'All bills cleared.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on PostgrestException catch (e) {
@@ -448,6 +448,6 @@ class BillsRemindersController extends GetxController {
   // ==========================================================
 
   void _showError(String message) {
-    Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar('Error'.tr, message.tr, snackPosition: SnackPosition.BOTTOM);
   }
 }

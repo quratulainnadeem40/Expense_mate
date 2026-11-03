@@ -13,6 +13,29 @@ class Formatters {
     return Get.find<SettingsController>().selectedCurrency.value;
   }
 
+  static String currencySymbol(String currencyCode) {
+    switch (currencyCode.trim().toUpperCase()) {
+      case 'PKR':
+        return 'Rs';
+      case 'SAR':
+        return 'SR';
+      case 'TRY':
+        return '\u20BA';
+      case 'AED':
+        return 'AED';
+      case 'USD':
+        return '\u0024';
+      case 'AUD':
+        return 'A\u0024';
+      case 'GBP':
+        return '\u00A3';
+      case 'EUR':
+        return '\u20AC';
+      default:
+        return currencyCode.trim().toUpperCase();
+    }
+  }
+
   /// An amount with the current currency in front, e.g. "PKR 1,200".
   ///
   /// Reading it inside an Obx makes the text change the moment the user

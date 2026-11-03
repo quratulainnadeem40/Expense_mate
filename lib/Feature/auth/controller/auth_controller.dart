@@ -53,8 +53,8 @@ class AuthController extends GetxController {
 
       if (response.user != null) {
         Get.snackbar(
-          'Success',
-          'Account created successfully',
+          'Success'.tr,
+          'Account created successfully'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
 
@@ -105,32 +105,11 @@ class AuthController extends GetxController {
       );
 
       if (response.user != null) {
-  // Send successful login notification email.
-  try {
-    final emailResponse = await _supabase.functions.invoke(
-      'send-login-email',
-    );
-
-    if (emailResponse.status == 200) {
-      debugPrint('LOGIN EMAIL: Request accepted successfully.');
-    } else {
-      debugPrint(
-        'LOGIN EMAIL: Request failed with status '
-        '${emailResponse.status}',
-      );
-    }
-  } catch (e) {
-    // Email failure should not prevent the user from logging in.
-    debugPrint('LOGIN EMAIL ERROR: $e');
-  }
-
-  Get.snackbar(
-    'Welcome',
-    'Login successful',
-    snackPosition: SnackPosition.BOTTOM,
-  );
-
-
+        Get.snackbar(
+          'Welcome'.tr,
+          'Login successful'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
 
         // Straight in if a PIN already exists on this phone, otherwise
         // offer to create one. Skipping is allowed, so signing in never
@@ -182,8 +161,8 @@ class AuthController extends GetxController {
       await _supabase.auth.resetPasswordForEmail(trimmedEmail);
 
       Get.snackbar(
-        'Email Sent',
-        'Check your email for the password reset link.',
+        'Email Sent'.tr,
+        'Check your email for the password reset link.'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
@@ -201,8 +180,8 @@ class AuthController extends GetxController {
 
   void _showError(String message) {
     Get.snackbar(
-      'Error',
-      message,
+      'Error'.tr,
+      message.tr,
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.red,
       colorText: Colors.white,

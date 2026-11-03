@@ -1,5 +1,6 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../Core/theme/custom_colors.dart';
 
@@ -28,7 +29,7 @@ class WalletBalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Total Balance',
+            'Total Balance'.tr,
             style: AppTextStyles.bodyMedium(
               isDark,
             ).copyWith(color: Colors.white70),
@@ -46,7 +47,7 @@ class WalletBalanceCard extends StatelessWidget {
           const SizedBox(height: 4),
 
           Text(
-            'Across all wallets',
+            'Across all wallets'.tr,
             style: AppTextStyles.caption(
               isDark,
             ).copyWith(color: Colors.white70),

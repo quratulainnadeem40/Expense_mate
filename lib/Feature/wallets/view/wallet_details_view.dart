@@ -1,9 +1,9 @@
 import 'package:expense_mate/Core/theme/custom_textstyle.dart';
+import 'package:expense_mate/Feature/wallets/model/wallet_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/wallets_controller.dart';
-import '../model/wallet_model.dart';
 import 'edit_wallet_view.dart';
 
 class WalletDetailsView extends StatelessWidget {
@@ -20,7 +20,7 @@ class WalletDetailsView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Wallet Details',
+          'Wallet Details'.tr,
           style: AppTextStyles.headingMedium(isDark),
         ),
       ),
@@ -31,7 +31,7 @@ class WalletDetailsView extends StatelessWidget {
         );
 
         if (currentWallet == null) {
-          return const Center(child: Text('Wallet not found'));
+          return Center(child: Text('Wallet not found'.tr));
         }
 
         return SingleChildScrollView(
@@ -49,7 +49,7 @@ class WalletDetailsView extends StatelessWidget {
                       const SizedBox(height: 14),
 
                       Text(
-                        currentWallet.name,
+                        currentWallet.name.tr,
                         style: AppTextStyles.headingMedium(isDark),
                         textAlign: TextAlign.center,
                       ),
@@ -57,7 +57,7 @@ class WalletDetailsView extends StatelessWidget {
                       const SizedBox(height: 6),
 
                       Text(
-                        currentWallet.displayType,
+                        currentWallet.displayType.tr,
                         style: AppTextStyles.bodyMedium(isDark),
                       ),
 
@@ -84,7 +84,7 @@ class WalletDetailsView extends StatelessWidget {
                     Get.to(() => EditWalletView(wallet: currentWallet));
                   },
                   icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Edit Wallet'),
+                  label: Text('Edit Wallet'.tr),
                 ),
               ),
 
@@ -102,7 +102,7 @@ class WalletDetailsView extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Money'),
+                  label: Text('Add Money'.tr),
                 ),
               ),
 
@@ -120,7 +120,7 @@ class WalletDetailsView extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.remove),
-                  label: const Text('Withdraw Money'),
+                  label: Text('Withdraw Money'.tr),
                 ),
               ),
             ],
@@ -140,12 +140,12 @@ class WalletDetailsView extends StatelessWidget {
 
     final amount = await Get.dialog<double>(
       AlertDialog(
-        title: Text(isAdd ? 'Add Money' : 'Withdraw Money'),
+        title: Text(isAdd ? 'Add Money'.tr : 'Withdraw Money'.tr),
         content: TextField(
           controller: amountController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: 'Amount',
+            labelText: 'Amount'.tr,
             prefixText: '${currentWallet.currency} ',
             border: const OutlineInputBorder(),
           ),
@@ -155,7 +155,7 @@ class WalletDetailsView extends StatelessWidget {
             onPressed: () {
               Get.back();
             },
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () {
@@ -163,8 +163,8 @@ class WalletDetailsView extends StatelessWidget {
 
               if (value == null || value <= 0) {
                 Get.snackbar(
-                  'Invalid Amount',
-                  'Please enter a valid amount.',
+                  'Invalid Amount'.tr,
+                  'Please enter a valid amount.'.tr,
                   snackPosition: SnackPosition.BOTTOM,
                 );
                 return;
@@ -172,7 +172,7 @@ class WalletDetailsView extends StatelessWidget {
 
               Get.back(result: value);
             },
-            child: Text(isAdd ? 'Add' : 'Withdraw'),
+            child: Text(isAdd ? 'Add'.tr : 'Withdraw'.tr),
           ),
         ],
       ),
@@ -190,7 +190,7 @@ class WalletDetailsView extends StatelessWidget {
     await controller.changeBalance(walletId: currentWallet.id, amount: change);
 
     Get.snackbar(
-      isAdd ? 'Money Added' : 'Money Withdrawn',
+      isAdd ? 'Money Added'.tr : 'Money Withdrawn'.tr,
       '${currentWallet.currency} ${amount.toStringAsFixed(2)}',
       snackPosition: SnackPosition.BOTTOM,
     );

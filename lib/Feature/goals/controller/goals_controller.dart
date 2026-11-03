@@ -44,8 +44,9 @@ class GoalsController extends GetxController {
     'gift',
   ];
 
-  String get nameHint =>
-      'e.g. ${goalIconFor(selectedIconKey.value).label} goal';
+  String get nameHint => 'e.g. @icon goal'.trParams({
+    'icon': goalIconFor(selectedIconKey.value).label.tr,
+  });
 
   // ----------------------------------------------------------------
   // SUMMARY  (for the header card)
@@ -236,9 +237,16 @@ class GoalsController extends GetxController {
     Get.back();
 
     if (!wasCompleted && goal.isCompleted) {
-      _ok('🎉 Goal reached! ${goal.title} is complete.');
+      _ok(
+        '🎉 Goal reached! @title is complete.'.trParams({'title': goal.title}),
+      );
     } else {
-      _ok('${_currency} ${amount.toStringAsFixed(0)} added');
+      _ok(
+        '@currency @amount added'.trParams({
+          'currency': _currency,
+          'amount': amount.toStringAsFixed(0),
+        }),
+      );
     }
   }
 
@@ -255,8 +263,10 @@ class GoalsController extends GetxController {
     final goal = goals[index];
     if (amount > goal.savedAmount) {
       _warn(
-        'You have only ${_currency} '
-        '${goal.savedAmount.toStringAsFixed(0)} saved',
+        'You have only @currency @amount saved'.trParams({
+          'currency': _currency,
+          'amount': goal.savedAmount.toStringAsFixed(0),
+        }),
       );
       return;
     }
@@ -267,7 +277,12 @@ class GoalsController extends GetxController {
 
     amountController.clear();
     Get.back();
-    _ok('${_currency} ${amount.toStringAsFixed(0)} withdrawn');
+    _ok(
+      '@currency @amount withdrawn'.trParams({
+        'currency': _currency,
+        'amount': amount.toStringAsFixed(0),
+      }),
+    );
   }
 
   void deleteGoal(String id) {
@@ -280,15 +295,15 @@ class GoalsController extends GetxController {
   // FEEDBACK
   // ----------------------------------------------------------------
   void _warn(String message) => Get.snackbar(
-    'Almost there',
-    message,
+    'Almost there'.tr,
+    message.tr,
     snackPosition: SnackPosition.BOTTOM,
     margin: const EdgeInsets.all(16),
   );
 
   void _ok(String message) => Get.snackbar(
-    'Done',
-    message,
+    'Done'.tr,
+    message.tr,
     snackPosition: SnackPosition.BOTTOM,
     margin: const EdgeInsets.all(16),
   );

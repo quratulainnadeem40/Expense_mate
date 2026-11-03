@@ -202,69 +202,53 @@ void main() {
     },
   );
 
-  test(
-    'only default categories show until a custom category has a transaction',
-    () {
-      final categories = [
-        CategoryModel(
-          id: 'default_food',
-          name: 'Food',
-          icon: 'food',
-          colorValue: 0,
-          isDefault: true,
-          type: 'expense',
-        ),
-        CategoryModel(
-          id: 'custom-id',
-          name: 'Freelance',
-          icon: 'work',
-          colorValue: 0,
-          isDefault: false,
-          type: 'income',
-          linkedIds: ['custom-id'],
-        ),
-      ];
+  test('new custom categories are visible before they have transactions', () {
+    final categories = [
+      CategoryModel(
+        id: 'default_food',
+        name: 'Food',
+        icon: 'food',
+        colorValue: 0,
+        isDefault: true,
+        type: 'expense',
+      ),
+      CategoryModel(
+        id: 'custom-id',
+        name: 'Freelance',
+        icon: 'work',
+        colorValue: 0,
+        isDefault: false,
+        type: 'income',
+        linkedIds: ['custom-id'],
+      ),
+    ];
 
-      final visible = CategoriesController.filterCategoriesForDisplay(
-        categories: categories,
-        transactions: const [],
-      );
+    final visible = CategoriesController.categoriesForDisplay(
+      categories: categories,
+    );
 
-      expect(visible.map((category) => category.name), ['Food']);
-    },
-  );
+    expect(visible.map((category) => category.name), ['Food', 'Freelance']);
+  });
 
-  test(
-    'custom category appears when a transaction uses a linked category ID',
-    () {
-      final categories = [
-        CategoryModel(
-          id: 'income-category',
-          name: 'Freelance',
-          icon: 'work',
-          colorValue: 0,
-          isDefault: false,
-          type: 'income',
-          linkedIds: ['income-category', 'expense-category'],
-        ),
-      ];
+  test('custom categories with linked income and expense IDs stay visible', () {
+    final categories = [
+      CategoryModel(
+        id: 'income-category',
+        name: 'Freelance',
+        icon: 'work',
+        colorValue: 0,
+        isDefault: false,
+        type: 'income',
+        linkedIds: ['income-category', 'expense-category'],
+      ),
+    ];
 
-      final visible = CategoriesController.filterCategoriesForDisplay(
-        categories: categories,
-        transactions: [
-          TransactionModel(
-            id: 'transaction',
-            categoryId: 'expense-category',
-            title: 'Design work',
-            amount: 1500,
-            type: 'expense',
-          ),
-        ],
-      );
+    final visible = CategoriesController.categoriesForDisplay(
+      categories: categories,
+    );
 
-      expect(visible.map((category) => category.name), ['Freelance']);
-    },
-  );
+    expect(visible.map((category) => category.name), ['Freelance']);
+  });
 
   test('category cycle honors selected start and end dates', () {
     final period = CategoriesController.categoryCyclePeriod(

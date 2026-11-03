@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:expense_mate/Core/utils/formatters.dart';
+import 'package:expense_mate/Core/localization/app_translations.dart';
 
 class CategoryTransactionsScreen extends StatefulWidget {
   final String categoryId;
@@ -32,46 +35,24 @@ class _CategoryTransactionsScreenState
     _transactionsFuture = _loadTransactions();
   }
 
-  // Normalize category names to match case-insensitively.
   String _normalizeName(String? name) {
     return (name ?? '').trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   double _parseAmount(dynamic value) {
     if (value is num) return value.toDouble();
-
     return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  String _formatAmount(double amount) {
-    final roundedAmount = amount.round();
-    final formatted = roundedAmount.toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < formatted.length; i++) {
-      if (i > 0 && (formatted.length - i) % 3 == 0) {
-        buffer.write(',');
-      }
-
-      buffer.write(formatted[i]);
-    }
-
-    return 'Rs. ${buffer.toString()}';
   }
 
   String _normalizeType(dynamic type) {
     final normalized = type?.toString().trim().toLowerCase();
-
-    if (normalized == 'income') {
-      return 'income';
-    }
-
-    return 'expense';
+    return normalized == 'income' ? 'income' : 'expense';
   }
 
   bool _isInSelectedPeriod(Map<String, dynamic> transaction) {
     final start = widget.periodStart;
     final end = widget.periodEnd;
+
     if (start == null || end == null) return true;
 
     final date = DateTime.tryParse(
@@ -79,6 +60,7 @@ class _CategoryTransactionsScreenState
           transaction['date']?.toString() ??
           '',
     );
+
     if (date == null) return false;
 
     final endExclusive = DateTime(end.year, end.month, end.day + 1);
@@ -88,6 +70,7 @@ class _CategoryTransactionsScreenState
   String _formatPeriod() {
     final start = widget.periodStart;
     final end = widget.periodEnd;
+
     if (start == null || end == null) return '';
 
     const months = [
@@ -104,54 +87,46 @@ class _CategoryTransactionsScreenState
       'Nov',
       'Dec',
     ];
-    final formattedStart = '${start.day} ${months[start.month - 1]}';
-    final formattedEnd = '${end.day} ${months[end.month - 1]}';
+
+    final formattedStart = '${start.day} ${months[start.month - 1].tr}';
+    final formattedEnd = '${end.day} ${months[end.month - 1].tr}';
 
     return start.year == end.year
         ? '$formattedStart – $formattedEnd, ${end.year}'
         : '$formattedStart, ${start.year} – $formattedEnd, ${end.year}';
   }
 
-  // Load transactions belonging to categories with the same name,
-  // including both Income and Expense category IDs.
   Future<List<Map<String, dynamic>>> _loadTransactions() async {
     final client = Supabase.instance.client;
     final user = client.auth.currentUser;
 
-    if (user == null) {
-      return [];
-    }
+    if (user == null) return [];
 
     final normalizedCategoryName = _normalizeName(widget.categoryName);
+    final matchingCategoryIds = <String>{};
 
-    // Start with the selected category ID.
-    final matchingCategoryIds = <String>{widget.categoryId};
-
-    // Load the user's categories.
     final categoryResponse = await client
         .from('categories')
         .select('id, name, type')
         .eq('user_id', user.id);
 
-    // Find categories with the same name, regardless of type.
-    // This allows Income and Expense categories with the same
-    // name to contribute transactions to the same detail screen.
     for (final item in categoryResponse) {
       final categoryName = item['name']?.toString();
 
       if (_normalizeName(categoryName) == normalizedCategoryName) {
         final id = item['id']?.toString();
 
-        if (id != null && id.isNotEmpty) {
+        if (id != null && id.isNotEmpty && !id.startsWith('default_')) {
           matchingCategoryIds.add(id);
         }
       }
     }
 
+    if (matchingCategoryIds.isEmpty) return [];
+
     final results = <Map<String, dynamic>>[];
     final seenTransactionIds = <String>{};
 
-    // Query each matching category ID separately.
     for (final categoryId in matchingCategoryIds) {
       final response = await client
           .from('transactions')
@@ -164,7 +139,6 @@ class _CategoryTransactionsScreenState
         final transaction = Map<String, dynamic>.from(row);
         final transactionId = transaction['id']?.toString();
 
-        // Avoid duplicate transactions.
         if (transactionId == null) {
           results.add(transaction);
         } else if (seenTransactionIds.add(transactionId)) {
@@ -173,7 +147,6 @@ class _CategoryTransactionsScreenState
       }
     }
 
-    // Sort all transactions by date, newest first.
     results.sort((a, b) {
       final dateA =
           DateTime.tryParse(a['transaction_date']?.toString() ?? '') ??
@@ -206,7 +179,6 @@ class _CategoryTransactionsScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section summary.
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -234,7 +206,7 @@ class _CategoryTransactionsScreenState
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    title,
+                    title.tr,
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -244,18 +216,25 @@ class _CategoryTransactionsScreenState
                 ],
               ),
               const SizedBox(height: 14),
-              Text(
-                'Total: ${_formatAmount(total)}',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: sectionColor,
+              Obx(
+                () => Text(
+                  'Total: @amount'.trParams({
+                    'amount': Formatters.money(total),
+                  }),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: sectionColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 5),
               Text(
-                '${transactions.length} '
-                '${transactions.length == 1 ? 'Transaction' : 'Transactions'}',
+                transactions.length == 1
+                    ? '1 Transaction'.tr
+                    : 'Transactions: @count'.trParams({
+                        'count': transactions.length.toString(),
+                      }),
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -264,15 +243,20 @@ class _CategoryTransactionsScreenState
             ],
           ),
         ),
-
-        // Transaction list.
         ...transactions.map((transaction) {
           final amount = _parseAmount(transaction['amount']);
 
           final transactionTitle =
               transaction['title']?.toString().trim().isNotEmpty == true
-              ? transaction['title'].toString()
-              : widget.categoryName;
+              ? transaction['title'].toString().trim().toLowerCase() ==
+                        widget.categoryName.trim().toLowerCase()
+                    ? AppTranslations.localizeCategoryRecord(
+                        widget.categoryName,
+                      )
+                    : AppTranslations.localizeCategoryRecord(
+                        transaction['title'].toString(),
+                      )
+              : AppTranslations.localizeCategoryRecord(widget.categoryName);
 
           final transactionDate = DateTime.tryParse(
             transaction['transaction_date']?.toString() ?? '',
@@ -340,12 +324,14 @@ class _CategoryTransactionsScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '${isIncome ? '+' : '-'}${_formatAmount(amount)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: sectionColor,
+                Obx(
+                  () => Text(
+                    Formatters.signedMoney(amount, isIncome: isIncome),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: sectionColor,
+                    ),
                   ),
                 ),
               ],
@@ -365,7 +351,7 @@ class _CategoryTransactionsScreenState
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(widget.categoryName),
+            Text(AppTranslations.localizeCategoryRecord(widget.categoryName)),
             if (widget.periodStart != null && widget.periodEnd != null)
               Text(
                 _formatPeriod(),
@@ -387,8 +373,9 @@ class _CategoryTransactionsScreenState
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  'Unable to load transactions.\n'
-                  '${snapshot.error}',
+                  'Unable to load transactions.\n@error'.trParams({
+                    'error': snapshot.error.toString(),
+                  }),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 ),
@@ -400,7 +387,6 @@ class _CategoryTransactionsScreenState
               .where(_isInSelectedPeriod)
               .toList();
 
-          // Separate transactions according to their actual type.
           final incomeTransactions = allTransactions
               .where(
                 (transaction) =>
@@ -415,35 +401,10 @@ class _CategoryTransactionsScreenState
               )
               .toList();
 
-          final showIncome = incomeTransactions.isNotEmpty;
-          final showExpense = expenseTransactions.isNotEmpty;
-
-          if (!showIncome && !showExpense) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 60,
-                      color: isDark ? Colors.grey[600] : Colors.grey[400],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No transactions found for this category in the selected period.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+          final hasTransactions = allTransactions.isNotEmpty;
+          final showIncome = incomeTransactions.isNotEmpty || !hasTransactions;
+          final showExpense =
+              expenseTransactions.isNotEmpty || !hasTransactions;
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -466,9 +427,7 @@ class _CategoryTransactionsScreenState
                     isIncome: true,
                     isDark: isDark,
                   ),
-
                 if (showIncome && showExpense) const SizedBox(height: 16),
-
                 if (showExpense)
                   _buildTransactionSection(
                     context: context,

@@ -25,7 +25,7 @@ class PinService {
   ///
   /// Without this, glancing at a notification would mean typing the PIN
   /// again, which people quickly start to hate.
-  static const Duration gracePeriod = Duration(seconds: 30);
+  static const Duration gracePeriod = Duration(minutes: 2);
 
   /// Wrong attempts before the keypad is held shut for a while.
   static const int maxAttempts = 5;
@@ -33,8 +33,6 @@ class PinService {
 
   /// True while the app should be showing the lock screen.
   bool isLocked = false;
-
-  DateTime? _backgroundedAt;
 
   Box? get _box => Hive.isBoxOpen(AppKeys.settingsBox)
       ? Hive.box(AppKeys.settingsBox)
@@ -149,26 +147,6 @@ class PinService {
   Future<void> recordSuccess() async {
     await _clearFailures();
     isLocked = false;
-    _backgroundedAt = null;
-  }
-
-  // ================================================================
-  // LIFECYCLE
-  // ================================================================
-
-  void onBackgrounded() {
-    if (!isPinSet) return;
-    _backgroundedAt = DateTime.now();
-  }
-
-  /// True when the app has been away long enough to ask again.
-  bool shouldLockOnResume() {
-    if (!isPinSet) return false;
-
-    final left = _backgroundedAt;
-    if (left == null) return false;
-
-    return DateTime.now().difference(left) >= gracePeriod;
   }
 
   void lock() {

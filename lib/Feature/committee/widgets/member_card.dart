@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class MemberCard extends StatelessWidget {
   final String memberName;
@@ -143,14 +144,14 @@ class MemberCard extends StatelessWidget {
                     onDelete?.call();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem<String>(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_rounded),
-                        SizedBox(width: 10),
-                        Text('Edit'),
+                        const Icon(Icons.edit_rounded),
+                        const SizedBox(width: 10),
+                        Text('Edit'.tr),
                       ],
                     ),
                   ),
@@ -158,9 +159,9 @@ class MemberCard extends StatelessWidget {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline_rounded),
-                        SizedBox(width: 10),
-                        Text('Delete'),
+                        const Icon(Icons.delete_outline_rounded),
+                        const SizedBox(width: 10),
+                        Text('Delete'.tr),
                       ],
                     ),
                   ),
@@ -178,10 +179,10 @@ class MemberCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isPaid
-                  ? Colors.green.withOpacity(0.10)
+                  ? Colors.green.withValues(alpha: 0.10)
                   : isOverdue
-                  ? Colors.red.withOpacity(0.10)
-                  : Colors.orange.withOpacity(0.10),
+                  ? Colors.red.withValues(alpha: 0.10)
+                  : Colors.orange.withValues(alpha: 0.10),
             ),
             child: Row(
               children: [
@@ -202,14 +203,14 @@ class MemberCard extends StatelessWidget {
                 const SizedBox(width: 8),
 
                 Text(
-                  'Payment Status',
+                  'Payment Status'.tr,
                   style: TextStyle(fontSize: 12, color: secondaryTextColor),
                 ),
 
                 const Spacer(),
 
                 Text(
-                  paymentStatus,
+                  paymentStatus.tr,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,

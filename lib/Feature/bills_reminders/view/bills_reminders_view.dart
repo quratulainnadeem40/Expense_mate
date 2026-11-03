@@ -21,7 +21,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Bills & Reminders',
+          'Bills & Reminders'.tr,
           style: AppTextStyles.headingMedium(isDark),
         ),
       ),
@@ -246,7 +246,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
           Get.to(() => const AddBillView());
         },
         icon: const Icon(Icons.add),
-        label: const Text('Add Bill'),
+        label: Text('Add Bill'.tr),
       ),
     );
   }
@@ -263,8 +263,12 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Delete Bill'),
-        content: Text('Are you sure you want to delete "$billName"?'),
+        title: Text('Delete Bill'.tr),
+        content: Text(
+          'Are you sure you want to delete "@name"?'.trParams({
+            'name': billName,
+          }),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -272,7 +276,7 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
                 Get.back();
               }
             },
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           TextButton(
             onPressed: () async {
@@ -282,8 +286,8 @@ class BillsRemindersView extends GetView<BillsRemindersController> {
 
               await controller.deleteBill(billId);
             },
-            child: const Text(
-              'Delete',
+            child: Text(
+              'Delete'.tr,
               style: TextStyle(color: AppColors.expenseRed),
             ),
           ),
@@ -349,7 +353,7 @@ class _SummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  title.tr,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodyMedium(isDark),
@@ -414,7 +418,7 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: AppTextStyles.headingMedium(isDark)),
+        Text(title.tr, style: AppTextStyles.headingMedium(isDark)),
         Text(
           '$count',
           style: AppTextStyles.bodyMedium(
@@ -499,14 +503,17 @@ class _BillTile extends StatelessWidget {
 
             if (bill.categoryId != null && bill.categoryId!.isNotEmpty)
               Text(
-                'Category selected',
+                'Category selected'.tr,
                 style: AppTextStyles.bodyMedium(isDark),
               ),
 
             if (bill.categoryId != null && bill.categoryId!.isNotEmpty)
               const SizedBox(height: 3),
 
-            Text('Due: $date', style: AppTextStyles.caption(isDark)),
+            Text(
+              'Due: @date'.trParams({'date': date}),
+              style: AppTextStyles.caption(isDark),
+            ),
 
             const SizedBox(height: 3),
 
@@ -528,7 +535,7 @@ class _BillTile extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Reminder enabled',
+                    'Reminder enabled'.tr,
                     style: AppTextStyles.caption(isDark),
                   ),
                 ],
@@ -552,13 +559,13 @@ class _BillTile extends StatelessWidget {
           },
           itemBuilder: (context) {
             return [
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit_outlined, size: 20),
-                    SizedBox(width: 10),
-                    Text('Edit'),
+                    const Icon(Icons.edit_outlined, size: 20),
+                    const SizedBox(width: 10),
+                    Text('Edit'.tr),
                   ],
                 ),
               ),
@@ -572,17 +579,20 @@ class _BillTile extends StatelessWidget {
                           : Icons.check_circle_outline,
                     ),
                     const SizedBox(width: 8),
-                    Text(bill.isPaid ? 'Mark Unpaid' : 'Mark Paid'),
+                    Text((bill.isPaid ? 'Mark Unpaid' : 'Mark Paid').tr),
                   ],
                 ),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, color: AppColors.expenseRed),
-                    SizedBox(width: 8),
-                    Text('Delete'),
+                    const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.expenseRed,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Delete'.tr),
                   ],
                 ),
               ),
@@ -624,7 +634,7 @@ class _EmptySection extends StatelessWidget {
         children: [
           Icon(icon, size: 42, color: AppColors.primary),
           const SizedBox(height: 10),
-          Text(message, style: AppTextStyles.bodyMedium(isDark)),
+          Text(message.tr, style: AppTextStyles.bodyMedium(isDark)),
         ],
       ),
     );

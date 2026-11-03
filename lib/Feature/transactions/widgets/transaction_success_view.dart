@@ -31,8 +31,8 @@ class TransactionSuccessView extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              const Text(
-                'Great!',
+              Text(
+                'Great!'.tr,
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -43,7 +43,9 @@ class TransactionSuccessView extends StatelessWidget {
               const SizedBox(height: 10),
 
               Text(
-                'Your ${isIncome ? 'income' : 'expense'} has been\nadded successfully.',
+                'Your @type has been added successfully.'.trParams({
+                  'type': (isIncome ? 'income' : 'expense').tr,
+                }),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
@@ -71,8 +73,8 @@ class TransactionSuccessView extends StatelessWidget {
                       (route) => route.isFirst,
                     ); // Dashboard / Home screen par wapas le jane ke liye
                   },
-                  child: const Text(
-                    'View Dashboard',
+                  child: Text(
+                    'View Dashboard'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -89,8 +91,8 @@ class TransactionSuccessView extends StatelessWidget {
                 onPressed: () {
                   Get.back(); // Re-opens previous form
                 },
-                child: const Text(
-                  'Add Another',
+                child: Text(
+                  'Add Another'.tr,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,

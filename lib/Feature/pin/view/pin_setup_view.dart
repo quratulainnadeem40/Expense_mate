@@ -64,7 +64,7 @@ class _PinSetupViewState extends State<PinSetupView> {
       // guesses, so they are refused here rather than later.
       if (_isTooSimple(_entry)) {
         setState(() {
-          _error = 'Pick something harder to guess';
+          _error = 'Pick something harder to guess'.tr;
           _entry = '';
         });
         return;
@@ -79,7 +79,7 @@ class _PinSetupViewState extends State<PinSetupView> {
 
     if (_entry != _first) {
       setState(() {
-        _error = 'The two PINs did not match';
+        _error = 'The two PINs did not match'.tr;
         _first = '';
         _entry = '';
       });
@@ -107,22 +107,22 @@ class _PinSetupViewState extends State<PinSetupView> {
     if (!await service.hasEnrolled()) return;
     if (!mounted) return;
 
-    final label = await service.label();
+    final label = (await service.label()).tr;
     if (!mounted) return;
 
     final useIt = await Get.dialog<bool>(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text('Use $label too?'),
+        title: Text('Use @label too?'.trParams({'label': label})),
         content: Text(
-          'Unlock with $label instead of typing the PIN each time. '
-          'Your PIN still works whenever it fails.',
+          'Unlock with @label instead of typing the PIN each time. Your PIN still works whenever it fails.'
+              .trParams({'label': label}),
           style: const TextStyle(fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Not now'),
+            child: Text('Not now'.tr),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -134,7 +134,7 @@ class _PinSetupViewState extends State<PinSetupView> {
               ),
             ),
             onPressed: () => Get.back(result: true),
-            child: const Text('Turn on'),
+            child: Text('Turn on'.tr),
           ),
         ],
       ),
@@ -197,7 +197,7 @@ class _PinSetupViewState extends State<PinSetupView> {
                             : Get.back(result: false);
                       },
                       child: Text(
-                        'Skip',
+                        'Skip'.tr,
                         style: TextStyle(color: secondaryText),
                       ),
                     ),
@@ -211,7 +211,7 @@ class _PinSetupViewState extends State<PinSetupView> {
               width: 76,
               height: 76,
               decoration: BoxDecoration(
-                color: kPinGreen.withOpacity(isDark ? 0.18 : 0.10),
+                color: kPinGreen.withValues(alpha: isDark ? 0.18 : 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -224,7 +224,7 @@ class _PinSetupViewState extends State<PinSetupView> {
             const SizedBox(height: 22),
 
             Text(
-              _isConfirming ? 'Enter it again' : 'Create a PIN',
+              (_isConfirming ? 'Enter it again' : 'Create a PIN').tr,
               style: TextStyle(
                 fontSize: 21,
                 fontWeight: FontWeight.w700,
@@ -238,9 +238,9 @@ class _PinSetupViewState extends State<PinSetupView> {
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
                 _isConfirming
-                    ? 'Type the same four digits once more.'
-                    : 'Four digits. You will enter this each time the '
-                          'app opens.',
+                    ? 'Type the same four digits once more.'.tr
+                    : 'Four digits. You will enter this each time the app opens.'
+                          .tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.5,

@@ -18,8 +18,8 @@ class GoalsView extends GetView<GoalsController> {
       appBar: AppBar(
         // No back arrow - the only way out is the cross on the right.
         automaticallyImplyLeading: false,
-        title: const Text(
-          'Savings Goals',
+        title: Text(
+          'Savings Goals'.tr,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
@@ -28,7 +28,7 @@ class GoalsView extends GetView<GoalsController> {
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            tooltip: 'Close',
+            tooltip: 'Close'.tr,
             icon: const Icon(Icons.close_rounded, size: 26),
             onPressed: () => Get.back(),
           ),
@@ -40,15 +40,16 @@ class GoalsView extends GetView<GoalsController> {
         foregroundColor: Colors.white,
         onPressed: () => _openGoalSheet(context),
         icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'New Goal',
+        label: Text(
+          'New Goal'.tr,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
         child: Obx(() {
-          if (controller.goals.isEmpty)
+          if (controller.goals.isEmpty) {
             return _EmptyState(onCreate: () => _openGoalSheet(context));
+          }
 
           final active = controller.activeGoals;
           final completed = controller.completedGoals;
@@ -150,7 +151,7 @@ class GoalsView extends GetView<GoalsController> {
                         children: [
                           const SizedBox(height: 8),
                           Text(
-                            goal == null ? 'New goal' : 'Edit goal',
+                            (goal == null ? 'New Goal' : 'Edit goal').tr,
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -159,7 +160,7 @@ class GoalsView extends GetView<GoalsController> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'What are you saving for?',
+                            'What are you saving for?'.tr,
                             style: TextStyle(
                               fontSize: 13,
                               color: theme.hintColor,
@@ -169,7 +170,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: 'Close'.tr,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
                         minWidth: 40,
@@ -195,7 +196,7 @@ class GoalsView extends GetView<GoalsController> {
                       onPressed: () =>
                           _showGoalIconPicker(context, isDark: isDark),
                       icon: const Icon(Icons.search_rounded, size: 18),
-                      label: const Text('Browse icons'),
+                      label: Text('Browse icons'.tr),
                       style: TextButton.styleFrom(
                         foregroundColor: kGoalGreen,
                         padding: const EdgeInsets.symmetric(
@@ -226,7 +227,7 @@ class GoalsView extends GetView<GoalsController> {
                       key: ValueKey(current),
                       scrollDirection: Axis.horizontal,
                       itemCount: iconKeys.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final iconKey = iconKeys[i];
                         final selected = current == iconKey;
@@ -238,10 +239,10 @@ class GoalsView extends GetView<GoalsController> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: selected
-                                  ? kGoalGreen.withOpacity(0.15)
+                                  ? kGoalGreen.withValues(alpha: 0.15)
                                   : (isDark
                                         ? Colors.white10
-                                        : Colors.black.withOpacity(0.04)),
+                                        : Colors.black.withValues(alpha: 0.04)),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: selected
@@ -305,7 +306,7 @@ class GoalsView extends GetView<GoalsController> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? Colors.white10
-                                : Colors.black.withOpacity(0.04),
+                                : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -329,11 +330,11 @@ class GoalsView extends GetView<GoalsController> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white10
-                              : Colors.black.withOpacity(0.04),
+                              : Colors.black.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'Clear',
+                          'Clear'.tr,
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -384,12 +385,12 @@ class GoalsView extends GetView<GoalsController> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? Colors.white10
-                                : Colors.black.withOpacity(0.04),
+                                : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: date == null
                                   ? Colors.transparent
-                                  : kGoalGreen.withOpacity(0.4),
+                                  : kGoalGreen.withValues(alpha: 0.4),
                             ),
                           ),
                           child: Row(
@@ -404,7 +405,7 @@ class GoalsView extends GetView<GoalsController> {
                               const SizedBox(width: 12),
                               Text(
                                 date == null
-                                    ? 'Choose a date'
+                                    ? 'Choose a date'.tr
                                     : '${date.day}/${date.month}/${date.year}',
                                 style: TextStyle(
                                   fontSize: 14,
@@ -453,7 +454,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     child: Text(
-                      goal == null ? 'Create goal' : 'Save changes',
+                      (goal == null ? 'Create goal' : 'Save changes').tr,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -490,11 +491,13 @@ class GoalsView extends GetView<GoalsController> {
     if (amount >= 100000) {
       final lakhs = amount / 100000;
       return lakhs == lakhs.roundToDouble()
-          ? '${lakhs.toStringAsFixed(0)} lakh'
-          : '${lakhs.toStringAsFixed(1)} lakh';
+          ? '@amount lakh'.trParams({'amount': lakhs.toStringAsFixed(0)})
+          : '@amount lakh'.trParams({'amount': lakhs.toStringAsFixed(1)});
     }
 
-    if (amount >= 1000) return '${amount ~/ 1000}k';
+    if (amount >= 1000) {
+      return '@amount thousand'.trParams({'amount': '${amount ~/ 1000}'});
+    }
 
     return '$amount';
   }
@@ -543,7 +546,7 @@ class GoalsView extends GetView<GoalsController> {
                         children: [
                           const SizedBox(height: 8),
                           Text(
-                            isDeposit ? 'Add money' : 'Withdraw money',
+                            (isDeposit ? 'Add money' : 'Withdraw money').tr,
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.bold,
@@ -558,10 +561,22 @@ class GoalsView extends GetView<GoalsController> {
                               Expanded(
                                 child: Text(
                                   isDeposit
-                                      ? '${goal.title} — $goalCurrency '
-                                            '${formatMoney(goal.remaining)} still needed'
-                                      : '${goal.title} — $goalCurrency '
-                                            '${formatMoney(goal.savedAmount)} available',
+                                      ? '@title — @currency @amount still needed'
+                                            .trParams({
+                                              'title': goal.title,
+                                              'currency': goalCurrency,
+                                              'amount': formatMoney(
+                                                goal.remaining,
+                                              ),
+                                            })
+                                      : '@title — @currency @amount available'
+                                            .trParams({
+                                              'title': goal.title,
+                                              'currency': goalCurrency,
+                                              'amount': formatMoney(
+                                                goal.savedAmount,
+                                              ),
+                                            }),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -576,7 +591,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: 'Close'.tr,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
                         minWidth: 40,
@@ -629,7 +644,7 @@ class GoalsView extends GetView<GoalsController> {
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white10
-                              : Colors.black.withOpacity(0.04),
+                              : Colors.black.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -665,7 +680,7 @@ class GoalsView extends GetView<GoalsController> {
                       ),
                     ),
                     child: Text(
-                      isDeposit ? 'Add to goal' : 'Withdraw',
+                      (isDeposit ? 'Add to goal' : 'Withdraw').tr,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -711,7 +726,7 @@ class GoalsView extends GetView<GoalsController> {
         backgroundColor: theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          'Delete this goal?',
+          'Delete this goal?'.tr,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
@@ -719,15 +734,18 @@ class GoalsView extends GetView<GoalsController> {
           ),
         ),
         content: Text(
-          '"${goal.title}" and its saved amount of $goalCurrency '
-          '${formatMoney(goal.savedAmount)} will be removed. '
-          'This cannot be undone.',
+          '@title and its saved amount of @currency @amount will be removed. This cannot be undone.'
+              .trParams({
+                'title': goal.title,
+                'currency': goalCurrency,
+                'amount': formatMoney(goal.savedAmount),
+              }),
           style: TextStyle(fontSize: 14, height: 1.5, color: theme.hintColor),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: TextStyle(color: theme.hintColor)),
+            child: Text('Cancel'.tr, style: TextStyle(color: theme.hintColor)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -739,7 +757,7 @@ class GoalsView extends GetView<GoalsController> {
               Get.back();
               controller.deleteGoal(goal.id);
             },
-            child: const Text('Delete'),
+            child: Text('Delete'.tr),
           ),
         ],
       ),
@@ -781,9 +799,9 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            activeCount + completedCount == 1
-                ? 'Saved across 1 goal'
-                : 'Saved across ${activeCount + completedCount} goals',
+            'Saved across @count goals'.trParams({
+              'count': '${activeCount + completedCount}',
+            }),
             style: const TextStyle(fontSize: 12.5, color: Colors.white70),
           ),
           const SizedBox(height: 6),
@@ -807,7 +825,7 @@ class _SummaryCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    'of ${goalMoney(target)}',
+                    'of @target'.trParams({'target': goalMoney(target)}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 13, color: Colors.white70),
@@ -833,11 +851,11 @@ class _SummaryCard extends StatelessWidget {
             children: [
               _Pill(
                 icon: Icons.trending_up_rounded,
-                text: '$activeCount in progress',
+                text: '@count in progress'.trParams({'count': '$activeCount'}),
               ),
               _Pill(
                 icon: Icons.check_circle_rounded,
-                text: '$completedCount completed',
+                text: '@count completed'.trParams({'count': '$completedCount'}),
               ),
             ],
           ),
@@ -858,7 +876,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
+        color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -867,7 +885,7 @@ class _Pill extends StatelessWidget {
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 6),
           Text(
-            text,
+            text.tr,
             style: const TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
@@ -895,7 +913,7 @@ class _SectionLabel extends StatelessWidget {
     return Row(
       children: [
         Text(
-          text,
+          text.tr,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -906,7 +924,7 @@ class _SectionLabel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: theme.hintColor.withOpacity(0.14),
+            color: theme.hintColor.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -1014,7 +1032,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Choose an icon',
+                          'Choose an icon'.tr,
                           style: TextStyle(
                             color: theme.textTheme.bodyLarge?.color,
                             fontSize: 19,
@@ -1023,7 +1041,9 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${goalIconOptions.length} icons · Search by name',
+                          '@count icons · Search by name'.trParams({
+                            'count': '${goalIconOptions.length}',
+                          }),
                           style: TextStyle(
                             color: theme.hintColor,
                             fontSize: 12,
@@ -1033,7 +1053,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close icon picker',
+                    tooltip: 'Close icon picker'.tr,
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(Icons.close_rounded, color: theme.hintColor),
                   ),
@@ -1047,12 +1067,12 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                 onChanged: (_) => setState(() {}),
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: 'Search home, travel, savings...',
+                  hintText: 'Search home, travel, savings...'.tr,
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: query.isEmpty
                       ? null
                       : IconButton(
-                          tooltip: 'Clear search',
+                          tooltip: 'Clear search'.tr,
                           onPressed: () {
                             _searchController.clear();
                             setState(() {});
@@ -1086,7 +1106,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
               child: Row(
                 children: [
                   Text(
-                    query.isEmpty ? 'ALL ICONS' : 'SEARCH RESULTS',
+                    (query.isEmpty ? 'ALL ICONS' : 'SEARCH RESULTS').tr,
                     style: TextStyle(
                       color: theme.hintColor,
                       fontSize: 11,
@@ -1096,7 +1116,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                   ),
                   const Spacer(),
                   Text(
-                    '${icons.length} found',
+                    '@count found'.trParams({'count': '${icons.length}'}),
                     style: TextStyle(
                       color: theme.hintColor,
                       fontSize: 11,
@@ -1112,7 +1132,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'RECENTLY USED',
+                    'RECENTLY USED'.tr,
                     style: TextStyle(
                       color: theme.hintColor,
                       fontSize: 11,
@@ -1165,7 +1185,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                                 GoalIconBadge(iconKey: option.key, size: 34),
                                 const SizedBox(height: 5),
                                 Text(
-                                  option.label,
+                                  option.label.tr,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1202,7 +1222,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'No matching icons',
+                            'No matching icons'.tr,
                             style: TextStyle(
                               color: theme.hintColor,
                               fontWeight: FontWeight.w600,
@@ -1259,7 +1279,7 @@ class _GoalIconPickerSheetState extends State<_GoalIconPickerSheet> {
                                       horizontal: 4,
                                     ),
                                     child: Text(
-                                      option.label,
+                                      option.label.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -1296,7 +1316,7 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
+      text.tr,
       style: TextStyle(
         fontSize: 12.5,
         fontWeight: FontWeight.w600,
@@ -1342,7 +1362,7 @@ class _Field extends StatelessWidget {
         color: theme.textTheme.bodyLarge?.color,
       ),
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: hint.tr,
         prefixText: prefix,
         prefixStyle: TextStyle(
           fontSize: fontSize,
@@ -1352,10 +1372,12 @@ class _Field extends StatelessWidget {
         hintStyle: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.normal,
-          color: theme.hintColor.withOpacity(0.6),
+          color: theme.hintColor.withValues(alpha: 0.6),
         ),
         filled: true,
-        fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+        fillColor: isDark
+            ? Colors.white10
+            : Colors.black.withValues(alpha: 0.04),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -1393,11 +1415,11 @@ class _DateChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
-          label,
+          label.tr,
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
@@ -1419,7 +1441,7 @@ class _SheetHandle extends StatelessWidget {
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: Theme.of(context).hintColor.withOpacity(0.35),
+          color: Theme.of(context).hintColor.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(999),
         ),
       ),
@@ -1446,7 +1468,7 @@ class _EmptyState extends StatelessWidget {
               width: 92,
               height: 92,
               decoration: BoxDecoration(
-                color: kGoalGreen.withOpacity(0.10),
+                color: kGoalGreen.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1457,7 +1479,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             Text(
-              'No goals yet',
+              'No goals yet'.tr,
               style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
@@ -1466,8 +1488,8 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Saving for a phone, a trip, or an emergency fund? '
-              'Create a goal and add money to it whenever you can.',
+              'Saving for a phone, a trip, or an emergency fund? Create a goal and add money to it whenever you can.'
+                  .tr,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -1481,7 +1503,7 @@ class _EmptyState extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onCreate,
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('Create your first goal'),
+                label: Text('Create your first goal'.tr),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kGoalGreen,
                   foregroundColor: Colors.white,

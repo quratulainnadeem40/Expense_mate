@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../controller/budget_controller.dart';
 
 class BudgetSummaryCard extends GetView<BudgetController> {
-  const BudgetSummaryCard({Key? key}) : super(key: key);
+  const BudgetSummaryCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +20,8 @@ class BudgetSummaryCard extends GetView<BudgetController> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const Text(
-                'Total Monthly Budget',
+              Text(
+                'Total Monthly Budget'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),

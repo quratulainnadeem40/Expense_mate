@@ -47,7 +47,7 @@ class AboutView extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'About',
+          'About'.tr,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -70,10 +70,11 @@ class AboutView extends StatelessWidget {
               title: 'What is Expense Mate?',
               child: Text(
                 'Expense Mate is a personal money manager that helps you see '
-                'exactly where your money goes. Record every income and '
-                'expense, set a budget for the month, keep your cash and '
-                'bank accounts separate, and get a clear picture of your '
-                'spending at the end of every month.',
+                        'exactly where your money goes. Record every income and '
+                        'expense, set a budget for the month, keep your cash and '
+                        'bank accounts separate, and get a clear picture of your '
+                        'spending at the end of every month.'
+                    .tr,
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.65,
@@ -203,9 +204,10 @@ class AboutView extends StatelessWidget {
                 children: [
                   Text(
                     'Your transactions are tied to your account and synced '
-                    'securely to the cloud, so you keep your history even if '
-                    'you change your phone. Only you can see your data — it '
-                    'is never sold or shared with advertisers.',
+                            'securely to the cloud, so you keep your history even if '
+                            'you change your phone. Only you can see your data — it '
+                            'is never sold or shared with advertisers.'
+                        .tr,
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.65,
@@ -308,7 +310,7 @@ class AboutView extends StatelessWidget {
 
             Center(
               child: Text(
-                'Made with Flutter',
+                'Made with Flutter'.tr,
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary(isDark),
@@ -318,7 +320,10 @@ class AboutView extends StatelessWidget {
             const SizedBox(height: 6),
             Center(
               child: Text(
-                '© $copyrightYear $developerName. All rights reserved.',
+                '© @year @developer. All rights reserved.'.trParams({
+                  'year': '$copyrightYear',
+                  'developer': developerName,
+                }),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
@@ -335,8 +340,8 @@ class AboutView extends StatelessWidget {
   void _copy(String value, String message) {
     Clipboard.setData(ClipboardData(text: value));
     Get.snackbar(
-      'Copied',
-      message,
+      'Copied'.tr,
+      message.tr,
       snackPosition: SnackPosition.BOTTOM,
       margin: const EdgeInsets.all(16),
     );
@@ -364,7 +369,7 @@ class _Header extends StatelessWidget {
             border: Border.all(color: AppColors.border(isDark)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.5 : 0.08),
+                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -375,7 +380,7 @@ class _Header extends StatelessWidget {
           child: Image.asset(
             'assets/logo.png',
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Icon(
+            errorBuilder: (_, _, _) => const Icon(
               Icons.account_balance_wallet_rounded,
               size: 44,
               color: Color(0xFF2EA44F),
@@ -393,7 +398,7 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          AboutView.tagline,
+          AboutView.tagline.tr,
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -405,11 +410,13 @@ class _Header extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFF2EA44F).withOpacity(isDark ? 0.18 : 0.10),
+            color: const Color(
+              0xFF2EA44F,
+            ).withValues(alpha: isDark ? 0.18 : 0.10),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
-            'Version ${AboutView.appVersion}',
+            'Version @version'.trParams({'version': AboutView.appVersion}),
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -446,7 +453,7 @@ class _Section extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 10),
           child: Text(
-            title,
+            title.tr,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -501,7 +508,7 @@ class _Feature extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: colour.withOpacity(isDark ? 0.20 : 0.12),
+              color: colour.withValues(alpha: isDark ? 0.20 : 0.12),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(icon, size: 20, color: colour),
@@ -512,7 +519,7 @@ class _Feature extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  title.tr,
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
@@ -521,7 +528,7 @@ class _Feature extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  detail,
+                  detail.tr,
                   style: TextStyle(
                     fontSize: 12.5,
                     height: 1.5,
@@ -563,7 +570,7 @@ class _MiniRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              text,
+              text.tr,
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textPrimary(isDark),
@@ -604,7 +611,7 @@ class _InfoTile extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            label,
+            label.tr,
             style: TextStyle(
               fontSize: 13.5,
               color: AppColors.textSecondary(isDark),
@@ -672,7 +679,7 @@ class _ActionTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      title.tr,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -681,7 +688,7 @@ class _ActionTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      subtitle,
+                      subtitle.tr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

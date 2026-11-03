@@ -86,18 +86,19 @@ class _WalletsViewState extends State<WalletsView> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Delete Wallets'),
+        title: Text('Delete Wallets'.tr),
         content: Text(
           count == 1
-              ? 'Are you sure you want to delete this wallet?'
-              : 'Are you sure you want to delete $count wallets?',
+              ? 'Are you sure you want to delete this wallet?'.tr
+              : 'Are you sure you want to delete @count wallets?'
+                  .trParams({'count': count.toString()}),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Get.back();
             },
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           TextButton(
             onPressed: () async {
@@ -113,9 +114,12 @@ class _WalletsViewState extends State<WalletsView> {
                 _exitSelectionMode();
               }
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            child: Text(
+              'Delete'.tr,
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -134,7 +138,9 @@ class _WalletsViewState extends State<WalletsView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isSelectionMode ? '${selectedWalletIds.length} selected' : 'Wallets',
+          isSelectionMode
+              ? '${selectedWalletIds.length} ${'selected'.tr}'
+              : 'Wallets'.tr,
           style: AppTextStyles.headingMedium(isDark),
         ),
 
@@ -148,7 +154,7 @@ class _WalletsViewState extends State<WalletsView> {
         actions: [
           if (isSelectionMode)
             IconButton(
-              tooltip: 'Delete selected wallets',
+              tooltip: 'Delete selected wallets'.tr,
               onPressed: selectedWalletIds.isEmpty
                   ? null
                   : () => _deleteSelectedWallets(context),
@@ -190,14 +196,14 @@ class _WalletsViewState extends State<WalletsView> {
               Row(
                 children: [
                   Text(
-                    'My Wallets',
+                    'My Wallets'.tr,
                     style: AppTextStyles.headingMedium(isDark),
                   ),
 
                   const Spacer(),
 
                   Text(
-                    '${controller.wallets.length} wallet(s)',
+                    '${controller.wallets.length} ${'wallet(s)'.tr}',
                     style: AppTextStyles.bodyMedium(isDark),
                   ),
                   const SizedBox(width: 10),
@@ -205,7 +211,7 @@ class _WalletsViewState extends State<WalletsView> {
                     width: 40,
                     height: 40,
                     child: IconButton(
-                      tooltip: 'Add wallet',
+                      tooltip: 'Add wallet'.tr,
                       onPressed: () {
                         Get.to(() => const AddWalletView());
                       },
@@ -293,12 +299,12 @@ class _EmptyWalletState extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          Text('No wallets yet', style: AppTextStyles.headingMedium(isDark)),
+          Text('No wallets yet'.tr, style: AppTextStyles.headingMedium(isDark)),
 
           const SizedBox(height: 8),
 
           Text(
-            'Add your first wallet to start tracking your money.',
+            'Add your first wallet to start tracking your money.'.tr,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium(isDark),
           ),

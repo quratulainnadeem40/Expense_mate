@@ -64,7 +64,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
             Icon(Icons.calendar_month_rounded, color: accentColor),
             const SizedBox(width: 8),
             Text(
-              'Monthly Schedule',
+              'Monthly Schedule'.tr,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: primaryTextColor,
@@ -90,7 +90,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Add a committee to see its monthly schedule.',
+                  'Add a committee to see its monthly schedule.'.tr,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: secondaryTextColor,
@@ -141,7 +141,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Receiving Order',
+                            'Receiving Order'.tr,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: primaryTextColor,
@@ -149,8 +149,8 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            'Open a committee to view its schedule and '
-                            'select a receiving member.',
+                            'Open a committee to view its schedule and select a receiving member.'
+                                .tr,
                             style: theme.textTheme.bodySmall?.copyWith(
                               height: 1.45,
                               color: secondaryTextColor,
@@ -164,7 +164,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
               ),
               const SizedBox(height: 22),
               Text(
-                'Committees',
+                'Committees'.tr,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: primaryTextColor,
@@ -176,7 +176,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                 final String name =
                     committee['name']?.toString().trim().isNotEmpty == true
                     ? committee['name'].toString().trim()
-                    : 'Committee';
+                    : 'Committee'.tr;
                 final List<dynamic> members = committee['members'] is List
                     ? committee['members'] as List<dynamic>
                     : const <dynamic>[];
@@ -226,8 +226,10 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                         ),
                       ),
                       subtitle: Text(
-                        '${members.length} ${members.length == 1 ? 'member' : 'members'}'
-                        ' · $rounds ${rounds == 1 ? 'round' : 'rounds'}',
+                        '@members members · @rounds rounds'.trParams({
+                          'members': '${members.length}',
+                          'rounds': '$rounds',
+                        }),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: secondaryTextColor,
                         ),
@@ -295,7 +297,7 @@ class _CommitteeScheduleDetailView extends StatelessWidget {
         title: Text(
           committee['name']?.toString().trim().isNotEmpty == true
               ? committee['name'].toString().trim()
-              : 'Committee Schedule',
+              : 'Committee Schedule'.tr,
         ),
         foregroundColor: primaryTextColor,
         backgroundColor: cardColor,
@@ -388,7 +390,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
 
   String get _committeeName {
     final String name = widget.committee['name']?.toString().trim() ?? '';
-    return name.isEmpty ? 'Committee' : name;
+    return name.isEmpty ? 'Committee'.tr : name;
   }
 
   List<Map<String, dynamic>> get _members {
@@ -578,9 +580,11 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     setState(() {});
 
     Get.snackbar(
-      'Committee Allocated',
-      '${_memberUsername(member)} is allocated to receive the committee for '
-          '${_monthName(date.month)} ${date.year}.',
+      'Committee Allocated'.tr,
+      '@name is allocated to receive the committee for @month.'.trParams({
+        'name': _memberUsername(member),
+        'month': '${_monthName(date.month)} ${date.year}',
+      }),
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: widget.accentColor,
       colorText: Colors.white,
@@ -640,8 +644,10 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
           ),
         ),
         subtitle: Text(
-          '${members.length} ${members.length == 1 ? 'member' : 'members'}'
-          ' · ${schedule.length} ${schedule.length == 1 ? 'round' : 'rounds'}',
+          '@members members · @rounds rounds'.trParams({
+            'members': '${members.length}',
+            'rounds': '${schedule.length}',
+          }),
           style: theme.textTheme.bodySmall?.copyWith(
             color: widget.secondaryTextColor,
           ),
@@ -655,8 +661,9 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
               child: Text(
                 members.isEmpty
                     ? 'Add committee members to create its receiving order.'
-                    : 'Set the committee start date and duration to create '
-                          'its schedule.',
+                          .tr
+                    : 'Set the committee start date and duration to create its schedule.'
+                          .tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: widget.secondaryTextColor,
                 ),
@@ -666,7 +673,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Select Receiving Month',
+                'Select Receiving Month'.tr,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: widget.primaryTextColor,
                   fontWeight: FontWeight.w600,
@@ -705,7 +712,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Allocation method',
+              'Allocation method'.tr,
               style: theme.textTheme.labelLarge?.copyWith(
                 color: widget.primaryTextColor,
                 fontWeight: FontWeight.w600,
@@ -713,16 +720,16 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             ),
             const SizedBox(height: 8),
             SegmentedButton<_AllocationMode>(
-              segments: const [
+              segments: [
                 ButtonSegment<_AllocationMode>(
                   value: _AllocationMode.sequence,
-                  icon: Icon(Icons.format_list_numbered_rounded),
-                  label: Text('Added order'),
+                  icon: const Icon(Icons.format_list_numbered_rounded),
+                  label: Text('Added order'.tr),
                 ),
                 ButtonSegment<_AllocationMode>(
                   value: _AllocationMode.spin,
-                  icon: Icon(Icons.casino_outlined),
-                  label: Text('Spin & win'),
+                  icon: const Icon(Icons.casino_outlined),
+                  label: Text('Spin & win'.tr),
                 ),
               ],
               selected: <_AllocationMode>{_allocationMode},
@@ -759,7 +766,9 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             Text(
               _allocationMode == _AllocationMode.sequence
                   ? 'Allocate each round in the order members were added.'
-                  : 'Spin the wheel to randomly choose this round’s recipient.',
+                        .tr
+                  : 'Spin the wheel to randomly choose this round’s recipient.'
+                        .tr,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: widget.secondaryTextColor,
               ),
@@ -794,7 +803,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Text(
-                          'All members have already received the committee.',
+                          'All members have already received the committee.'
+                              .tr,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: widget.secondaryTextColor,
@@ -866,7 +876,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                             : Icons.casino_rounded,
                       ),
                 label: Text(
-                  _isSpinning
+                  (_isSpinning
                       ? _allocationMode == _AllocationMode.sequence
                             ? 'Allocating...'
                             : 'Spinning...'
@@ -878,7 +888,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                       ? 'Already allocated'
                       : availableMembers.isEmpty
                       ? 'All members allocated'
-                      : 'Spin & allocate',
+                      : 'Spin & allocate')
+                      .tr,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.accentColor,
@@ -907,11 +918,16 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                     Text(
                       _allocationMode == _AllocationMode.spin &&
                               selectedSchedule['isAllocated'] != true
-                          ? 'Spin & allocate a recipient for '
-                                '${selectedSchedule['month']}.'
-                          : '${selectedSchedule['memberUsername']} is set to '
-                                'receive the committee for '
-                                '${selectedSchedule['month']}.',
+                          ? 'Spin & allocate a recipient for @month.'
+                                .trParams({
+                                  'month': selectedSchedule['month'].toString(),
+                                })
+                          : '@name is set to receive the committee for @month.'
+                                .trParams({
+                                  'name': selectedSchedule['memberUsername']
+                                      .toString(),
+                                  'month': selectedSchedule['month'].toString(),
+                                }),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -932,9 +948,10 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
             ],
             const SizedBox(height: 18),
             Text(
-              _allocationMode == _AllocationMode.spin
-                  ? 'Allocated Rounds'
-                  : 'Monthly Schedule',
+              (_allocationMode == _AllocationMode.spin
+                      ? 'Allocated Rounds'
+                      : 'Monthly Schedule')
+                  .tr,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: widget.primaryTextColor,
                 fontWeight: FontWeight.bold,
@@ -945,8 +962,8 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  'No recipients have been allocated yet. Use Spin & allocate '
-                  'to choose the first recipient.',
+                  'No recipients have been allocated yet. Use Spin & allocate to choose the first recipient.'
+                      .tr,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: widget.secondaryTextColor,
                   ),
@@ -1008,7 +1025,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
       'November',
       'December',
     ];
-    return months[month - 1];
+    return months[month - 1].tr;
   }
 
   String _formatDate(DateTime date) =>

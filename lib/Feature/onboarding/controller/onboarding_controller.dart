@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show Locale;
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -54,31 +55,20 @@ class OnboardingController extends GetxController {
       nativeName: 'English',
       englishName: 'English',
     ),
-    OnboardingLanguage(code: 'PS', nativeName: 'پښتو', englishName: 'Pashto'),
-    OnboardingLanguage(code: 'SD', nativeName: 'سنڌي', englishName: 'Sindhi'),
-    OnboardingLanguage(
-      code: 'AR',
-      nativeName: 'العربية',
-      englishName: 'Arabic',
-    ),
-    OnboardingLanguage(code: 'HI', nativeName: 'हिन्दी', englishName: 'Hindi'),
   ];
 
   static const List<OnboardingCurrency> currencies = [
-    OnboardingCurrency(code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs'),
-    OnboardingCurrency(code: 'USD', name: 'US Dollar', symbol: '\u0024'),
-    OnboardingCurrency(code: 'AED', name: 'UAE Dirham', symbol: 'AED'),
+    OnboardingCurrency(code: 'PKR', name: 'Pakistani Rupees', symbol: 'Rs'),
     OnboardingCurrency(code: 'SAR', name: 'Saudi Riyal', symbol: 'SR'),
-    OnboardingCurrency(code: 'GBP', name: 'British Pound', symbol: '\u00A3'),
-    OnboardingCurrency(code: 'EUR', name: 'Euro', symbol: '\u20AC'),
-    OnboardingCurrency(code: 'INR', name: 'Indian Rupee', symbol: '\u20B9'),
-    OnboardingCurrency(code: 'CAD', name: 'Canadian Dollar', symbol: 'C\u0024'),
+    OnboardingCurrency(code: 'TRY', name: 'Turkish Lira', symbol: '\u20BA'),
+    OnboardingCurrency(code: 'AED', name: 'UAE Dirham', symbol: 'AED'),
+    OnboardingCurrency(code: 'USD', name: 'US Dollar', symbol: '\u0024'),
     OnboardingCurrency(
       code: 'AUD',
       name: 'Australian Dollar',
       symbol: 'A\u0024',
     ),
-    OnboardingCurrency(code: 'TRY', name: 'Turkish Lira', symbol: '\u20BA'),
+    OnboardingCurrency(code: 'GBP', name: 'British Pound', symbol: '\u00A3'),
   ];
 
   Box get _box => Hive.box(AppKeys.settingsBox);
@@ -97,16 +87,35 @@ class OnboardingController extends GetxController {
     // Carry over whatever is already set, so going back through
     // onboarding does not silently reset the user's currency.
     if (Hive.isBoxOpen(AppKeys.settingsBox)) {
+      final savedCurrency = _box
+          .get('currency', defaultValue: 'PKR')
+          .toString()
+          .trim()
+          .toUpperCase();
       selectedCurrency.value =
-          _box.get('currency', defaultValue: 'PKR') as String;
-      selectedLanguage.value =
-          _box.get(languageKey, defaultValue: 'en') as String;
+          SettingsController.defaultCurrencies.contains(savedCurrency)
+          ? savedCurrency
+          : 'PKR';
+
+      final savedLanguage =
+          _box.get(languageKey, defaultValue: 'en').toString().trim().toLowerCase();
+      selectedLanguage.value = SettingsController.supportedLanguages.contains(savedLanguage)
+          ? savedLanguage
+          : 'en';
     }
   }
 
   bool get isLastPage => pageIndex.value == pageCount - 1;
 
-  void setLanguage(String code) => selectedLanguage.value = code;
+  Future<void> setLanguage(String code) async {
+    final normalizedLanguage = code.trim().toLowerCase();
+    if (!SettingsController.supportedLanguages.contains(normalizedLanguage)) {
+      return;
+    }
+
+    selectedLanguage.value = normalizedLanguage;
+    await Get.updateLocale(Locale(normalizedLanguage));
+  }
 
   void setCurrency(String code) => selectedCurrency.value = code;
 
@@ -120,17 +129,22 @@ class OnboardingController extends GetxController {
 
   /// Saves both choices and marks onboarding done.
   Future<void> finish() async {
+    final normalizedLanguage = selectedLanguage.value.trim().toLowerCase();
+    selectedLanguage.value = normalizedLanguage;
+
     if (Hive.isBoxOpen(AppKeys.settingsBox)) {
-      await _box.put(languageKey, selectedLanguage.value);
+      await _box.put(languageKey, normalizedLanguage);
       await _box.put(seenKey, true);
     }
 
-    // Push the currency through the settings controller so every screen
-    // picks it up straight away, instead of only after a restart.
+    // Push both settings through the global settings controller so the
+    // whole app immediately switches to the selected language.
     final settings = Get.isRegistered<SettingsController>()
         ? Get.find<SettingsController>()
         : Get.put(SettingsController());
 
+    await settings.changeLanguage(normalizedLanguage);
     await settings.changeCurrency(selectedCurrency.value);
+    Get.forceAppUpdate();
   }
 }

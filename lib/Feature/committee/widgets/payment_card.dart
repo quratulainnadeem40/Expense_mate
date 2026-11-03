@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class PaymentCard extends StatelessWidget {
   final String memberName;
@@ -100,11 +101,11 @@ class PaymentCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: isReceived
-                      ? Colors.green.withOpacity(0.12)
-                      : Colors.orange.withOpacity(0.12),
+                      ? Colors.green.withValues(alpha: 0.12)
+                      : Colors.orange.withValues(alpha: 0.12),
                 ),
                 child: Text(
-                  status,
+                  status.tr,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -124,8 +125,8 @@ class PaymentCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.black.withOpacity(0.04),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.04),
             ),
             child: Row(
               children: [
@@ -138,7 +139,7 @@ class PaymentCard extends StatelessWidget {
                 const SizedBox(width: 8),
 
                 Text(
-                  'Amount',
+                  'Amount'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     color: isDark ? Colors.white54 : Colors.black54,

@@ -98,7 +98,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Add a committee first to track its payments.',
+              'Add a committee first to track its payments.'.tr,
               textAlign: TextAlign.center,
               style: TextStyle(color: secondaryTextColor),
             ),
@@ -110,7 +110,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Select a committee',
+            'Select a committee'.tr,
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.bold,
@@ -138,15 +138,17 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.groups_rounded)),
                 title: Text(
-                  committee['name']?.toString() ?? 'Committee',
+                  committee['name']?.toString() ?? 'Committee'.tr,
                   style: TextStyle(
                     color: primaryTextColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 subtitle: Text(
-                  '${payments.length} payment records · '
-                  '${members.length} members',
+                  '@count payment records · @members members'.trParams({
+                    'count': '${payments.length}',
+                    'members': '${members.length}',
+                  }),
                   style: TextStyle(color: secondaryTextColor),
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
@@ -198,7 +200,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
       'December',
     ];
 
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+    return '${date.day} ${months[date.month - 1].tr} ${date.year}';
   }
 
   // --------------------------------------------------
@@ -259,7 +261,14 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$count payments marked as $status.')),
+      SnackBar(
+        content: Text(
+          '@count payments marked as @status.'.trParams({
+            'count': '$count',
+            'status': status.tr,
+          }),
+        ),
+      ),
     );
   }
 
@@ -335,7 +344,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Change Payment Status',
+                  'Change Payment Status'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -344,13 +353,15 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Current status: $currentStatus',
+                  'Current status: @status'.trParams({
+                    'status': currentStatus.tr,
+                  }),
                   style: TextStyle(fontSize: 13, color: secondaryColor),
                 ),
                 const SizedBox(height: 18),
                 _statusOption(
                   context: sheetContext,
-                  title: 'Received',
+                  title: 'Received'.tr,
                   icon: Icons.check_circle_outline_rounded,
                   color: isDark
                       ? const Color(0xFF65D6A0)
@@ -360,7 +371,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 _statusOption(
                   context: sheetContext,
-                  title: 'Pending',
+                  title: 'Pending'.tr,
                   icon: Icons.pending_outlined,
                   color: isDark
                       ? const Color(0xFFFFCA70)
@@ -370,7 +381,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ),
                 _statusOption(
                   context: sheetContext,
-                  title: 'Overdue',
+                  title: 'Overdue'.tr,
                   icon: Icons.warning_amber_rounded,
                   color: isDark
                       ? const Color(0xFFFF8585)
@@ -422,9 +433,13 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
 
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(
-          this.context,
-        ).showSnackBar(SnackBar(content: Text('Payment marked as $title.')));
+        ScaffoldMessenger.of(this.context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Payment marked as @title.'.trParams({'title': title.tr}),
+            ),
+          ),
+        );
       },
     );
   }
@@ -460,14 +475,14 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.payments_rounded),
-            SizedBox(width: 8),
+            const Icon(Icons.payments_rounded),
+            const SizedBox(width: 8),
             Text(
-              'Payment Tracking',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              'Payment Tracking'.tr,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -480,8 +495,8 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
             ? [
                 IconButton(
                   tooltip: _isBulkSelectionMode
-                      ? 'Cancel selection'
-                      : 'Select payments',
+                        ? 'Cancel selection'.tr
+                        : 'Select payments'.tr,
                   onPressed: _toggleBulkSelectionMode,
                   icon: Icon(
                     _isBulkSelectionMode
@@ -523,7 +538,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Payment Records',
+                      'Payment Records'.tr,
                       style: TextStyle(
                         fontSize: 19,
                         fontWeight: FontWeight.bold,
@@ -536,10 +551,12 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8,
                         ),
-                        title: const Text('Select all members'),
+                        title: Text('Select all members'.tr),
                         subtitle: Text(
-                          '${_selectedPaymentIndices.length} of '
-                          '${payments.length} selected',
+                          '@count of @total selected'.trParams({
+                            'count': '${_selectedPaymentIndices.length}',
+                            'total': '${payments.length}',
+                          }),
                         ),
                         value: _selectedPaymentIndices.isEmpty
                             ? false
@@ -553,26 +570,26 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                       ),
                       DropdownButtonFormField<String>(
                         initialValue: _bulkPaymentStatus,
-                        decoration: const InputDecoration(
-                          labelText: 'Bulk payment status',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
+                        decoration: InputDecoration(
+                          labelText: 'Bulk payment status'.tr,
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 10,
                           ),
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                             value: 'Received',
-                            child: Text('Received'),
+                            child: Text('Received'.tr),
                           ),
                           DropdownMenuItem(
                             value: 'Pending',
-                            child: Text('Pending'),
+                            child: Text('Pending'.tr),
                           ),
                           DropdownMenuItem(
                             value: 'Overdue',
-                            child: Text('Overdue'),
+                            child: Text('Overdue'.tr),
                           ),
                         ],
                         onChanged: (status) {
@@ -596,8 +613,10 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                             _ => Icons.warning_amber_rounded,
                           }),
                           label: Text(
-                            'Mark ${_selectedPaymentIndices.length} as '
-                            '$_bulkPaymentStatus',
+                            'Mark @count as @status'.trParams({
+                              'count': '${_selectedPaymentIndices.length}',
+                              'status': _bulkPaymentStatus.tr,
+                            }),
                           ),
                         ),
                       ),
@@ -617,7 +636,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
 
                         final String dateText = paymentDate != null
                             ? _formatDate(paymentDate)
-                            : 'Date not added';
+                            : 'Date not added'.tr;
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
@@ -655,7 +674,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                                     child: PaymentCard(
                                       memberName:
                                           payment['memberName']?.toString() ??
-                                          'Member Name',
+                                          'Member Name'.tr,
                                       amount: _formatAmount(amount),
                                       paymentDate: dateText,
                                       status:
@@ -673,7 +692,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                     const SizedBox(height: 12),
                     if (!_isBulkSelectionMode)
                       Text(
-                        'Tap any payment record to change its status.',
+                        'Tap any payment record to change its status.'.tr,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
@@ -710,7 +729,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Payment Summary',
+            'Payment Summary'.tr,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
@@ -722,7 +741,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
             children: [
               Expanded(
                 child: _summaryItem(
-                  title: 'Received',
+                  title: 'Received'.tr,
                   value: '$receivedCount',
                   icon: Icons.check_circle_outline_rounded,
                   color: isDark
@@ -735,7 +754,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
-                  title: 'Pending',
+                  title: 'Pending'.tr,
                   value: '$pendingCount',
                   icon: Icons.pending_outlined,
                   color: isDark
@@ -748,7 +767,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
               const SizedBox(width: 10),
               Expanded(
                 child: _summaryItem(
-                  title: 'Overdue',
+                  title: 'Overdue'.tr,
                   value: '$overdueCount',
                   icon: Icons.warning_amber_rounded,
                   color: isDark
@@ -812,7 +831,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
           Icon(Icons.payments_outlined, size: 55, color: secondaryTextColor),
           const SizedBox(height: 12),
           Text(
-            'No Payment Records Yet',
+            'No Payment Records Yet'.tr,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

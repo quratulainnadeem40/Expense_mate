@@ -1,7 +1,11 @@
+import 'package:expense_mate/Core/constants/app_keys.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:expense_mate/Core/service/notification_service.dart';
+import '../controller/committe_controller.dart';
 
 class CommitteeRemindersView extends StatefulWidget {
   const CommitteeRemindersView({super.key});
@@ -11,166 +15,298 @@ class CommitteeRemindersView extends StatefulWidget {
 }
 
 class _CommitteeRemindersViewState extends State<CommitteeRemindersView> {
-  bool paymentDueReminder = true;
-  bool upcomingPaymentReminder = true;
-  bool receivingReminder = true;
-  bool overdueReminder = true;
-  bool monthlyReminder = true;
+  final CommitteeController _committeeController = CommitteeController.instance;
+  final NotificationService _notificationService =
+      Get.find<NotificationService>();
+  late final Box _settings;
+  late bool _enabled;
+  late int _daysBefore;
+  bool _isSaving = false;
 
-  Widget _buildReminderCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: SwitchListTile(
-        secondary: CircleAvatar(child: Icon(icon)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(description),
-        value: value,
-        onChanged: onChanged,
-      ),
+  @override
+  void initState() {
+    super.initState();
+    _settings = Hive.box(AppKeys.settingsBox);
+    _enabled = _settings.get(
+      AppKeys.committeeReminderEnabledKey,
+      defaultValue: true,
     );
+    _daysBefore = _settings.get(
+      AppKeys.committeeReminderDaysBeforeKey,
+      defaultValue: 1,
+    );
+    if (_daysBefore != 0 && _daysBefore != 1) _daysBefore = 1;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncSchedule(showError: true);
+    });
   }
 
-  Future<void> _showTestNotification() async {
+  Future<void> _updateReminder({bool? enabled, int? daysBefore}) async {
+    if (_isSaving) return;
+
+    final bool previousEnabled = _enabled;
+    final int previousDaysBefore = _daysBefore;
+    setState(() {
+      _enabled = enabled ?? _enabled;
+      _daysBefore = daysBefore ?? _daysBefore;
+      _isSaving = true;
+    });
+
     try {
-      final notificationService = Get.find<NotificationService>();
+      await _settings.put(AppKeys.committeeReminderEnabledKey, _enabled);
+      await _settings.put(AppKeys.committeeReminderDaysBeforeKey, _daysBefore);
+      await _syncSchedule(showError: false);
+      if (mounted) _showMessage('Reminder settings saved.'.tr);
+    } catch (error) {
+      await _settings.put(AppKeys.committeeReminderEnabledKey, previousEnabled);
+      await _settings.put(
+        AppKeys.committeeReminderDaysBeforeKey,
+        previousDaysBefore,
+      );
+      if (mounted) {
+        setState(() {
+          _enabled = previousEnabled;
+          _daysBefore = previousDaysBefore;
+        });
+        _showMessage(
+          'Unable to update reminders: @message'.trParams({
+            'message': error.toString(),
+          }),
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
-      await notificationService.showCommitteeNotification();
+  Future<void> _syncSchedule({required bool showError}) async {
+    try {
+      await _notificationService.syncCommitteeReminders(
+        occurrences: _committeeController.reminderOccurrences,
+        enabled:
+            _enabled &&
+            _settings.get('notifications_enabled', defaultValue: true),
+        daysBefore: _daysBefore,
+      );
+    } catch (error) {
+      if (showError && mounted) {
+        _showMessage(
+          'Unable to update reminders: @message'.trParams({
+            'message': error.toString(),
+          }),
+          isError: true,
+        );
+      } else {
+        rethrow;
+      }
+    }
+  }
 
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Committee reminder notification sent successfully.'),
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to send notification: $e')),
-      );
+  DateTime? get _nextReminderDate {
+    if (!_enabled ||
+        !_settings.get('notifications_enabled', defaultValue: true)) {
+      return null;
     }
+
+    final DateTime now = DateTime.now();
+    for (final occurrence in _committeeController.reminderOccurrences) {
+      final DateTime reminderDate = occurrence.reminderDate(
+        daysBefore: _daysBefore,
+      );
+      if (reminderDate.isAfter(now)) return reminderDate;
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.notifications_rounded),
-            SizedBox(width: 8),
-            Text('Reminders & Notifications'),
+            const Icon(Icons.notifications_rounded),
+            const SizedBox(width: 8),
+            Text('Reminders & Notifications'.tr),
           ],
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Committee Reminders',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 25,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.notifications_active_rounded,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Committee Reminders'.tr,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Get one reminder for each committee date.'.tr,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 6),
-
-            const Text(
-              'Manage your committee payment and monthly reminders.',
-              style: TextStyle(color: Colors.grey),
-            ),
-
             const SizedBox(height: 24),
-
-            _buildReminderCard(
-              icon: Icons.payment_rounded,
-              title: 'Payment Due Reminder',
-              description: 'Get a reminder when your committee payment is due.',
-              value: paymentDueReminder,
-              onChanged: (value) {
-                setState(() {
-                  paymentDueReminder = value;
-                });
-              },
-            ),
-
-            _buildReminderCard(
-              icon: Icons.event_available_rounded,
-              title: 'Upcoming Payment Reminder',
-              description:
-                  'Get a reminder before your monthly contribution is due.',
-              value: upcomingPaymentReminder,
-              onChanged: (value) {
-                setState(() {
-                  upcomingPaymentReminder = value;
-                });
-              },
-            ),
-
-            _buildReminderCard(
-              icon: Icons.person_rounded,
-              title: 'Receiving Member Reminder',
-              description:
-                  'Get notified when it is your turn to receive the committee pool.',
-              value: receivingReminder,
-              onChanged: (value) {
-                setState(() {
-                  receivingReminder = value;
-                });
-              },
-            ),
-
-            _buildReminderCard(
-              icon: Icons.warning_amber_rounded,
-              title: 'Overdue Payment Reminder',
-              description:
-                  'Get a reminder when a committee payment becomes overdue.',
-              value: overdueReminder,
-              onChanged: (value) {
-                setState(() {
-                  overdueReminder = value;
-                });
-              },
-            ),
-
-            _buildReminderCard(
-              icon: Icons.calendar_month_rounded,
-              title: 'Monthly Committee Reminder',
-              description: 'Receive a monthly reminder about your committee.',
-              value: monthlyReminder,
-              onChanged: (value) {
-                setState(() {
-                  monthlyReminder = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showTestNotification,
-                icon: const Icon(Icons.notifications_active_rounded),
-                label: const Text('Test Reminder'),
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: CircleAvatar(
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
+                        child: Icon(
+                          Icons.event_available_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      title: Text(
+                        'Monthly committee reminder'.tr,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        'A single notification for each upcoming committee date.'
+                            .tr,
+                      ),
+                      value: _enabled,
+                      onChanged: _isSaving
+                          ? null
+                          : (value) => _updateReminder(enabled: value),
+                    ),
+                    const Divider(height: 24),
+                    Text(
+                      'When should we remind you?'.tr,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    RadioGroup<int>(
+                      groupValue: _daysBefore,
+                      onChanged: (value) {
+                        if (!_isSaving && value != null) {
+                          _updateReminder(daysBefore: value);
+                        }
+                      },
+                      child: Column(
+                        children: [
+                          RadioListTile<int>(
+                            contentPadding: EdgeInsets.zero,
+                            value: 1,
+                            title: Text('One day before'.tr),
+                            subtitle: Text(
+                              'Get one reminder one day before the due date.'
+                                  .tr,
+                            ),
+                          ),
+                          RadioListTile<int>(
+                            contentPadding: EdgeInsets.zero,
+                            value: 0,
+                            title: Text('On the due date'.tr),
+                            subtitle: Text(
+                              'Get one reminder on the committee due date.'.tr,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-
+            const SizedBox(height: 16),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Next reminder'.tr,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _nextReminderDate == null
+                                ? (!_settings.get(
+                                        'notifications_enabled',
+                                        defaultValue: true,
+                                      )
+                                      ? 'Notifications are disabled in app settings.'
+                                            .tr
+                                      : _enabled
+                                      ? 'No upcoming committee dates are scheduled.'
+                                            .tr
+                                      : 'Reminders are turned off.'.tr)
+                                : DateFormat.yMMMd(
+                                    Get.locale?.toLanguageTag(),
+                                  ).add_jm().format(_nextReminderDate!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
-
-            const Center(
-              child: Text(
-                'Committee reminders are managed from this screen.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, fontSize: 13),
+            Text(
+              'Reminders are sent at 9:00 AM using your device time.'.tr,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
