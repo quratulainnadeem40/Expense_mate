@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../constants/app_keys.dart';
 import 'pin_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Fingerprint or face unlock, sitting on top of the PIN.
 ///
@@ -97,35 +98,47 @@ Future<bool> setEnabled(bool value) async {
       return false;
     }
 
-    // Fingerprint verify karna zaroori hai before disabling.
+    // Disable se pehle fingerprint verification.
     if (!value) {
       final verified = await authenticate(
         reason: 'Verify your fingerprint to disable biometric unlock',
       );
 
-      if (!verified) {
-        debugPrint('FINGERPRINT VERIFICATION FAILED');
-        return false;
-      }
+      if (!verified) return false;
     }
 
-    // Enabling ke waqt biometric availability check.
+    // Enable ke waqt biometric availability check.
     if (value) {
       final available = await isAvailable();
       final enrolled = await hasEnrolled();
 
-      if (!available || !enrolled) {
-        return false;
-      }
+      if (!available || !enrolled) return false;
+    }
+
+    final user = Supabase.instance.client.auth.currentUser;
+
+    if (user == null) {
+      debugPrint('BIOMETRIC CLOUD ERROR: User not logged in');
+      return false;
     }
 
     final box = await Hive.openBox(AppKeys.settingsBox);
 
+    // Local save.
     await box.put(_enabledKey, value);
-
     isEnabledRx.value = value;
 
-    debugPrint('BIOMETRIC SETTING SAVED: $value');
+    // Cloud save.
+    await Supabase.instance.client
+        .from('user_security_settings')
+        .upsert({
+      'user_id': user.id,
+      'biometric_enabled': value,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    debugPrint('BIOMETRIC LOCAL VALUE: $value');
+    debugPrint('BIOMETRIC CLOUD SYNC SUCCESS');
 
     return true;
   } catch (e) {
@@ -133,8 +146,6 @@ Future<bool> setEnabled(bool value) async {
     return false;
   }
 }
-
-
 
   /// Shows the system prompt.
   ///
