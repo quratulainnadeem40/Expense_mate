@@ -628,52 +628,50 @@ class SettingsView extends StatelessWidget {
                 ),
                 if (PinService.instance.isPinSet)
                   FutureBuilder<bool>(
-                    future: BiometricService.instance.isAvailable(),
+future: BiometricService.instance.availabilityFuture,
                     builder: (context, snapshot) {
                       if (snapshot.data != true) {
                         return const SizedBox.shrink();
                       }
 
-                      return SwitchListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        secondary: _IconContainer(
-                          icon: Icons.fingerprint_rounded,
-                          isDark: isDark,
-                        ),
-                        title: Text(
-                          'Unlock with fingerprint'.tr,
-                          style: AppTextStyles.bodyLarge(
-                            isDark,
-                          ).copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          'Your PIN still works if it fails'.tr,
-                          style: AppTextStyles.bodyMedium(isDark),
-                        ),
-                        value: BiometricService.instance.isEnabledRx.value,
-                        onChanged: (value) async {
-                          if (value) {
-                            final ok = await BiometricService.instance
-                                .hasEnrolled();
+                     return Obx(
+  () => SwitchListTile(
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 4,
+    ),
+    secondary: _IconContainer(
+      icon: Icons.fingerprint_rounded,
+      isDark: isDark,
+    ),
+    title: Text(
+      'Unlock with fingerprint'.tr,
+      style: AppTextStyles.bodyLarge(
+        isDark,
+      ).copyWith(fontWeight: FontWeight.w600),
+    ),
+    subtitle: Text(
+      'Your PIN still works if it fails'.tr,
+      style: AppTextStyles.bodyMedium(isDark),
+    ),
+    value: BiometricService.instance.isEnabledRx.value,
+    onChanged: (value) async {
+      final success =
+          await BiometricService.instance.setEnabled(value);
 
-                            if (!ok) {
-                              Get.snackbar(
-                                'Nothing enrolled'.tr,
-                                'Add a fingerprint in your phone settings first.'
-                                    .tr,
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
-                              return;
-                            }
-                          }
+      if (!success) {
+        BiometricService.instance.refreshEnabledState();
 
-                          await BiometricService.instance.setEnabled(value);
-                          controller.update();
-                        },
-                      );
+        Get.snackbar(
+          'Unable to change setting'.tr,
+          'Please check your PIN and biometric settings.'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    },
+  ),
+);
+                    
                     },
                   ),
                 if (PinService.instance.isPinSet)

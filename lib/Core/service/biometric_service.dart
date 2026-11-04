@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:get/get.dart';
-
+import 'package:flutter/foundation.dart';
 import '../constants/app_keys.dart';
 import 'pin_service.dart';
 
@@ -18,6 +18,12 @@ class BiometricService {
 
   final LocalAuthentication _auth = LocalAuthentication();
 
+  Future<bool>? _availabilityFuture;
+
+Future<bool> get availabilityFuture {
+  return _availabilityFuture ??= isAvailable();
+}
+
   // Reactive fingerprint state.
   final RxBool isEnabledRx = false.obs;
 
@@ -26,12 +32,17 @@ class BiometricService {
       : null;
 
   /// Refresh fingerprint state from its own Hive key.
-  void refreshEnabledState() {
-    final savedValue =
-        (_box?.get(_enabledKey, defaultValue: false) as bool?) ?? false;
+void refreshEnabledState() {
+  final box = _box;
 
-    isEnabledRx.value = PinService.instance.isPinSet && savedValue;
-  }
+  // Box available nahi hai to existing state change na karein.
+  if (box == null) return;
+
+  final savedValue =
+      (box.get(_enabledKey, defaultValue: false) as bool?) ?? false;
+
+  isEnabledRx.value = PinService.instance.isPinSet && savedValue;
+}
 
   /// Whether the phone has a usable fingerprint or face sensor.
   Future<bool> isAvailable() async {
@@ -79,21 +90,45 @@ class BiometricService {
   }
 
   /// Enable or disable fingerprint without changing notifications.
-  Future<void> setEnabled(bool value) async {
-    final box = _box;
-
-    if (box == null) return;
-
-    // Fingerprint can only be enabled when a PIN exists.
+ Future<bool> setEnabled(bool value) async {
+  try {
     if (value && !PinService.instance.isPinSet) {
       isEnabledRx.value = false;
-      return;
+      return false;
     }
 
+    if (value) {
+      final available = await isAvailable();
+      final enrolled = await hasEnrolled();
+
+      if (!available || !enrolled) {
+        return false;
+      }
+    }
+
+    final box = await Hive.openBox(AppKeys.settingsBox);
+
     await box.put(_enabledKey, value);
+    debugPrint(
+  'NOTIFICATION VALUE: '
+  '${box.get('notifications_enabled')}',
+);
+
+debugPrint(
+  'BIOMETRIC VALUE: '
+  '${box.get('biometric_enabled')}',
+);
 
     isEnabledRx.value = value;
+
+    debugPrint('BIOMETRIC SETTING SAVED: $value');
+
+    return true;
+  } catch (e) {
+    debugPrint('BIOMETRIC SETTING ERROR: $e');
+    return false;
   }
+}
 
   /// Shows the system prompt.
   ///
