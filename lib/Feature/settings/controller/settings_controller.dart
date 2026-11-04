@@ -817,7 +817,17 @@ class SettingsController extends GetxController {
           'Unable to restore committee reminders: $error\n$stackTrace',
         );
       }
+      
     }
+    debugPrint(
+  'NOTIFICATION VALUE: '
+  '${settingsBox.get('notifications_enabled')}',
+);
+
+debugPrint(
+  'BIOMETRIC VALUE: '
+  '${settingsBox.get('biometric_enabled')}',
+);
   }
 
   // LOGOUT
