@@ -90,13 +90,26 @@ void refreshEnabledState() {
   }
 
   /// Enable or disable fingerprint without changing notifications.
- Future<bool> setEnabled(bool value) async {
+Future<bool> setEnabled(bool value) async {
   try {
     if (value && !PinService.instance.isPinSet) {
       isEnabledRx.value = false;
       return false;
     }
 
+    // Fingerprint verify karna zaroori hai before disabling.
+    if (!value) {
+      final verified = await authenticate(
+        reason: 'Verify your fingerprint to disable biometric unlock',
+      );
+
+      if (!verified) {
+        debugPrint('FINGERPRINT VERIFICATION FAILED');
+        return false;
+      }
+    }
+
+    // Enabling ke waqt biometric availability check.
     if (value) {
       final available = await isAvailable();
       final enrolled = await hasEnrolled();
@@ -109,15 +122,6 @@ void refreshEnabledState() {
     final box = await Hive.openBox(AppKeys.settingsBox);
 
     await box.put(_enabledKey, value);
-    debugPrint(
-  'NOTIFICATION VALUE: '
-  '${box.get('notifications_enabled')}',
-);
-
-debugPrint(
-  'BIOMETRIC VALUE: '
-  '${box.get('biometric_enabled')}',
-);
 
     isEnabledRx.value = value;
 
@@ -129,6 +133,8 @@ debugPrint(
     return false;
   }
 }
+
+
 
   /// Shows the system prompt.
   ///

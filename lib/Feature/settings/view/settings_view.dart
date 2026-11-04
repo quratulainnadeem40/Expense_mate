@@ -659,15 +659,17 @@ future: BiometricService.instance.availabilityFuture,
       final success =
           await BiometricService.instance.setEnabled(value);
 
-      if (!success) {
-        BiometricService.instance.refreshEnabledState();
+   if (!success) {
+  BiometricService.instance.refreshEnabledState();
 
-        Get.snackbar(
-          'Unable to change setting'.tr,
-          'Please check your PIN and biometric settings.'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
+  Get.snackbar(
+    'Verification Failed'.tr,
+    value
+        ? 'Please check your PIN and biometric settings.'.tr
+        : 'Fingerprint verification failed. Biometric unlock is still enabled.'.tr,
+    snackPosition: SnackPosition.BOTTOM,
+  );
+}
     },
   ),
 );
