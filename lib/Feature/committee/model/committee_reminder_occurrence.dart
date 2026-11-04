@@ -1,3 +1,5 @@
+import 'committee_schedule.dart';
+
 class CommitteeReminderOccurrence {
   final String committeeId;
   final String committeeName;
@@ -35,43 +37,17 @@ List<CommitteeReminderOccurrence> buildCommitteeReminderOccurrences(
         : DateTime.tryParse(storedDate?.toString() ?? '');
     if (firstDate == null) continue;
 
-    final int duration =
-        int.tryParse(committee['duration']?.toString() ?? '') ?? 0;
-    if (duration <= 0) continue;
-
-    final String unit = (committee['unit']?.toString() ?? 'Months')
-        .trim()
-        .toLowerCase();
-    final double durationInMonths = switch (unit) {
-      'year' || 'years' => duration * 12,
-      'week' || 'weeks' => duration / 4.345,
-      'day' || 'days' => duration / 30,
-      _ => duration.toDouble(),
-    };
+    final int cycleCount = committeeCycleCount(committee);
+    if (cycleCount <= 0) continue;
 
     final String committeeId = committee['id']?.toString() ?? '';
     final String name = committee['name']?.toString().trim() ?? '';
-    for (int index = 0; index < durationInMonths.ceil(); index++) {
-      final DateTime targetMonth = DateTime(
-        firstDate.year,
-        firstDate.month + index,
-        1,
-      );
-      final int lastDay = DateTime(
-        targetMonth.year,
-        targetMonth.month + 1,
-        0,
-      ).day;
-
+    for (int index = 1; index <= cycleCount; index++) {
       result.add(
         CommitteeReminderOccurrence(
           committeeId: committeeId,
           committeeName: name,
-          date: DateTime(
-            targetMonth.year,
-            targetMonth.month,
-            firstDate.day > lastDay ? lastDay : firstDate.day,
-          ),
+          date: committeeDateForCycle(firstDate, index),
         ),
       );
     }

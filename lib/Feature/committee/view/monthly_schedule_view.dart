@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
+import '../model/committee_schedule.dart';
 import '../widgets/schedule_card.dart';
 
 class MonthlyScheduleView extends StatefulWidget {
@@ -33,11 +34,6 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
   static const Color _softBlue = Color(0xFFE8F3FF);
   static const Color _borderBlue = Color(0xFFDCE5F0);
   static const Color _textColor = Color(0xFF243449);
-
-  int _integer(dynamic value, [int fallback = 0]) {
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? fallback;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -180,22 +176,7 @@ class _MonthlyScheduleViewState extends State<MonthlyScheduleView> {
                 final List<dynamic> members = committee['members'] is List
                     ? committee['members'] as List<dynamic>
                     : const <dynamic>[];
-                final int duration = _integer(
-                  committee['duration'] ?? committee['durationMonths'],
-                );
-                final String unit =
-                    (committee['unit'] ?? committee['durationUnit'] ?? 'months')
-                        .toString()
-                        .toLowerCase();
-                final double durationMonths = switch (unit) {
-                  'year' || 'years' => duration * 12.0,
-                  'week' || 'weeks' => duration / 4.345,
-                  'day' || 'days' => duration / 30.0,
-                  _ => duration.toDouble(),
-                };
-                final int rounds = durationMonths > 0
-                    ? durationMonths.ceil()
-                    : 0;
+                final int rounds = committeeCycleCount(committee);
                 return Padding(
                   key: ValueKey<String>('schedule-card-$id'),
                   padding: const EdgeInsets.only(bottom: 12),
@@ -424,26 +405,9 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     final DateTime? startDate = _parseDate(widget.committee['startDate']);
     if (members.isEmpty || startDate == null) return [];
 
-    final int duration = _integer(
-      widget.committee['duration'] ?? widget.committee['durationMonths'],
-    );
-    final String unit =
-        (widget.committee['unit'] ?? widget.committee['durationUnit'] ?? '')
-            .toString()
-            .toLowerCase();
-    final double durationMonths = switch (unit) {
-      'year' || 'years' => duration * 12.0,
-      'week' || 'weeks' => duration / 4.345,
-      'day' || 'days' => duration / 30.0,
-      _ => duration.toDouble(),
-    };
-    if (durationMonths <= 0) return [];
-
-    final int rounds = durationMonths.ceil();
-    final int memberCount = _integer(
-      widget.committee['memberCount'] ?? widget.committee['membersCount'],
-      members.length,
-    );
+    final int rounds = committeeCycleCount(widget.committee);
+    if (rounds <= 0) return [];
+    final int memberCount = committeeCycleCount(widget.committee);
     final double monthlyContribution = _number(
       widget.committee['contribution'] ??
           widget.committee['monthlyContribution'],
@@ -451,10 +415,11 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     final double pool = monthlyContribution * memberCount;
 
     return List<Map<String, dynamic>>.generate(rounds, (index) {
-      final DateTime date = _addMonthsClamped(startDate, index + 1);
+      final DateTime date = committeeDateForCycle(startDate, index + 1);
       final String? savedName = _selectionFor(date);
-      final Map<String, dynamic> defaultMember =
-          members[index % members.length];
+      final Map<String, dynamic>? defaultMember = index < members.length
+          ? members[index]
+          : null;
       Map<String, dynamic>? savedMember;
       if (savedName != null) {
         for (final Map<String, dynamic> member in members) {
@@ -466,14 +431,19 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
           }
         }
       }
-      final Map<String, dynamic> receivingMember = savedMember ?? defaultMember;
+      final Map<String, dynamic>? receivingMember =
+          savedMember ?? defaultMember;
 
       return {
         'round': index + 1,
         'isAllocated': savedMember != null,
         'month': '${_monthName(date.month)} ${date.year}',
-        'memberName': _memberName(receivingMember),
-        'memberUsername': _memberUsername(receivingMember),
+        'memberName': receivingMember == null
+            ? ''
+            : _memberName(receivingMember),
+        'memberUsername': receivingMember == null
+            ? ''
+            : _memberUsername(receivingMember),
         'amount': pool,
         'formattedAmount': _formatAmount(pool),
         'date': date,
@@ -662,7 +632,7 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
                 members.isEmpty
                     ? 'Add committee members to create its receiving order.'
                           .tr
-                    : 'Set the committee start date and duration to create its schedule.'
+                    : 'Add committee members and set its start date to create its schedule.'
                           .tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: widget.secondaryTextColor,
@@ -990,24 +960,9 @@ class _CommitteeScheduleCardState extends State<_CommitteeScheduleCard> {
     return DateTime.tryParse(value.toString());
   }
 
-  int _integer(dynamic value, [int fallback = 0]) {
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? fallback;
-  }
-
   double _number(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString().replaceAll(',', '') ?? '') ?? 0;
-  }
-
-  DateTime _addMonthsClamped(DateTime date, int months) {
-    final DateTime firstDay = DateTime(date.year, date.month + months, 1);
-    final int lastDay = DateTime(firstDay.year, firstDay.month + 1, 0).day;
-    return DateTime(
-      firstDay.year,
-      firstDay.month,
-      date.day > lastDay ? lastDay : date.day,
-    );
   }
 
   String _monthName(int month) {

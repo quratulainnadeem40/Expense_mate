@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
+import '../model/committee_schedule.dart';
 
 class CommitteeHistoryView extends StatefulWidget {
   const CommitteeHistoryView({super.key});
@@ -123,18 +124,19 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
     final DateTime? startDate = _parseDate(committee['startDate']);
     final DateTime? endDate = _parseDate(committee['endingDate']);
     final List<Map<String, dynamic>> members = _membersFor(committee);
-    final int totalMembers = _integer(
-      committee['memberCount'] ?? committee['membersCount'],
-      members.length,
-    );
+    final int totalMembers = committeeCycleCount(committee);
     final double monthlyAmount = _number(committee['contribution']);
-    final int roundCount = _roundCount(committee, members.length);
+    final int roundCount = _roundCount(committee);
+    final DateTime? scheduledEndDate = startDate == null || roundCount <= 0
+        ? endDate
+        : committeeDateForCycle(startDate, roundCount);
     final List<DateTime?> memberReceiveDates = _memberReceiveDates(
-      members.length,
-      roundCount,
-      startDate,
-      endDate,
-      completed,
+      committee: committee,
+      members: members,
+      roundCount: roundCount,
+      startDate: startDate,
+      endingDate: scheduledEndDate,
+      completed: completed,
     );
     final int completedRounds = memberReceiveDates
         .where((date) => date != null)
@@ -284,8 +286,14 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
   }
 
   bool _isCompleted(Map<String, dynamic> committee) {
-    final DateTime? endingDate = _parseDate(committee['endingDate']);
-    if (endingDate == null) return false;
+    final DateTime? startDate = _parseDate(committee['startDate']);
+    final int rounds = committeeCycleCount(committee);
+    if (startDate == null ||
+        rounds <= 0 ||
+        _membersFor(committee).length < rounds) {
+      return false;
+    }
+    final DateTime endingDate = committeeDateForCycle(startDate, rounds);
     final DateTime today = DateUtils.dateOnly(DateTime.now());
     return DateUtils.dateOnly(endingDate).isBefore(today);
   }
@@ -301,40 +309,48 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
         .toList();
   }
 
-  int _roundCount(Map<String, dynamic> committee, int memberCount) {
-    final int duration = _integer(committee['duration'], 0);
-    final String unit = (committee['unit'] ?? committee['durationUnit'] ?? '')
-        .toString()
-        .toLowerCase();
-
-    final double months = switch (unit) {
-      'year' || 'years' => duration * 12.0,
-      'week' || 'weeks' => duration / 4.345,
-      'day' || 'days' => duration / 30,
-      _ => duration.toDouble(),
-    };
-    final int configuredRounds = months.ceil();
-    if (memberCount == 0) return configuredRounds;
-    return configuredRounds < memberCount ? configuredRounds : memberCount;
+  int _roundCount(Map<String, dynamic> committee) {
+    return committeeCycleCount(committee);
   }
 
-  List<DateTime?> _memberReceiveDates(
-    int memberCount,
-    int roundCount,
-    DateTime? startDate,
-    DateTime? endingDate,
-    bool completed,
-  ) {
-    final List<DateTime?> dates = List<DateTime?>.filled(memberCount, null);
+  List<DateTime?> _memberReceiveDates({
+    required Map<String, dynamic> committee,
+    required List<Map<String, dynamic>> members,
+    required int roundCount,
+    required DateTime? startDate,
+    required DateTime? endingDate,
+    required bool completed,
+  }) {
+    final List<DateTime?> dates = List<DateTime?>.filled(members.length, null);
     if (startDate == null || roundCount <= 0) return dates;
 
     final DateTime today = DateUtils.dateOnly(DateTime.now());
-    for (int index = 0; index < memberCount && index < roundCount; index++) {
-      final DateTime scheduledDate = _addMonthsClamped(startDate, index);
+    final dynamic savedSelections = committee['receivingSelections'];
+    for (int index = 0; index < roundCount; index++) {
+      final DateTime scheduledDate = committeeDateForCycle(startDate, index + 1);
       final bool roundComplete = completed
           ? endingDate != null && !scheduledDate.isAfter(endingDate)
           : !DateUtils.dateOnly(scheduledDate).isAfter(today);
-      if (roundComplete) dates[index] = scheduledDate;
+      if (!roundComplete) continue;
+
+      final String selectionKey =
+          '${scheduledDate.year}-${scheduledDate.month.toString().padLeft(2, '0')}';
+      final String? selectedName = savedSelections is Map
+          ? savedSelections[selectionKey]?.toString()
+          : null;
+      final int memberIndex = selectedName == null
+          ? index
+          : members.indexWhere((member) {
+              final String name = member['name']?.toString().trim() ?? '';
+              final String username =
+                  member['username']?.toString().trim() ?? '';
+              return name == selectedName ||
+                  username == selectedName ||
+                  username.replaceFirst('@', '') == selectedName;
+            });
+      if (memberIndex >= 0 && memberIndex < dates.length) {
+        dates[memberIndex] = scheduledDate;
+      }
     }
 
     return dates;
@@ -367,29 +383,10 @@ class _CommitteeHistoryViewState extends State<CommitteeHistoryView> {
     return result;
   }
 
-  DateTime _addMonthsClamped(DateTime date, int months) {
-    final DateTime targetMonth = DateTime(date.year, date.month + months, 1);
-    final int lastDay = DateTime(
-      targetMonth.year,
-      targetMonth.month + 1,
-      0,
-    ).day;
-    return DateTime(
-      targetMonth.year,
-      targetMonth.month,
-      date.day > lastDay ? lastDay : date.day,
-    );
-  }
-
   DateTime? _parseDate(dynamic value) {
     if (value is DateTime) return value;
     if (value == null) return null;
     return DateTime.tryParse(value.toString());
-  }
-
-  int _integer(dynamic value, int fallback) {
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
   double _number(dynamic value) {

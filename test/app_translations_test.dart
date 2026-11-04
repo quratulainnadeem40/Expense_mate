@@ -323,6 +323,7 @@ void main() {
       'Phone: @number',
       '@count / @total Added',
       'Change Payment Status',
+      'Select all payments',
       'Current status: @status',
       'Tap any payment record to change its status.',
       'No committees available yet.',
@@ -330,6 +331,10 @@ void main() {
       'Not received yet',
       'Total amount',
       'Monthly installment',
+      'First Committee Payout',
+      'The first installment is collected on the start date. The first payout happens after one month, then one member receives the committee each month until everyone has received it.',
+      'Due date: @date',
+      '@name · Installment @installment of @total',
       'Total members',
       'Start date',
       '@count members x @amount',
@@ -344,6 +349,11 @@ void main() {
     expect(urdu['Phone: @number'], contains('@number'));
     expect(urdu['@count / @total Added'], contains('@count'));
     expect(urdu['@count members x @amount'], contains('@amount'));
+    expect(urdu['Due date: @date'], contains('@date'));
+    expect(
+      urdu['@name · Installment @installment of @total'],
+      contains('@installment'),
+    );
   });
 
   test('Urdu translates snackbar validation and account messages', () {

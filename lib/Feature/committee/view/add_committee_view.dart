@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
+import '../model/committee_schedule.dart';
 
 class AddCommitteeView extends StatefulWidget {
   const AddCommitteeView({super.key});
@@ -23,8 +24,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
   DateTime? startDate;
   DateTime? endingDate;
-
-  String durationUnit = 'Months';
 
   final CommitteeController committeeController = CommitteeController.instance;
 
@@ -71,7 +70,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   void initState() {
     super.initState();
 
-    durationController.addListener(_onInputChanged);
     contributionController.addListener(_onContributionChanged);
     membersController.addListener(_onInputChanged);
   }
@@ -82,7 +80,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
     contributionController.removeListener(_onContributionChanged);
     membersController.removeListener(_onInputChanged);
-    durationController.removeListener(_onInputChanged);
 
     contributionController.dispose();
     membersController.dispose();
@@ -92,6 +89,14 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
   }
 
   void _onInputChanged() {
+    final int memberCount = int.tryParse(membersController.text.trim()) ?? 0;
+    final String calculatedDuration = memberCount > 0
+        ? memberCount.toString()
+        : '';
+    if (durationController.text != calculatedDuration) {
+      durationController.text = calculatedDuration;
+    }
+
     _calculateEndingDate();
 
     if (mounted) {
@@ -174,56 +179,14 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       return;
     }
 
-    final int duration = int.tryParse(durationController.text.trim()) ?? 0;
+    final int memberCount = int.tryParse(membersController.text.trim()) ?? 0;
 
-    if (duration <= 0) {
+    if (memberCount <= 0) {
       endingDate = null;
       return;
     }
 
-    DateTime calculatedDate;
-
-    switch (durationUnit) {
-      case 'Days':
-        calculatedDate = startDate!.add(Duration(days: duration));
-        break;
-
-      case 'Weeks':
-        calculatedDate = startDate!.add(Duration(days: duration * 7));
-        break;
-
-      case 'Months':
-        final int targetYear =
-            startDate!.year + ((startDate!.month - 1 + duration) ~/ 12);
-
-        final int targetMonth = ((startDate!.month - 1 + duration) % 12) + 1;
-
-        final int lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
-
-        final int targetDay = startDate!.day > lastDay
-            ? lastDay
-            : startDate!.day;
-
-        calculatedDate = DateTime(targetYear, targetMonth, targetDay);
-        break;
-
-      case 'Years':
-        final int targetYear = startDate!.year + duration;
-
-        final int lastDay = DateTime(targetYear, startDate!.month + 1, 0).day;
-
-        final int targetDay = startDate!.day > lastDay
-            ? lastDay
-            : startDate!.day;
-
-        calculatedDate = DateTime(targetYear, startDate!.month, targetDay);
-        break;
-
-      default:
-        calculatedDate = startDate!.add(Duration(days: duration));
-    }
-
-    endingDate = calculatedDate;
+    endingDate = committeeDateForCycle(startDate!, memberCount);
   }
 
   Future<void> selectStartDate() async {
@@ -285,31 +248,9 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
     return contribution * members;
   }
 
-  double get durationInMonths {
-    final int duration = int.tryParse(durationController.text.trim()) ?? 0;
-
-    if (duration <= 0) return 0;
-
-    switch (durationUnit) {
-      case 'Days':
-        return duration / 30;
-      case 'Weeks':
-        return duration / 4.345;
-      case 'Months':
-        return duration.toDouble();
-      case 'Years':
-        return duration * 12;
-      default:
-        return duration.toDouble();
-    }
-  }
-
   double get totalDurationAmount {
-    final int duration = int.tryParse(durationController.text.trim()) ?? 0;
-
-    if (duration <= 0) return 0;
-
-    return monthlyCommitteeAmount * duration;
+    final int memberCount = int.tryParse(membersController.text.trim()) ?? 0;
+    return monthlyCommitteeAmount * memberCount;
   }
 
   String _formatAmount(double amount) {
@@ -396,8 +337,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
         .trim();
 
     final String membersText = membersController.text.trim();
-    final String durationText = durationController.text.trim();
-
     if (name.isEmpty) {
       showMessage('Please enter committee name.'.tr);
       return;
@@ -413,11 +352,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       return;
     }
 
-    if (durationText.isEmpty) {
-      showMessage('Please enter duration.'.tr);
-      return;
-    }
-
     if (startDate == null) {
       showMessage('Please select start date.'.tr);
       return;
@@ -425,8 +359,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
     final double? contribution = double.tryParse(contributionText);
     final int? members = int.tryParse(membersText);
-    final int? duration = int.tryParse(durationText);
-
     if (contribution == null || contribution <= 0) {
       showMessage('Please enter a valid monthly contribution.'.tr);
       return;
@@ -437,15 +369,10 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       return;
     }
 
-    if (duration == null || duration <= 0) {
-      showMessage('Please enter a valid duration.'.tr);
-      return;
-    }
-
     _calculateEndingDate();
 
     if (endingDate == null) {
-      showMessage('Please enter a valid duration.'.tr);
+      showMessage('Please enter a valid number of members.'.tr);
       return;
     }
 
@@ -453,8 +380,6 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       name: name,
       contribution: contribution,
       memberCount: members,
-      committeeDuration: duration,
-      unit: durationUnit,
       committeeStartDate: startDate!,
       committeeEndingDate: endingDate!,
     );
@@ -463,8 +388,8 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
       'name': name,
       'contribution': contribution,
       'members': members,
-      'duration': duration,
-      'durationUnit': durationUnit,
+      'duration': members,
+      'durationUnit': 'Months',
       'startDate': startDate,
       'endingDate': endingDate,
       'monthlyCommitteeAmount': monthlyCommitteeAmount,
@@ -555,71 +480,17 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
 
             const SizedBox(height: 16),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: durationController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style: TextStyle(color: primaryText),
-                    decoration: _inputDecoration(label: 'Duration'.tr),
-                  ),
+            TextField(
+              controller: durationController,
+              readOnly: true,
+              style: TextStyle(color: primaryText),
+              decoration: _inputDecoration(
+                label: 'Duration'.tr,
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Text('Months'.tr),
                 ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: durationUnit,
-                    decoration: _inputDecoration(label: 'Unit'.tr),
-                    dropdownColor: cardBackground,
-                    iconEnabledColor: isDark
-                        ? const Color(0xFF7DD6A8)
-                        : greenAccent,
-                    style: TextStyle(color: primaryText, fontSize: 16),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'Days',
-                        child: Text(
-                          'Days'.tr,
-                          style: TextStyle(color: primaryText),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Weeks',
-                        child: Text(
-                          'Weeks'.tr,
-                          style: TextStyle(color: primaryText),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Months',
-                        child: Text(
-                          'Months'.tr,
-                          style: TextStyle(color: primaryText),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Years',
-                        child: Text(
-                          'Years'.tr,
-                          style: TextStyle(color: primaryText),
-                        ),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-
-                      setState(() {
-                        durationUnit = value;
-                        _calculateEndingDate();
-                      });
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -667,6 +538,15 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
             ),
 
             _buildDateField(
+              label: 'First Committee Payout'.tr,
+              date: startDate == null
+                  ? null
+                  : committeeDateForCycle(startDate!, 1),
+              onTap: () {},
+              readOnly: true,
+            ),
+
+            _buildDateField(
               label: 'Ending Date'.tr,
               date: endingDate,
               onTap: () {},
@@ -674,6 +554,12 @@ class _AddCommitteeViewState extends State<AddCommitteeView> {
             ),
 
             const SizedBox(height: 8),
+            Text(
+              'The first installment is collected on the start date. The first payout happens after one month, then one member receives the committee each month until everyone has received it.'
+                  .tr,
+              style: TextStyle(color: secondaryText, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 16),
 
             SizedBox(
               width: double.infinity,

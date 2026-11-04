@@ -1206,6 +1206,7 @@ class AppTranslations extends Translations {
     'Payment Records': 'Payment Records',
     'Payment Tracking': 'Payment Tracking',
     'Select all members': 'Select all members',
+    'Select all payments': 'Select all payments',
     'Date not added': 'Date not added',
     'Total Pool': 'Total Pool',
     'Duration': 'Duration',
@@ -1219,6 +1220,8 @@ class AppTranslations extends Translations {
     'Enter a valid member quantity': 'Enter a valid member quantity',
     'Cannot be less than members already added':
         'Cannot be less than members already added',
+    'Cannot be less than members or installments already recorded.':
+        'Cannot be less than members or installments already recorded.',
     'Enter duration': 'Enter duration',
     'Unit': 'Unit',
     'Days': 'Days',
@@ -1226,6 +1229,7 @@ class AppTranslations extends Translations {
     'Months': 'Months',
     'Years': 'Years',
     'Start Date': 'Start Date',
+    'First Committee Payout': 'First Committee Payout',
     'Ending Date': 'Ending Date',
     'Change Start Date': 'Change Start Date',
     'Save Changes': 'Save Changes',
@@ -1270,6 +1274,9 @@ class AppTranslations extends Translations {
     'Father/Husband: Not Added': 'Father/Husband: Not Added',
     'Phone: Not Added': 'Phone: Not Added',
     'Payment Status: @status': 'Payment Status: @status',
+    'Due date: @date': 'Due date: @date',
+    '@name · Installment @installment of @total':
+        '@name · Installment @installment of @total',
     'Allocation method': 'Allocation method',
     'Added order': 'Added order',
     'Spin & win': 'Spin & win',
@@ -1524,8 +1531,10 @@ class AppTranslations extends Translations {
     '@name History': '@name History',
     'Add committee members to create its receiving order.':
         'Add committee members to create its receiving order.',
-    'Set the committee start date and duration to create its schedule.':
-        'Set the committee start date and duration to create its schedule.',
+    'Add committee members and set its start date to create its schedule.':
+        'Add committee members and set its start date to create its schedule.',
+    'The first installment is collected on the start date. The first payout happens after one month, then one member receives the committee each month until everyone has received it.':
+        'The first installment is collected on the start date. The first payout happens after one month, then one member receives the committee each month until everyone has received it.',
     'Open a committee to view its schedule and select a receiving member.':
         'Open a committee to view its schedule and select a receiving member.',
     'Committee Schedule': 'Committee Schedule',
@@ -2089,6 +2098,7 @@ class AppTranslations extends Translations {
     'Payment Records': 'ادائیگی کے ریکارڈز',
     'Payment Tracking': 'ادائیگی کا ٹریکنگ',
     'Select all members': 'تمام ارکان منتخب کریں',
+    'Select all payments': 'تمام ادائیگیاں منتخب کریں',
     'Date not added': 'تاریخ شامل نہیں کی گئی',
     'Total Pool': 'کل رقم',
     'Duration': 'مدت',
@@ -2103,6 +2113,8 @@ class AppTranslations extends Translations {
     'Enter a valid member quantity': 'براہِ کرم درست ارکان کی تعداد درج کریں',
     'Cannot be less than members already added':
         'پہلے سے شامل ارکان سے کم نہیں ہو سکتا',
+    'Cannot be less than members or installments already recorded.':
+        'اراکین یا پہلے سے درج قسطوں کی تعداد سے کم نہیں ہو سکتا۔',
     'Enter duration': 'مدت درج کریں',
     'Unit': 'واحد',
     'Days': 'دن',
@@ -2110,6 +2122,7 @@ class AppTranslations extends Translations {
     'Months': 'ماہ',
     'Years': 'سال',
     'Start Date': 'شروع ہونے کی تاریخ',
+    'First Committee Payout': 'پہلی کمیٹی کی ادائیگی',
     'Ending Date': 'ختم ہونے کی تاریخ',
     'Change Start Date': 'شروع ہونے کی تاریخ تبدیل کریں',
     'Save Changes': 'تبدیلیاں محفوظ کریں',
@@ -2156,6 +2169,9 @@ class AppTranslations extends Translations {
     'Phone: Not Added': 'فون: شامل نہیں ہوا',
     'Phone: @number': 'فون: @number',
     'Payment Status: @status': 'ادائیگی کی حیثیت: @status',
+    'Due date: @date': 'مقررہ تاریخ: @date',
+    '@name · Installment @installment of @total':
+        '@name · @total میں سے قسط @installment',
     'No Members Added': 'کوئی رکن شامل نہیں ہوا',
     'Tap "Add Member" to add committee members.':
         'کمیٹی کے ارکان شامل کرنے کے لیے "Add Member" پر کلک کریں۔',
@@ -2169,6 +2185,8 @@ class AppTranslations extends Translations {
         'اس راؤنڈ کے وصول کنندہ کو بے ترتیب منتخب کرنے کے لیے پہیہ گھمائیں۔',
     'Total amount': 'کل رقم',
     'Monthly installment': 'ماہانہ قسط',
+    'The first installment is collected on the start date. The first payout happens after one month, then one member receives the committee each month until everyone has received it.':
+        'پہلی قسط کمیٹی شروع ہونے کی تاریخ پر جمع ہوگی۔ پہلی کمیٹی ایک پورا مہینہ مکمل ہونے کے بعد نکلے گی، پھر ہر ماہ ایک رکن کو کمیٹی ملے گی جب تک سب اراکین کو کمیٹی نہ مل جائے۔',
     'Total members': 'اراکین کی کل تعداد',
     'Start date': 'شروع ہونے کی تاریخ',
     'Not received yet': 'ابھی تک وصول نہیں ہوا',
@@ -2539,8 +2557,8 @@ class AppTranslations extends Translations {
     '@name History': '@name کی ہسٹری',
     'Add committee members to create its receiving order.':
         'وصولی کی ترتیب بنانے کے لیے کمیٹی کے اراکین شامل کریں۔',
-    'Set the committee start date and duration to create its schedule.':
-        'شیڈول بنانے کے لیے کمیٹی کی آغاز کی تاریخ اور مدت مقرر کریں۔',
+    'Add committee members and set its start date to create its schedule.':
+        'شیڈول بنانے کے لیے کمیٹی کے اراکین اور آغاز کی تاریخ مقرر کریں۔',
     'Open a committee to view its schedule and select a receiving member.':
         'شیڈول دیکھنے اور وصول کنندہ رکن منتخب کرنے کے لیے کمیٹی کھولیں۔',
     'Committee Schedule': 'کمیٹی کا شیڈول',
@@ -3098,6 +3116,7 @@ class AppTranslations extends Translations {
     'Payment Records': 'د تادیاتو ریکارډونه',
     'Payment Tracking': 'د تادیاتو تعقیب',
     'Select all members': 'ټول غړي وټاکئ',
+    'Select all payments': 'ټولې تادیات وټاکئ',
     'Date not added': 'نیټه اضافه شوې نه ده',
     'Total Pool': 'ټول pooled',
     'Duration': 'مدت',
@@ -3118,6 +3137,7 @@ class AppTranslations extends Translations {
     'Months': 'میاشتې',
     'Years': 'کالونه',
     'Start Date': 'د پیل نېټه',
+    'First Committee Payout': 'د کمیټې لومړی ترلاسه کول',
     'Ending Date': 'د پای نېټه',
     'Change Start Date': 'د پیل نېټه بدل کړئ',
     'Save Changes': 'بدلونونه خوندي کړئ',
@@ -3162,6 +3182,9 @@ class AppTranslations extends Translations {
     'Father/Husband: Not Added': 'د پلار/موسمان: اضافه شوی نه دی',
     'Phone: Not Added': 'تلیفون: اضافه شوی نه دی',
     'Payment Status: @status': 'د تادیاتو حالت: @status',
+    'Due date: @date': 'د ورکړې نېټه: @date',
+    '@name · Installment @installment of @total':
+        '@name · د @total څخه قسط @installment',
     'No Members Added': 'هیڅ غړي اضافه شوي ندي',
     'Tap "Add Member" to add committee members.':
         'د کمیټې غړو اضافه کولو لپاره "Add Member" فشار کړئ.',

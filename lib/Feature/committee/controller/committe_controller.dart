@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:expense_mate/Feature/committee/model/committee_reminder_occurrence.dart';
+import 'package:expense_mate/Feature/committee/model/committee_schedule.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -149,6 +150,7 @@ class CommitteeController extends GetxController {
             );
 
             restored['paymentDate'] = _parseDate(restored['paymentDate']);
+            restored['dueDate'] = _parseDate(restored['dueDate']);
 
             return restored;
           }).toList();
@@ -280,8 +282,6 @@ class CommitteeController extends GetxController {
     required String name,
     required double contribution,
     required int memberCount,
-    required int committeeDuration,
-    required String unit,
     required DateTime committeeStartDate,
     required DateTime committeeEndingDate,
   }) {
@@ -294,8 +294,8 @@ class CommitteeController extends GetxController {
       'name': name.trim(),
       'contribution': contribution,
       'memberCount': memberCount,
-      'duration': committeeDuration,
-      'unit': unit,
+      'duration': memberCount,
+      'unit': 'Months',
       'startDate': committeeStartDate,
       'endingDate': committeeEndingDate,
       'allocationMode': 'sequence',
@@ -345,13 +345,8 @@ class CommitteeController extends GetxController {
         ) ??
         0;
 
-    duration.value =
-        int.tryParse(committee['duration']?.toString() ?? '0') ?? 0;
-
-    durationUnit.value =
-        committee['unit']?.toString() ??
-        committee['durationUnit']?.toString() ??
-        'Months';
+    duration.value = totalMembers.value;
+    durationUnit.value = 'Months';
 
     startDate.value = _parseDate(committee['startDate']);
     endingDate.value = _parseDate(committee['endingDate']);
@@ -557,6 +552,8 @@ class CommitteeController extends GetxController {
     required String memberName,
     required double amount,
     required String status,
+    int? installmentNumber,
+    DateTime? dueDate,
     DateTime? paymentDate,
     String? note,
   }) {
@@ -565,6 +562,14 @@ class CommitteeController extends GetxController {
       'amount': amount,
       'status': status,
     };
+
+    if (installmentNumber != null) {
+      payment['installmentNumber'] = installmentNumber;
+    }
+
+    if (dueDate != null) {
+      payment['dueDate'] = dueDate;
+    }
 
     if (paymentDate != null) {
       payment['paymentDate'] = paymentDate;
@@ -681,31 +686,11 @@ class CommitteeController extends GetxController {
   double get monthlyCommitteeAmount => totalPool;
 
   double get durationInMonths {
-    if (duration.value <= 0) return 0;
-
-    switch (durationUnit.value.toLowerCase()) {
-      case 'year':
-      case 'years':
-        return duration.value * 12;
-
-      case 'week':
-      case 'weeks':
-        return duration.value / 4.345;
-
-      case 'day':
-      case 'days':
-        return duration.value / 30;
-
-      case 'month':
-      case 'months':
-      default:
-        return duration.value.toDouble();
-    }
+    return totalMembers.value.toDouble();
   }
 
   double get totalDurationAmount {
-    if (duration.value <= 0) return 0;
-    return totalPool * duration.value;
+    return totalPool * totalMembers.value;
   }
 
   List<CommitteeReminderOccurrence> get reminderOccurrences {
@@ -721,36 +706,22 @@ class CommitteeController extends GetxController {
 
     if (!hasCommittee ||
         members.isEmpty ||
-        durationInMonths <= 0 ||
+        totalMembers.value <= 0 ||
         startDate.value == null) {
       return result;
     }
 
-    final int months = durationInMonths.ceil();
+    final int months = totalMembers.value;
 
     for (int i = 0; i < months; i++) {
-      final DateTime firstDay = startDate.value!;
-
-      final DateTime targetMonth = DateTime(
-        firstDay.year,
-        firstDay.month + i,
-        1,
+      final DateTime receivingDate = committeeDateForCycle(
+        startDate.value!,
+        i + 1,
       );
 
-      final int lastDay = DateTime(
-        targetMonth.year,
-        targetMonth.month + 1,
-        0,
-      ).day;
-
-      final DateTime receivingDate = DateTime(
-        targetMonth.year,
-        targetMonth.month,
-        firstDay.day > lastDay ? lastDay : firstDay.day,
-      );
-
-      final String defaultMember =
-          members[i % members.length]['name']?.toString() ?? 'Member';
+      final String defaultMember = i < members.length
+          ? members[i]['name']?.toString() ?? 'Member'
+          : 'Member';
 
       final String? savedMember = getReceivingSelection(receivingDate);
 
@@ -877,16 +848,14 @@ class CommitteeController extends GetxController {
     required String name,
     required double contribution,
     required int memberCount,
-    required int committeeDuration,
-    required String unit,
     required DateTime committeeStartDate,
     required DateTime committeeEndingDate,
   }) {
     committeeName.value = name.trim();
     monthlyContribution.value = contribution;
     totalMembers.value = memberCount;
-    duration.value = committeeDuration;
-    durationUnit.value = unit;
+    duration.value = memberCount;
+    durationUnit.value = 'Months';
     startDate.value = committeeStartDate;
     endingDate.value = committeeEndingDate;
 

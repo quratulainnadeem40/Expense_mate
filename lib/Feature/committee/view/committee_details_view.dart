@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
+import '../model/committee_schedule.dart';
 
 class CommitteeDetailsView extends StatefulWidget {
   final bool membersOnly;
@@ -131,50 +132,6 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
-  }
-
-  DateTime _calculateEndingDate({
-    required DateTime startDate,
-    required int duration,
-    required String unit,
-  }) {
-    final String normalizedUnit = unit.toLowerCase().trim();
-
-    if (normalizedUnit == 'day' || normalizedUnit == 'days') {
-      return startDate.add(Duration(days: duration));
-    }
-
-    if (normalizedUnit == 'week' || normalizedUnit == 'weeks') {
-      return startDate.add(Duration(days: duration * 7));
-    }
-
-    if (normalizedUnit == 'month' || normalizedUnit == 'months') {
-      final int totalMonths =
-          startDate.year * 12 + startDate.month - 1 + duration;
-
-      final int year = totalMonths ~/ 12;
-      final int month = totalMonths % 12 + 1;
-      final int lastDay = DateTime(year, month + 1, 0).day;
-
-      return DateTime(
-        year,
-        month,
-        startDate.day > lastDay ? lastDay : startDate.day,
-      );
-    }
-
-    if (normalizedUnit == 'year' || normalizedUnit == 'years') {
-      final int year = startDate.year + duration;
-      final int lastDay = DateTime(year, startDate.month + 1, 0).day;
-
-      return DateTime(
-        year,
-        startDate.month,
-        startDate.day > lastDay ? lastDay : startDate.day,
-      );
-    }
-
-    return startDate.add(Duration(days: duration * 30));
   }
 
   double get _totalPayment => committeeController.totalDurationAmount;
@@ -373,17 +330,7 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
     );
 
     final TextEditingController durationController = TextEditingController(
-      text: committeeController.duration.value.toString(),
-    );
-
-    final List<String> unitKeys = ['Months', 'Years', 'Weeks', 'Days'];
-    final List<String> units = unitKeys.map((unit) => unit.tr).toList();
-
-    String selectedUnit = unitKeys.firstWhere(
-      (unit) =>
-          unit.toLowerCase() ==
-          committeeController.durationUnit.value.toLowerCase(),
-      orElse: () => 'Months',
+      text: committeeController.totalMembers.value.toString(),
     );
 
     DateTime selectedStartDate =
@@ -401,14 +348,14 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
             data: dialogTheme,
             child: StatefulBuilder(
               builder: (dialogContext, setDialogState) {
-                final int selectedDuration =
-                    int.tryParse(durationController.text.trim()) ?? 1;
-
-                final DateTime endingDate = _calculateEndingDate(
-                  startDate: selectedStartDate,
-                  duration: selectedDuration > 0 ? selectedDuration : 1,
-                  unit: selectedUnit,
-                );
+                final int selectedMemberCount =
+                    int.tryParse(membersController.text.trim()) ?? 0;
+                final DateTime? endingDate = selectedMemberCount > 0
+                    ? committeeDateForCycle(
+                        selectedStartDate,
+                        selectedMemberCount,
+                      )
+                    : null;
 
                 return AlertDialog(
                   title: Text(
@@ -483,71 +430,46 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                                     .tr;
                               }
 
+                              final int lastRecordedInstallment =
+                                  committeeController.payments.fold<int>(
+                                    1,
+                                    (highest, payment) {
+                                      final int installment = int.tryParse(
+                                            payment['installmentNumber']
+                                                    ?.toString() ??
+                                                '',
+                                          ) ??
+                                          1;
+                                      return installment > highest
+                                          ? installment
+                                          : highest;
+                                    },
+                                  );
+                              if (count < lastRecordedInstallment) {
+                                return 'Cannot be less than members or installments already recorded.'
+                                    .tr;
+                              }
+
                               return null;
+                            },
+                            onChanged: (value) {
+                              final int count = int.tryParse(value.trim()) ?? 0;
+                              durationController.text = count > 0
+                                  ? count.toString()
+                                  : '';
+                              setDialogState(() {});
                             },
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: durationController,
-                                  keyboardType: TextInputType.number,
-                                  style: TextStyle(color: primaryText),
-                                  decoration: InputDecoration(
-                                    labelText: 'Duration'.tr,
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                  onChanged: (_) {
-                                    setDialogState(() {});
-                                  },
-                                  validator: (value) {
-                                    final int? number = int.tryParse(
-                                      value?.trim() ?? '',
-                                    );
-
-                                    if (number == null || number <= 0) {
-                                      return 'Enter duration'.tr;
-                                    }
-
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 3,
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: selectedUnit,
-                                  isExpanded: true,
-                                  dropdownColor: cardBackground,
-                                  style: TextStyle(color: primaryText),
-                                  decoration: InputDecoration(
-                                    labelText: 'Unit'.tr,
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                  items: units.asMap().entries.map((entry) {
-                                    final unit = unitKeys[entry.key];
-                                    final localizedValue = entry.value;
-                                    return DropdownMenuItem<String>(
-                                      value: unit,
-                                      child: Text(
-                                        localizedValue,
-                                        style: TextStyle(color: primaryText),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setDialogState(() {
-                                        selectedUnit = value;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: durationController,
+                            readOnly: true,
+                            style: TextStyle(color: primaryText),
+                            decoration: InputDecoration(
+                              labelText: 'Duration'.tr,
+                              suffixText: 'Months'.tr,
+                              border: const OutlineInputBorder(),
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Align(
@@ -602,6 +524,14 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
+                              '${'First Committee Payout'.tr}: ${_formatDate(committeeDateForCycle(selectedStartDate, 1))}',
+                              style: TextStyle(color: primaryText),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
                               '${'Ending Date'.tr}: ${_formatDate(endingDate)}',
                               style: TextStyle(color: secondaryText),
                             ),
@@ -630,10 +560,6 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                           return;
                         }
 
-                        final int duration = int.parse(
-                          durationController.text.trim(),
-                        );
-
                         final double contribution = double.parse(
                           contributionController.text.trim(),
                         );
@@ -643,18 +569,12 @@ class _CommitteeDetailsViewState extends State<CommitteeDetailsView> {
                         );
 
                         final DateTime calculatedEndingDate =
-                            _calculateEndingDate(
-                              startDate: selectedStartDate,
-                              duration: duration,
-                              unit: selectedUnit,
-                            );
+                            committeeDateForCycle(selectedStartDate, memberCount);
 
                         committeeController.updateCurrentCommittee(
                           name: nameController.text.trim(),
                           contribution: contribution,
                           memberCount: memberCount,
-                          committeeDuration: duration,
-                          unit: selectedUnit,
                           committeeStartDate: selectedStartDate,
                           committeeEndingDate: calculatedEndingDate,
                         );

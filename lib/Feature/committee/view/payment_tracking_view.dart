@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controller/committe_controller.dart';
+import '../model/committee_schedule.dart';
 import '../widgets/payment_card.dart';
 
 class PaymentTrackingView extends StatefulWidget {
@@ -38,17 +39,14 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
 
   void _createPaymentRecordsForMembers() {
     final members = committeeController.members;
+    final DateTime? startDate = committeeController.startDate.value;
+    final int cycleCount = committeeController.totalMembers.value;
+    if (startDate == null || cycleCount <= 0) return;
 
     for (final member in members) {
       final String memberName = member['name']?.toString().trim() ?? '';
 
       if (memberName.isEmpty) continue;
-
-      final bool alreadyExists = committeeController.payments.any(
-        (payment) => payment['memberName']?.toString() == memberName,
-      );
-
-      if (alreadyExists) continue;
 
       final double contribution = member['contribution'] is num
           ? (member['contribution'] as num).toDouble()
@@ -57,11 +55,25 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                 ) ??
                 committeeController.monthlyContribution.value;
 
-      committeeController.addPayment(
-        memberName: memberName,
-        amount: contribution,
-        status: 'Pending',
-      );
+      for (int cycleIndex = 0; cycleIndex < cycleCount; cycleIndex++) {
+        final int installmentNumber = cycleIndex + 1;
+        final bool alreadyExists = committeeController.payments.any((payment) {
+          if (payment['memberName']?.toString() != memberName) return false;
+          final int savedInstallment =
+              int.tryParse(payment['installmentNumber']?.toString() ?? '') ??
+              1;
+          return savedInstallment == installmentNumber;
+        });
+        if (alreadyExists) continue;
+
+        committeeController.addPayment(
+          memberName: memberName,
+          amount: contribution,
+          status: 'Pending',
+          installmentNumber: installmentNumber,
+          dueDate: committeeDateForCycle(startDate, cycleIndex),
+        );
+      }
     }
   }
 
@@ -551,7 +563,7 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8,
                         ),
-                        title: Text('Select all members'.tr),
+                        title: Text('Select all payments'.tr),
                         subtitle: Text(
                           '@count of @total selected'.trParams({
                             'count': '${_selectedPaymentIndices.length}',
@@ -633,10 +645,44 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                             payment['paymentDate'] is DateTime
                             ? payment['paymentDate'] as DateTime
                             : null;
+                        final DateTime? dueDate = payment['dueDate'] is DateTime
+                            ? payment['dueDate'] as DateTime
+                            : null;
 
+                        final int installmentNumber =
+                            int.tryParse(
+                              payment['installmentNumber']?.toString() ?? '',
+                            ) ??
+                            1;
+                        final DateTime? installmentDueDate =
+                            dueDate ??
+                            (installmentNumber == 1
+                                ? committeeController.startDate.value
+                                : null);
                         final String dateText = paymentDate != null
                             ? _formatDate(paymentDate)
+                            : installmentDueDate != null
+                            ? _formatDate(installmentDueDate)
                             : 'Date not added'.tr;
+                        final String memberName =
+                            payment['memberName']?.toString() ??
+                            'Member Name'.tr;
+                        final String installmentLabel =
+                            '@name · Installment @installment of @total'.trParams({
+                              'name': memberName,
+                              'installment': '$installmentNumber',
+                              'total':
+                                  '${committeeController.totalMembers.value}',
+                            });
+                        final List<String> paymentNotes = [
+                          if (payment['note']?.toString().trim().isNotEmpty ==
+                              true)
+                            payment['note'].toString(),
+                          if (installmentDueDate != null)
+                            'Due date: @date'.trParams({
+                              'date': _formatDate(installmentDueDate),
+                            }),
+                        ];
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
@@ -672,15 +718,15 @@ class _PaymentTrackingViewState extends State<PaymentTrackingView> {
                                         : () => _changeStatus(index),
                                     borderRadius: BorderRadius.circular(16),
                                     child: PaymentCard(
-                                      memberName:
-                                          payment['memberName']?.toString() ??
-                                          'Member Name'.tr,
+                                      memberName: installmentLabel,
                                       amount: _formatAmount(amount),
                                       paymentDate: dateText,
                                       status:
                                           payment['status']?.toString() ??
                                           'Pending',
-                                      note: payment['note']?.toString(),
+                                      note: paymentNotes.isEmpty
+                                          ? null
+                                          : paymentNotes.join(' · '),
                                     ),
                                   ),
                                 ),
