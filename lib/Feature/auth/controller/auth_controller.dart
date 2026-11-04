@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:expense_mate/Core/routes/app_routes.dart';
+import 'package:expense_mate/Feature/pin/view/pin_lock_view.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -61,17 +63,40 @@ class AuthController extends GetxController {
         // Straight in if a PIN already exists on this phone, otherwise
         // offer to create one. Skipping is allowed, so signing in never
         // becomes a two-step affair for someone who does not want it.
-        if (PinService.instance.isPinSet) {
-          Get.offAllNamed(AppRoutes.home);
-        } else {
-          Get.offAllNamed(
-            AppRoutes.pinSetup,
-            arguments: {
-              PinSetupView.argNextRoute: AppRoutes.home,
-              PinSetupView.argCanSkip: true,
-            },
-          );
-        }
+        if (_supabase.auth.currentSession == null) {
+  // Email confirmation is required before PIN setup.
+  Get.offAllNamed(AppRoutes.login);
+  return;
+}
+
+try {
+  final hasPin = await PinService.instance.hasPinOnServer();
+
+  if (hasPin) {
+    Get.offAllNamed(
+      AppRoutes.pinLock,
+      arguments: {
+        PinLockView.argNextRoute: AppRoutes.home,
+      },
+    );
+  } else {
+    Get.offAllNamed(
+      AppRoutes.pinSetup,
+      arguments: {
+        PinSetupView.argNextRoute: AppRoutes.home,
+        PinSetupView.argCanSkip: false,
+      },
+    );
+  }
+} catch (e) {
+  debugPrint('SIGNUP PIN STATUS ERROR: $e');
+
+  Get.snackbar(
+    'Connection Error',
+    'Unable to check PIN status. Please try again.',
+    snackPosition: SnackPosition.BOTTOM,
+  );
+}
       }
     } on AuthException catch (e) {
       _showError(e.message);
@@ -104,28 +129,42 @@ class AuthController extends GetxController {
         password: password,
       );
 
-      if (response.user != null) {
-        Get.snackbar(
-          'Welcome'.tr,
-          'Login successful'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+    if (response.user != null) {
+  Get.snackbar(
+    'Welcome',
+    'Login successful',
+    snackPosition: SnackPosition.BOTTOM,
+  );
 
-        // Straight in if a PIN already exists on this phone, otherwise
-        // offer to create one. Skipping is allowed, so signing in never
-        // becomes a two-step affair for someone who does not want it.
-        if (PinService.instance.isPinSet) {
-          Get.offAllNamed(AppRoutes.home);
-        } else {
-          Get.offAllNamed(
-            AppRoutes.pinSetup,
-            arguments: {
-              PinSetupView.argNextRoute: AppRoutes.home,
-              PinSetupView.argCanSkip: true,
-            },
-          );
-        }
-      }
+  try {
+    final hasPin = await PinService.instance.hasPinOnServer();
+
+    if (hasPin) {
+      Get.offAllNamed(
+        AppRoutes.pinLock,
+        arguments: {
+          PinLockView.argNextRoute: AppRoutes.home,
+        },
+      );
+    } else {
+      Get.offAllNamed(
+        AppRoutes.pinSetup,
+        arguments: {
+          PinSetupView.argNextRoute: AppRoutes.home,
+          PinSetupView.argCanSkip: false,
+        },
+      );
+    }
+  } catch (e) {
+    debugPrint('LOGIN PIN STATUS ERROR: $e');
+
+    Get.snackbar(
+      'Connection Error',
+      'Unable to check your PIN. Please try again.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+}
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {

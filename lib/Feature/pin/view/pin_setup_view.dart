@@ -85,19 +85,32 @@ class _PinSetupViewState extends State<PinSetupView> {
       });
       return;
     }
+try {
+  // Step 1: Save PIN on Supabase.
+  await PinService.instance.savePinToServer(_entry);
 
-    await PinService.instance.setPin(_entry);
+  // Step 2: Save local PIN for existing app-lock functionality.
+  await PinService.instance.setPin(_entry);
 
-    // Asked right here, while the lock is on the user's mind. Doing it
-    // later from Settings is something almost nobody goes looking for.
-    await _offerBiometric();
+  // Step 3: Offer biometric authentication.
+  await _offerBiometric();
 
-    final next = _nextRoute;
-    if (next != null) {
-      Get.offAllNamed(next);
-    } else {
-      Get.back(result: true);
-    }
+  final next = _nextRoute;
+
+  if (next != null) {
+    Get.offAllNamed(next);
+  } else {
+    Get.back(result: true);
+  }
+} catch (e) {
+  debugPrint('PIN SETUP ERROR: $e');
+
+  Get.snackbar(
+    'PIN Setup Failed',
+    'Unable to save your PIN. Please try again.',
+    snackPosition: SnackPosition.BOTTOM,
+  );
+}
   }
 
   Future<void> _offerBiometric() async {

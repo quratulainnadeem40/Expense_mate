@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/app_keys.dart';
 
 /// Keeps the app lock PIN.
@@ -70,7 +70,57 @@ class PinService {
     await _clearFailures();
     isLocked = false;
   }
+Future<bool> hasPinOnServer() async {
+  try {
+    final response = await Supabase.instance.client.functions.invoke(
+      'pin-status',
+    );
 
+    if (response.status != 200) {
+      throw Exception('Unable to check PIN status');
+    }
+
+    final data = response.data;
+
+    return data['hasPin'] == true;
+  } catch (e) {
+    print('PIN STATUS ERROR: $e');
+    rethrow;
+  }
+}
+Future<void> savePinToServer(String pin) async {
+  try {
+    final response = await Supabase.instance.client.functions.invoke(
+      'set-pin',
+      body: {'pin': pin},
+    );
+
+    if (response.status != 200) {
+      throw Exception(
+        response.data?['error'] ?? 'Unable to save PIN',
+      );
+    }
+  } catch (e) {
+    print('SAVE PIN ERROR: $e');
+    rethrow;
+  }
+}
+Future<Map<String, dynamic>> verifyPinOnServer(String pin) async {
+  try {
+    final response = await Supabase.instance.client.functions.invoke(
+      'verify-pin',
+      body: {'pin': pin},
+    );
+
+    return Map<String, dynamic>.from(response.data);
+  } on FunctionException catch (e) {
+    if (e.status == 401 || e.status == 429) {
+      return Map<String, dynamic>.from(e.details);
+    }
+
+    rethrow;
+  }
+}
   Future<void> clearPin() async {
     final box = _box;
     if (box == null) return;
