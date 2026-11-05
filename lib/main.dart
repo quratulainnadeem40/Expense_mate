@@ -104,8 +104,8 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
     super.dispose();
   }
 
-  /// Requires local authentication after two minutes away when a PIN is
-  /// configured; otherwise the signed-in session must be renewed.
+  /// Requires PIN verification after two minutes away when a PIN is configured;
+  /// otherwise the signed-in session must be renewed.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -219,7 +219,8 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
               ),
               content: Text(
                 'For your security, you were signed out after 2 minutes of '
-                'inactivity. Log in again to continue.'.tr,
+                        'inactivity. Log in again to continue.'
+                    .tr,
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -285,7 +286,6 @@ class _ExpenseMateAppState extends State<ExpenseMateApp>
         darkTheme: AppTheme.darkTheme,
         themeMode: settingsController.isDarkMode.value
             ? ThemeMode.dark
-            
             : ThemeMode.light,
         initialRoute: AppRoutes.splash,
         getPages: AppPages.pages,

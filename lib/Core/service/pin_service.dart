@@ -1,23 +1,17 @@
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/app_keys.dart';
 
-/// Keeps the app lock PIN.
-///
-/// The PIN itself is never written down. Only a salted hash is stored,
-/// so reading the database gives nothing away.
+/// Keeps the app-lock PIN in Supabase; only attempt state stays on-device.
 class PinService {
   PinService._();
 
   static final PinService instance = PinService._();
 
-  static const String _hashKey = 'app_pin_hash';
-  static const String _saltKey = 'app_pin_salt';
-  static const String _setAtKey = 'app_pin_set_at';
+  static const String _legacyHashKey = 'app_pin_hash';
+  static const String _legacySaltKey = 'app_pin_salt';
+  static const String _legacySetAtKey = 'app_pin_set_at';
   static const String _failsKey = 'app_pin_fails';
   static const String _lockedUntilKey = 'app_pin_locked_until';
 
@@ -33,116 +27,110 @@ class PinService {
 
   /// True while the app should be showing the lock screen.
   bool isLocked = false;
+  bool _hasPinOnServer = false;
 
   Box? get _box => Hive.isBoxOpen(AppKeys.settingsBox)
       ? Hive.box(AppKeys.settingsBox)
       : null;
 
-  bool get isPinSet => (_box?.get(_hashKey) as String?)?.isNotEmpty ?? false;
+  bool get isPinSet => _hasPinOnServer;
 
-  // ================================================================
-  // HASHING
-  // ================================================================
-
-  String _newSalt() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-    return base64Url.encode(bytes);
-  }
-
-  String _hash(String pin, String salt) =>
-      sha256.convert(utf8.encode('$salt:$pin')).toString();
-
-  // ================================================================
-  // SET / CHANGE / CLEAR
-  // ================================================================
-
-  Future<void> setPin(String pin) async {
+  Future<void> _removeLegacyLocalPin() async {
     final box = _box;
     if (box == null) return;
 
-    final salt = _newSalt();
-
-    await box.put(_saltKey, salt);
-    await box.put(_hashKey, _hash(pin, salt));
-    await box.put(_setAtKey, DateTime.now().toIso8601String());
-
-    await _clearFailures();
-    isLocked = false;
+    await box.delete(_legacyHashKey);
+    await box.delete(_legacySaltKey);
+    await box.delete(_legacySetAtKey);
   }
-Future<bool> hasPinOnServer() async {
-  try {
-    final response = await Supabase.instance.client.functions.invoke(
-      'pin-status',
-    );
 
-    if (response.status != 200) {
-      throw Exception('Unable to check PIN status');
+  // ================================================================
+  // SERVER PIN STATUS / CHANGE / CLEAR
+  // ================================================================
+
+  Future<bool> hasPinOnServer() async {
+    try {
+      await _removeLegacyLocalPin();
+      final response = await Supabase.instance.client.functions.invoke(
+        'pin-status',
+      );
+
+      if (response.status != 200 || response.data is! Map) {
+        throw Exception('Unable to check PIN status');
+      }
+
+      final hasPin = response.data['hasPin'];
+      if (hasPin is! bool) {
+        throw Exception('Invalid PIN status response');
+      }
+
+      _hasPinOnServer = hasPin;
+      return hasPin;
+    } catch (e) {
+      debugPrint('PIN STATUS ERROR: $e');
+      rethrow;
     }
-
-    final data = response.data;
-
-    return data['hasPin'] == true;
-  } catch (e) {
-    print('PIN STATUS ERROR: $e');
-    rethrow;
   }
-}
-Future<void> savePinToServer(String pin) async {
-  try {
+
+  Future<void> savePinToServer(String pin) async {
+    try {
+      await _removeLegacyLocalPin();
+      final response = await Supabase.instance.client.functions.invoke(
+        'set-pin',
+        body: {'pin': pin},
+      );
+
+      if (response.status != 200) {
+        throw Exception(
+          response.data is Map
+              ? response.data['error'] ?? 'Unable to save PIN'
+              : 'Unable to save PIN',
+        );
+      }
+
+      _hasPinOnServer = true;
+      await _clearFailures();
+      isLocked = false;
+    } catch (e) {
+      debugPrint('SAVE PIN ERROR: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyPinOnServer(String pin) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'verify-pin',
+        body: {'pin': pin},
+      );
+
+      return Map<String, dynamic>.from(response.data);
+    } on FunctionException catch (e) {
+      if (e.status == 401 || e.status == 429) {
+        return Map<String, dynamic>.from(e.details);
+      }
+
+      rethrow;
+    }
+  }
+
+  Future<void> clearPin() async {
+    await _removeLegacyLocalPin();
     final response = await Supabase.instance.client.functions.invoke(
-      'set-pin',
-      body: {'pin': pin},
+      'clear-pin',
     );
 
     if (response.status != 200) {
       throw Exception(
-        response.data?['error'] ?? 'Unable to save PIN',
+        response.data is Map
+            ? response.data['error'] ?? 'Unable to remove PIN'
+            : 'Unable to remove PIN',
       );
     }
-  } catch (e) {
-    print('SAVE PIN ERROR: $e');
-    rethrow;
-  }
-}
-Future<Map<String, dynamic>> verifyPinOnServer(String pin) async {
-  try {
-    final response = await Supabase.instance.client.functions.invoke(
-      'verify-pin',
-      body: {'pin': pin},
-    );
 
-    return Map<String, dynamic>.from(response.data);
-  } on FunctionException catch (e) {
-    if (e.status == 401 || e.status == 429) {
-      return Map<String, dynamic>.from(e.details);
-    }
-
-    rethrow;
-  }
-}
-  Future<void> clearPin() async {
-    final box = _box;
-    if (box == null) return;
-
-    await box.delete(_hashKey);
-    await box.delete(_saltKey);
-    await box.delete(_setAtKey);
-
+    _hasPinOnServer = false;
     await _clearFailures();
     isLocked = false;
-  }
-
-  bool verify(String pin) {
-    final box = _box;
-    if (box == null) return false;
-
-    final salt = box.get(_saltKey) as String?;
-    final stored = box.get(_hashKey) as String?;
-
-    if (salt == null || stored == null) return false;
-
-    return _hash(pin, salt) == stored;
   }
 
   // ================================================================

@@ -2749,6 +2749,12 @@ class AppTranslations extends Translations {
     'All members have already received the committee.':
         'تمام اراکین کمیٹی کی رقم وصول کر چکے ہیں۔',
     'Forgot your PIN?': 'اپنا PIN بھول گئے؟',
+    'PIN Setup Failed': 'PIN سیٹ اپ نہیں ہو سکا',
+    'Unable to save your PIN. Please try again.':
+        'آپ کا PIN محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    'PIN Removal Failed': 'PIN ہٹایا نہیں جا سکا',
+    'Unable to remove PIN. Please try again.':
+        'PIN ہٹایا نہیں جا سکا۔ دوبارہ کوشش کریں۔',
     'Create a PIN': 'PIN بنائیں',
     'Enter it again': 'دوبارہ درج کریں',
     'Four digits. You will enter this each time the app opens.':

@@ -1461,9 +1461,18 @@ future: BiometricService.instance.availabilityFuture,
             ),
             onPressed: () async {
               Get.back();
-              await PinService.instance.clearPin();
-              await BiometricService.instance.setEnabled(false);
-              controller.update();
+              try {
+                await PinService.instance.clearPin();
+                await BiometricService.instance.setEnabled(false);
+                controller.update();
+              } catch (e) {
+                debugPrint('PIN REMOVAL ERROR: $e');
+                Get.snackbar(
+                  'PIN Removal Failed'.tr,
+                  'Unable to remove PIN. Please try again.'.tr,
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
             },
             child: Text('Remove'.tr),
           ),
